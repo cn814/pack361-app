@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary": "#1b2638", "primary-fixed": "#c1ecd4", "on-secondary-container": "#6e4c00", "surface-container-low": "#f5f4ef", "primary-fixed-dim": "#a5d0b9", "error-container": "#ffdad6", "secondary-fixed-dim": "#feba38", "on-error-container": "#93000a", "surface-container-high": "#e9e8e3", "on-surface": "#1b1c19", "error": "#ba1a1a", "on-secondary-fixed": "#281900", "inverse-primary": "#a5d0b9", "surface-container-lowest": "#ffffff", "surface-dim": "#dbdad5", "on-primary-fixed": "#002114", "secondary-fixed": "#ffdeab", "on-secondary-fixed-variant": "#5f4100", "tertiary-fixed-dim": "#bcc7de", "tertiary-fixed": "#d8e3fb", "surface-bright": "#faf9f4", "outline": "#717973", "background": "#faf9f4", "secondary-container": "#feba38", "surface": "#faf9f4", "inverse-on-surface": "#f2f1ec", "on-primary-fixed-variant": "#274e3d", "on-primary": "#ffffff", "secondary": "#7e5700", "inverse-surface": "#30312e", "on-primary-container": "#86af99", "outline-variant": "#c1c8c2", "on-surface-variant": "#414844", "on-tertiary-fixed-variant": "#3c475a", "on-background": "#1b1c19", "surface-tint": "#3f6653", "on-tertiary-fixed": "#111c2d", "on-tertiary": "#ffffff", "on-error": "#ffffff", "surface-variant": "#e3e3de", "on-secondary": "#ffffff", "surface-container-highest": "#e3e3de", "on-tertiary-container": "#9ba6bd", "primary-container": "#1b4332", "surface-container": "#efeee9", "primary": "#012d1d", "tertiary-container": "#313c4f" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xl": "2rem", "space-md": "1rem", "margin-mobile": "1rem", "margin": "1.5rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "gutter": "1rem", "gutter-mobile": "0.75rem", "space-lg": "1.5rem" }, fontFamily: { "body-md": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-badge": ["Plus Jakarta Sans"] }, fontSize: { "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "display-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.03em", fontWeight: "800" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "headline-md": ["20px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }], "headline-lg": ["28px", { lineHeight: "36px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "700" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "700" }], "label-badge": ["11px", { lineHeight: "14px", letterSpacing: "0.05em", fontWeight: "800" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface antialiased"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Cub Scout Pack Emblem" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UEmM_xZekDjqsIc14_6TWsK--RIQKqUMki-GZKev4T7wM76v8b_oBhNWX4hRZAjOJjPCRpjEdbgh6uvn9zxstZKwoArWHsMbXOsGPkLYBQC_8k06_v_Hsw-HhxeL0Ib9XOkz6UaS4huYhrmbT46NjjUr-anx8aX1I9ei3r7_tvMXDZdb6xtFv5Du4AdlBMtYTDkqhMOh6AaVtalDg9kbFwIPw9cI3pH__zmJKOzYvFHHp23ycmCMsFF3w"/><div class="flex flex-col"><span class="font-label-lg text-label-lg text-primary leading-tight tracking-tight">Pack 361 Trailblazers</span><span class="font-label-md text-label-md text-on-surface-variant leading-none">Campouts</span></div></div><div class="relative flex items-center justify-center min-w-[44px] min-h-[44px]"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5gSfs58coc4spCVj7LbGSbgCfo-pj6WdwYgzLdGKhu766exJEVQZuOKqR7k763AbeuLTl_0VSNQ3layEasM4OiuH8mFo7nVLcR8Rx-MLAilhS5YGb5WfHJsYeIsT1kVEOcTDSn9Of_br5CvOvKGzfYp7D8iNe39sXsNbsGROj_Fs_Fo733L4MWiC_fJHTKq5pjftYU4HzyTPu2o3pvL_7_BjQlCYFACryc-wzbWk8WO9H3nGzP6D0"/><span class="absolute top-2 right-1.5 w-2.5 h-2.5 bg-secondary-container rounded-full ring-2 ring-surface"></span></div></div></header><main class="flex flex-col relative w-full pt-16 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- Toast Notification Container -->
+<div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 transform -translate-y-12 opacity-0 pointer-events-none transition-all duration-300 ease-out flex items-center gap-space-xs bg-tertiary text-on-tertiary px-space-md py-space-sm rounded-xl shadow-xl max-w-[90vw]" id="toast">
+<span class="material-symbols-outlined text-secondary-fixed text-[20px]">check_circle</span>
+<span class="font-label-md text-label-md text-on-tertiary" id="toast-message">Checklist copied to clipboard!</span>
+</div>
+<div class="px-margin-mobile flex flex-col gap-space-lg">
+<!-- Top Leader Badge / Admin Banner -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center gap-1 bg-surface-container-high text-on-surface-variant px-space-sm py-1 rounded-full font-label-badge text-label-badge uppercase tracking-wider">
+<span class="material-symbols-outlined text-[14px] text-secondary">lock</span>
+          Key 3 &amp; Den Leaders Only
+        </span>
+<span class="inline-flex items-center gap-1 bg-primary-fixed text-on-primary-fixed px-space-sm py-1 rounded-full font-label-badge text-label-badge uppercase tracking-wider">
+<span class="material-symbols-outlined text-[14px]">verified_user</span>
+          Pack 361 Admin
+        </span>
+</div>
+<div class="flex flex-col">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">Leader Playbook &amp; Data Sync SOP</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">
+          Master guides for exporting Scoutbook rosters, offline campout preparedness, and den advancement pipelines.
+        </p>
+</div>
+<!-- Quick Stats Strip -->
+<div class="grid grid-cols-3 gap-gutter-mobile mt-space-xs">
+<div class="bg-surface-container-lowest p-space-sm rounded-xl flex flex-col shadow-sm">
+<span class="font-label-badge text-label-badge text-outline uppercase">Active Roster</span>
+<span class="font-headline-sm text-headline-sm text-primary mt-0.5">48 Scouts</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">5 Dens Total</span>
+</div>
+<div class="bg-surface-container-lowest p-space-sm rounded-xl flex flex-col shadow-sm">
+<span class="font-label-badge text-label-badge text-outline uppercase">Last Sync</span>
+<span class="font-headline-sm text-headline-sm text-primary mt-0.5">3d ago</span>
+<span class="font-body-sm text-body-sm text-secondary-container">Update due</span>
+</div>
+<div class="bg-surface-container-lowest p-space-sm rounded-xl flex flex-col shadow-sm">
+<span class="font-label-badge text-label-badge text-outline uppercase">Pending</span>
+<span class="font-headline-sm text-headline-sm text-primary mt-0.5">14 Badges</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Needs Order</span>
+</div>
+</div>
+</div>
+<!-- Quick Search & Category Filter Section -->
+<div class="flex flex-col gap-space-sm">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full bg-surface-container-low pl-10 pr-4 py-2.5 rounded-xl font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest shadow-sm" id="sop-search" placeholder="Search SOP topics, Scoutbook export, YPT..." type="text"/>
+</div>
+<!-- Filter Chips Carousel -->
+<div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar py-1">
+<button class="filter-chip active flex-shrink-0 px-3.5 py-1.5 rounded-full font-label-md text-label-md bg-primary text-on-primary shadow-sm" data-category="all">
+          All Guides
+        </button>
+<button class="filter-chip flex-shrink-0 px-3.5 py-1.5 rounded-full font-label-md text-label-md bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors" data-category="scoutbook">
+          Scoutbook &amp; Roster
+        </button>
+<button class="filter-chip flex-shrink-0 px-3.5 py-1.5 rounded-full font-label-md text-label-md bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors" data-category="vault">
+          Photo Vault YPT
+        </button>
+<button class="filter-chip flex-shrink-0 px-3.5 py-1.5 rounded-full font-label-md text-label-md bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors" data-category="campouts">
+          Campout Ops
+        </button>
+<button class="filter-chip flex-shrink-0 px-3.5 py-1.5 rounded-full font-label-md text-label-md bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors" data-category="dues">
+          Givebutter &amp; Dues
+        </button>
+</div>
+</div>
+<!-- Featured Deep Dive Card: Scoutbook Export SOP -->
+<div class="doc-card bg-surface-container-lowest rounded-xl p-space-md shadow-md flex flex-col gap-space-md relative overflow-hidden" data-tags="scoutbook roster csv my.scouting internet advancement awards sync" id="card-scoutbook-sop">
+<!-- Pine Accent Header Indicator -->
+<div class="absolute top-0 left-0 right-0 h-1.5 bg-primary-container"></div>
+<div class="flex items-start justify-between gap-space-sm pt-1">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="inline-flex items-center gap-1 bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded font-label-badge text-label-badge uppercase tracking-wider">
+<span class="material-symbols-outlined text-[13px]">sync_alt</span>
+              Official BSA SOP
+            </span>
+<span class="font-label-badge text-label-badge text-outline uppercase tracking-wider">Rev. Sep 2026</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-primary mt-1">Exporting Scoutbook &amp; my.Scouting Data</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+            Step-by-step export workflow to pull registered youth, parent rosters, and advancement records into the Pack 361 portal without den mismatches.
+          </p>
+</div>
+<div class="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[24px]">folder_zip</span>
+</div>
+</div>
+<!-- Illustrated Stepper Diagram -->
+<div class="flex flex-col gap-space-sm bg-surface-container-low p-space-sm rounded-xl">
+<!-- Step 1 -->
+<div class="flex items-start gap-3">
+<div class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-badge text-label-badge flex-shrink-0 mt-0.5 shadow-sm">
+            1
+          </div>
+<div class="flex flex-col flex-1">
+<span class="font-label-lg text-label-lg text-primary">Authenticate as Key 3 or Unit Admin</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">
+              Log into <span class="text-primary font-label-md">my.Scouting.org</span> or <span class="text-primary font-label-md">scoutbook.scouting.org</span> with your official BSA Unit Administrator credentials.
+            </span>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="flex items-start gap-3">
+<div class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-badge text-label-badge flex-shrink-0 mt-0.5 shadow-sm">
+            2
+          </div>
+<div class="flex flex-col flex-1">
+<span class="font-label-lg text-label-lg text-primary">Access Unit Roster in Internet Advancement 2.0</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">
+              From the left drawer, navigate to <strong class="text-on-surface font-label-md">Pack 361 &gt; Roster</strong> or open <strong class="text-on-surface font-label-md">Internet Advancement 2.0</strong> to review active registrations.
+            </span>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="flex items-start gap-3">
+<div class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-badge text-label-badge flex-shrink-0 mt-0.5 shadow-sm">
+            3
+          </div>
+<div class="flex flex-col flex-1">
+<span class="font-label-lg text-label-lg text-primary">Generate Comprehensive Roster CSV</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">
+              Click <strong class="text-on-surface font-label-md">Export &gt; Export Roster (.CSV)</strong>. Confirm inclusion of BSA Member IDs, Cub legal names, parent primary email, and Den assignment numbers.
+            </span>
+</div>
+</div>
+<!-- Step 4 -->
+<div class="flex items-start gap-3">
+<div class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-badge text-label-badge flex-shrink-0 mt-0.5 shadow-sm">
+            4
+          </div>
+<div class="flex flex-col flex-1">
+<span class="font-label-lg text-label-lg text-primary">Export Purchasing &amp; Needs-Approval Reports</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">
+              In Scoutbook Reports, select <strong class="text-on-surface font-label-md">Needs Purchasing Report</strong> and <strong class="text-on-surface font-label-md">Needs Approval</strong> to download pending belt loops and rank pins.
+            </span>
+</div>
+</div>
+<!-- Step 5 -->
+<div class="flex items-start gap-3">
+<div class="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-label-badge text-label-badge flex-shrink-0 mt-0.5 shadow-sm">
+            5
+          </div>
+<div class="flex flex-col flex-1">
+<span class="font-label-lg text-label-lg text-primary">Sync to Pack Portal</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">
+              Drop the exported CSV file into the Webmaster portal dropzone below. Roster IDs, den feeds, and scout advancement rings update instantly.
+            </span>
+</div>
+</div>
+</div>
+<!-- Pro Tip Warm Callout -->
+<div class="flex items-start gap-space-sm bg-secondary-fixed/30 p-space-sm rounded-xl">
+<span class="material-symbols-outlined text-secondary text-[22px] flex-shrink-0 mt-0.5" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-secondary-fixed">Leader Cutoff Reminder</span>
+<p class="font-body-sm text-body-sm text-on-secondary-fixed-variant mt-0.5">
+            Export right after the monthly Pack Committee cutoff date (last Sunday of each month). This guarantees our Council Scout Shop order is submitted at least 10 days before Blue &amp; Gold or Court of Honor celebrations.
+          </p>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col sm:flex-row gap-space-xs pt-space-xs">
+<button class="w-full flex items-center justify-center gap-space-xs py-3 px-space-md bg-primary text-on-primary rounded-xl font-label-lg text-label-lg shadow-sm hover:opacity-95 transition-transform active:translate-y-0.5" id="btn-copy-checklist">
+<span class="material-symbols-outlined text-[18px]">checklist</span>
+          Copy Step-by-Step Checklist
+        </button>
+<a class="w-full flex items-center justify-center gap-space-xs py-3 px-space-md bg-surface-container-high text-primary rounded-xl font-label-lg text-label-lg hover:bg-surface-variant transition-colors" href="#template-download" id="btn-download-template">
+<span class="material-symbols-outlined text-[18px]">download_for_offline</span>
+          Sample CSV Template (.csv)
+        </a>
+</div>
+</div>
+<!-- Additional Leader SOP Modules (Accordion / Card List) -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-primary">Core Operational Playbooks</h2>
+<span class="font-label-badge text-label-badge text-outline uppercase">4 Modules</span>
+</div>
+<!-- Module A: Magic Link & Whitelist -->
+<div class="doc-card bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm transition-all" data-tags="roster whitelist magic link parent auth security transfer scouts">
+<div class="flex items-center justify-between cursor-pointer accordion-trigger" data-target="panel-a">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container-low flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">vpn_key</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary">Parent Whitelist &amp; Magic Links</span>
+<span class="font-label-md text-label-md text-outline">Access control &amp; Youth Privacy</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline transition-transform duration-200 accordion-icon">expand_more</span>
+</div>
+<div class="accordion-content hidden flex flex-col gap-space-sm pt-space-xs" id="panel-a">
+<p class="font-body-md text-body-md text-on-surface-variant">
+            To prevent unsolicited access to Pack 361 schedules and youth rosters, all parent logins use passwordless token links sent to the email address registered on their official BSA charter application.
+          </p>
+<div class="bg-surface-container-low p-space-sm rounded-xl flex flex-col gap-1 font-body-sm text-body-sm">
+<span class="font-label-md text-label-md text-primary">Handling Transfer or New Scouts:</span>
+<ul class="list-disc list-inside text-on-surface-variant flex flex-col gap-1">
+<li>Check Council registrar confirmation in my.Scouting before provisioning app access.</li>
+<li>Manually add parent email to the Pack 361 Firestore Whitelist under <code class="text-primary font-label-badge">/authorized_parents</code>.</li>
+<li>New scouts will appear on their assigned den wall once the Scoutbook Member ID matches.</li>
+</ul>
+</div>
+<div class="flex justify-end pt-1">
+<button class="text-secondary font-label-md text-label-md flex items-center gap-1 hover:underline">
+<span>View Whitelist Policy Spec</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Module B: YPT 2-Deep Photo Policy -->
+<div class="doc-card bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm transition-all" data-tags="youth protection ypt photo vault opt-out moderation council compliance">
+<div class="flex items-center justify-between cursor-pointer accordion-trigger" data-target="panel-b">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container-low flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">shield_person</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary">Youth Protection (YPT) 2-Deep Photo SOP</span>
+<span class="font-label-md text-label-md text-outline">Media vault moderation &amp; opt-outs</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline transition-transform duration-200 accordion-icon">expand_more</span>
+</div>
+<div class="accordion-content hidden flex flex-col gap-space-sm pt-space-xs" id="panel-b">
+<p class="font-body-md text-body-md text-on-surface-variant">
+            Pack 361 strictly enforces BSA Youth Protection guidelines across the community Media Vault. Photos uploaded by den parents enter a staging queue requiring approval before appearing in public pack recaps.
+          </p>
+<div class="grid grid-cols-2 gap-gutter-mobile">
+<div class="bg-surface-container-low p-space-sm rounded-xl flex flex-col">
+<span class="font-label-md text-label-md text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-error">visibility_off</span>
+                Photo Opt-Outs
+              </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                3 scouts in Den 2 &amp; Den 5 have signed parental opt-out waivers. Check the roster badge flag before publishing campout gallery highlights.
+              </span>
+</div>
+<div class="bg-surface-container-low p-space-sm rounded-xl flex flex-col">
+<span class="font-label-md text-label-md text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">group</span>
+                Two-Leader Review
+              </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                Vault uploads require one registered leader stamp before sync. Never crop or tag scout full surnames on exterior sharing links.
+              </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Module C: Campout Offline Cache & Emergency Alerts -->
+<div class="doc-card bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm transition-all" data-tags="campouts offline emergency alerts sms burn ban state parks weather">
+<div class="flex items-center justify-between cursor-pointer accordion-trigger" data-target="panel-c">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container-low flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">offline_pin</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary">Offline Cache &amp; Emergency Alerts</span>
+<span class="font-label-md text-label-md text-outline">Field operations in zero-cell zones</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline transition-transform duration-200 accordion-icon">expand_more</span>
+</div>
+<div class="accordion-content hidden flex flex-col gap-space-sm pt-space-xs" id="panel-c">
+<p class="font-body-md text-body-md text-on-surface-variant">
+            Some campsites (e.g., Broad Creek, western Maryland state parks) have weak or no cell signal. Den leaders must sync rosters to their local device cache before departing the church staging grounds.
+          </p>
+<div class="bg-surface-container-low p-space-sm rounded-xl flex flex-col gap-2 font-body-sm text-body-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">cell_tower</span>
+<span class="text-on-surface font-label-md">Emergency SMS Broadcast Trigger</span>
+</div>
+<span class="text-on-surface-variant">
+              In cases of sudden burn bans, severe storm evacuation, or campsite relocation, admins can broadcast an uncompressed SMS alert directly to all verified parent mobile numbers via Twilio failover.
+            </span>
+</div>
+</div>
+</div>
+<!-- Module D: Advancement Quick-Entry Workflow -->
+<div class="doc-card bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm transition-all" data-tags="advancement quick entry den meetings leo miller belt loops rank badges court of honor">
+<div class="flex items-center justify-between cursor-pointer accordion-trigger" data-target="panel-d">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container-low flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">military_tech</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary">Advancement Quick-Entry Workflow</span>
+<span class="font-label-md text-label-md text-outline">Den meeting sign-offs to batch sync</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline transition-transform duration-200 accordion-icon">expand_more</span>
+</div>
+<div class="accordion-content hidden flex flex-col gap-space-sm pt-space-xs" id="panel-d">
+<p class="font-body-md text-body-md text-on-surface-variant">
+            Den leaders can check off adventure requirements directly from mobile during meetings. Entries stay in 'Den Verified' status until the Advancement Chair executes the monthly Council purchase order.
+          </p>
+<div class="bg-surface-container-low p-space-sm rounded-xl flex flex-col gap-1.5 font-body-sm text-body-sm">
+<div class="flex items-center justify-between text-on-surface">
+<span class="font-label-md">Bobcat to Arrow of Light Path</span>
+<span class="font-label-badge text-label-badge bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded">Current Cub Scout Program</span>
+</div>
+<span class="text-on-surface-variant">
+              Batch export creates a Scoutbook-compatible .CSV with exact requirement codes (e.g., <code class="font-label-badge text-primary">TIG-ADV-01</code>) preventing manual single-entry drag.
+            </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Tools & External Resource Hub -->
+<div class="flex flex-col gap-space-sm">
+<h2 class="font-headline-sm text-headline-sm text-primary">Official BSA Admin Portals</h2>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-gutter-mobile">
+<!-- Portal Link 1 -->
+<a class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center justify-between hover:bg-surface-container-low transition-colors group" href="https://my.scouting.org" rel="noopener noreferrer" target="_blank">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[24px]">account_balance</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary group-hover:text-primary-container">my.Scouting Portal</span>
+<span class="font-body-sm text-body-sm text-outline">Charters &amp; YPT Status</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">open_in_new</span>
+</a>
+<!-- Portal Link 2 -->
+<a class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center justify-between hover:bg-surface-container-low transition-colors group" href="https://scoutbook.scouting.org" rel="noopener noreferrer" target="_blank">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[24px]">stars</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary group-hover:text-primary-container">Scoutbook Plus</span>
+<span class="font-body-sm text-body-sm text-outline">Internet Advancement 2.0</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">open_in_new</span>
+</a>
+<!-- Contact Advancement Chair -->
+<a class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center justify-between hover:bg-surface-container-low transition-colors group" href="mailto:advancement@example.org?subject=Pack%20361%20Scoutbook%20Sync%20Inquiry">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[24px]">badge</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary group-hover:text-primary-container">Elena Ortiz</span>
+<span class="font-body-sm text-body-sm text-outline">Advancement Chair</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[20px]">mail</span>
+</a>
+</div>
+</div>
+<!-- Webmaster Contact & Version Footer -->
+<div class="bg-surface-container p-space-md rounded-xl flex flex-col sm:flex-row items-center justify-between gap-space-md mb-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary">Need technical changes or API access?</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">
+            Contact the Pack 361 Webmaster.
+          </span>
+</div>
+</div>
+<a class="inline-flex items-center justify-center px-4 py-2 bg-primary text-on-primary rounded-xl font-label-md text-label-md shadow-sm hover:opacity-90 transition-opacity whitespace-nowrap" href="mailto:webmaster@example.org?subject=Pack%20361%20Playbook%20Feedback">
+        Message Webmaster
+      </a>
+</div>
+</div>
+</div>
+<script>
+  // Filter Chips Micro-interaction
+  const filterChips = document.querySelectorAll('.filter-chip');
+  const docCards = document.querySelectorAll('.doc-card');
+  const searchInput = document.getElementById('sop-search');
+
+  function applyFilters() {
+    const activeChip = document.querySelector('.filter-chip.active');
+    const category = activeChip ? activeChip.getAttribute('data-category') : 'all';
+    const query = searchInput.value.toLowerCase().trim();
+
+    docCards.forEach(card => {
+      const tags = (card.getAttribute('data-tags') || '').toLowerCase();
+      const content = card.textContent.toLowerCase();
+      
+      const matchesCategory = (category === 'all') || tags.includes(category);
+      const matchesSearch = query === '' || tags.includes(query) || content.includes(query);
+
+      if (matchesCategory && matchesSearch) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+
+  filterChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      filterChips.forEach(c => {
+        c.classList.remove('active', 'bg-primary', 'text-on-primary');
+        c.classList.add('bg-surface-container-high', 'text-on-surface');
+      });
+      chip.classList.add('active', 'bg-primary', 'text-on-primary');
+      chip.classList.remove('bg-surface-container-high', 'text-on-surface');
+      applyFilters();
+    });
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', applyFilters);
+  }
+
+  // Accordion Expand/Collapse Interaction
+  const triggers = document.querySelectorAll('.accordion-trigger');
+  triggers.forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      const targetId = trigger.getAttribute('data-target');
+      const panel = document.getElementById(targetId);
+      const icon = trigger.querySelector('.accordion-icon');
+
+      if (panel) {
+        const isHidden = panel.classList.contains('hidden');
+        if (isHidden) {
+          panel.classList.remove('hidden');
+          if (icon) icon.style.transform = 'rotate(180deg)';
+        } else {
+          panel.classList.add('hidden');
+          if (icon) icon.style.transform = 'rotate(0deg)';
+        }
+      }
+    });
+  });
+
+  // Copy Step-by-Step Checklist to Clipboard
+  const btnCopy = document.getElementById('btn-copy-checklist');
+  const toast = document.getElementById('toast');
+  const toastMessage = document.getElementById('toast-message');
+
+  function showToast(msg) {
+    if (!toast) return;
+    toastMessage.textContent = msg;
+    toast.classList.remove('-translate-y-12', 'opacity-0', 'pointer-events-none');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+      toast.classList.add('-translate-y-12', 'opacity-0', 'pointer-events-none');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 2800);
+  }
+
+  if (btnCopy) {
+    btnCopy.addEventListener('click', () => {
+      const checklistText = 
+`Pack 361 - Official Scoutbook Data Sync SOP:
+1. Log into my.Scouting.org / Scoutbook with Key 3 credentials.
+2. Select Pack 361 > Roster or Internet Advancement 2.0.
+3. Export Roster CSV with Member IDs, Youth Names, Parent Emails, and Den Numbers.
+4. Export 'Needs Purchasing' & 'Needs Approval' advancement reports.
+5. Upload CSV directly to Pack 361 portal for automatic rank advancement sync.
+Cutoff Tip: Export on the last Sunday of every month prior to the Scout Shop deadline.`;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(checklistText).then(() => {
+          showToast('SOP Checklist copied to clipboard!');
+        }).catch(() => {
+          showToast('Checklist ready for export!');
+        });
+      } else {
+        showToast('SOP Checklist ready for export!');
+      }
+    });
+  }
+
+  // Template Download Mock Feedback
+  const btnDownload = document.getElementById('btn-download-template');
+  if (btnDownload) {
+    btnDownload.addEventListener('click', (e) => {
+      e.preventDefault();
+      showToast('Downloading Scoutbook_Pack361_Template.csv');
+    });
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(30,41,58,0.06)]" data-active-classes="text-primary font-label-lg"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="feed" href="#"><span class="material-symbols-outlined text-[24px]">holiday_village</span><span class="font-label-md text-label-md mt-0.5">Feed</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="campouts" href="#"><span class="material-symbols-outlined text-[24px]">explore</span><span class="font-label-md text-label-md mt-0.5">Campouts</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="scoutbook" href="#"><span class="material-symbols-outlined text-[24px]">military_tech</span><span class="font-label-md text-label-md mt-0.5">Scoutbook</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="vault" href="#"><span class="material-symbols-outlined text-[24px]">shield</span><span class="font-label-md text-label-md mt-0.5">Vault</span></a></div></nav></body></html>
