@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary": "#1b2638", "primary-fixed": "#c1ecd4", "on-secondary-container": "#6e4c00", "surface-container-low": "#f5f4ef", "primary-fixed-dim": "#a5d0b9", "error-container": "#ffdad6", "secondary-fixed-dim": "#feba38", "on-error-container": "#93000a", "surface-container-high": "#e9e8e3", "on-surface": "#1b1c19", "error": "#ba1a1a", "on-secondary-fixed": "#281900", "inverse-primary": "#a5d0b9", "surface-container-lowest": "#ffffff", "surface-dim": "#dbdad5", "on-primary-fixed": "#002114", "secondary-fixed": "#ffdeab", "on-secondary-fixed-variant": "#5f4100", "tertiary-fixed-dim": "#bcc7de", "tertiary-fixed": "#d8e3fb", "surface-bright": "#faf9f4", "outline": "#717973", "background": "#faf9f4", "secondary-container": "#feba38", "surface": "#faf9f4", "inverse-on-surface": "#f2f1ec", "on-primary-fixed-variant": "#274e3d", "on-primary": "#ffffff", "secondary": "#7e5700", "inverse-surface": "#30312e", "on-primary-container": "#86af99", "outline-variant": "#c1c8c2", "on-surface-variant": "#414844", "on-tertiary-fixed-variant": "#3c475a", "on-background": "#1b1c19", "surface-tint": "#3f6653", "on-tertiary-fixed": "#111c2d", "on-tertiary": "#ffffff", "on-error": "#ffffff", "surface-variant": "#e3e3de", "on-secondary": "#ffffff", "surface-container-highest": "#e3e3de", "on-tertiary-container": "#9ba6bd", "primary-container": "#1b4332", "surface-container": "#efeee9", "primary": "#012d1d", "tertiary-container": "#313c4f" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xl": "2rem", "space-md": "1rem", "margin-mobile": "1rem", "margin": "1.5rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "gutter": "1rem", "gutter-mobile": "0.75rem", "space-lg": "1.5rem" }, fontFamily: { "body-md": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-badge": ["Plus Jakarta Sans"] }, fontSize: { "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "display-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.03em", fontWeight: "800" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "headline-md": ["20px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }], "headline-lg": ["28px", { lineHeight: "36px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "700" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "700" }], "label-badge": ["11px", { lineHeight: "14px", letterSpacing: "0.05em", fontWeight: "800" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface antialiased"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Cub Scout Pack Emblem" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UEmM_xZekDjqsIc14_6TWsK--RIQKqUMki-GZKev4T7wM76v8b_oBhNWX4hRZAjOJjPCRpjEdbgh6uvn9zxstZKwoArWHsMbXOsGPkLYBQC_8k06_v_Hsw-HhxeL0Ib9XOkz6UaS4huYhrmbT46NjjUr-anx8aX1I9ei3r7_tvMXDZdb6xtFv5Du4AdlBMtYTDkqhMOh6AaVtalDg9kbFwIPw9cI3pH__zmJKOzYvFHHp23ycmCMsFF3w"/><div class="flex flex-col"><span class="font-label-lg text-label-lg text-primary leading-tight tracking-tight">Pack 361 Trailblazers</span><span class="font-label-md text-label-md text-on-surface-variant leading-none">Campouts</span></div></div><div class="relative flex items-center justify-center min-w-[44px] min-h-[44px]"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5gSfs58coc4spCVj7LbGSbgCfo-pj6WdwYgzLdGKhu766exJEVQZuOKqR7k763AbeuLTl_0VSNQ3layEasM4OiuH8mFo7nVLcR8Rx-MLAilhS5YGb5WfHJsYeIsT1kVEOcTDSn9Of_br5CvOvKGzfYp7D8iNe39sXsNbsGROj_Fs_Fo733L4MWiC_fJHTKq5pjftYU4HzyTPu2o3pvL_7_BjQlCYFACryc-wzbWk8WO9H3nGzP6D0"/><span class="absolute top-2 right-1.5 w-2.5 h-2.5 bg-secondary-container rounded-full ring-2 ring-surface"></span></div></div></header><main class="flex flex-col relative w-full pt-16 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full pb-8">
+<!-- Top Offline Sync Indicator Pill -->
+<section class="px-margin-mobile pt-3 pb-2">
+<div class="flex items-center justify-between bg-primary-fixed text-on-primary-fixed px-3 py-2 rounded-xl shadow-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary" style="font-variation-settings: 'FILL' 1;">offline_pin</span>
+<div class="flex flex-col">
+<span class="font-label-badge text-label-badge tracking-wider uppercase text-primary">Offline Mode Active</span>
+<span class="font-body-sm text-body-sm text-on-primary-fixed-variant leading-tight">Saved locally 12m ago • 0-bar cell ready</span>
+</div>
+</div>
+<button class="flex items-center gap-1 bg-surface-container-lowest text-primary px-2.5 py-1 rounded-lg text-label-md font-label-md shadow-sm active:scale-95 transition-transform" onclick="simulateSync(this)">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>Recheck</span>
+</button>
+</div>
+</section>
+<!-- Campout Context & Title Header -->
+<section class="px-margin-mobile pt-2 pb-3">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="bg-secondary-fixed text-on-secondary-fixed font-label-badge text-label-badge px-2 py-0.5 rounded-full uppercase tracking-wider">Pack 361 Fall Campout</span>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">pin_drop</span> Pack Campsite
+        </span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">Broad Creek Fall Campout</h1>
+<!-- Weather & Fire Condition Pill Bento -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm mt-1 flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[24px]">sunny</span>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface leading-snug">Oct 23–25, 2026</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Check forecast • late-Oct lows can reach the 30s</p>
+</div>
+</div>
+<div class="text-right">
+<span class="inline-flex items-center gap-1 bg-primary-fixed-dim/40 text-primary px-2 py-0.5 rounded-full font-label-badge text-label-badge">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span> LOW WIND
+            </span>
+</div>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-low px-2.5 py-1.5 rounded-lg">
+<span class="material-symbols-outlined text-[18px] text-secondary" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="font-label-md text-label-md text-on-surface">Fire Status:</span>
+<span class="font-body-sm text-body-sm text-primary font-semibold">Campfires Permitted (No Burn Ban)</span>
+</div>
+</div>
+</div>
+<!-- Quick Action Tray -->
+<div class="grid grid-cols-3 gap-2 mt-3">
+<a class="flex flex-col items-center justify-center bg-error-container text-on-error-container p-2.5 rounded-xl active:scale-95 transition-all text-center" href="#emergency-section">
+<span class="material-symbols-outlined text-[20px] mb-1" style="font-variation-settings: 'FILL' 1;">e911_emergency</span>
+<span class="font-label-md text-label-md leading-tight">911 &amp; ER</span>
+</a>
+<button class="flex flex-col items-center justify-center bg-surface-container-lowest text-primary p-2.5 rounded-xl shadow-sm active:scale-95 transition-all text-center" onclick="showToast('PDF Map cached to local storage')">
+<span class="material-symbols-outlined text-[20px] mb-1">picture_as_pdf</span>
+<span class="font-label-md text-label-md leading-tight">Save PDF</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-surface-container-lowest text-on-surface p-2.5 rounded-xl shadow-sm active:scale-95 transition-all text-center" onclick="toggleRulesModal(true)">
+<span class="material-symbols-outlined text-[20px] mb-1">gavel</span>
+<span class="font-label-md text-label-md leading-tight">Camp Rules</span>
+</button>
+</div>
+</section>
+<!-- Emergency Safety & Evacuation Card (BSA Mandatory Directive) -->
+<section class="px-margin-mobile py-2" id="emergency-section">
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-md">
+<!-- Amber/Red Warning Bar -->
+<div class="bg-error px-4 py-2 flex items-center justify-between text-on-error">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[22px]">crisis_alert</span>
+<span class="font-label-lg text-label-lg tracking-wide uppercase">Camp Safety &amp; Rapid 911 Protocol</span>
+</div>
+<span class="font-label-badge text-label-badge bg-on-error/20 px-2 py-0.5 rounded uppercase">BSA Mandate</span>
+</div>
+<div class="p-3.5 flex flex-col gap-3">
+<!-- Physical Location for 911 Dispatch -->
+<div class="bg-surface-container-low p-3 rounded-lg">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-badge text-label-badge text-error uppercase">Official 911 Physical Address</span>
+<p class="font-label-lg text-label-lg text-on-surface mt-0.5">Broad Creek Memorial Scout Reservation</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">1929 Susquehanna Hall Rd, Whiteford, MD 21160</p>
+</div>
+<button class="bg-surface-container-lowest px-2.5 py-1.5 rounded-lg shadow-sm text-center" onclick="copyGateCode()">
+<span class="font-label-badge text-label-badge text-on-surface-variant uppercase block">Gate Code</span>
+<span class="font-label-lg text-label-lg text-primary font-bold">TBD</span>
+</button>
+</div>
+</div>
+<!-- 24/7 ER Facility Details -->
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-error text-[24px]">local_hospital</span>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Nearest ER: confirm before trip</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Add hospital name, drive time & address</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5">
+<a class="w-9 h-9 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-sm" href="tel:9362914500">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</a>
+<button class="w-9 h-9 rounded-full bg-surface-container-highest text-primary flex items-center justify-center" onclick="showToast('Loading offline GPS route to Huntsville ER...')">
+<span class="material-symbols-outlined text-[18px]">directions</span>
+</button>
+</div>
+</div>
+<!-- Ranger & Radio Frequency info -->
+<div class="grid grid-cols-2 gap-2">
+<div class="p-2.5 bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-1.5 text-on-surface mb-1">
+<span class="material-symbols-outlined text-[18px] text-secondary">radio</span>
+<span class="font-label-md text-label-md">Ranger Station</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">FRS Channel: <span class="font-bold text-on-surface">4</span></p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Camp office: add number</p>
+</div>
+<div class="p-2.5 bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-1.5 text-on-surface mb-1">
+<span class="material-symbols-outlined text-[18px] text-primary">medical_services</span>
+<span class="font-label-md text-label-md">Pack First Aid Tent</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight">Pack First Aid Lead</p>
+<p class="font-body-sm text-body-sm text-primary font-semibold mt-0.5">Pack Pavilion HQ</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive Broad Creek Offline Map -->
+<section class="px-margin-mobile py-2.5">
+<div class="flex items-center justify-between mb-2">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary">Campsite Field Map</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Fully functional offline vector trail map</p>
+</div>
+<span class="bg-surface-container text-on-surface font-label-badge text-label-badge px-2 py-0.5 rounded-full">GPS: 39.7° N, 76.3° W</span>
+</div>
+<!-- Map Filter Toggle Chips -->
+<div class="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
+<button class="bg-primary text-on-primary px-3 py-1.5 rounded-full font-label-md text-label-md whitespace-nowrap shadow-sm active:scale-95 transition-all flex items-center gap-1" id="toggle-zones" onclick="toggleMapLayer('zones')">
+<span class="material-symbols-outlined text-[16px]">holiday_village</span>
+<span>Dens &amp; Tents</span>
+</button>
+<button class="bg-surface-container-lowest text-on-surface px-3 py-1.5 rounded-full font-label-md text-label-md whitespace-nowrap shadow-sm active:scale-95 transition-all flex items-center gap-1" id="toggle-water" onclick="toggleMapLayer('water')">
+<span class="material-symbols-outlined text-[16px] text-tertiary">water_drop</span>
+<span>Water &amp; Latrine</span>
+</button>
+<button class="bg-surface-container-lowest text-on-surface px-3 py-1.5 rounded-full font-label-md text-label-md whitespace-nowrap shadow-sm active:scale-95 transition-all flex items-center gap-1" id="toggle-activity" onclick="toggleMapLayer('activity')">
+<span class="material-symbols-outlined text-[16px] text-secondary">sports_score</span>
+<span>Ranges &amp; Ring</span>
+</button>
+</div>
+<!-- High Visual Fidelity Tactile Vector Map Canvas -->
+<div class="relative w-full h-72 rounded-2xl overflow-hidden bg-primary-container shadow-md flex items-center justify-center select-none">
+<!-- Illustrated Topo Forest Background with SVGs -->
+<svg class="absolute inset-0 w-full h-full opacity-35" fill="none" preserveaspectratio="none" viewbox="0 0 360 288">
+<path d="M-20 60 C80 40, 160 120, 240 80 C320 40, 380 90, 400 110 L400 300 L-20 300 Z" fill="#2d6a4f"></path>
+<path d="M-10 140 C100 130, 190 210, 290 170 C350 140, 390 190, 410 200 L410 300 L-10 300 Z" fill="#1b4332"></path>
+<!-- Trail path dashed -->
+<path d="M40 260 C70 200, 110 170, 175 145 C220 125, 270 110, 330 65" stroke="#feba38" stroke-dasharray="4 4" stroke-linecap="round" stroke-width="3"></path>
+<path d="M175 145 C150 110, 120 90, 60 75" stroke="#feba38" stroke-dasharray="3 3" stroke-linecap="round" stroke-width="2.5"></path>
+</svg>
+<!-- Water Feature (Grand Lake Margin) -->
+<div class="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-tertiary-container/80 blur-[2px] flex items-center justify-center text-on-tertiary text-[10px] font-label-badge uppercase tracking-wider text-right pr-6 pt-6">
+        Nature Trailhead
+      </div>
+<!-- Map Pin 1: Site Pack Pavilion (HQ) -->
+<div class="absolute left-[44%] top-[45%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer group" onclick="showPinDetails('Site Pack Pavilion', 'Camp HQ, First Aid tent, Dutch Oven staging area, electricity available.')">
+<div class="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container shadow-lg flex items-center justify-center animate-bounce">
+<span class="material-symbols-outlined text-[18px]">roofing</span>
+</div>
+<span class="bg-surface text-primary font-label-badge text-[10px] px-1.5 py-0.5 rounded shadow mt-1 whitespace-nowrap font-bold">HQ Pavilion</span>
+</div>
+<!-- Map Pin 2: Central Campfire Ring -->
+<div class="map-layer-activity absolute left-[26%] top-[30%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer" onclick="showPinDetails('Council Campfire Ring', 'Location for Saturday 7:30 PM Grand Campfire &amp; Skits. Bring camping chairs.')">
+<div class="w-7 h-7 rounded-full bg-secondary text-on-secondary shadow-md flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">local_fire_department</span>
+</div>
+<span class="bg-surface/90 text-on-surface font-label-badge text-[9px] px-1 rounded shadow mt-0.5 whitespace-nowrap">Campfire Ring</span>
+</div>
+<!-- Map Pin 3: Water & Restrooms -->
+<div class="map-layer-water absolute left-[72%] top-[55%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer" onclick="showPinDetails('Comfort Station #3', 'Flush toilets, hot showers, and certified potable drinking water spigot.')">
+<div class="w-7 h-7 rounded-full bg-tertiary-fixed text-on-tertiary-fixed shadow-md flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">wc</span>
+</div>
+<span class="bg-surface/90 text-tertiary font-label-badge text-[9px] px-1 rounded shadow mt-0.5 whitespace-nowrap">Latrine &amp; Water</span>
+</div>
+<!-- Map Pin 4: Den Tent Clusters Zone -->
+<div class="map-layer-zones absolute left-[20%] top-[65%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer" onclick="showPinDetails('Den Tent Field', 'Designated zones for Lions, Tigers, Wolves, Bears, and Webelos tent clusters.')">
+<div class="w-7 h-7 rounded-full bg-primary-fixed text-on-primary-fixed shadow-md flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">cabin</span>
+</div>
+<span class="bg-surface/90 text-primary font-label-badge text-[9px] px-1 rounded shadow mt-0.5 whitespace-nowrap">Den Tents (1-5)</span>
+</div>
+<!-- Map Pin 5: Archery & BB Range -->
+<div class="map-layer-activity absolute left-[78%] top-[25%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer" onclick="showPinDetails('Camp Range', 'Archery &amp; Slingshot certifications start Saturday 1:30 PM. Certified RSO on duty.')">
+<div class="w-7 h-7 rounded-full bg-secondary-container text-on-secondary-container shadow-md flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">target</span>
+</div>
+<span class="bg-surface/90 text-on-surface font-label-badge text-[9px] px-1 rounded shadow mt-0.5 whitespace-nowrap">Archery Range</span>
+</div>
+<!-- North Compass Overlay in Corner -->
+<div class="absolute bottom-2 left-2 bg-surface/90 rounded-lg p-1.5 shadow flex items-center gap-1">
+<span class="material-symbols-outlined text-primary text-[18px]">explore</span>
+<span class="font-label-badge text-label-badge text-primary uppercase font-bold">N</span>
+</div>
+<!-- Location Tap Helper info banner -->
+<div class="absolute bottom-2 right-2 bg-surface-container-lowest/95 backdrop-blur-sm px-2.5 py-1 rounded-lg shadow text-on-surface font-body-sm text-[11px] flex items-center gap-1.5 pointer-events-none" id="map-info-pill">
+<span class="material-symbols-outlined text-secondary text-[14px]">touch_app</span>
+<span>Tap any pin for notes</span>
+</div>
+</div>
+</section>
+<!-- Detailed Day-by-Day Hour-by-Hour Itinerary -->
+<section class="px-margin-mobile pt-3 pb-2">
+<div class="flex items-center justify-between mb-2.5">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary">Campout Schedule</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Pack 361 Fall Program &amp; Advancements</p>
+</div>
+<span class="font-label-md text-label-md text-primary bg-primary-fixed-dim/30 px-2 py-1 rounded-lg font-bold">Field &amp; Activity Uniforms</span>
+</div>
+<!-- Tab Pills Day Selectors -->
+<div class="grid grid-cols-3 gap-1.5 p-1 bg-surface-container rounded-xl">
+<button class="day-tab py-1.5 text-center rounded-lg font-label-md text-label-md text-on-surface-variant transition-all hover:text-on-surface" onclick="switchDayTab('fri', this)">
+        Fri Oct 23
+      </button>
+<button class="day-tab py-1.5 text-center rounded-lg font-label-md text-label-md bg-surface-container-lowest text-primary shadow-sm font-bold transition-all" onclick="switchDayTab('sat', this)">
+        Sat (Active)
+      </button>
+<button class="day-tab py-1.5 text-center rounded-lg font-label-md text-label-md text-on-surface-variant transition-all hover:text-on-surface" onclick="switchDayTab('sun', this)">
+        Sun Oct 25
+      </button>
+</div>
+<!-- Timeline Body (Saturday Default) -->
+<div class="mt-3 flex flex-col gap-2.5" id="timeline-container">
+<!-- 07:00 AM Event -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex items-start gap-3">
+<div class="flex flex-col items-center justify-center min-w-[56px] text-center pt-0.5">
+<span class="font-label-lg text-label-lg text-primary">07:00</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant uppercase">AM</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<h3 class="font-label-lg text-label-lg text-on-surface truncate">Reveille &amp; Camp Breakfast</h3>
+<span class="bg-surface-container text-on-surface-variant font-label-badge text-label-badge px-1.5 py-0.5 rounded uppercase">Activity Uniform</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Cook stoves lit at individual Den campsites. Water boil stations active.</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="font-body-sm text-body-sm text-primary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">pin_drop</span> Den Tents
+            </span>
+<span class="text-outline-variant">•</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Den Leaders lead</span>
+</div>
+</div>
+</div>
+<!-- 08:30 AM Event (Field Uniform Flag Ceremony) -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm border-l-4 border-l-primary flex items-start gap-3">
+<div class="flex flex-col items-center justify-center min-w-[56px] text-center pt-0.5">
+<span class="font-label-lg text-label-lg text-primary">08:30</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant uppercase">AM</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<h3 class="font-label-lg text-label-lg text-primary font-bold truncate">Morning Colors &amp; Flag Raising</h3>
+<span class="bg-primary text-on-primary font-label-badge text-label-badge px-2 py-0.5 rounded-full uppercase">Field Uniform</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Full formal Scout uniform required for opening ceremony and den roll call.</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="font-body-sm text-body-sm text-primary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">flag</span> Main Flagpole
+            </span>
+<span class="text-outline-variant">•</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Cubmaster</span>
+</div>
+</div>
+</div>
+<!-- 09:15 AM Adventure Rotations Card with Sub-den nesting -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex items-start gap-3">
+<div class="flex flex-col items-center justify-center min-w-[56px] text-center pt-0.5">
+<span class="font-label-lg text-label-lg text-primary">09:15</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant uppercase">AM</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<h3 class="font-label-lg text-label-lg text-on-surface">Den Adventure Rotations</h3>
+<span class="bg-secondary-fixed text-on-secondary-fixed font-label-badge text-label-badge px-1.5 py-0.5 rounded uppercase">Rank Skills</span>
+</div>
+<!-- Den breakdown micro-cards -->
+<div class="mt-2 flex flex-col gap-1.5">
+<div class="p-2 bg-surface-container-low rounded-lg">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-primary font-bold">Bears (Den 3)</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant">Pack Pavilion</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface mt-0.5">Baloo the Builder woodwork &amp; hand tool safety.</p>
+</div>
+<div class="p-2 bg-surface-container-low rounded-lg">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-primary font-bold">Webelos &amp; AOL</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant">Campfire Ring</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface mt-0.5">Cast Iron Chef &amp; knife safety demo.</p>
+</div>
+<div class="p-2 bg-surface-container-low rounded-lg">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-primary font-bold">Lions, Tigers, Wolves</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant">Nature Trailhead</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface mt-0.5">1-Mile Nature Scavenger Hike &amp; Leave No Trace review.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- 12:00 PM Event -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex items-start gap-3">
+<div class="flex flex-col items-center justify-center min-w-[56px] text-center pt-0.5">
+<span class="font-label-lg text-label-lg text-primary">12:00</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant uppercase">PM</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<h3 class="font-label-lg text-label-lg text-on-surface">Pack Sack Lunch &amp; Gaga Ball</h3>
+<span class="bg-surface-container text-on-surface-variant font-label-badge text-label-badge px-1.5 py-0.5 rounded uppercase">Activity Uniform</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Families eat pack-brought sack lunches under trees. Gaga Ball pit open!</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="font-body-sm text-body-sm text-primary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">sports_volleyball</span> Gaga Pit
+            </span>
+</div>
+</div>
+</div>
+<!-- 01:30 PM Archery -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex items-start gap-3">
+<div class="flex flex-col items-center justify-center min-w-[56px] text-center pt-0.5">
+<span class="font-label-lg text-label-lg text-primary">01:30</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant uppercase">PM</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<h3 class="font-label-lg text-label-lg text-on-surface font-bold">Archery &amp; Slingshot Range</h3>
+<span class="bg-secondary-fixed text-on-secondary-fixed font-label-badge text-label-badge px-1.5 py-0.5 rounded uppercase">Certified</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Certified BSA Range Safety Officers supervising target qualification shoots.</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="font-body-sm text-body-sm text-primary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">track_changes</span> Range #2
+            </span>
+<span class="text-outline-variant">•</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Range Safety Officer</span>
+</div>
+</div>
+</div>
+<!-- 04:00 PM Dutch Oven Prep -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex items-start gap-3">
+<div class="flex flex-col items-center justify-center min-w-[56px] text-center pt-0.5">
+<span class="font-label-lg text-label-lg text-primary">04:00</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant uppercase">PM</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<h3 class="font-label-lg text-label-lg text-on-surface">Dutch Oven Cook-off &amp; Tent Check</h3>
+<span class="bg-surface-container text-on-surface-variant font-label-badge text-label-badge px-1.5 py-0.5 rounded uppercase">Den Event</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Charcoal briquettes pre-lit at Pavilion. Camp Commissioner tent inspection.</p>
+</div>
+</div>
+<!-- 06:00 PM Pack Feast -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex items-start gap-3">
+<div class="flex flex-col items-center justify-center min-w-[56px] text-center pt-0.5">
+<span class="font-label-lg text-label-lg text-primary">06:00</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant uppercase">PM</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<h3 class="font-label-lg text-label-lg text-on-surface font-bold">Pack Feast: Beef Stew &amp; Cobbler</h3>
+<span class="bg-secondary-fixed text-on-secondary-fixed font-label-badge text-label-badge px-1.5 py-0.5 rounded uppercase">Feast</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">All Dens dine together at Pavilion picnic tables. Bring your mess kits!</p>
+</div>
+</div>
+<!-- 07:30 PM Grand Campfire -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm border-l-4 border-l-secondary flex items-start gap-3">
+<div class="flex flex-col items-center justify-center min-w-[56px] text-center pt-0.5">
+<span class="font-label-lg text-label-lg text-secondary font-bold">07:30</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant uppercase">PM</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<h3 class="font-label-lg text-label-lg text-primary font-bold">Grand Campfire, Skits &amp; Awards</h3>
+<span class="bg-secondary text-on-secondary font-label-badge text-label-badge px-2 py-0.5 rounded uppercase">Field Uniform</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Den skits, camp songs, and rank belt-loop advancements. Bring camp chairs &amp; flashlights.</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="font-body-sm text-body-sm text-primary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">local_fire_department</span> Main Campfire Ring
+            </span>
+</div>
+</div>
+</div>
+<!-- 09:30 PM Lights Out -->
+<div class="bg-surface-container-low rounded-xl p-3 flex items-start gap-3">
+<div class="flex flex-col items-center justify-center min-w-[56px] text-center pt-0.5">
+<span class="font-label-lg text-label-lg text-on-surface-variant">09:30</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant uppercase">PM</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<h3 class="font-label-lg text-label-lg text-on-surface">Lights Out &amp; Quiet Hours</h3>
+<span class="bg-surface-container-highest text-on-surface font-label-badge text-label-badge px-1.5 py-0.5 rounded uppercase">Camp Rule</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Red headlamp lenses only. All scouts in tents. Camp quiet hours enforced.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Vital Campout Rules & Outdoor Code Checkpoints -->
+<section class="px-margin-mobile py-2.5">
+<div class="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm flex flex-col gap-3">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-[22px]">backpack</span>
+<h3 class="font-headline-sm text-headline-sm">Essential Scouting Protocols</h3>
+</div>
+<!-- 6 Essentials Pill Strip -->
+<div class="p-3 bg-surface-container-low rounded-lg">
+<div class="flex items-center justify-between mb-1.5">
+<span class="font-label-md text-label-md text-primary font-bold">The 6 Cub Scout Essentials</span>
+<span class="font-label-badge text-label-badge text-secondary uppercase font-bold">Every Scout Bag</span>
+</div>
+<div class="grid grid-cols-2 gap-2 text-body-sm font-body-sm text-on-surface">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span> Filled Water Bottle
+          </span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span> Trail Snack
+          </span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span> Flashlight / Headlamp
+          </span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span> Personal First Aid Kit
+          </span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span> Sun Protection (Hat)
+          </span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span> Emergency Whistle
+          </span>
+</div>
+</div>
+<!-- Leave No Trace reminder -->
+<div class="flex items-start gap-2.5 p-2 bg-surface-container-low rounded-lg">
+<span class="material-symbols-outlined text-secondary text-[20px] mt-0.5">compost</span>
+<div class="flex-1">
+<span class="font-label-md text-label-md text-on-surface">Leave No Trace &amp; Potable Water Rule</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">All trash is Pack-in, Pack-out. Do not wash dishes at drinking spigots; use the designated greywater wash stations.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- YPT Campout Photo Vault CTA Banner -->
+<section class="px-margin-mobile pt-1 pb-4">
+<div class="bg-primary-container text-on-primary rounded-xl p-3.5 shadow-md flex items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">add_a_photo</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-primary">Got Campout Photos?</span>
+<span class="font-body-sm text-body-sm text-on-primary-container">Upload to the secure Pack 361 YPT Vault</span>
+</div>
+</div>
+<button class="bg-secondary-container text-on-secondary-container px-3 py-1.5 rounded-lg font-label-md text-label-md whitespace-nowrap active:scale-95 transition-transform shadow" onclick="showToast('Navigating to YPT Photo Vault...')">
+        Upload
+      </button>
+</div>
+</section>
+<!-- Dynamic Feedback Toast -->
+<div class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface px-4 py-2 rounded-full font-label-md text-label-md shadow-xl opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center gap-2" id="toast">
+<span class="material-symbols-outlined text-[16px] text-secondary-fixed">info</span>
+<span id="toast-text">Message</span>
+</div>
+<!-- Camp Rules Modal Sheet (Hidden by default) -->
+<div class="fixed inset-0 bg-inverse-surface/40 backdrop-blur-sm z-50 hidden flex flex-col justify-end" id="rules-modal">
+<div class="bg-surface-container-lowest rounded-t-2xl p-margin-mobile flex flex-col gap-3 max-h-[751px] overflow-y-auto">
+<div class="flex items-center justify-between pb-2 border-b border-surface-container-high">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[24px]">verified</span>
+<h3 class="font-headline-sm text-headline-sm text-primary">Broad Creek Camp Rules</h3>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface" onclick="toggleRulesModal(false)">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="flex flex-col gap-2 font-body-sm text-body-sm text-on-surface">
+<p><strong class="font-label-md">1. Youth Protection:</strong> 2-deep adult leadership in effect 100% of the time. Adults must never be alone in a tent with youth other than their own child.</p>
+<p><strong class="font-label-md">2. Buddy System:</strong> Scouts must maintain a registered scout buddy at all times, including trips to the latrine or water spigot.</p>
+<p><strong class="font-label-md">3. Knives &amp; Whittling Chip:</strong> Only scouts who have earned their Whittling Chip may carry pocketknives. No sheath knives allowed.</p>
+<p><strong class="font-label-md">4. Quiet Hours:</strong> 9:30 PM to 6:30 AM. Generators strictly prohibited in tent areas.</p>
+<p><strong class="font-label-md">5. Wildlife:</strong> Raccoons &amp; deer frequent Pack Campsite. Keep all food in hard-sided vehicles overnight.</p>
+</div>
+<button class="w-full bg-primary text-on-primary py-2.5 rounded-xl font-label-lg text-label-lg mt-2 active:scale-95 transition-transform" onclick="toggleRulesModal(false)">
+        I Understand &amp; Agree
+      </button>
+</div>
+</div>
+</div>
+<script>
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toast-text');
+    toastText.innerText = message;
+    toast.classList.remove('opacity-0', 'pointer-events-none');
+    toast.classList.add('opacity-100');
+    setTimeout(() => {
+      toast.classList.remove('opacity-100');
+      toast.classList.add('opacity-0', 'pointer-events-none');
+    }, 2800);
+  }
+
+  function simulateSync(button) {
+    const icon = button.querySelector('.material-symbols-outlined');
+    icon.classList.add('animate-spin');
+    setTimeout(() => {
+      icon.classList.remove('animate-spin');
+      showToast('Offline cache updated (100% local)');
+    }, 900);
+  }
+
+  function copyGateCode() {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText('TBD');
+      showToast('Gate code copied to clipboard');
+    } else {
+      showToast('Gate code: ask the camp office');
+    }
+  }
+
+  function toggleRulesModal(show) {
+    const modal = document.getElementById('rules-modal');
+    if (show) {
+      modal.classList.remove('hidden');
+    } else {
+      modal.classList.add('hidden');
+    }
+  }
+
+  function showPinDetails(title, desc) {
+    showToast(title + ': ' + desc);
+  }
+
+  function toggleMapLayer(layer) {
+    if (layer === 'zones') {
+      const items = document.querySelectorAll('.map-layer-zones');
+      items.forEach(el => el.classList.toggle('hidden'));
+      document.getElementById('toggle-zones').classList.toggle('bg-primary');
+      document.getElementById('toggle-zones').classList.toggle('text-on-primary');
+      document.getElementById('toggle-zones').classList.toggle('bg-surface-container-lowest');
+      document.getElementById('toggle-zones').classList.toggle('text-on-surface');
+    } else if (layer === 'water') {
+      const items = document.querySelectorAll('.map-layer-water');
+      items.forEach(el => el.classList.toggle('hidden'));
+      document.getElementById('toggle-water').classList.toggle('bg-tertiary');
+      document.getElementById('toggle-water').classList.toggle('text-on-tertiary');
+      document.getElementById('toggle-water').classList.toggle('bg-surface-container-lowest');
+      document.getElementById('toggle-water').classList.toggle('text-on-surface');
+    } else if (layer === 'activity') {
+      const items = document.querySelectorAll('.map-layer-activity');
+      items.forEach(el => el.classList.toggle('hidden'));
+      document.getElementById('toggle-activity').classList.toggle('bg-secondary');
+      document.getElementById('toggle-activity').classList.toggle('text-on-secondary');
+      document.getElementById('toggle-activity').classList.toggle('bg-surface-container-lowest');
+      document.getElementById('toggle-activity').classList.toggle('text-on-surface');
+    }
+  }
+
+  function switchDayTab(day, btn) {
+    document.querySelectorAll('.day-tab').forEach(b => {
+      b.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm', 'font-bold');
+      b.classList.add('text-on-surface-variant');
+    });
+    btn.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm', 'font-bold');
+    btn.classList.remove('text-on-surface-variant');
+
+    if (day === 'fri') {
+      showToast('Viewing Friday Arrival: Check-in begins 5:00 PM');
+    } else if (day === 'sat') {
+      showToast('Viewing Saturday Full Program');
+    } else if (day === 'sun') {
+      showToast('Viewing Sunday Departure: Scouts Own 8:30 AM');
+    }
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(30,41,58,0.06)]" data-active-classes="text-primary font-label-lg"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="feed" href="#"><span class="material-symbols-outlined text-[24px]">holiday_village</span><span class="font-label-md text-label-md mt-0.5">Feed</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="campouts" href="#"><span class="material-symbols-outlined text-[24px]">explore</span><span class="font-label-md text-label-md mt-0.5">Campouts</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="scoutbook" href="#"><span class="material-symbols-outlined text-[24px]">military_tech</span><span class="font-label-md text-label-md mt-0.5">Scoutbook</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="vault" href="#"><span class="material-symbols-outlined text-[24px]">shield</span><span class="font-label-md text-label-md mt-0.5">Vault</span></a></div></nav></body></html>

@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary": "#1b2638", "primary-fixed": "#c1ecd4", "on-secondary-container": "#6e4c00", "surface-container-low": "#f5f4ef", "primary-fixed-dim": "#a5d0b9", "error-container": "#ffdad6", "secondary-fixed-dim": "#feba38", "on-error-container": "#93000a", "surface-container-high": "#e9e8e3", "on-surface": "#1b1c19", "error": "#ba1a1a", "on-secondary-fixed": "#281900", "inverse-primary": "#a5d0b9", "surface-container-lowest": "#ffffff", "surface-dim": "#dbdad5", "on-primary-fixed": "#002114", "secondary-fixed": "#ffdeab", "on-secondary-fixed-variant": "#5f4100", "tertiary-fixed-dim": "#bcc7de", "tertiary-fixed": "#d8e3fb", "surface-bright": "#faf9f4", "outline": "#717973", "background": "#faf9f4", "secondary-container": "#feba38", "surface": "#faf9f4", "inverse-on-surface": "#f2f1ec", "on-primary-fixed-variant": "#274e3d", "on-primary": "#ffffff", "secondary": "#7e5700", "inverse-surface": "#30312e", "on-primary-container": "#86af99", "outline-variant": "#c1c8c2", "on-surface-variant": "#414844", "on-tertiary-fixed-variant": "#3c475a", "on-background": "#1b1c19", "surface-tint": "#3f6653", "on-tertiary-fixed": "#111c2d", "on-tertiary": "#ffffff", "on-error": "#ffffff", "surface-variant": "#e3e3de", "on-secondary": "#ffffff", "surface-container-highest": "#e3e3de", "on-tertiary-container": "#9ba6bd", "primary-container": "#1b4332", "surface-container": "#efeee9", "primary": "#012d1d", "tertiary-container": "#313c4f" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xl": "2rem", "space-md": "1rem", "margin-mobile": "1rem", "margin": "1.5rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "gutter": "1rem", "gutter-mobile": "0.75rem", "space-lg": "1.5rem" }, fontFamily: { "body-md": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-badge": ["Plus Jakarta Sans"] }, fontSize: { "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "display-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.03em", fontWeight: "800" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "headline-md": ["20px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }], "headline-lg": ["28px", { lineHeight: "36px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "700" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "700" }], "label-badge": ["11px", { lineHeight: "14px", letterSpacing: "0.05em", fontWeight: "800" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface antialiased"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Cub Scout Pack Emblem" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UEmM_xZekDjqsIc14_6TWsK--RIQKqUMki-GZKev4T7wM76v8b_oBhNWX4hRZAjOJjPCRpjEdbgh6uvn9zxstZKwoArWHsMbXOsGPkLYBQC_8k06_v_Hsw-HhxeL0Ib9XOkz6UaS4huYhrmbT46NjjUr-anx8aX1I9ei3r7_tvMXDZdb6xtFv5Du4AdlBMtYTDkqhMOh6AaVtalDg9kbFwIPw9cI3pH__zmJKOzYvFHHp23ycmCMsFF3w"/><div class="flex flex-col"><span class="font-label-lg text-label-lg text-primary leading-tight tracking-tight">Pack 361 Trailblazers</span><span class="font-label-md text-label-md text-on-surface-variant leading-none">Campouts</span></div></div><div class="relative flex items-center justify-center min-w-[44px] min-h-[44px]"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5gSfs58coc4spCVj7LbGSbgCfo-pj6WdwYgzLdGKhu766exJEVQZuOKqR7k763AbeuLTl_0VSNQ3layEasM4OiuH8mFo7nVLcR8Rx-MLAilhS5YGb5WfHJsYeIsT1kVEOcTDSn9Of_br5CvOvKGzfYp7D8iNe39sXsNbsGROj_Fs_Fo733L4MWiC_fJHTKq5pjftYU4HzyTPu2o3pvL_7_BjQlCYFACryc-wzbWk8WO9H3nGzP6D0"/><span class="absolute top-2 right-1.5 w-2.5 h-2.5 bg-secondary-container rounded-full ring-2 ring-surface"></span></div></div></header><main class="flex flex-col relative w-full pt-16 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- Event Banner & Header Card -->
+<section class="px-margin-mobile pt-space-md pb-space-xs">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md relative overflow-hidden">
+<!-- Scout Green Header Accent Line -->
+<div class="absolute top-0 left-0 right-0 h-1 bg-primary-container"></div>
+<div class="flex items-center justify-between gap-space-xs mb-space-xs">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-fixed/60 text-primary font-label-badge text-label-badge uppercase tracking-wider">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+          Track 1 Live Heats Active
+        </span>
+<span class="font-label-md text-label-md text-secondary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">sports_score</span>
+          Pack 361 Derby
+        </span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface tracking-tight mt-1 mb-1">
+        Annual Pinewood Derby Hub
+      </h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mb-space-sm">
+<span class="material-symbols-outlined text-[16px] text-primary">calendar_month</span>
+        Saturday, Jan 23, 2027 • [Derby venue] • 4-Lane Electronic Track
+      </p>
+<!-- Quick Action Jump Chips -->
+<div class="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+<a class="shrink-0 px-3 py-1.5 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1 hover:bg-surface-container-high transition-colors" href="#live-heats">
+<span class="material-symbols-outlined text-[15px] text-secondary">timer</span>
+          Live Heats
+        </a>
+<a class="shrink-0 px-3 py-1.5 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1 hover:bg-surface-container-high transition-colors" href="#car-specs">
+<span class="material-symbols-outlined text-[15px] text-primary">straighten</span>
+          Specs &amp; Rules
+        </a>
+<a class="shrink-0 px-3 py-1.5 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1 hover:bg-surface-container-high transition-colors" href="#inspection-pass">
+<span class="material-symbols-outlined text-[15px] text-primary">verified</span>
+          Pit Pass
+        </a>
+<a class="shrink-0 px-3 py-1.5 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1 hover:bg-surface-container-high transition-colors" href="#vote-awards">
+<span class="material-symbols-outlined text-[15px] text-secondary">how_to_vote</span>
+          Design Vote
+        </a>
+</div>
+</div>
+</section>
+<!-- Interactive Tab Switcher -->
+<section class="px-margin-mobile pt-space-xs pb-space-sm">
+<div class="bg-surface-container p-1 rounded-xl flex items-center justify-between text-center" id="tab-nav">
+<button class="flex-1 py-2 px-1 rounded-lg bg-surface-container-lowest shadow-sm font-label-md text-label-md text-primary font-bold flex items-center justify-center gap-1 transition-all" id="tab-btn-live" onclick="switchHubTab('live')" type="button">
+<span class="material-symbols-outlined text-[16px]">speed</span>
+        Live Heats
+      </button>
+<button class="flex-1 py-2 px-1 rounded-lg font-label-md text-label-md text-on-surface-variant flex items-center justify-center gap-1 transition-all" id="tab-btn-rules" onclick="switchHubTab('rules')" type="button">
+<span class="material-symbols-outlined text-[16px]">rule</span>
+        Rules &amp; Specs
+      </button>
+<button class="flex-1 py-2 px-1 rounded-lg font-label-md text-label-md text-on-surface-variant flex items-center justify-center gap-1 transition-all" id="tab-btn-pit" onclick="switchHubTab('pit')" type="button">
+<span class="material-symbols-outlined text-[16px]">fact_check</span>
+        Pit Pass
+      </button>
+</div>
+</section>
+<!-- TAB 1: LIVE HEATS & STANDINGS (Default Active) -->
+<div class="flex flex-col space-y-space-md" id="view-live">
+<!-- Current Race Card -->
+<section class="px-margin-mobile" id="live-heats">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md">
+<!-- Race Badge Banner -->
+<div class="flex items-center justify-between mb-space-sm pb-space-xs">
+<div>
+<span class="font-label-badge text-label-badge uppercase tracking-wider text-secondary font-extrabold block">Official Gate Release</span>
+<h2 class="font-headline-md text-headline-md text-primary flex items-center gap-1.5">
+              Heat 14 of 32
+              <span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[11px] font-bold">Lions &amp; Tigers</span>
+</h2>
+</div>
+<div class="text-right">
+<span class="font-label-badge text-label-badge uppercase text-on-surface-variant block">Avg Scale Speed</span>
+<span class="font-headline-sm text-headline-sm font-extrabold text-primary">218.4 <span class="text-[12px] font-normal text-on-surface-variant">MPH</span></span>
+</div>
+</div>
+<!-- 4-Lane Telemetry Rows -->
+<div class="space-y-2">
+<!-- Lane 1 (1st Place) -->
+<div class="p-2.5 rounded-lg bg-secondary-fixed/20 flex items-center justify-between">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="w-7 h-7 rounded-full bg-secondary text-on-secondary font-label-badge text-label-badge flex items-center justify-center shrink-0">L1</span>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate">#104 The Lightning Bolt</span>
+<span class="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-secondary text-on-secondary font-label-badge text-[10px]">1st</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Leo Miller • Den 3 Bears</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-headline-sm text-headline-sm font-extrabold text-primary">3.142s</span>
+</div>
+</div>
+<!-- Lane 2 (2nd Place) -->
+<div class="p-2.5 rounded-lg bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="w-7 h-7 rounded-full bg-surface-container-high text-on-surface font-label-badge text-label-badge flex items-center justify-center shrink-0">L2</span>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate">#208 Woodland Rocket</span>
+<span class="inline-flex items-center px-1.5 py-0.2 rounded bg-surface-variant text-on-surface-variant font-label-badge text-[10px]">2nd</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Maya Lin • Den 1 Tigers</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">3.189s</span>
+</div>
+</div>
+<!-- Lane 3 (3rd Place) -->
+<div class="p-2.5 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="w-7 h-7 rounded-full bg-surface-container-high text-on-surface font-label-badge text-label-badge flex items-center justify-center shrink-0">L3</span>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate">#112 Sonic Pine</span>
+<span class="inline-flex items-center px-1.5 py-0.2 rounded bg-secondary-fixed/50 text-on-secondary-fixed font-label-badge text-[10px]">3rd</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Sam R. • Den 2 Wolves</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface-variant">3.205s</span>
+</div>
+</div>
+<!-- Lane 4 (4th Place) -->
+<div class="p-2.5 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="w-7 h-7 rounded-full bg-surface-container-high text-on-surface font-label-badge text-label-badge flex items-center justify-center shrink-0">L4</span>
+<div class="min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate block">#305 Gator Chomp</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Lucas V. • Den 3 Bears</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-headline-sm text-headline-sm text-on-surface-variant">3.241s</span>
+</div>
+</div>
+</div>
+<!-- Next Up On Deck Callout -->
+<div class="mt-space-md p-space-sm rounded-lg bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">flag</span>
+</div>
+<div>
+<span class="font-label-badge text-label-badge uppercase text-secondary font-bold block">On Deck Next • Starting in ~2m</span>
+<span class="font-label-lg text-label-lg text-primary">Heat 15: Den 4 Webelos Staging</span>
+</div>
+</div>
+<span class="font-label-md text-label-md px-2 py-1 rounded bg-surface-container-lowest text-primary font-bold shadow-sm">Pits Ready</span>
+</div>
+</div>
+</section>
+<!-- Track Record & Top Speed Preview -->
+<section class="px-margin-mobile">
+<div class="bg-primary-container text-on-primary rounded-xl p-space-md shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-badge text-label-badge uppercase tracking-wider text-secondary-fixed">Leaderboard Preview</span>
+<span class="flex items-center gap-1 font-label-md text-label-md text-on-primary-container">
+<span class="material-symbols-outlined text-[16px]">military_tech</span> Pack Record
+          </span>
+</div>
+<div class="flex items-end justify-between">
+<div>
+<span class="font-display-lg text-display-lg leading-none tracking-tight text-white block">3.098<span class="text-headline-sm font-normal text-on-primary-container ml-1">sec</span></span>
+<span class="font-body-sm text-body-sm text-on-primary-container mt-1 block">Maya K. (Den 5 Arrow of Light) • 221.7 Scale MPH</span>
+</div>
+<button class="px-3 py-1.5 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md font-bold shadow-sm hover:opacity-95 transition-opacity" type="button">
+            Full Board
+          </button>
+</div>
+</div>
+</section>
+<!-- Derby Photo Reel from Pits & Track -->
+<section class="px-margin-mobile">
+<div class="flex items-center justify-between mb-2">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Race Day Highlights</h3>
+<span class="font-label-md text-label-md text-primary font-bold">128 Snapshots</span>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div class="rounded-xl overflow-hidden shadow-sm bg-surface-container aspect-video relative">
+<img class="w-full h-full object-cover" data-alt="Two smiling Cub Scouts in official navy blue uniforms and orange neckerchiefs giving high-fives over a wooden pinewood derby track inside a packed gymnasium with spectators cheering in the background, warm natural indoor lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsHF8OdHhG3FYOFeUlOmNFdnC6tPhakqlChL-D-AmEh58crWXkiyi8WOebx6sthkUK-Empt60vV_K9mMYSLCnHgW2rfA2m6T13Dtbwlh2sknChbcyOJipG8NczaleLMiFINb28YxKxmKF2UN_hH6siJHCyIdZ8GkW-2z2QM1rLdFDcuwvn_XVjS8zfANZdHgXNCaM23JTUpFtOMpJ8maf_ZyRISt7A1MQZ-LU2VPdYPoEAz-sVrwqj"/>
+<span class="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded bg-surface/90 font-label-badge text-label-badge text-on-surface backdrop-blur-sm">Trackside Finish</span>
+</div>
+<div class="rounded-xl overflow-hidden shadow-sm bg-surface-container aspect-video relative">
+<img class="w-full h-full object-cover" data-alt="Close up photograph of four custom painted handcrafted pinewood derby wooden race cars lined up neatly on the starting aluminum track pins with racing numbers and glossy varnish, forest green and yellow details." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCD4lTT6LydQyWf1Dc52JNXGvFJaJGYA0uARDlIRSqi8-Scot-s7DW0YWUv1-Ojy64QE8WHVqKiuQ52_Q_EEFtJ-aiYGtmWzv2TRimf2MVBNGi6OWpyjf723IG9z1lQnvG0Od20cDN9XrjPBiQT6Dfqy3FJlDPklDl-JQTkzRyaJbGoIHKCUfjgiegAGIuafXU4g84PN85L7OroXWbqsNiCY632824tzbK4cfp4KNotAdGlVsuocVmr"/>
+<span class="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded bg-surface/90 font-label-badge text-label-badge text-on-surface backdrop-blur-sm">Inspection Impound</span>
+</div>
+</div>
+</section>
+</div>
+<!-- TAB 2: OFFICIAL RULES & TECHNICAL CAR SPECIFICATIONS -->
+<div class="flex flex-col space-y-space-md hidden" id="view-rules">
+<section class="px-margin-mobile" id="car-specs">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md">
+<div class="flex items-center gap-2 mb-space-sm pb-space-xs">
+<div class="w-9 h-9 rounded-lg bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">build_circle</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-primary">Official BSA Car Specs</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Pack 361 Inspection Standards</p>
+</div>
+</div>
+<!-- Technical Specs Bento -->
+<div class="grid grid-cols-1 gap-2.5">
+<!-- Weight Spec -->
+<div class="p-3 rounded-lg bg-surface-container-low flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed/50 text-secondary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">scale</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface">Maximum Weight: 5.00 oz (141.7 g)</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                Measured strictly on the official digital scale at check-in. No loose weights permitted. Weights must be glued or securely recessed into car body.
+              </p>
+</div>
+</div>
+<!-- Dimensions Spec -->
+<div class="p-3 rounded-lg bg-surface-container-low flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high text-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">aspect_ratio</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface">Overall Dimensions</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                • Max Length: <strong>7.00 inches</strong><br/>
+                • Max Width: <strong>2.75 inches</strong> (including wheels)<br/>
+                • Max Height: <strong>3.00 inches</strong> (must clear electronic finish gate)
+              </p>
+</div>
+</div>
+<!-- Clearance & Track Spec -->
+<div class="p-3 rounded-lg bg-surface-container-low flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-fixed text-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">height</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface">Track &amp; Center Rail Clearance</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                Minimum bottom clearance of <strong>3/8 in (0.375 in)</strong> between underside and track bed. Minimum <strong>1 3/4 in</strong> inside wheel clearance across guide strip.
+              </p>
+</div>
+</div>
+<!-- Wheels & Axles Spec -->
+<div class="p-3 rounded-lg bg-surface-container-low flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">toll</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface">Wheels, Axles &amp; Lubrication</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                Official BSA kit wheels and axles only. Light seam removal &amp; graphite burnishing allowed. No wheel beveling, lathe narrowing, ball bearings, or bushings. <strong>Dry graphite powder only</strong> — liquid oils (Krytox, WD40) strictly disqualified.
+              </p>
+</div>
+</div>
+</div>
+<!-- Warning Callout -->
+<div class="mt-space-md p-3 rounded-lg bg-error-container/40 text-on-error-container flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] text-error shrink-0 mt-0.5">warning</span>
+<p class="font-body-sm text-body-sm">
+            Once a car passes the official weigh-in and dimension box test, it is impounded in the staging corral. No modifications or re-lubrication are allowed unless granted a pit repair by the Race Master.
+          </p>
+</div>
+</div>
+</section>
+</div>
+<!-- TAB 3: CAR INSPECTION PASS & PIT CHECKLIST -->
+<div class="flex flex-col space-y-space-md hidden" id="view-pit">
+<section class="px-margin-mobile" id="inspection-pass">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md relative overflow-hidden">
+<!-- Official Watermark Stamp -->
+<div class="flex items-center justify-between mb-space-sm">
+<div>
+<span class="font-label-badge text-label-badge uppercase tracking-wider text-primary font-extrabold">Official Inspection Record</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Scout Car Pass #104</h2>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-badge text-label-badge font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> APPROVED
+          </span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container mb-space-md flex items-center justify-between">
+<div>
+<span class="font-label-lg text-label-lg text-on-surface block font-bold">Leo Miller</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Den 3 Bears • Car: "The Lightning Bolt"</span>
+</div>
+<div class="text-right">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">4.98 oz</span>
+<span class="font-label-badge text-label-badge text-on-surface-variant block uppercase">Scale Verified</span>
+</div>
+</div>
+<!-- 7-Point Interactive Checklist -->
+<div class="space-y-2 font-body-sm text-body-sm">
+<label class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-low cursor-pointer">
+<input checked="" class="w-5 h-5 rounded accent-primary cursor-pointer" type="checkbox"/>
+<span class="text-on-surface">1. Official BSA pine block body, wheels &amp; nail axles</span>
+</label>
+<label class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-low cursor-pointer">
+<input checked="" class="w-5 h-5 rounded accent-primary cursor-pointer" type="checkbox"/>
+<span class="text-on-surface">2. Total weight under 5.00 oz (Official: 4.98 oz)</span>
+</label>
+<label class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-low cursor-pointer">
+<input checked="" class="w-5 h-5 rounded accent-primary cursor-pointer" type="checkbox"/>
+<span class="text-on-surface">3. Official box test passed (7.00" L x 2.75" W x 3.00" H)</span>
+</label>
+<label class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-low cursor-pointer">
+<input checked="" class="w-5 h-5 rounded accent-primary cursor-pointer" type="checkbox"/>
+<span class="text-on-surface">4. Center guide rail clearance passed (min 3/8")</span>
+</label>
+<label class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-low cursor-pointer">
+<input checked="" class="w-5 h-5 rounded accent-primary cursor-pointer" type="checkbox"/>
+<span class="text-on-surface">5. Dry graphite lubrication only (no liquid oils)</span>
+</label>
+<label class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-low cursor-pointer">
+<input checked="" class="w-5 h-5 rounded accent-primary cursor-pointer" type="checkbox"/>
+<span class="text-on-surface">6. No wheel bearings, bushings, or loose weights</span>
+</label>
+<label class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-low cursor-pointer">
+<input checked="" class="w-5 h-5 rounded accent-primary cursor-pointer" type="checkbox"/>
+<span class="text-on-surface">7. Free-wheeling / gravity only (no start propulsion)</span>
+</label>
+</div>
+<!-- Official Sign-off Stamp Box -->
+<div class="mt-space-md p-3 rounded-lg bg-primary-fixed/30 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[24px] text-primary">verified_user</span>
+<div>
+<span class="font-label-md text-label-md text-primary font-bold block">Impounded &amp; Certified</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Pitmaster Dave T. • 08:42 AM</span>
+</div>
+</div>
+<span class="font-label-badge text-label-badge uppercase tracking-wider text-primary font-extrabold px-2 py-1 bg-surface-container-lowest rounded shadow-sm">SEAL #884</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Fan-Favorite Design Voting Section -->
+<section class="px-margin-mobile pt-space-md" id="vote-awards">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md">
+<div class="flex items-center justify-between mb-space-xs">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">trophy</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Design Award Ballot</h3>
+</div>
+<span class="font-label-badge text-label-badge text-secondary font-bold px-2 py-0.5 rounded bg-secondary-fixed/50">Closes 12:30 PM</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-sm">
+        Every registered scout &amp; parent can cast one ballot for favorite handcrafted aesthetics!
+      </p>
+<!-- Category Choices -->
+<div class="space-y-2">
+<label class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-2.5">
+<input checked="" class="w-4 h-4 accent-primary" name="design_vote" type="radio" value="paint"/>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Best Paint &amp; Custom Detail</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">#104 Miller</span>
+</label>
+<label class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-2.5">
+<input class="w-4 h-4 accent-primary" name="design_vote" type="radio" value="scout"/>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Most Scout-Like Theme</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">#112 Sonic Pine</span>
+</label>
+<label class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-2.5">
+<input class="w-4 h-4 accent-primary" name="design_vote" type="radio" value="creative"/>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Most Creative / Out-of-the-Box</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">#305 Gator Chomp</span>
+</label>
+<label class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-2.5">
+<input class="w-4 h-4 accent-primary" name="design_vote" type="radio" value="fast"/>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Fastest Looking Static Stance</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">#208 Rocket</span>
+</label>
+</div>
+<button class="mt-space-md w-full py-2.5 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg font-bold flex items-center justify-center gap-1.5 shadow-sm active:translate-y-0.5 transition-transform" onclick="castBallot(this)" type="button">
+<span class="material-symbols-outlined text-[18px]">how_to_vote</span>
+        Submit Scout Ballot
+      </button>
+</div>
+</section>
+<!-- Race Day Schedule Timeline -->
+<section class="px-margin-mobile pt-space-md">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md">
+<div class="flex items-center justify-between mb-space-sm">
+<h3 class="font-headline-sm text-headline-sm text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[20px] text-secondary">schedule</span>
+          Race Day Run of Show
+        </h3>
+<span class="font-label-badge text-label-badge text-on-surface-variant uppercase">Gym 1 Schedule</span>
+</div>
+<!-- Timeline Items -->
+<div class="relative pl-6 space-y-4">
+<!-- Connecting Line -->
+<div class="absolute left-2.5 top-2 bottom-2 w-0.5 bg-surface-container-high"></div>
+<!-- 8:00 AM Complete -->
+<div class="relative flex items-start gap-3">
+<span class="absolute -left-6 top-1 w-5 h-5 rounded-full bg-primary-fixed text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]">done</span>
+</span>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">08:00 AM</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant text-[11px]">Completed</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Pit Check-in, Official Digital Weigh-in &amp; Impound</p>
+</div>
+</div>
+<!-- 9:00 AM Active -->
+<div class="relative flex items-start gap-3">
+<span class="absolute -left-6 top-1 w-5 h-5 rounded-full bg-secondary text-on-secondary flex items-center justify-center ring-4 ring-secondary/20">
+<span class="material-symbols-outlined text-[14px]">play_arrow</span>
+</span>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-primary font-extrabold">09:00 AM</span>
+<span class="px-2 py-0.2 rounded bg-secondary-fixed text-on-secondary-fixed text-[11px] font-bold">Now Racing</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface font-semibold">Lions &amp; Tigers Preliminary Heats</p>
+</div>
+</div>
+<!-- 10:15 AM -->
+<div class="relative flex items-start gap-3 opacity-90">
+<span class="absolute -left-6 top-1.5 w-5 h-5 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center">
+<span class="w-2 h-2 rounded-full bg-on-surface-variant"></span>
+</span>
+<div class="min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface">10:15 AM</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Wolves &amp; Bears Heats</p>
+</div>
+</div>
+<!-- 11:30 AM -->
+<div class="relative flex items-start gap-3 opacity-90">
+<span class="absolute -left-6 top-1.5 w-5 h-5 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center">
+<span class="w-2 h-2 rounded-full bg-on-surface-variant"></span>
+</span>
+<div class="min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface">11:30 AM</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Webelos &amp; Arrow of Light (AOL) Heats</p>
+</div>
+</div>
+<!-- 12:15 PM -->
+<div class="relative flex items-start gap-3 opacity-90">
+<span class="absolute -left-6 top-1.5 w-5 h-5 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center">
+<span class="w-2 h-2 rounded-full bg-on-surface-variant"></span>
+</span>
+<div class="min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface">12:15 PM</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Siblings &amp; Open Parent/Adult Outlaw Derby</p>
+</div>
+</div>
+<!-- 12:45 PM -->
+<div class="relative flex items-start gap-3 opacity-90">
+<span class="absolute -left-6 top-1.5 w-5 h-5 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</span>
+<div class="min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">12:45 PM</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Championship Grand Finals &amp; Trophy Ceremony</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Emergency Pit Crew Tuning Card -->
+<section class="px-margin-mobile pt-space-md pb-space-lg">
+<div class="bg-surface-container p-space-md rounded-xl flex items-start gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">car_repair</span>
+</div>
+<div class="min-w-0">
+<h4 class="font-label-lg text-label-lg text-primary">Need Last-Minute Pit Tuning?</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+          Car over 5.00 oz or bottom rail dragging? Visit the Pit Crew at the Pitmaster Bench. Drill press, lead putty, and official BSA dry graphite powder are on standby.
+        </p>
+<div class="mt-space-sm flex items-center gap-2">
+<span class="inline-flex items-center gap-1 font-label-md text-label-md text-primary font-bold">
+<span class="material-symbols-outlined text-[16px]">location_on</span> [Derby venue] stage left
+          </span>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive JavaScript for Sub-Tabs & Micro-Interactions -->
+<script>
+    function switchHubTab(tabName) {
+      const liveView = document.getElementById('view-live');
+      const rulesView = document.getElementById('view-rules');
+      const pitView = document.getElementById('view-pit');
+
+      const btnLive = document.getElementById('tab-btn-live');
+      const btnRules = document.getElementById('tab-btn-rules');
+      const btnPit = document.getElementById('tab-btn-pit');
+
+      // Reset tabs visibility
+      liveView.classList.add('hidden');
+      rulesView.classList.add('hidden');
+      pitView.classList.add('hidden');
+
+      // Reset buttons styles
+      [btnLive, btnRules, btnPit].forEach(btn => {
+        btn.className = "flex-1 py-2 px-1 rounded-lg font-label-md text-label-md text-on-surface-variant flex items-center justify-center gap-1 transition-all";
+      });
+
+      const activeBtnClass = "flex-1 py-2 px-1 rounded-lg bg-surface-container-lowest shadow-sm font-label-md text-label-md text-primary font-bold flex items-center justify-center gap-1 transition-all";
+
+      if (tabName === 'live') {
+        liveView.classList.remove('hidden');
+        btnLive.className = activeBtnClass;
+      } else if (tabName === 'rules') {
+        rulesView.classList.remove('hidden');
+        btnRules.className = activeBtnClass;
+      } else if (tabName === 'pit') {
+        pitView.classList.remove('hidden');
+        btnPit.className = activeBtnClass;
+      }
+    }
+
+    function castBallot(btn) {
+      btn.innerText = 'Ballot Submitted! Thank you!';
+      btn.classList.remove('bg-primary');
+      btn.classList.add('bg-primary-container', 'opacity-90');
+      btn.disabled = true;
+    }
+  </script>
+</div></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(30,41,58,0.06)]" data-active-classes="text-primary font-label-lg"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="feed" href="#"><span class="material-symbols-outlined text-[24px]">holiday_village</span><span class="font-label-md text-label-md mt-0.5">Feed</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="campouts" href="#"><span class="material-symbols-outlined text-[24px]">explore</span><span class="font-label-md text-label-md mt-0.5">Campouts</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="scoutbook" href="#"><span class="material-symbols-outlined text-[24px]">military_tech</span><span class="font-label-md text-label-md mt-0.5">Scoutbook</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="vault" href="#"><span class="material-symbols-outlined text-[24px]">shield</span><span class="font-label-md text-label-md mt-0.5">Vault</span></a></div></nav></body></html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary": "#1b2638", "primary-fixed": "#c1ecd4", "on-secondary-container": "#6e4c00", "surface-container-low": "#f5f4ef", "primary-fixed-dim": "#a5d0b9", "error-container": "#ffdad6", "secondary-fixed-dim": "#feba38", "on-error-container": "#93000a", "surface-container-high": "#e9e8e3", "on-surface": "#1b1c19", "error": "#ba1a1a", "on-secondary-fixed": "#281900", "inverse-primary": "#a5d0b9", "surface-container-lowest": "#ffffff", "surface-dim": "#dbdad5", "on-primary-fixed": "#002114", "secondary-fixed": "#ffdeab", "on-secondary-fixed-variant": "#5f4100", "tertiary-fixed-dim": "#bcc7de", "tertiary-fixed": "#d8e3fb", "surface-bright": "#faf9f4", "outline": "#717973", "background": "#faf9f4", "secondary-container": "#feba38", "surface": "#faf9f4", "inverse-on-surface": "#f2f1ec", "on-primary-fixed-variant": "#274e3d", "on-primary": "#ffffff", "secondary": "#7e5700", "inverse-surface": "#30312e", "on-primary-container": "#86af99", "outline-variant": "#c1c8c2", "on-surface-variant": "#414844", "on-tertiary-fixed-variant": "#3c475a", "on-background": "#1b1c19", "surface-tint": "#3f6653", "on-tertiary-fixed": "#111c2d", "on-tertiary": "#ffffff", "on-error": "#ffffff", "surface-variant": "#e3e3de", "on-secondary": "#ffffff", "surface-container-highest": "#e3e3de", "on-tertiary-container": "#9ba6bd", "primary-container": "#1b4332", "surface-container": "#efeee9", "primary": "#012d1d", "tertiary-container": "#313c4f" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xl": "2rem", "space-md": "1rem", "margin-mobile": "1rem", "margin": "1.5rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "gutter": "1rem", "gutter-mobile": "0.75rem", "space-lg": "1.5rem" }, fontFamily: { "body-md": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-badge": ["Plus Jakarta Sans"] }, fontSize: { "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "display-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.03em", fontWeight: "800" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "headline-md": ["20px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }], "headline-lg": ["28px", { lineHeight: "36px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "700" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "700" }], "label-badge": ["11px", { lineHeight: "14px", letterSpacing: "0.05em", fontWeight: "800" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface antialiased"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Cub Scout Pack Emblem" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UEmM_xZekDjqsIc14_6TWsK--RIQKqUMki-GZKev4T7wM76v8b_oBhNWX4hRZAjOJjPCRpjEdbgh6uvn9zxstZKwoArWHsMbXOsGPkLYBQC_8k06_v_Hsw-HhxeL0Ib9XOkz6UaS4huYhrmbT46NjjUr-anx8aX1I9ei3r7_tvMXDZdb6xtFv5Du4AdlBMtYTDkqhMOh6AaVtalDg9kbFwIPw9cI3pH__zmJKOzYvFHHp23ycmCMsFF3w"/><div class="flex flex-col"><span class="font-label-lg text-label-lg text-primary leading-tight tracking-tight">Pack 361 Trailblazers</span><span class="font-label-md text-label-md text-on-surface-variant leading-none">Youth Protection Vault</span></div></div><div class="relative flex items-center justify-center min-w-[44px] min-h-[44px]"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5gSfs58coc4spCVj7LbGSbgCfo-pj6WdwYgzLdGKhu766exJEVQZuOKqR7k763AbeuLTl_0VSNQ3layEasM4OiuH8mFo7nVLcR8Rx-MLAilhS5YGb5WfHJsYeIsT1kVEOcTDSn9Of_br5CvOvKGzfYp7D8iNe39sXsNbsGROj_Fs_Fo733L4MWiC_fJHTKq5pjftYU4HzyTPu2o3pvL_7_BjQlCYFACryc-wzbWk8WO9H3nGzP6D0"/><span class="absolute top-2 right-1.5 w-2.5 h-2.5 bg-secondary-container rounded-full ring-2 ring-surface"></span></div></div></header><main class="flex flex-col relative w-full pt-16 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- YPT Compliance & Privacy Security Banner -->
+<section class="px-margin-mobile pt-space-sm pb-space-xs">
+<div class="bg-primary-container text-on-primary rounded-xl p-space-md shadow-sm">
+<div class="flex items-start gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-primary-fixed-dim/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-space-xs flex-wrap">
+<h2 class="font-headline-sm text-headline-sm text-on-primary">Private Pack 361 Vault</h2>
+<span class="bg-primary-fixed text-on-primary-fixed font-label-badge text-label-badge px-2 py-0.5 rounded-full">YPT COMPLIANT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-primary-container mt-1">
+            Restricted to rostered Pack 361 families. EXIF/GPS geotags are stripped and full names are restricted per Scouting America digital safety rules.
+          </p>
+<button class="inline-flex items-center gap-1 mt-2 text-primary-fixed font-label-md text-label-md underline underline-offset-2 hover:text-on-primary transition-colors" id="yptPolicyToggle">
+<span>View 4 Digital Safety Safeguards</span>
+<span class="material-symbols-outlined text-[16px] transition-transform duration-200" id="yptChevron">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Collapsible Safety Guidelines -->
+<div class="hidden mt-space-sm pt-space-sm border-t border-on-primary-container/20 space-y-2 text-on-primary-container font-body-sm text-body-sm" id="yptPolicyDetails">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed shrink-0 mt-0.5">check_circle</span>
+<span><strong>No Full Names:</strong> Captions display first name and Den rank only (e.g., "Leo M. • Bear Den 3").</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed shrink-0 mt-0.5">check_circle</span>
+<span><strong>Two-Deep Leadership:</strong> Public activity albums ensure adult supervision is visually documented.</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed shrink-0 mt-0.5">check_circle</span>
+<span><strong>Opt-Out Automated Masking:</strong> Scouts without parental media release are excluded or flagged.</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed shrink-0 mt-0.5">check_circle</span>
+<span><strong>No External Sharing:</strong> Direct downloads are watermarked for non-public family albums only.</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Den Opt-Out Micro-Alert -->
+<section class="px-margin-mobile py-space-xs">
+<div class="bg-secondary-fixed text-on-secondary-fixed rounded-xl px-space-md py-2.5 flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0" style="font-variation-settings: 'FILL' 1;">shield_with_heart</span>
+<p class="font-body-sm text-body-sm truncate">
+<strong>1 scout in Bear Den</strong> has opted out of external media.
+        </p>
+</div>
+<span class="shrink-0 font-label-badge text-label-badge uppercase tracking-wider text-secondary px-2 py-0.5 bg-surface/80 rounded-md">Den Protected</span>
+</div>
+</section>
+<!-- Action & Filter Bar -->
+<section class="px-margin-mobile pt-space-xs pb-space-sm space-y-space-sm">
+<div class="flex items-center gap-space-sm">
+<button class="flex-1 bg-primary text-on-primary font-label-lg text-label-lg h-11 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm active:translate-y-0.5 transition-all" id="openUploadBtn">
+<span class="material-symbols-outlined text-[20px]">add_photo_alternate</span>
+<span>Upload Photos</span>
+</button>
+<button class="bg-surface-container-high text-on-surface font-label-lg text-label-lg h-11 px-3.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm active:bg-secondary-container transition-colors" id="filterTaggedBtn">
+<span class="material-symbols-outlined text-secondary text-[18px]">bookmark</span>
+<span>My Scouts</span>
+<span class="bg-primary text-on-primary font-label-badge text-label-badge px-1.5 py-0.5 rounded-full">2</span>
+</button>
+</div>
+<!-- Scrollable Tag Badges -->
+<div class="flex gap-2 overflow-x-auto pb-1 -mx-margin-mobile px-margin-mobile no-scrollbar">
+<button class="bg-primary text-on-primary font-label-md text-label-md px-3 py-1.5 rounded-full shrink-0 shadow-sm">
+        All Albums (14)
+      </button>
+<button class="bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 rounded-full shrink-0 shadow-sm">
+        🏕️ Campouts
+      </button>
+<button class="bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 rounded-full shrink-0 shadow-sm">
+        🏎️ Pinewood Derby
+      </button>
+<button class="bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 rounded-full shrink-0 shadow-sm">
+        🌱 Service &amp; Tree Planting
+      </button>
+<button class="bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 rounded-full shrink-0 shadow-sm">
+        🎖️ Blue &amp; Gold
+      </button>
+</div>
+</section>
+<!-- Featured Event Album Card -->
+<section class="px-margin-mobile py-space-xs">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Latest Pack Highlight</h3>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Jan 2026</span>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm flex flex-col">
+<div class="relative w-full h-56 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Two enthusiastic Cub Scouts in navy blue uniforms and orange neckerchiefs giving an energetic high-five across a wooden Pinewood Derby multi-lane racetrack, holding their handmade racecars with smiling crowd and den leaders cheering warmly in school gymnasium background, daylight fill with vibrant warmth" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTFW4qOeJkscgPPj_N5rV8WdY3ZVfBkH-pB2eW4wgmlB-CYjr3jQFyWprVo4yo6RSww7HoSqiqr81-qZF5l5j5K8rjojn4SXXlQ1EuVjqB2wBt6J-IrSCI320NKQ6tUdPtxwtgT1E_Z9So3TQ5eWLM_kcw_UdBWubZRiSolyIeHWvVuSAOc8eFN31h4KO27eA8JbL_obZGELXKRR7M_1iYXwIFtEjKgH63tKMP2Z2DHKDs42P_KL-3"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-black/20"></div>
+<div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
+<span class="bg-primary/90 backdrop-blur-md text-on-primary font-label-badge text-label-badge px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[14px] text-primary-fixed">verified</span>
+            YPT APPROVED
+          </span>
+<span class="bg-surface-container-highest/90 backdrop-blur-md text-on-surface font-label-badge text-label-badge px-2 py-1 rounded-full">
+            42 PHOTOS
+          </span>
+</div>
+<div class="absolute bottom-3 left-3 right-3 text-on-primary">
+<span class="bg-secondary text-on-secondary font-label-badge text-label-badge px-2 py-0.5 rounded-md inline-block uppercase">Official Den Event</span>
+<h4 class="font-headline-lg-mobile text-headline-lg-mobile mt-0.5 leading-snug drop-shadow-sm">2026 Pinewood Derby Grand Finals</h4>
+<p class="font-body-sm text-body-sm text-primary-fixed mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">person</span>
+<span>Mark T. (Bear Den Leader) &amp; 4 parents</span>
+</p>
+</div>
+</div>
+<div class="p-space-md flex items-center justify-between bg-surface-container-low">
+<div class="flex items-center gap-2">
+<div class="flex -space-x-2">
+<div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-on-primary font-label-badge text-[10px]">MT</div>
+<div class="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-on-secondary font-label-badge text-[10px]">SC</div>
+<div class="w-7 h-7 rounded-full bg-tertiary flex items-center justify-center text-on-tertiary font-label-badge text-[10px]">+3</div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Tagged: Leo M., Liam K., Toby R.</span>
+</div>
+<button class="bg-primary-container text-on-primary font-label-md text-label-md px-3.5 py-2 rounded-xl flex items-center gap-1 active:scale-95 transition-transform shadow-sm">
+<span>Open Album</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Tagged Scouts Stream ("Leo & Maya's Memories") -->
+<section class="px-margin-mobile pt-space-md pb-space-xs">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">face_6</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Leo's Verified Tags</h3>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Bear Den 3 • Verified Pack 361 Parent Roster</span>
+</div>
+<button class="text-primary font-label-md text-label-md hover:underline flex items-center gap-0.5">
+<span>View all 18</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+<!-- Quick Micro Gallery Carousel -->
+<div class="grid grid-cols-3 gap-2.5">
+<div class="relative rounded-xl overflow-hidden aspect-square bg-surface-container shadow-sm group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Young Cub Scout wearing Bear Den neckerchief smiling proudly next to a hand-built Pinewood wooden racecar with lightning decals on a trophy stage" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1_zgaXnedn7dXlOBA5UUgiHHIn4gcI1c6n-s5Pg19u0YMiY_Fqb3XbjEced-ZDIsH7aOV4vcfI1wn6yGWKAp7s2qjzMOb3CoRIgREvRpebEq6g19O3lnd7v0vncBU6JU2IwFoAJWMdI4kC9zqhmXGxbxLyCN1TfLNrG1LFfFfHz4FdXnLNCnUyzFsvfu_-hJ89UzGowY3Ej5Lwge-On3nKiqlJfFryys2-FYCDX3kU_I2HDlbpWf4"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/70 via-transparent to-transparent"></div>
+<span class="absolute bottom-1.5 left-1.5 font-label-badge text-[10px] text-on-primary bg-primary/70 px-1.5 py-0.5 rounded backdrop-blur-xs">Derby Heat 4</span>
+</div>
+<div class="relative rounded-xl overflow-hidden aspect-square bg-surface-container shadow-sm group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Cub scout in uniform helping shovel fertile brown soil around newly planted sapling tree in public park conservation project with den team in sunny morning" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiIjbsw1zx3Cy8Jdj2VrxXoUgSaC9iJFP9mHDLxV1Ncn3IpAJvvKTOaj7uwHKYDsBK2AXdK2w-E9yN_Fj_kOTcagkNqx7vFDmF7dWqlPkSHsASYxdAeRp2IE-hdsUPGdvNriIIuA2aKQoSCLg7l-uHPE-uW4aN9t7ztlWlTMwzz5pOzcA-MrCnazqN3Dta4aTZSj7TxWp8p4qZOPKd8PFGnQC8CDDO3CjwWJXvB2I6aWxt8M2JoNV3"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/70 via-transparent to-transparent"></div>
+<span class="absolute bottom-1.5 left-1.5 font-label-badge text-[10px] text-on-primary bg-primary/70 px-1.5 py-0.5 rounded backdrop-blur-xs">Tree Project</span>
+</div>
+<div class="relative rounded-xl overflow-hidden aspect-square bg-surface-container shadow-sm group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Close view of scout hands holding roasting skewer with golden brown marshmallow over natural stone campfire ring at twilight evening campout" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJvAtcYWhaLwhzvS3wTALFBYvP0GVLn74w_qR-ESYOYC_KIOlnITziLIe0mHsu5dv9hg1q1sDQo_w9rk0eYvhj1ApC-l1EgVNpb3hyMWrCVa8zK2prtQ1eSqO7k7RfcdcGrYqS1ecisqxJzE8QrAsY4rL7HYfc0Jac6eDCkKd8wEE06dnvbwYpzVWYMJT8VgWf2UxL7t5vkfmfyTnHhrnt350x26gVMd6ml-2zEyuNViEs4y8wCkhL"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/70 via-transparent to-transparent"></div>
+<span class="absolute bottom-1.5 left-1.5 font-label-badge text-[10px] text-on-primary bg-primary/70 px-1.5 py-0.5 rounded backdrop-blur-xs">Campfire Skit</span>
+</div>
+</div>
+</section>
+<!-- Pack Events Album Stream -->
+<section class="px-margin-mobile pt-space-md pb-space-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[20px]">photo_library</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Pack 361 Albums</h3>
+</div>
+<span class="font-label-badge text-label-badge text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded-full">SORT: RECENT</span>
+</div>
+<!-- Album 1: Spring Campout -->
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm flex flex-col">
+<div class="relative h-48 w-full bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Cub scout den gathered around a roaring stone fire pit in a pine forest at dusk, with adult scoutmaster in khaki uniform leading storytelling, scouts raising hands with happy expressions under twilight forest canopy" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9bs5XnG4A-Cm_up9VEY68NSOfisv1MikBjWiaXKhQacEFeiLMbfVk5-EjFVuQR-McPUryQMa4gDqjOKqPId5WCCwm73uUHW51WwlOvmTik6meY7ijqr3-Q7BAsqY-sCu1NA-caPtr9KfQy4FAUt_zORSQEDDdZ5XHdBUA0aukBY5nvmiEnri2-OfbbxWPSp6VWUGlCfdJ6W1deW2G7pQ7I-oWQlZdy_O8mGVYdvmaXv5F0E-myG3F"/>
+<div class="absolute top-2.5 right-2.5 bg-surface/90 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1 font-label-badge text-label-badge text-on-surface shadow-sm">
+<span class="material-symbols-outlined text-secondary text-[14px]" style="font-variation-settings: 'FILL' 1;">photo</span>
+<span>28 PHOTOS</span>
+</div>
+<div class="absolute bottom-2.5 left-2.5 bg-primary-container/90 text-on-primary font-label-badge text-[10px] tracking-wide px-2 py-0.5 rounded">
+          LOCATION: WASHINGTON MONUMENT STATE PARK
+        </div>
+</div>
+<div class="p-space-md space-y-2">
+<div class="flex items-start justify-between gap-2">
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">June Campout at Washington Monument SP</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">June 5–7 • Washington Monument State Park</p>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</button>
+</div>
+<!-- YPT Tag pills -->
+<div class="flex items-center gap-1.5 flex-wrap pt-1">
+<span class="bg-surface-container-low text-on-surface-variant font-label-badge text-label-badge px-2 py-0.5 rounded-md">
+            Campfire Skits
+          </span>
+<span class="bg-surface-container-low text-on-surface-variant font-label-badge text-label-badge px-2 py-0.5 rounded-md">
+            Outdoor Code
+          </span>
+<span class="bg-primary-fixed text-on-primary-fixed font-label-badge text-label-badge px-2 py-0.5 rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">verified</span>
+            2-Deep Verified
+          </span>
+</div>
+<div class="pt-2 flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm">
+<span>Uploaded by Assistant Cubmaster Sarah W.</span>
+<span class="font-label-md text-label-md text-primary flex items-center gap-0.5">
+            Browse
+            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</span>
+</div>
+</div>
+</div>
+<!-- Album 2: Earth Day Tree Planting -->
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm flex flex-col">
+<div class="relative h-48 w-full bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Cub scouts wearing gold Lion and Bear den neckerchiefs with shovels, kneeling on soil planting green sapling tree alongside encouraging parents in sunny community memorial park with background oak trees" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVGiic_sxov74uAMogWRKzB_jmkqnE0pLqhPsASjbOSYJPm6RMUFx72P2ydqXsvDqpolNF5n847CKUe8Kqn2SYC3EnVo8sDU7ZDByzCrFH6iFJuTPDxv_7fGp0GDxXO-POW5Q0cjppy8kjJmLuG_COwoWf81Rjy84jzevfqSCXYZ_nC-y6XwXt-Pkm6LiNELqPU7uXhdCoCpha0BMQSNgiDH6zXIAkgUHZtqqc5l1tZ9K6UW-sG9B5"/>
+<div class="absolute top-2.5 right-2.5 bg-surface/90 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1 font-label-badge text-label-badge text-on-surface shadow-sm">
+<span class="material-symbols-outlined text-secondary text-[14px]" style="font-variation-settings: 'FILL' 1;">photo</span>
+<span>19 PHOTOS</span>
+</div>
+<div class="absolute bottom-2.5 left-2.5 bg-primary-container/90 text-on-primary font-label-badge text-[10px] tracking-wide px-2 py-0.5 rounded">
+          COMMUNITY CONSERVATION SERVICE
+        </div>
+</div>
+<div class="p-space-md space-y-2">
+<div class="flex items-start justify-between gap-2">
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Tree Planting Conservation Project</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">April • Centennial Park</p>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</button>
+</div>
+<div class="flex items-center gap-1.5 flex-wrap pt-1">
+<span class="bg-surface-container-low text-on-surface-variant font-label-badge text-label-badge px-2 py-0.5 rounded-md">
+            LNT Conservation
+          </span>
+<span class="bg-surface-container-low text-on-surface-variant font-label-badge text-label-badge px-2 py-0.5 rounded-md">
+            Lion &amp; Bear Dens
+          </span>
+<span class="bg-primary-fixed text-on-primary-fixed font-label-badge text-label-badge px-2 py-0.5 rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">security</span>
+            Face-Tags Verified
+          </span>
+</div>
+<div class="pt-2 flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm">
+<span>Uploaded by Den 2 Leader Carlos R.</span>
+<span class="font-label-md text-label-md text-primary flex items-center gap-0.5">
+            Browse
+            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Sticky Quick Upload Banner Dock -->
+<section class="px-margin-mobile pt-space-xs pb-space-lg">
+<div class="bg-surface-container-high rounded-xl p-space-md flex items-center justify-between gap-3 shadow-sm">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-primary-container text-on-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">cloud_upload</span>
+</div>
+<div class="min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Have photos from Pinewood Derby?</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">EXIF scrubbed &amp; sent to leader approval queue</p>
+</div>
+</div>
+<button class="bg-secondary-container text-on-secondary-container font-label-md text-label-md px-3.5 py-2 rounded-xl shrink-0 active:scale-95 transition-transform font-bold" id="quickUploadDockBtn">
+        Add Photos
+      </button>
+</div>
+</section>
+<!-- Secure YPT Upload Modal Overlay -->
+<div class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" id="uploadModal">
+<div class="w-full max-w-lg bg-surface rounded-t-2xl sm:rounded-2xl p-space-lg shadow-xl space-y-space-md max-h-[795px] overflow-y-auto">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[24px]">verified</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Secure YPT Photo Upload</h3>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant" id="closeUploadModal">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Safe Upload Checklist Box -->
+<div class="bg-surface-container-low rounded-xl p-space-md space-y-2">
+<p class="font-label-md text-label-md text-primary uppercase tracking-wide">Automated Vault Safeguards</p>
+<div class="flex items-center gap-2 text-body-sm text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+<span>Camera GPS geotags &amp; timestamps will be automatically stripped.</span>
+</div>
+<div class="flex items-center gap-2 text-body-sm text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+<span>Scouts with restricted media forms will be masked from den gallery.</span>
+</div>
+</div>
+<!-- Upload Form Fields -->
+<div class="space-y-space-sm">
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1">Target Pack Event</label>
+<select class="w-full bg-surface-container-lowest text-on-surface rounded-xl px-3 py-2.5 font-body-md text-body-md shadow-sm outline-none focus:bg-surface-container-lowest">
+<option>2026 Pinewood Derby Grand Finals</option>
+<option>June Campout (Washington Monument SP)</option>
+<option>Tree Planting Conservation Project</option>
+<option>Den 3 Bear Weekly Meeting</option>
+</select>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-lg flex flex-col items-center justify-center text-center shadow-sm">
+<span class="material-symbols-outlined text-primary text-[40px] mb-2">add_photo_alternate</span>
+<p class="font-label-lg text-label-lg text-on-surface">Tap to select photos from library</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">High-resolution JPEG, PNG, HEIC up to 25MB each</p>
+<input class="hidden" id="photoFileInput" multiple="" type="file"/>
+<button class="mt-space-sm bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded-xl active:scale-95 transition-transform" onclick="document.getElementById('photoFileInput').click()">
+            Choose Files
+          </button>
+</div>
+<div class="flex items-center gap-2 pt-1">
+<input checked="" class="w-4 h-4 rounded text-primary accent-primary" id="yptAcknowledge" type="checkbox"/>
+<label class="font-body-sm text-body-sm text-on-surface-variant" for="yptAcknowledge">
+            I confirm these photos adhere to Scouting America digital privacy guidelines.
+          </label>
+</div>
+</div>
+<!-- Modal Action Buttons -->
+<div class="flex items-center gap-2 pt-2">
+<button class="flex-1 bg-surface-container text-on-surface font-label-lg text-label-lg h-11 rounded-xl" id="cancelModalBtn">
+          Cancel
+        </button>
+<button class="flex-1 bg-primary text-on-primary font-label-lg text-label-lg h-11 rounded-xl shadow-sm flex items-center justify-center gap-1 active:translate-y-0.5" id="submitUploadBtn">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+<span>Encrypt &amp; Upload</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    const policyToggle = document.getElementById('yptPolicyToggle');
+    const policyDetails = document.getElementById('yptPolicyDetails');
+    const chevron = document.getElementById('yptChevron');
+
+    if (policyToggle && policyDetails && chevron) {
+      policyToggle.addEventListener('click', () => {
+        const isHidden = policyDetails.classList.contains('hidden');
+        if (isHidden) {
+          policyDetails.classList.remove('hidden');
+          chevron.classList.add('rotate-180');
+        } else {
+          policyDetails.classList.add('hidden');
+          chevron.classList.remove('rotate-180');
+        }
+      });
+    }
+
+    const uploadModal = document.getElementById('uploadModal');
+    const openBtn = document.getElementById('openUploadBtn');
+    const quickBtn = document.getElementById('quickUploadDockBtn');
+    const closeBtn = document.getElementById('closeUploadModal');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const submitBtn = document.getElementById('submitUploadBtn');
+
+    function openModal() {
+      if (uploadModal) uploadModal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      if (uploadModal) uploadModal.classList.add('hidden');
+    }
+
+    if (openBtn) openBtn.addEventListener('click', openModal);
+    if (quickBtn) quickBtn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    if (submitBtn) {
+      submitBtn.addEventListener('click', () => {
+        submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span><span>Scrubbing GPS...</span>';
+        setTimeout(() => {
+          submitBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check</span><span>Uploaded!</span>';
+          setTimeout(() => {
+            closeModal();
+            submitBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">lock</span><span>Encrypt &amp; Upload</span>';
+          }, 800);
+        }, 1200);
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(30,41,58,0.06)]" data-active-classes="text-primary font-label-lg"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="feed" href="#"><span class="material-symbols-outlined text-[24px]">holiday_village</span><span class="font-label-md text-label-md mt-0.5">Feed</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="campouts" href="#"><span class="material-symbols-outlined text-[24px]">explore</span><span class="font-label-md text-label-md mt-0.5">Campouts</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs text-on-surface-variant hover:text-primary transition-colors" data-path="scoutbook" href="#"><span class="material-symbols-outlined text-[24px]">military_tech</span><span class="font-label-md text-label-md mt-0.5">Scoutbook</span></a><a aria-current="page" class="relative flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-xs transition-colors text-primary font-label-lg" data-path="vault" href="#"><span class="material-symbols-outlined text-[24px] [font-variation-settings:'FILL'_1]">shield</span><span class="font-label-md text-label-md mt-0.5">Vault</span><span class="absolute -bottom-1 w-5 h-1 bg-primary-container rounded-full"></span></a></div></nav></body></html>
