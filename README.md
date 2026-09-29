@@ -22,7 +22,7 @@ npm run dev
 ## Folders
 | Path | What |
 |---|---|
-| `supabase/migrations/20260929000000_init.sql` | Database schema, security rules, storage buckets. Run this first. |
+| `supabase/migrations/` | Database schema, security rules, storage buckets (`..._init.sql`), then `..._harden_functions.sql`. Run in order. |
 | `supabase/seed.sql` | Starter data: dens (Scoutbook numbering), pack meetings, fall events, default packing list. |
 | `supabase/import/build_roster_import.py` | Merges Scoutbook Plus + TroopWebHost data into `imports/roster_import.sql` and `imports/roster_review.md`. |
 | `supabase/tests/` | Permission tests (plain Postgres + a small Supabase stand-in). |
@@ -41,6 +41,7 @@ createdb packtest
 psql -v ON_ERROR_STOP=1 -d packtest \
   -f supabase/tests/00_supabase_mock.sql \
   -f supabase/migrations/20260929000000_init.sql \
+  -f supabase/migrations/20260929000100_harden_functions.sql \
   -f supabase/tests/01_rls_tests.sql
 ```
 Every check prints `PASS`. The run stops at the first `FAIL`.
