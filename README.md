@@ -1,7 +1,8 @@
 # Pack 361 App (Ellicott City, MD)
 
 Private member web app for Cub Scout Pack 361: pack feed and announcements, calendar, campout
-schedules with an offline packing checklist, leader directory, and family profile.
+schedules with an offline packing checklist, leader directory, family profile, and advancement
+(rank progress from Scoutbook, families report requirements, den leaders approve).
 Next.js 16 (App Router) on Vercel, Supabase (Postgres + Auth) for data and login.
 
 ## Run locally
@@ -22,7 +23,7 @@ npm run dev
 ## Folders
 | Path | What |
 |---|---|
-| `supabase/migrations/` | Database schema, security rules, storage buckets (`..._init.sql`), then `..._harden_functions.sql` and `..._private_helpers.sql`. Run in order. |
+| `supabase/migrations/` | Database schema, security rules, storage buckets (`..._init.sql`), then `..._harden_functions.sql`, `..._private_helpers.sql` and `..._advancement.sql` (adventure catalog + Scoutbook import). Run in order. |
 | `supabase/seed.sql` | Starter data: dens (Scoutbook numbering), pack meetings, fall events, default packing list. |
 | `supabase/import/build_roster_import.py` | Merges Scoutbook Plus + TroopWebHost data into `imports/roster_import.sql` and `imports/roster_review.md`. |
 | `supabase/tests/` | Permission tests (plain Postgres + a small Supabase stand-in). |
@@ -34,6 +35,16 @@ npm run dev
 | `imports/` | Roster data pulled from Scoutbook Plus and TroopWebHost, plus the generated import. Git-ignored (family contact info). |
 
 
+## Advancement
+- **Scoutbook Plus is the official record.** There's no Scoutbook API, so an admin exports
+  *Reports → Quick Export → Advancements* and uploads the CSV at **Scouts → Import Scoutbook**.
+  Each scout in the file is replaced (matched by BSA member ID). Do it after each pack meeting.
+- Families see their scout's current rank: required adventures, electives, partial requirements,
+  ranks earned. They can report finished home requirements; the den leader approves; whoever enters
+  it in Scoutbook taps "Entered" (or the next import marks it automatically).
+- Leaders get a shopping list of items approved in Scoutbook but not yet marked awarded.
+- The 2024 adventure catalog lives in the `adventures` table (editable in the Supabase table editor).
+
 ## Run the permission tests
 Needs PostgreSQL 15+:
 ```bash
@@ -43,6 +54,8 @@ psql -v ON_ERROR_STOP=1 -d packtest \
   -f supabase/migrations/20260929000000_init.sql \
   -f supabase/migrations/20260929000100_harden_functions.sql \
   -f supabase/migrations/20260929000200_private_helpers.sql \
-  -f supabase/tests/01_rls_tests.sql
+  -f supabase/migrations/20260929000300_advancement.sql \
+  -f supabase/tests/01_rls_tests.sql \
+  -f supabase/tests/02_advancement_tests.sql
 ```
 Every check prints `PASS`. The run stops at the first `FAIL`.
