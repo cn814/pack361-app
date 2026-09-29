@@ -25,10 +25,16 @@ export default async function Home() {
         {scouts.length > 0 && (
           <ul className="mt-2 flex flex-wrap gap-2">
             {scouts.map((s) => (
-              <li key={s.id} className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-sm font-semibold text-navy">
-                <span className="h-2 w-2 rounded-full bg-gold" aria-hidden />
-                {s.first_name}
-                {s.den && <span className="font-normal text-muted">· {s.den.name}</span>}
+              <li key={s.id}>
+                <Link
+                  href={`/scouts/${s.id}`}
+                  className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-sm font-semibold text-navy active:bg-surface-low"
+                >
+                  <span className="h-2 w-2 rounded-full bg-gold" aria-hidden />
+                  {s.first_name}
+                  {s.den && <span className="font-normal text-muted">· {s.den.name}</span>}
+                  <ChevronRight className="h-3.5 w-3.5 text-muted" aria-hidden />
+                </Link>
               </li>
             ))}
           </ul>
