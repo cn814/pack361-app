@@ -6,7 +6,12 @@ import { sendLoginEmail, verifyLoginCode, type LoginState } from "./actions";
 
 const initial: LoginState = { step: "email", email: "" };
 
-export default function LoginForm() {
+/**
+ * codeEnabled: whether the sign-in email includes a one-time code as well as the link.
+ * Supabase's built-in email sender only sends the link; turn this on (LOGIN_CODE_ENABLED=true)
+ * once custom SMTP is set up and the email template includes {{ .Token }}.
+ */
+export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
   const [sent, sendAction, sending] = useActionState(sendLoginEmail, initial);
   const [verify, verifyAction, verifying] = useActionState(verifyLoginCode, initial);
 
@@ -42,9 +47,34 @@ export default function LoginForm() {
     );
   }
 
+  const resend = (
+    <form action={sendAction}>
+      <input type="hidden" name="email" value={email} />
+      <button type="submit" className="w-full text-center text-xs font-bold text-pine underline" disabled={sending}>
+        {sending ? "Sending…" : "Didn't get it? Send a new link"}
+      </button>
+    </form>
+  );
+
+  if (!codeEnabled) {
+    return (
+      <div className="space-y-3 text-left">
+        <p className="rounded-xl bg-mint px-3 py-2.5 text-sm text-pine">
+          We sent a sign-in link to <strong>{email}</strong>. Open that email on this device and tap the link to sign in.
+        </p>
+        <p className="text-center text-xs text-muted">
+          The link expires in an hour. Check your spam folder if it hasn&apos;t arrived in a couple of minutes.
+        </p>
+        {resend}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3 text-left">
-      <p className="rounded-xl bg-mint px-3 py-2.5 text-sm text-pine">{sent.message}</p>
+      <p className="rounded-xl bg-mint px-3 py-2.5 text-sm text-pine">
+        We sent a sign-in email to <strong>{email}</strong>. Tap the link in it, or type the code below.
+      </p>
       <form action={verifyAction} className="space-y-3">
         <input type="hidden" name="email" value={email} />
         <label className="block">
@@ -72,12 +102,7 @@ export default function LoginForm() {
         Using the app from your home screen? Type the code here instead of tapping the link, so you stay signed in inside
         the app.
       </p>
-      <form action={sendAction}>
-        <input type="hidden" name="email" value={email} />
-        <button type="submit" className="w-full text-center text-xs font-bold text-pine underline" disabled={sending}>
-          Send a new email
-        </button>
-      </form>
+      {resend}
     </div>
   );
 }
