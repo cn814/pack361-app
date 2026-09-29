@@ -31,11 +31,7 @@ export async function sendLoginEmail(_prev: LoginState, form: FormData): Promise
     };
   }
   // Same message whether or not the address is on the roster (doesn't reveal who's in the pack).
-  return {
-    step: "code",
-    email,
-    message: `We sent a sign-in email to ${email}. Tap the link in it, or type the code below.`,
-  };
+  return { step: "code", email };
 }
 
 export async function verifyLoginCode(_prev: LoginState, form: FormData): Promise<LoginState> {

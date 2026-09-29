@@ -22,7 +22,7 @@ export default function LoginPage() {
           </p>
           <div className="mt-6">
             {supabaseConfigured() ? (
-              <LoginForm />
+              <LoginForm codeEnabled={process.env.LOGIN_CODE_ENABLED === "true"} />
             ) : (
               <p className="rounded-xl bg-gold-50 px-3 py-3 text-sm text-gold-800">
                 The app isn&apos;t connected to its database yet. (Set the Supabase environment variables.)
