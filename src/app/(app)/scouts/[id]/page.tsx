@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import SubmitButton from "@/components/SubmitButton";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Award, CircleCheck, House, Medal, Plus } from "lucide-react";
@@ -129,7 +130,7 @@ export default async function ScoutPage({ params, searchParams }: PageProps<"/sc
                     <form action={withdrawSubmission}>
                       <input type="hidden" name="id" value={s.id} />
                       <input type="hidden" name="scout_id" value={id} />
-                      <button className="text-[11px] font-semibold text-muted underline">Withdraw</button>
+                      <SubmitButton className="text-[11px] font-semibold text-muted underline">Withdraw</SubmitButton>
                     </form>
                   )}
                 </span>

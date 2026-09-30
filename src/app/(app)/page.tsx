@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SubmitButton from "@/components/SubmitButton";
 import { ChevronRight, MapPin, Pin, ShoppingBag, Timer } from "lucide-react";
 import EventRow from "@/components/EventRow";
 import PostAnnouncement from "@/components/PostAnnouncement";
@@ -109,7 +110,7 @@ export default async function Home() {
               {(p.author_id === me.id || me.role === "admin" || me.role === "cubmaster") && (
                 <form action={deleteAnnouncement}>
                   <input type="hidden" name="id" value={p.id} />
-                  <button className="font-semibold text-danger/80 underline">Delete</button>
+                  <SubmitButton className="font-semibold text-danger/80 underline">Delete</SubmitButton>
                 </form>
               )}
             </div>
