@@ -123,20 +123,20 @@ export async function countMyPending(adultId: string): Promise<number> {
 }
 
 /** Events from the last six months up to tomorrow, newest first (for tagging uploads). */
-export async function getRecentEvents(): Promise<{ id: string; title: string; starts_at: string }[]> {
+export async function getRecentEvents(): Promise<{ id: string; title: string; starts_at: string; category: string }[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("events")
-    .select("id, title, starts_at")
+    .select("id, title, starts_at, category")
     .gte("starts_at", new Date(Date.now() - 183 * 86400000).toISOString())
     .lte("starts_at", new Date(Date.now() + 86400000).toISOString())
     .order("starts_at", { ascending: false });
-  return (data ?? []) as { id: string; title: string; starts_at: string }[];
+  return (data ?? []) as { id: string; title: string; starts_at: string; category: string }[];
 }
 
 /** One event's id, title and date (to tag uploads from an event page). */
-export async function getEventBrief(id: string): Promise<{ id: string; title: string; starts_at: string } | null> {
+export async function getEventBrief(id: string): Promise<{ id: string; title: string; starts_at: string; category: string } | null> {
   const supabase = await createClient();
-  const { data } = await supabase.from("events").select("id, title, starts_at").eq("id", id).maybeSingle();
-  return (data as { id: string; title: string; starts_at: string } | null) ?? null;
+  const { data } = await supabase.from("events").select("id, title, starts_at, category").eq("id", id).maybeSingle();
+  return (data as { id: string; title: string; starts_at: string; category: string } | null) ?? null;
 }

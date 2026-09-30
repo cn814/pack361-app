@@ -25,10 +25,13 @@ export default function PhotoUploader({
   events,
   defaultEventId,
   leader,
+  returnTo,
 }: {
   events: { id: string; title: string; when: string }[];
   defaultEventId?: string;
   leader: boolean;
+  /** Page to go back to after a successful upload (the event the upload started from). */
+  returnTo?: string;
 }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
@@ -59,6 +62,12 @@ export default function PhotoUploader({
         failed++;
       }
       setProgress({ done, failed });
+    }
+    if (done > 0 && failed === 0) {
+      // All sent: go back and say so in a pop-up (see components/Toast).
+      const back = returnTo ?? `/photos?album=${eventId || "other"}`;
+      router.push(`${back}${back.includes("?") ? "&" : "?"}done=${leader ? "photos-added" : "photos-sent"}&n=${done}`);
+      return;
     }
     setProgress(null);
     setFinished({ sent: done, failed });
