@@ -117,6 +117,9 @@ name, deletes ones older than 60 days, and can GPG-encrypt (`ENCRYPT_TO`). It us
 (Supabase → Connect → Session pooler) stays in `~/.config/pack361/backup.env` or an environment
 variable, never in the repo. Photos are in Supabase Storage and aren't included.
 
+On an Unraid NAS, paste `scripts/unraid-user-script.sh` into the User Scripts plugin and schedule it
+nightly; it runs `pg_dump` in a throwaway `postgres:17-alpine` container.
+
 To look inside a backup: `pg_restore -f backup.sql pack361-….dump` writes it out as SQL.
 
 ## Run the permission tests
