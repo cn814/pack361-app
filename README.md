@@ -95,7 +95,9 @@ npm run dev
   link (`TWH_CALENDAR_URL`) daily and from Pack admin → Sync now. New events are added (category and
   ranks guessed from the title), TroopWebHost events follow its time and place,
   events already in the app are matched by date and title instead of duplicated, and events deleted
-  in TroopWebHost are removed unless someone has signed up to volunteer.
+  in TroopWebHost are removed unless someone has signed up to volunteer. Synced events show an
+  **RSVP** button that opens the event on TroopWebHost (`events.twh_url`, or the pack's TroopWebHost
+  site when the feed has no direct link); Givebutter links stay as "Pay / sign up".
 - **Big-event tab**: the bottom bar shows a tab for the next campout, derby, Blue & Gold, regatta
   or crossover from 45 days before until 3 days after (`src/lib/featured.ts`).
 - **Messages**: "Report a problem or send a note" (My family, Leaders) saves to `feedback` and
