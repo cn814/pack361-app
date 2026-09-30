@@ -45,3 +45,8 @@ next-env.d.ts
 /imports/*
 !/imports/.gitkeep
 __pycache__/
+
+# Database backups (family data): never commit
+*.dump
+*.dump.gpg
+pack361-backups/
