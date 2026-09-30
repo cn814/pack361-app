@@ -82,7 +82,7 @@ export function parseIcs(text: string): FeedEvent[] {
   return out;
 }
 
-/** Category, ranks and leader-only, guessed from the TroopWebHost title (new events only). */
+/** Category and ranks, guessed from the TroopWebHost title (new events only). */
 export function classify(title: string): { category: string; ranks: DenRank[] | null; leaders_only: boolean } {
   const t = title.toLowerCase();
   const category = /den meeting/.test(t)
@@ -112,7 +112,8 @@ export function classify(title: string): { category: string; ranks: DenRank[] | 
   return {
     category,
     ranks: ranks.length && category !== "Pack Meeting" && category !== "Den Meeting" ? ranks : null,
-    leaders_only: /committee|roundtable|leader training|leaders meeting/.test(t),
+    // Committee meetings and Roundtable are open to everyone: the pack wants more parents involved.
+    leaders_only: false,
   };
 }
 

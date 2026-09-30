@@ -89,11 +89,11 @@ npm run dev
   static files on the phone; the sign-in page clears them.
 - **Den-aware calendar** (`src/lib/calendar.ts`): families see pack-wide events, events for their
   scouts' dens or ranks (`events.den_id`, `events.ranks`), and their dens' planned meetings; leaders
-  see everything (with a "My family's dens" filter). `events.leaders_only` hides committee meetings
-  and Roundtable from parents (enforced by RLS). The private calendar feed follows the same rules.
+  see everything (with a "My family's dens" filter). `events.leaders_only` can hide an event from
+  parents (enforced by RLS); committee meetings and Roundtable are deliberately open to everyone. The private calendar feed follows the same rules.
 - **TroopWebHost sync** (`src/lib/twh.ts`): reads an admin's TroopWebHost calendar subscription
-  link (`TWH_CALENDAR_URL`) daily and from Pack admin → Sync now. New events are added (category,
-  ranks and leader-only guessed from the title), TroopWebHost events follow its time and place,
+  link (`TWH_CALENDAR_URL`) daily and from Pack admin → Sync now. New events are added (category and
+  ranks guessed from the title), TroopWebHost events follow its time and place,
   events already in the app are matched by date and title instead of duplicated, and events deleted
   in TroopWebHost are removed unless someone has signed up to volunteer.
 - **Big-event tab**: the bottom bar shows a tab for the next campout, derby, Blue & Gold, regatta
