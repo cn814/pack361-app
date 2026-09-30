@@ -162,4 +162,15 @@ select test.expect_rows($$update public.feedback set resolved_at = now()$$, 1, '
 select test.expect_error($$update public.feedback set message = 'edited'$$, '42501', 'nobody edits the message');
 rollback;
 
+\echo '== Leader-only events'
+insert into public.events (id, title, category, starts_at, leaders_only)
+values ('50000000-0000-0000-0000-000000000009', 'Committee Meeting', 'Committee', '2026-10-01 21:00-04', true);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select test.check(test.count($$select * from public.events where id = '50000000-0000-0000-0000-000000000009'$$) = 0, 'parents do not see leader-only events');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select test.check(test.count($$select * from public.events where id = '50000000-0000-0000-0000-000000000009'$$) = 1, 'leaders see leader-only events');
+rollback;
+
 \echo '== TOOLS TESTS PASSED'

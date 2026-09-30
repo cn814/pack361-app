@@ -6,7 +6,7 @@ import BackLink from "@/components/BackLink";
 import MeetingForm from "@/components/MeetingForm";
 import SubmitButton from "@/components/SubmitButton";
 import { requireMember } from "@/lib/data";
-import { denAdventures, fmtMeetingDate, getMeeting, leadsDen, todayEastern } from "@/lib/meetings";
+import { denAdventures, fmtMeetingDate, fmtMeetingTime, getMeeting, leadsDen, todayEastern } from "@/lib/meetings";
 import { createClient } from "@/lib/supabase/server";
 import type { DenRank } from "@/lib/types";
 import { deleteMeeting, recordMeeting, saveAttendance, saveMeeting } from "../actions";
@@ -39,10 +39,11 @@ export default async function MeetingPage({ params }: PageProps<"/scouts/den/[de
         <h1 className="text-xl font-extrabold leading-tight text-pine-950">{meeting.title}</h1>
         <p className="flex items-center gap-1.5 text-sm text-muted">
           <CalendarDays className="h-4 w-4" aria-hidden /> {fmtMeetingDate(meeting.meets_on)}
+          {fmtMeetingTime(meeting) ? ` · ${fmtMeetingTime(meeting)}` : ""}
         </p>
-        {meeting.location && (
+        {(meeting.location || meeting.address) && (
           <p className="flex items-center gap-1.5 text-sm text-muted">
-            <MapPin className="h-4 w-4" aria-hidden /> {meeting.location}
+            <MapPin className="h-4 w-4" aria-hidden /> {[meeting.location, meeting.address].filter(Boolean).join(", ")}
           </p>
         )}
         {meeting.adventure && (
@@ -52,7 +53,9 @@ export default async function MeetingPage({ params }: PageProps<"/scouts/den/[de
           </p>
         )}
         {meeting.family_note && <p className="rounded-xl bg-surface-low p-2 text-sm text-navy">{meeting.family_note}</p>}
-        <p className="text-[11px] text-muted">Families in the den see the date, adventure and note on their scout&apos;s page.</p>
+        <p className="text-[11px] text-muted">
+          Families in the den see this on their calendar and their scout&apos;s page (not attendance).
+        </p>
       </section>
 
       <section className="card space-y-2">

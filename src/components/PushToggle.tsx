@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { Bell, BellOff } from "lucide-react";
-import { removePushSubscription, savePushSubscription } from "@/app/(app)/push-actions";
+import { removePushSubscription, savePushSubscription, sendTestPush } from "@/app/(app)/push-actions";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -59,6 +59,13 @@ export default function PushToggle() {
       }
     });
 
+  const [test, setTest] = useState<{ ok: boolean; message: string } | null>(null);
+  const sendTest = () =>
+    start(async () => {
+      setTest(null);
+      setTest(await sendTestPush());
+    });
+
   const turnOff = () =>
     start(async () => {
       const reg = await navigator.serviceWorker.ready;
@@ -82,7 +89,15 @@ export default function PushToggle() {
           <Bell className="h-4 w-4" aria-hidden /> {pending ? "Turning on…" : "Get alerts for new announcements"}
         </button>
       )}
-      {state === "on" && <p className="text-xs text-pine">Alerts are on for this device.</p>}
+      {state === "on" && (
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs text-pine">Alerts are on for this device.</p>
+          <button type="button" onClick={sendTest} disabled={pending} className="text-xs font-bold text-pine underline">
+            Send a test alert
+          </button>
+        </div>
+      )}
+      {test && <p className={`text-xs ${test.ok ? "text-pine" : "text-danger"}`}>{test.message}</p>}
       {state === "ios-install" && (
         <p className="text-muted">
           On iPhone, first add this app to your home screen: tap Share, then <b>Add to Home Screen</b>. Open it from there and

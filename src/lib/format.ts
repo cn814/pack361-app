@@ -13,7 +13,8 @@ export function fmtMonth(iso: string) {
   return new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "long", year: "numeric" }).format(new Date(iso));
 }
 
-export function fmtRange(start: string, end: string | null) {
+export function fmtRange(start: string, end: string | null, allDay = false) {
+  if (allDay) return end && fmtDay(end) !== fmtDay(start) ? `${fmtDay(start)} – ${fmtDay(end)}` : `${fmtDay(start)} · all day`;
   if (!end) return `${fmtDay(start)} · ${fmtTime(start)}`;
   const sameDay = fmtDay(start) === fmtDay(end);
   return sameDay ? `${fmtDay(start)} · ${fmtTime(start)}–${fmtTime(end)}` : `${fmtDay(start)} – ${fmtDay(end)}`;

@@ -4,7 +4,7 @@
 export type FeaturedKind = "campout" | "derby" | "space_derby" | "regatta" | "blue_gold" | "crossover";
 
 const KINDS: { kind: FeaturedKind; label: string; match: (title: string, category: string) => boolean }[] = [
-  { kind: "space_derby", label: "Space Derby", match: (t) => /space\s*derby/i.test(t) },
+  { kind: "space_derby", label: "Derby", match: (t) => /space\s*derby|rocket/i.test(t) },
   { kind: "derby", label: "Derby", match: (t, c) => /derby/i.test(c) || /pinewood|derby/i.test(t) },
   { kind: "regatta", label: "Regatta", match: (t) => /regatta/i.test(t) },
   { kind: "blue_gold", label: "Blue & Gold", match: (t, c) => /blue\s*(&|and|n)\s*gold/i.test(`${t} ${c}`) },

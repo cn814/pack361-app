@@ -60,17 +60,18 @@ export default async function Home() {
                   <Timer className="h-3 w-3" aria-hidden /> {daysUntil(next.starts_at)}
                 </span>
                 <span className="badge bg-white/10 text-mint-200">{next.category}</span>
+                {next.den_name && <span className="badge bg-white/10 text-gold">{next.den_name}</span>}
               </div>
               <h2 className="mt-2 text-xl font-extrabold leading-tight">{next.title}</h2>
-              <p className="mt-1 text-sm text-mint-200">{fmtRange(next.starts_at, next.ends_at)}</p>
+              <p className="mt-1 text-sm text-mint-200">{fmtRange(next.starts_at, next.ends_at, next.all_day)}</p>
               {next.location_name && (
                 <p className="mt-0.5 flex items-center gap-1 text-sm text-mint-200">
                   <MapPin className="h-3.5 w-3.5" aria-hidden /> {next.location_name}
                 </p>
               )}
               <div className="mt-4 flex gap-2">
-                <Link href={eventHref(next)} className="btn-gold">
-                  {next.category === "Campout" ? "Campout details" : "Details"} <ChevronRight className="h-4 w-4" aria-hidden />
+                <Link href={next.href} className="btn-gold">
+                  {next.category === "Campout" ? "Campout details" : next.kind === "meeting" ? "Meeting details" : "Details"} <ChevronRight className="h-4 w-4" aria-hidden />
                 </Link>
                 {next.signup_url && (
                   <a href={next.signup_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold">

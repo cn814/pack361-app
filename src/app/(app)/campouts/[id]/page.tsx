@@ -44,7 +44,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
             <span className="badge bg-mint text-pine">{event.category}</span>
             <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-pine-950">{event.title}</h1>
             <p className="flex items-center gap-1.5 text-sm text-muted">
-              <CalendarDays className="h-4 w-4" aria-hidden /> {fmtRange(event.starts_at, event.ends_at)}
+              <CalendarDays className="h-4 w-4" aria-hidden /> {fmtRange(event.starts_at, event.ends_at, event.all_day)}
             </p>
             {place && (
               <p className="flex items-start gap-1.5 text-sm text-muted">

@@ -14,12 +14,16 @@ export interface DenMeeting {
   adventure: string | null;
   requirements: string[];
   location: string | null;
+  address: string | null;
+  start_time: string | null;
+  end_time: string | null;
   family_note: string | null;
   recorded_at: string | null;
   attendance?: { scout_id: string }[];
 }
 
-const COLS = "id, den_id, meets_on, title, rank, adventure, requirements, location, family_note, recorded_at";
+const COLS =
+  "id, den_id, meets_on, title, rank, adventure, requirements, location, address, start_time, end_time, family_note, recorded_at";
 
 /** Can this adult plan meetings for the den? (Mirrors private.leads_den.) */
 export async function leadsDen(me: Adult, denId: string): Promise<boolean> {
@@ -91,3 +95,16 @@ export async function denAdventures(denId: string, rank: DenRank): Promise<Adven
     }));
 }
 
+
+/** "6:30 PM" from "18:30:00". */
+export function fmtClock(t: string | null): string | null {
+  if (!t) return null;
+  const [h, m] = t.split(":").map(Number);
+  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+}
+
+export function fmtMeetingTime(m: { start_time: string | null; end_time: string | null }): string | null {
+  const a = fmtClock(m.start_time);
+  const b = fmtClock(m.end_time);
+  return a ? (b ? `${a}–${b}` : a) : null;
+}
