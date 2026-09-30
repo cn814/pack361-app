@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import SubmitButton from "@/components/SubmitButton";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Award, CircleCheck, House, Medal, Plus } from "lucide-react";
+import { Award, CalendarDays, CircleCheck, House, Medal, Plus } from "lucide-react";
+import { fmtMeetingDate, getUpcomingMeetings } from "@/lib/meetings";
 import { AdventureList, ProgressBar, ProgressSummary } from "@/components/RankProgress";
 import { isLeader, requireMember } from "@/lib/data";
 import { getCatalog, getDataAsOf, getRecords, getScout, getSubmissions } from "@/lib/advancement-data";
@@ -21,12 +22,13 @@ export default async function ScoutPage({ params, searchParams }: PageProps<"/sc
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const scout = await getScout(id);
   if (!scout) notFound();
-  const [catalog, records, submissions, asOf, settings] = await Promise.all([
+  const [catalog, records, submissions, asOf, settings, meetings] = await Promise.all([
     getCatalog(),
     getRecords([id]),
     getSubmissions({ scoutId: id }),
     getDataAsOf([id]),
     getSettings(),
+    getUpcomingMeetings(scout.den ? [scout.den.id] : [], 2),
   ]);
   const mine = scout.family_id === me.family_id;
   const p = scout.den ? rankProgress(scout.den.rank, records, catalog) : null;
@@ -69,6 +71,29 @@ export default async function ScoutPage({ params, searchParams }: PageProps<"/sc
           </Link>
         )}
       </section>
+
+      {meetings.length > 0 && (
+        <section className="card space-y-2">
+          <h2 className="section-title flex items-center gap-1.5">
+            <CalendarDays className="h-3.5 w-3.5" aria-hidden /> Next den meeting{meetings.length > 1 ? "s" : ""}
+          </h2>
+          <ul className="space-y-2">
+            {meetings.map((m) => (
+              <li key={m.id} className="text-sm">
+                <p className="font-bold text-ink">
+                  {fmtMeetingDate(m.meets_on)} · {m.title}
+                </p>
+                {(m.adventure || m.location) && (
+                  <p className="text-xs text-muted">
+                    {[m.adventure && m.adventure !== m.title ? m.adventure : null, m.location].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {m.family_note && <p className="text-navy">{m.family_note}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {ideas.length > 0 && (
         <section className="card space-y-2 border-l-4 border-l-gold">

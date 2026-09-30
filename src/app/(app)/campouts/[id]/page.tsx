@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CalendarDays, MapPin, Navigation, Ticket } from "lucide-react";
 import PackingChecklist from "@/components/PackingChecklist";
+import BackLink from "@/components/BackLink";
 import EventSignup from "@/components/EventSignup";
+import VolunteerJobs from "@/components/VolunteerJobs";
+import EventPhotosLink from "@/components/EventPhotosLink";
+import SaveOffline from "@/components/SaveOffline";
+import { getSlots } from "@/lib/volunteer";
 import { EventLinks, EventSections } from "@/components/EventInfo";
 import { getEvent, getItinerary, getPackingList, isLeader, requireMember } from "@/lib/data";
 import { getCampaigns, getOrders } from "@/lib/fundraising-data";
@@ -16,7 +21,12 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const event = await getEvent(id);
   if (!event) notFound();
-  const [itinerary, packing, campaigns] = await Promise.all([getItinerary(id), getPackingList(id), getCampaigns()]);
+  const [itinerary, packing, campaigns, slots] = await Promise.all([
+    getItinerary(id),
+    getPackingList(id),
+    getCampaigns(),
+    getSlots(id),
+  ]);
   const campaign = campaigns.find((c) => c.event_id === id) ?? null;
   const orders = campaign ? await getOrders([campaign.id]) : [];
 
@@ -26,6 +36,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
 
   return (
     <>
+      <BackLink href="/events" label="Events" />
       <section className="card space-y-2 border-t-4 border-t-pine">
         <span className="badge bg-mint text-pine">{event.category}</span>
         <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-pine-950">{event.title}</h1>
@@ -62,6 +73,8 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
         />
       )}
 
+      <SaveOffline />
+
       <EventLinks links={event.links ?? []} />
 
       <section className="space-y-3">
@@ -92,10 +105,14 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
 
       <EventSections sections={event.sections ?? []} />
 
+      <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={isLeader(me)} />
+
       <section className="space-y-3">
         <h2 className="section-title">Packing checklist</h2>
         <PackingChecklist eventId={event.id} items={packing} />
       </section>
+
+      <EventPhotosLink eventId={id} startsAt={event.starts_at} />
     </>
   );
 }

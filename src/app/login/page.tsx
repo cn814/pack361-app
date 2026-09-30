@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Award, CalendarDays, ChevronRight, Lock, ShieldCheck, ShoppingBag, Tent } from "lucide-react";
 import LoginForm from "./LoginForm";
+import ServiceWorkerSetup from "@/components/ServiceWorkerSetup";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -9,6 +10,7 @@ export const metadata: Metadata = { title: "Sign in" };
 export default function LoginPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-4 px-4 py-8">
+      <ServiceWorkerSetup mode="clear" />
       <section className="card overflow-hidden p-0 text-center">
         <div className="h-1.5 bg-pine" />
         <div className="p-6">

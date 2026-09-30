@@ -1,19 +1,33 @@
 import type { Metadata } from "next";
-import { Mail, Phone, ShieldAlert } from "lucide-react";
-import { getLeaders, requireMember } from "@/lib/data";
+import Link from "next/link";
+import { Mail, Phone, Settings, ShieldAlert, ShieldCheck } from "lucide-react";
+import { getLeaders, isLeader, requireMember } from "@/lib/data";
+import { isAdmin } from "@/lib/advancement-data";
 
 export const metadata: Metadata = { title: "Leaders" };
 
 const ROLE_ORDER: Record<string, number> = { cubmaster: 0, admin: 1, committee: 2, den_leader: 3, parent: 4 };
 
 export default async function LeadersPage() {
-  await requireMember();
+  const me = await requireMember();
   const leaders = (await getLeaders()).sort(
     (a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9) || a.name.localeCompare(b.name),
   );
   return (
     <>
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack leaders</h1>
+      {isLeader(me) && (
+        <div className="grid grid-cols-2 gap-2">
+          <Link href="/leaders/training" className="btn-ghost py-2">
+            <ShieldCheck className="h-4 w-4" aria-hidden /> Training
+          </Link>
+          {isAdmin(me) && (
+            <Link href="/admin" className="btn-primary py-2">
+              <Settings className="h-4 w-4" aria-hidden /> Pack admin
+            </Link>
+          )}
+        </div>
+      )}
       <ul className="space-y-2">
         {leaders.map((l) => (
           <li key={l.adult_id} className="card flex items-center justify-between gap-3 py-3">

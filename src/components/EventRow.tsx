@@ -59,7 +59,9 @@ export default function EventRow({ e, signup }: { e: PackEvent; signup?: SignupS
     </Link>
   ) : (
     <div className="card">
-      {body}
+      <Link href={`/events/${e.id}`} className="block">
+        {body}
+      </Link>
       {e.signup_url && !signup?.mine && (
         <a href={e.signup_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-xs font-bold text-pine underline">
           RSVP / pay on Givebutter

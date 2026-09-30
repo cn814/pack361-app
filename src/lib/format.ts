@@ -43,3 +43,8 @@ export function dueWithin(dateStr: string | null, days: number) {
   if (!dateStr) return false;
   return new Date(dateStr + "T12:00:00").getTime() - Date.now() < days * 86400000;
 }
+
+/** Has this moment already passed? */
+export function isPast(iso: string) {
+  return new Date(iso).getTime() <= Date.now();
+}

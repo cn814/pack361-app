@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "./supabase/server";
 import type { Adult, Announcement, ItineraryItem, Leader, PackEvent, PackingItem, Scout } from "./types";
 import { LEADER_ROLES } from "./types";
+import { eventPath, FEATURE_DAYS_AFTER, FEATURE_DAYS_BEFORE, featuredKind, type FeaturedTab } from "./featured";
 
 /** The signed-in adult's roster row, or null if they're signed in but not on the roster. */
 export const getMe = cache(async (): Promise<{ email: string; adult: Adult | null } | null> => {
@@ -41,7 +42,7 @@ export async function getMyScouts(): Promise<Scout[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("scouts")
-    .select("id, first_name, last_name, family_id, den:dens(id, rank, number, name)")
+    .select("id, first_name, last_name, family_id, photo_permission, den:dens(id, rank, number, name)")
     .eq("family_id", me.family_id)
     .eq("is_active", true)
     .order("first_name");
@@ -126,3 +127,27 @@ export async function getCalendarToken(): Promise<string | null> {
   const { data } = await supabase.from("adults").select("calendar_token").eq("id", me.id).maybeSingle();
   return (data?.calendar_token as string | undefined) ?? null;
 }
+
+/**
+ * The next big event (campout, derby, Blue & Gold...) within its tab window, for the
+ * bottom bar. Null when nothing big is coming up.
+ */
+export const getFeaturedTab = cache(async (): Promise<FeaturedTab | null> => {
+  const supabase = await createClient();
+  const now = Date.now();
+  const { data } = await supabase
+    .from("events")
+    .select("id, title, category, starts_at, ends_at")
+    .gte("starts_at", new Date(now - 10 * 86400000).toISOString())
+    .lte("starts_at", new Date(now + FEATURE_DAYS_BEFORE * 86400000).toISOString())
+    .order("starts_at")
+    .limit(40);
+  for (const e of (data ?? []) as { id: string; title: string; category: string; starts_at: string; ends_at: string | null }[]) {
+    const k = featuredKind(e);
+    if (!k) continue;
+    const over = new Date(e.ends_at ?? e.starts_at).getTime() + FEATURE_DAYS_AFTER * 86400000;
+    if (over < now) continue;
+    return { href: eventPath(e), label: k.label, kind: k.kind };
+  }
+  return null;
+});

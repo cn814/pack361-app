@@ -1,14 +1,17 @@
 import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 import NavProgress from "@/components/NavProgress";
-import { displayName, requireMember } from "@/lib/data";
+import ServiceWorkerSetup from "@/components/ServiceWorkerSetup";
+import { displayName, getFeaturedTab, requireMember } from "@/lib/data";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const me = await requireMember();
+  const featured = await getFeaturedTab();
   const initials = (displayName(me)[0] + me.last_name[0]).toUpperCase();
   return (
     <div className="mx-auto min-h-dvh w-full max-w-md print:max-w-none">
       <NavProgress />
+      <ServiceWorkerSetup mode="register" />
       <header className="print:hidden sticky top-0 z-40 flex items-center justify-between bg-pine px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow-md">
         <Link href="/" className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -27,7 +30,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         </Link>
       </header>
       <main className="space-y-4 px-4 pb-28 pt-4 print:pb-0">{children}</main>
-      <BottomNav />
+      <BottomNav featured={featured} />
     </div>
   );
 }
