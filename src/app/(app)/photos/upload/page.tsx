@@ -3,7 +3,7 @@ import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import PhotoUploader from "@/components/PhotoUploader";
 import { isLeader, requireMember } from "@/lib/data";
-import { getRecentEvents } from "@/lib/photos";
+import { getEventBrief, getRecentEvents } from "@/lib/photos";
 import { fmtDay } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Upload photos" };
@@ -12,12 +12,17 @@ export default async function UploadPage({ searchParams }: PageProps<"/photos/up
   const me = await requireMember();
   const { event } = await searchParams;
   const recent = await getRecentEvents();
+  // Opened from an event page for an event that isn't in the recent list yet: include it.
+  if (typeof event === "string" && /^[0-9a-f-]{36}$/i.test(event) && !recent.some((e) => e.id === event)) {
+    const one = await getEventBrief(event);
+    if (one) recent.unshift(one);
+  }
   const events = recent.map((e) => ({ id: e.id, title: e.title, when: fmtDay(e.starts_at) }));
   const leader = isLeader(me);
 
   return (
     <>
-      <BackLink href="/photos" label="Pack photos" />
+      <BackLink href={typeof event === "string" && recent.some((e) => e.id === event) ? `/events/${event}` : "/photos"} label={typeof event === "string" && recent.some((e) => e.id === event) ? "Event" : "Pack photos"} />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Upload photos</h1>
       <p className="-mt-2 text-sm text-muted">
         {leader

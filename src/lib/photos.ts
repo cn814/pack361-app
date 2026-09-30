@@ -133,3 +133,10 @@ export async function getRecentEvents(): Promise<{ id: string; title: string; st
     .order("starts_at", { ascending: false });
   return (data ?? []) as { id: string; title: string; starts_at: string }[];
 }
+
+/** One event's id, title and date (to tag uploads from an event page). */
+export async function getEventBrief(id: string): Promise<{ id: string; title: string; starts_at: string } | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("events").select("id, title, starts_at").eq("id", id).maybeSingle();
+  return (data as { id: string; title: string; starts_at: string } | null) ?? null;
+}

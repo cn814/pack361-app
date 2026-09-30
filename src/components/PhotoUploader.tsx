@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CircleCheck, ImagePlus, TriangleAlert } from "lucide-react";
+import { Camera, CircleCheck, ImagePlus, TriangleAlert } from "lucide-react";
 import { uploadPhoto } from "@/app/(app)/photos/actions";
 
 /** Re-draw the photo at a smaller size. Re-encoding drops location (GPS) and camera data. */
@@ -82,20 +82,49 @@ export default function PhotoUploader({
         </select>
       </label>
 
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-outline bg-surface-low p-6 text-center">
-        <ImagePlus className="h-8 w-8 text-pine" aria-hidden />
-        <span className="font-bold text-pine">{files.length ? `${files.length} photo${files.length > 1 ? "s" : ""} chosen` : "Choose photos"}</span>
-        <span className="text-xs text-muted">Up to 20 at a time</span>
-        <input
-          ref={input}
-          type="file"
-          accept="image/*"
-          multiple
-          className="sr-only"
-          disabled={busy}
-          onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 20))}
-        />
-      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-outline bg-surface-low p-5 text-center">
+          <Camera className="h-7 w-7 text-pine" aria-hidden />
+          <span className="font-bold text-pine">Take a photo</span>
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            disabled={busy}
+            onChange={(e) => {
+              const f = Array.from(e.target.files ?? []);
+              setFiles((cur) => [...cur, ...f].slice(0, 20));
+              e.target.value = "";
+            }}
+          />
+        </label>
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-outline bg-surface-low p-5 text-center">
+          <ImagePlus className="h-7 w-7 text-pine" aria-hidden />
+          <span className="font-bold text-pine">Choose photos</span>
+          <input
+            ref={input}
+            type="file"
+            accept="image/*"
+            multiple
+            className="sr-only"
+            disabled={busy}
+            onChange={(e) => {
+              const f = Array.from(e.target.files ?? []);
+              setFiles((cur) => [...cur, ...f].slice(0, 20));
+              e.target.value = "";
+            }}
+          />
+        </label>
+      </div>
+      {files.length > 0 && (
+        <p className="flex items-center justify-between text-sm font-semibold text-pine">
+          {files.length} photo{files.length > 1 ? "s" : ""} ready (up to 20)
+          <button type="button" className="text-xs text-muted underline" onClick={() => setFiles([])} disabled={busy}>
+            Clear
+          </button>
+        </p>
+      )}
 
       <label className="block space-y-1">
         <span className="text-xs font-bold text-navy">Caption (optional)</span>
