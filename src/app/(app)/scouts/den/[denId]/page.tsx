@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CalendarPlus, ChevronLeft, House } from "lucide-react";
 import { isLeader, requireMember } from "@/lib/data";
+import PostAnnouncement from "@/components/PostAnnouncement";
 import { getCatalog, getMyDenIds, getRecords, reviewsWholePack } from "@/lib/advancement-data";
 import { ELECTIVES_NEEDED, RANK_LABEL, rankProgress } from "@/lib/advancement";
 import { createClient } from "@/lib/supabase/server";
@@ -67,6 +68,7 @@ export default async function DenGridPage({ params }: PageProps<"/scouts/den/[de
       <Link href={`/scouts/den/${denId}/meetings`} className="btn-primary w-full">
         <CalendarPlus className="h-4 w-4" aria-hidden /> Den meetings and attendance
       </Link>
+      <PostAnnouncement dens={[{ id: den.id, name: den.name }]} canPostPack={false} defaultDen={den.id} />
 
       {need.length > 0 && (
         <section className="card space-y-2">

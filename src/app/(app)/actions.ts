@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
-import { sendPushToAll } from "@/lib/push";
+import { sendPushTo, sendPushToAll } from "@/lib/push";
+import { emailConfigured, sendEmails } from "@/lib/email";
+import { denAudience } from "@/lib/audience";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyAdmins } from "@/lib/notify";
 import { APP_URL } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
@@ -15,23 +18,56 @@ export async function postAnnouncement(_prev: PostState, form: FormData): Promis
   if (!isLeader(me)) return { error: "Only leaders can post." };
   const title = String(form.get("title") ?? "").trim();
   const body = String(form.get("body") ?? "").trim();
-  const category = String(form.get("category") ?? "General");
+  const denId = String(form.get("den_id") ?? "");
+  const den = /^[0-9a-f-]{36}$/i.test(denId) ? denId : null;
+  const category = String(form.get("category") ?? (den ? "Den" : "General"));
+  const email = den !== null && form.getAll("email").includes("on");
   if (!title || !body) return { error: "Add a title and a message." };
   const supabase = await createClient();
-  const { error } = await supabase.from("announcements").insert({
-    author_id: me.id,
-    title: title.slice(0, 140),
-    body: body.slice(0, 4000),
-    category,
-    is_pinned: form.get("pinned") === "on",
-  });
-  if (error) return { error: "Couldn't post. Try again." };
-  if (form.getAll("notify").includes("on")) {
+  // RLS: den leaders can only message the dens they lead; committee members any den.
+  const { data: post, error } = await supabase
+    .from("announcements")
+    .insert({
+      author_id: me.id,
+      title: title.slice(0, 140),
+      body: body.slice(0, 4000),
+      category,
+      den_id: den,
+      is_pinned: !den && form.get("pinned") === "on",
+    })
+    .select("id, den:dens(name)")
+    .single();
+  if (error || !post) return { error: den ? "Couldn't send that. You can only message dens you lead." : "Couldn't post. Try again." };
+  const denName = (post.den as unknown as { name: string } | null)?.name ?? null;
+  const notify = form.getAll("notify").includes("on");
+  if (den && (notify || email)) {
     after(async () => {
-      await sendPushToAll({ title: `Pack 361: ${title.slice(0, 80)}`, body: body.slice(0, 180), url: "/", tag: "announcement" }, me.id);
+      const people = (await denAudience(den)).filter((p) => p.id !== me.id);
+      if (notify) {
+        await sendPushTo(
+          people.map((p) => p.id),
+          { title: `${denName}: ${title.slice(0, 80)}`, body: body.slice(0, 180), url: "/inbox", tag: `den-${den}` },
+        );
+      }
+      if (email && emailConfigured() && people.length) {
+        const from = `${me.preferred_name || me.first_name} ${me.last_name}`;
+        const err = await sendEmails(
+          people.slice(0, 100).map((p) => ({
+            to: p.email,
+            subject: `${denName}: ${title.slice(0, 100)}`,
+            replyTo: me.email,
+            paragraphs: [`Hi ${p.preferred_name || p.first_name},`, body, `From ${from}, ${denName}. Reply to this email to reach them.`, `${APP_URL}/inbox`],
+          })),
+        );
+        await createAdminClient().from("announcements").update({ emailed_count: err ? 0 : Math.min(people.length, 100) }).eq("id", post.id);
+      }
+    });
+  } else if (!den && notify) {
+    after(async () => {
+      await sendPushToAll({ title: `Pack 361: ${title.slice(0, 80)}`, body: body.slice(0, 180), url: "/inbox", tag: "announcement" }, me.id);
     });
   }
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -39,7 +75,7 @@ export async function deleteAnnouncement(form: FormData) {
   await requireMember();
   const supabase = await createClient();
   await supabase.from("announcements").delete().eq("id", String(form.get("id")));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 export async function updateMyContact(_prev: PostState, form: FormData): Promise<PostState> {

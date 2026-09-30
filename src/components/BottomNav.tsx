@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Award,
+  Bell,
+  BookOpen,
+  Vote,
   CalendarDays,
   CarFront,
   Fish,
@@ -42,7 +45,15 @@ interface Tab {
  * Main navigation. Phones: a bottom tab bar. Computers (lg and up): a left sidebar with the
  * same tabs plus the pack name, Photos and My family.
  */
-export default function BottomNav({ featured, me }: { featured: FeaturedTab | null; me: { initials: string; name: string } }) {
+export default function BottomNav({
+  featured,
+  me,
+  inbox = 0,
+}: {
+  featured: FeaturedTab | null;
+  me: { initials: string; name: string };
+  inbox?: number;
+}) {
   const path = usePathname();
   // Highlight the tapped tab right away instead of waiting for the page to load.
   const [tapped, setTapped] = useState<{ href: string; from: string } | null>(null);
@@ -116,6 +127,31 @@ export default function BottomNav({ featured, me }: { featured: FeaturedTab | nu
                   <Icon className="h-5 w-5 lg:mx-1" strokeWidth={active ? 2.5 : 2} aria-hidden />
                 )}
                 <span className="max-w-16 truncate lg:max-w-none">{label}</span>
+              </Link>
+            </li>
+          );
+        })}
+        {(
+          [
+            { href: "/inbox", label: "Notifications", icon: Bell, count: inbox },
+            { href: "/guide", label: "Pack guide", icon: BookOpen, count: 0 },
+            { href: "/polls", label: "Polls", icon: Vote, count: 0 },
+          ] as const
+        ).map(({ href, label, icon: Icon, count }) => {
+          const on = pending ? pending === href : path.startsWith(href);
+          return (
+            <li key={href} className="hidden lg:block">
+              <Link
+                href={href}
+                prefetch={href === "/inbox" ? false : undefined}
+                onClick={tap(href, (p) => p.startsWith(href))}
+                aria-current={path.startsWith(href) ? "page" : undefined}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
+                  on ? "bg-white/10 text-white" : "text-mint-200 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <Icon className="mx-1 h-5 w-5" aria-hidden /> {label}
+                {count > 0 && <span className="ml-auto rounded-full bg-danger px-2 py-0.5 text-[11px] font-extrabold text-white">{count > 9 ? "9+" : count}</span>}
               </Link>
             </li>
           );

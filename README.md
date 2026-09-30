@@ -31,7 +31,7 @@ npm run dev
 ## Folders
 | Path | What |
 |---|---|
-| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init`, `harden_functions`, `private_helpers`, `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback`, `den_calendar`, `twh_sync`, `twh_rsvp`, `review_fixes` (event archive, photo removal requests, indexes). |
+| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init`, `harden_functions`, `private_helpers`, `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback`, `den_calendar`, `twh_sync`, `twh_rsvp`, `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages). |
 | `supabase/data/` | One-off data updates run in the SQL Editor (e.g. the Fall Campout details, Arrow of Light Den 8 bridging). |
 | `supabase/seed.sql` | Starter data: dens (Scoutbook numbering), pack meetings, fall events, default packing list. |
 | `supabase/import/build_roster_import.py` | Merges Scoutbook Plus + TroopWebHost data into `imports/roster_import.sql` and `imports/roster_review.md`. |
@@ -129,6 +129,28 @@ npm run dev
 - **Messages**: "Report a problem or send a note" (My family, Leaders) saves to `feedback` and
   alerts the admins (phone alert + email); admins handle them in Pack admin → Messages. Photo
   uploads from families (one alert per batch) and removal requests also alert the admins.
+- **Notifications** (bell in the top bar, `/inbox`): announcements and den messages, plus a
+  "Needs you" list (`src/lib/inbox.ts`): polls to answer, medical forms needed before an upcoming
+  campout, dues, the photo permission question, and for leaders photos to review, forms turned in
+  and messages from families. The badge counts new posts and polls since the list was last opened
+  (`inbox_reads`) plus open to-dos. Home shows the top three to-dos.
+- **Den messages**: a leader posts to one den (den leaders: their own dens; committee, Cubmaster
+  and admins: any den) from Home, Notifications or the den's page. Only that den's families and
+  leaders see it (RLS). It goes out as a phone alert and, optionally, an email whose replies go to
+  the leader. Parents never message each other or scouts.
+- **Pack guide** (`/guide`, `guide_pages`): searchable pages about how the pack works. Committee,
+  Cubmaster and admins edit them in the app with a small Markdown subset (`src/components/GuideBody.tsx`).
+  Drafts are visible to leaders only; `[Leaders: …]` placeholders are highlighted.
+- **Paperwork**: each scout and adult's medical form (Parts A and B) status on My family and on
+  Leaders → Paperwork. Families tap "I turned it in"; a leader marks it received; it expires a
+  year after the date on the form. Only status and dates are stored. Dues per family per season
+  (`pack_settings.dues_season`, `dues_amount`, `dues_how` in Pack admin), same two-step flow.
+- **Polls** (`/polls`): leaders ask the pack or one den; single or multiple choice, optional
+  one-answer-per-family, closing date, results for voters or leaders only. Votes go through
+  `cast_vote()`; `poll_results()` returns counts, never names (leaders see who answered what).
+- **Sign-in on phones**: the sign-in email leads with the code (also in the subject). Links in
+  email always open the phone's browser, never the home-screen app, so on phones the link opens
+  `/auth/open`, which says to type the code in the app and only signs in the browser if asked.
 - **Computers**: at the `lg` breakpoint the bottom bar becomes a left sidebar and busy pages use
   two columns (add `page-wide` to a page element to let it use the full width). Phones are unchanged.
 - A second daily cron (`/api/cron/daily`, 21:00 UTC = 5 PM EDT / 4 PM EST) sends the volunteer and

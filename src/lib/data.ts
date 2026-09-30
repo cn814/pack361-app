@@ -35,6 +35,11 @@ export function isLeader(a: Adult) {
   return LEADER_ROLES.includes(a.role);
 }
 
+/** Committee members, the Cubmaster and admins (they keep the Pack guide up to date). */
+export function isCommittee(a: Adult) {
+  return a.role === "committee" || a.role === "cubmaster" || a.role === "admin";
+}
+
 export function displayName(a: { first_name: string; preferred_name?: string | null }) {
   return a.preferred_name || a.first_name;
 }
@@ -121,7 +126,9 @@ export async function getAnnouncements(limit = 20): Promise<Announcement[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("announcements")
-    .select("id, title, body, category, is_pinned, created_at, author_id, author:adults!announcements_author_id_fkey(first_name, last_name, preferred_name, position_title)")
+    .select(
+      "id, title, body, category, is_pinned, created_at, author_id, den_id, den:dens(name), author:adults!announcements_author_id_fkey(first_name, last_name, preferred_name, position_title)",
+    )
     .order("is_pinned", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(limit);

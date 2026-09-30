@@ -2,12 +2,21 @@ import "server-only";
 import { cache } from "react";
 import { createClient } from "./supabase/server";
 
-export type SettingKey = "awards_tracked_from" | "photo_keep_months" | "email_daily_limit";
+export type SettingKey =
+  | "awards_tracked_from"
+  | "photo_keep_months"
+  | "email_daily_limit"
+  | "dues_season"
+  | "dues_amount"
+  | "dues_how";
 
 export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   awards_tracked_from: "2026-07-01",
   photo_keep_months: "24",
   email_daily_limit: "40",
+  dues_season: "2026-27",
+  dues_amount: "",
+  dues_how: "",
 };
 const DEFAULTS = SETTING_DEFAULTS;
 

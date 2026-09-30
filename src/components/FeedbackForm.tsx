@@ -5,7 +5,7 @@ import { sendFeedback } from "@/app/(app)/actions";
 /** "Report a problem or send a note" — goes to the pack admins as an alert and email. */
 export default function FeedbackForm({ page }: { page: string }) {
   return (
-    <details className="card">
+    <details id="feedback" className="card scroll-mt-20">
       <summary className="flex cursor-pointer list-none items-center gap-2 font-bold text-pine">
         <MessageSquareWarning className="h-5 w-5" aria-hidden /> Report a problem or send a note
       </summary>

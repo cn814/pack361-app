@@ -17,6 +17,8 @@ export interface Email {
   subject: string;
   /** Paragraphs of plain text; a paragraph that is exactly a URL becomes a button. */
   paragraphs: string[];
+  /** Where replies go (default info@pack361.org), e.g. the den leader who wrote it. */
+  replyTo?: string;
 }
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -51,7 +53,7 @@ export async function sendEmail(e: Email): Promise<string | null> {
       body: JSON.stringify({
         from: FROM,
         to: [e.to],
-        reply_to: REPLY_TO,
+        reply_to: e.replyTo ?? REPLY_TO,
         subject: e.subject,
         html: html(e),
         text: e.paragraphs.join("\n\n"),
@@ -80,7 +82,7 @@ export async function sendEmails(list: Email[]): Promise<string | null> {
         list.map((e) => ({
           from: FROM,
           to: [e.to],
-          reply_to: REPLY_TO,
+          reply_to: e.replyTo ?? REPLY_TO,
           subject: e.subject,
           html: html(e),
           text: e.paragraphs.join("\n\n"),

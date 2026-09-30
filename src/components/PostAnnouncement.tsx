@@ -7,46 +7,92 @@ import { postAnnouncement, type PostState } from "@/app/(app)/actions";
 
 const CATEGORIES = ["General", "Campout", "Pack Meeting", "Den", "Derby", "Service", "Fundraiser"];
 
-export default function PostAnnouncement() {
+/**
+ * Leaders post to the whole pack, or message one den's families (den leaders: their own dens;
+ * committee members: any den). Den messages can also go out by email.
+ */
+export default function PostAnnouncement({
+  dens,
+  canPostPack = true,
+  defaultDen = "",
+}: {
+  dens: { id: string; name: string }[];
+  canPostPack?: boolean;
+  defaultDen?: string;
+}) {
   const [open, setOpen] = useState(false);
+  const [den, setDen] = useState(defaultDen || (canPostPack ? "" : (dens[0]?.id ?? "")));
   const [state, action, pending] = useActionState<PostState, FormData>(async (prev, form) => {
     const result = await postAnnouncement(prev, form);
     if (result.ok) setOpen(false);
     return result;
   }, {});
   const keep = useSubmitKeepingValues(action);
+  const denName = dens.find((d) => d.id === den)?.name;
 
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} className="btn-ghost w-full">
-        <Megaphone className="h-4 w-4" aria-hidden /> Post an announcement
+        <Megaphone className="h-4 w-4" aria-hidden /> {canPostPack ? "Post an announcement or den message" : "Message my den"}
       </button>
     );
   }
   return (
     <form action={action} onSubmit={keep} className="card space-y-3">
-      <h2 className="font-bold text-pine-950">New announcement</h2>
-      <input name="title" required maxLength={140} placeholder="Title" className="input" />
-      <textarea name="body" required rows={4} maxLength={4000} placeholder="Message for pack families" className="input" />
-      <div className="flex items-center gap-3">
-        <select name="category" className="input w-auto py-2 text-sm" defaultValue="General">
-          {CATEGORIES.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
-        <label className="flex items-center gap-2 text-sm text-navy">
-          <input type="checkbox" name="pinned" className="h-4 w-4 accent-pine" /> Pin to top
+      <h2 className="font-bold text-pine-950">{den ? `Message to ${denName} families` : "New pack announcement"}</h2>
+      {(dens.length > 0 || !canPostPack) && (
+        <label className="block space-y-1">
+          <span className="text-xs font-bold text-navy">Send to</span>
+          <select name="den_id" className="input" value={den} onChange={(e) => setDen(e.target.value)}>
+            {canPostPack && <option value="">Whole pack</option>}
+            {dens.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name} families
+              </option>
+            ))}
+          </select>
         </label>
-      </div>
+      )}
+      <input name="title" required maxLength={140} placeholder={den ? "Bring a flashlight Monday" : "Title"} className="input" />
+      <textarea
+        name="body"
+        required
+        rows={4}
+        maxLength={4000}
+        placeholder={den ? `Message for ${denName} parents` : "Message for pack families"}
+        className="input"
+      />
+      {!den && (
+        <div className="flex items-center gap-3">
+          <select name="category" className="input w-auto py-2 text-sm" defaultValue="General">
+            {CATEGORIES.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </select>
+          <label className="flex items-center gap-2 text-sm text-navy">
+            <input type="checkbox" name="pinned" className="h-4 w-4 accent-pine" /> Pin to top
+          </label>
+        </div>
+      )}
       <label className="flex items-center gap-2 text-sm text-navy">
         <input type="hidden" name="notify" value="off" />
-        <input type="checkbox" name="notify" value="on" defaultChecked className="h-4 w-4 accent-pine" /> Send a phone alert to
-        families who turned alerts on
+        <input type="checkbox" name="notify" value="on" defaultChecked className="h-4 w-4 accent-pine" /> Send a phone alert to{" "}
+        {den ? "the den's families" : "families"} who turned alerts on
       </label>
+      {den && (
+        <label className="flex items-start gap-2 text-sm text-navy">
+          <input type="hidden" name="email" value="off" />
+          <input type="checkbox" name="email" value="on" defaultChecked className="mt-0.5 h-4 w-4 accent-pine" />
+          <span>
+            Also email the den&apos;s parents. Replies come to you.
+            <span className="block text-[11px] text-muted">Messages go to parents and the den&apos;s leaders only, never to scouts.</span>
+          </span>
+        </label>
+      )}
       {state.error && <p className="text-sm text-danger">{state.error}</p>}
       <div className="flex gap-2">
         <button type="submit" className="btn-primary flex-1" disabled={pending}>
-          {pending ? "Posting…" : "Post"}
+          {pending ? "Sending…" : den ? "Send to the den" : "Post"}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="btn-ghost">
           Cancel

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import FeedbackForm from "@/components/FeedbackForm";
-import { Mail, Phone, Settings, ShieldAlert, ShieldCheck } from "lucide-react";
+import { BookOpen, FileText, Mail, Phone, Settings, ShieldAlert, ShieldCheck, Vote } from "lucide-react";
 import { getLeaders, isLeader, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
 
@@ -21,6 +21,15 @@ export default async function LeadersPage() {
         <div className="grid grid-cols-2 gap-2">
           <Link href="/leaders/training" className="btn-ghost py-2">
             <ShieldCheck className="h-4 w-4" aria-hidden /> Training
+          </Link>
+          <Link href="/leaders/paperwork" className="btn-ghost py-2">
+            <FileText className="h-4 w-4" aria-hidden /> Paperwork
+          </Link>
+          <Link href="/polls/new" className="btn-ghost py-2">
+            <Vote className="h-4 w-4" aria-hidden /> New poll
+          </Link>
+          <Link href="/guide" className="btn-ghost py-2">
+            <BookOpen className="h-4 w-4" aria-hidden /> Pack guide
           </Link>
           {isAdmin(me) && (
             <Link href="/admin" className="btn-primary py-2">

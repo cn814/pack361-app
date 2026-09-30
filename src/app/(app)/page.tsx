@@ -1,23 +1,26 @@
 import Link from "next/link";
 import SubmitButton from "@/components/SubmitButton";
-import { Camera, ChevronRight, HandHelping, Images, MapPin, Pin, ShoppingBag, Timer } from "lucide-react";
+import { BookOpen, ChevronRight, HandHelping, Images, MapPin, Pin, ShoppingBag, Timer, Users, Vote } from "lucide-react";
 import { eventHref, getOpenJobs } from "@/lib/volunteer";
 import EventRow from "@/components/EventRow";
 import RsvpLink from "@/components/RsvpLink";
 import PostAnnouncement from "@/components/PostAnnouncement";
 import { deleteAnnouncement } from "./actions";
 import { displayName, getAnnouncements, getMyScouts, getUpcomingEvents, isLeader, requireMember } from "@/lib/data";
+import { getMessageableDens } from "@/lib/audience";
+import { getTodos } from "@/lib/inbox";
 import { daysUntil, fmtRange, timeAgo } from "@/lib/format";
 
 export default async function Home() {
   const me = await requireMember();
-  const [scouts, events, posts, jobs] = await Promise.all([
+  const [scouts, events, posts, jobs, todos, dens] = await Promise.all([
     getMyScouts(),
     getUpcomingEvents(8),
     getAnnouncements(15),
     getOpenJobs(),
+    getTodos(),
+    isLeader(me) ? getMessageableDens(me) : Promise.resolve([]),
   ]);
-  const photoQuestion = scouts.filter((s) => !s.photo_permission);
   const next = events[0];
   const rest = events.slice(1, 5);
   const leader = isLeader(me);
@@ -89,14 +92,20 @@ export default async function Home() {
             <div className="flex items-center justify-between">
               <h2 className="section-title">Pack announcements</h2>
             </div>
-            {leader && <PostAnnouncement />}
+            {leader && <PostAnnouncement dens={dens} />}
             {posts.length === 0 && <p className="card text-sm text-muted">No announcements yet.</p>}
             {posts.map((p) => (
-              <article key={p.id} className="card space-y-1.5 border-t-4 border-t-pine">
+              <article key={p.id} className={`card space-y-1.5 border-t-4 ${p.den_id ? "border-t-navy" : "border-t-pine"}`}>
                 <div className="flex items-center justify-between gap-2 text-xs">
                   <span className="flex items-center gap-1.5">
                     {p.is_pinned && <Pin className="h-3.5 w-3.5 text-gold-700" aria-label="Pinned" />}
-                    <span className="badge bg-gold-50 text-gold-700">{p.category}</span>
+                    {p.den ? (
+                      <span className="badge bg-navy text-white">
+                        <Users className="h-3 w-3" aria-hidden /> {p.den.name}
+                      </span>
+                    ) : (
+                      <span className="badge bg-gold-50 text-gold-700">{p.category}</span>
+                    )}
                   </span>
                   <span className="text-muted">{timeAgo(p.created_at)}</span>
                 </div>
@@ -121,17 +130,27 @@ export default async function Home() {
         </div>
         <div className="contents lg:block lg:space-y-4">
         <div className="order-3 empty:hidden">
-          {photoQuestion.length > 0 && (
-            <Link href="/family#photos" className="card flex items-center gap-3 border-l-4 border-l-gold">
-              <Camera className="h-6 w-6 shrink-0 text-gold-700" aria-hidden />
-              <span className="min-w-0 flex-1">
-                <span className="block font-bold text-pine-950">One quick question</span>
-                <span className="block text-xs text-muted">
-                  May {photoQuestion.map((s) => s.first_name).join(" and ")} appear in the pack&apos;s private photo album?
-                </span>
-              </span>
-              <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
-            </Link>
+          {todos.length > 0 && (
+            <section className="space-y-2">
+              {todos.slice(0, 3).map((t) => (
+                <Link
+                  key={t.key}
+                  href={t.href}
+                  className={`card flex items-center gap-3 border-l-4 py-3 ${t.tone === "danger" ? "border-l-danger" : t.tone === "pine" ? "border-l-pine" : "border-l-gold"}`}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-bold text-pine-950">{t.title}</span>
+                    <span className="block text-xs text-muted">{t.detail}</span>
+                  </span>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
+                </Link>
+              ))}
+              {todos.length > 3 && (
+                <Link href="/inbox" prefetch={false} className="block px-1 text-xs font-bold text-pine">
+                  {todos.length - 3} more in Notifications →
+                </Link>
+              )}
+            </section>
           )}
         </div>
         <div className="order-4 empty:hidden">
@@ -163,6 +182,14 @@ export default async function Home() {
         </div>
         <div className="order-5 empty:hidden">
           <div className="grid grid-cols-2 gap-2">
+            <Link href="/guide" className="card flex items-center gap-2 py-3">
+              <BookOpen className="h-5 w-5 shrink-0 text-pine" aria-hidden />
+              <span className="font-bold text-pine-950">Pack guide</span>
+            </Link>
+            <Link href="/polls" className="card flex items-center gap-2 py-3">
+              <Vote className="h-5 w-5 shrink-0 text-pine" aria-hidden />
+              <span className="font-bold text-pine-950">Polls</span>
+            </Link>
             <Link href="/photos" className="card flex items-center gap-2 py-3">
               <Images className="h-5 w-5 shrink-0 text-pine" aria-hidden />
               <span className="font-bold text-pine-950">Pack photos</span>

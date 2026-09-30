@@ -74,6 +74,8 @@ export interface Announcement {
   created_at: string;
   author_id: string;
   author: { first_name: string; last_name: string; preferred_name: string | null; position_title: string | null } | null;
+  den_id?: string | null;
+  den?: { name: string } | null;
 }
 
 export interface Leader {
