@@ -100,8 +100,9 @@ export default function PushToggle() {
       {test && <p className={`text-xs ${test.ok ? "text-pine" : "text-danger"}`}>{test.message}</p>}
       {state === "ios-install" && (
         <p className="text-muted">
-          On iPhone, first add this app to your home screen: tap Share, then <b>Add to Home Screen</b>. Open it from there and
-          come back here to turn on alerts.
+          On iPhone, alerts only work from the home-screen app. Tap the <b>Share</b> button (the square with an arrow: at the
+          bottom in Safari, at the right end of the address bar in Chrome), then <b>Add to Home Screen</b>. Open Pack 361 from
+          the new icon, sign in, and come back here to turn on alerts.
         </p>
       )}
       {state === "blocked" && <p className="text-muted">Notifications are blocked for this site. Allow them in your browser settings.</p>}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Award, CalendarDays, ChevronRight, Lock, ShieldCheck, ShoppingBag, Tent } from "lucide-react";
 import LoginForm from "./LoginForm";
+import InstallHelp from "@/components/InstallHelp";
 import ServiceWorkerSetup from "@/components/ServiceWorkerSetup";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
@@ -34,6 +35,8 @@ export default function LoginPage() {
           </div>
         </div>
       </section>
+
+      <InstallHelp />
 
       <section className="card">
         <h2 className="section-title mb-2">Signing in unlocks</h2>

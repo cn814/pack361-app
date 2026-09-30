@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { CircleCheck } from "lucide-react";
-import type { ActionResult } from "@/components/ActionForm";
+import { useSubmitKeepingValues, type ActionResult } from "@/components/ActionForm";
 import type { DenMeeting } from "@/lib/meetings";
 
 export interface AdventureOption {
@@ -34,13 +34,14 @@ export default function MeetingForm({
   defaultLocation?: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(action, {});
+  const onSubmit = useSubmitKeepingValues(formAction);
   const [adventure, setAdventure] = useState(meeting?.adventure ?? "");
   const [reqs, setReqs] = useState<string[]>(meeting?.requirements ?? []);
   const adv = adventures.find((a) => a.name === adventure);
   const suggested = adventures.filter((a) => a.required && a.missing > 0).sort((a, b) => b.missing - a.missing).slice(0, 3);
 
   return (
-    <form action={formAction} className="space-y-3">
+    <form action={formAction} onSubmit={onSubmit} className="space-y-3">
       {meeting && <input type="hidden" name="id" value={meeting.id} />}
       <input type="hidden" name="den_id" value={denId} />
       <label className="block space-y-1">

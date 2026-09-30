@@ -8,6 +8,7 @@ import { isLeader, requireMember } from "@/lib/data";
 import { PHOTO_BUCKET } from "@/lib/photos";
 import { after } from "next/server";
 import { notifyAdmins } from "@/lib/notify";
+import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 const MAX_FULL = 3_500_000;
@@ -51,23 +52,44 @@ export async function uploadPhoto(form: FormData): Promise<{ error?: string; app
         status: leader ? "approved" : "pending_review",
       });
   if (error) {
-    await supabase.storage.from(PHOTO_BUCKET).remove([path, thumbPath]);
+    // Only leaders may delete photo files, so tidy up this failed upload with the server key.
+    if (adminConfigured()) await createAdminClient().storage.from(PHOTO_BUCKET).remove([path, thumbPath]);
     return { error: "Upload failed. Try again." };
-  }
-  revalidatePath("/photos", "layout");
-  if (!leader) {
-    after(() =>
-      notifyAdmins({ title: "New pack photos to review", body: "A family uploaded photos for the album.", url: "/photos/review", tag: "photo-review" }),
-    );
   }
   return { approved: leader };
 }
 
+/** After a batch of uploads: refresh the album once and, for family uploads, alert admins once. */
+export async function finishUpload() {
+  const me = await requireMember();
+  revalidatePath("/photos", "layout");
+  if (isLeader(me)) return;
+  // Count what this person actually uploaded in the last few minutes, rather than trusting the
+  // number sent from the browser, and only alert when there is something new to review.
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("photos")
+    .select("id", { count: "exact", head: true })
+    .eq("uploader_id", me.id)
+    .eq("status", "pending_review")
+    .gte("created_at", new Date(Date.now() - 10 * 60000).toISOString());
+  if (count) {
+    after(() =>
+      notifyAdmins({
+        title: "New pack photos to review",
+        body: `A family uploaded ${count} photo${count === 1 ? "" : "s"} for the album.`,
+        url: "/photos/review",
+        tag: "photo-review",
+      }),
+    );
+  }
+}
+
+/** Leaders only (RLS): delete the rows, then the files of the rows that were really deleted. */
 async function removePhotos(ids: string[]) {
   const supabase = await createClient();
-  const { data } = await supabase.from("photos").select("id, storage_path, thumb_path").in("id", ids);
+  const { data, error } = await supabase.from("photos").delete().in("id", ids).select("storage_path, thumb_path");
   const paths = (data ?? []).flatMap((p) => [p.storage_path as string, p.thumb_path as string | null]).filter(Boolean) as string[];
-  const { error } = await supabase.from("photos").delete().in("id", ids);
   if (!error && paths.length) await supabase.storage.from(PHOTO_BUCKET).remove(paths);
   return !error;
 }
@@ -90,32 +112,32 @@ export async function reviewPhotos(form: FormData) {
   revalidatePath("/photos", "layout");
 }
 
-/** The uploader (while pending) or a leader deletes a photo. */
-export async function deletePhoto(form: FormData) {
-  await requireMember();
-  const id = String(form.get("id") ?? "");
-  const back = String(form.get("back") ?? "/photos");
-  if (UUID.test(id)) await removePhotos([id]);
-  revalidatePath("/photos", "layout");
-  redirect(back.startsWith("/photos") ? back : "/photos");
-}
-
-/** Anyone can ask for a photo to come down; it's hidden right away until a leader looks. */
+/**
+ * Anyone can ask for a photo to be removed (nobody but leaders deletes photos). It's hidden
+ * right away until a leader looks. Admins are alerted once per new request.
+ */
 export async function flagPhoto(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   await requireMember();
   const id = String(form.get("id") ?? "");
   const reason = String(form.get("reason") ?? "").trim().slice(0, 500);
   if (!UUID.test(id)) return { error: "Photo not found." };
   const supabase = await createClient();
-  const { error } = await supabase.rpc("flag_photo", { p_photo_id: id, p_reason: reason });
-  if (error) return { error: "Couldn't send that request." };
-  after(() =>
+  const { data: isNew, error } = await supabase.rpc("flag_photo", { p_photo_id: id, p_reason: reason });
+  if (error) {
+    return {
+      error:
+        error.code === "54000"
+          ? "You've sent a lot of removal requests today. Email info@pack361.org and a leader will help."
+          : "Couldn't send that request. Email info@pack361.org and a leader will take care of it.",
+    };
+  }
+  if (isNew) after(() =>
     notifyAdmins(
       { title: "Photo take-down request", body: reason ? reason.slice(0, 160) : "A family asked for a photo to come down.", url: "/photos/review", tag: "photo-flag" },
       {
-        subject: "A family asked for a pack photo to be taken down",
+        subject: "A family asked for a pack photo to be removed",
         paragraphs: [
-          "Someone asked for a photo in the pack album to be taken down. It's hidden from families until a leader reviews it.",
+          "Someone asked for a photo in the pack album to be removed. It's hidden from families until a leader reviews it.",
           reason ? `Their reason: ${reason}` : "They didn't give a reason.",
           `${process.env.NEXT_PUBLIC_APP_URL ?? "https://app.pack361.org"}/photos/review`,
         ],

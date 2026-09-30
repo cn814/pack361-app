@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, type ReactNode } from "react";
+import { startTransition, useActionState, useEffect, useRef, type FormEvent, type ReactNode } from "react";
 import { CircleCheck } from "lucide-react";
 
 export type ActionResult = { ok?: boolean; error?: string; message?: string };
@@ -26,14 +26,14 @@ export default function ActionForm({
   confirm?: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(action, {});
+  const form = useRef<HTMLFormElement>(null);
+  const onSubmit = useSubmitKeepingValues(formAction, confirm);
+  // Clear the form only after a successful save; on an error, what was typed stays put.
+  useEffect(() => {
+    if (state.ok) form.current?.reset();
+  }, [state]);
   return (
-    <form
-      action={formAction}
-      className={className}
-      onSubmit={(e) => {
-        if (confirm && !window.confirm(confirm)) e.preventDefault();
-      }}
-    >
+    <form ref={form} action={formAction} className={className} onSubmit={onSubmit}>
       {children}
       <button className={`${buttonClass} ${pending ? "is-busy" : ""}`} disabled={pending}>
         {pending ? busy : submit}
@@ -46,6 +46,19 @@ export default function ActionForm({
       )}
     </form>
   );
+}
+
+/**
+ * Submit handler that runs the action without React's automatic form reset, which would
+ * otherwise wipe what the person typed when the save fails.
+ */
+export function useSubmitKeepingValues(formAction: (fd: FormData) => void, confirm?: string) {
+  return (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (confirm && !window.confirm(confirm)) return;
+    const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);
+    startTransition(() => formAction(fd));
+  };
 }
 
 /** Labeled field wrapper used by admin forms. */

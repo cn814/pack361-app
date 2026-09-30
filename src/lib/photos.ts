@@ -38,33 +38,34 @@ export interface Album {
   title: string;
   date: string | null;
   count: number;
+  latest: string;
   cover: Photo;
 }
 
+/** One album per event (plus "Around the pack"), newest event first. Counted in the database. */
 export async function getAlbums(): Promise<Album[]> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("photos")
-    .select(COLS)
-    .eq("status", "approved")
-    .order("created_at", { ascending: false })
-    .limit(1000);
-  const photos = (data ?? []) as unknown as Photo[];
-  const groups = new Map<string, Photo[]>();
-  for (const p of photos) {
-    const k = p.event_id ?? "other";
-    groups.set(k, [...(groups.get(k) ?? []), p]);
-  }
-  const covers = await sign([...groups.values()].map((g) => g[0]));
-  return [...groups.entries()]
-    .map(([key, list], i) => ({
-      key,
-      title: list[0].event?.title ?? "Around the pack",
-      date: list[0].event?.starts_at ?? null,
-      count: list.length,
-      cover: covers[i],
-    }))
-    .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+  const { data: albums } = await supabase.rpc("photo_albums");
+  const rows = (albums ?? []) as { event_id: string | null; photo_count: number; cover_id: string; latest_at: string }[];
+  if (!rows.length) return [];
+  const { data } = await supabase.from("photos").select(COLS).in("id", rows.map((r) => r.cover_id));
+  const covers = await sign((data ?? []) as unknown as Photo[]);
+  const byId = new Map(covers.map((p) => [p.id, p]));
+  return rows
+    .filter((r) => byId.has(r.cover_id))
+    .map((r) => {
+      const cover = byId.get(r.cover_id)!;
+      return {
+        key: r.event_id ?? "other",
+        title: cover.event?.title ?? "Around the pack",
+        date: cover.event?.starts_at ?? null,
+        latest: r.latest_at,
+        count: Number(r.photo_count),
+        cover,
+      };
+    })
+    // Newest event first; "Around the pack" sorts by its newest photo.
+    .sort((a, b) => Date.parse(b.date ?? b.latest) - Date.parse(a.date ?? a.latest));
 }
 
 export async function getAlbumPhotos(key: string): Promise<Photo[]> {

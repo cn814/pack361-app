@@ -1,6 +1,8 @@
 // Leader training courses the pack tracks (Scouting America requirements for Cub Scout leaders).
 // Pure data and date helpers: safe to import from server or client code.
 
+import { daysBetween, easternDate } from "./tz";
+
 export type CourseKey = "ypt" | "position" | "hazardous_weather" | "baloo" | "safe_swim" | "safety_afloat";
 
 export interface Course {
@@ -34,11 +36,9 @@ export interface TrainingRow {
 
 export type TrainingState = "current" | "expiring" | "expired" | "missing";
 
-const DAY = 86400000;
-
 export function daysLeft(expires: string | null): number | null {
   if (!expires) return null;
-  return Math.floor((new Date(expires + "T12:00:00").getTime() - Date.now()) / DAY);
+  return daysBetween(easternDate(Date.now()), expires);
 }
 
 export function trainingState(row: TrainingRow | undefined): TrainingState {

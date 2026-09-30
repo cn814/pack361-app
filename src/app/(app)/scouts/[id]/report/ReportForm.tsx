@@ -1,5 +1,6 @@
 "use client";
 
+import { useSubmitKeepingValues } from "@/components/ActionForm";
 import { useActionState, useState } from "react";
 import { reportRequirements, type FormState } from "../../actions";
 import type { DenRank } from "@/lib/types";
@@ -25,12 +26,13 @@ export default function ReportForm({
   today: string;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(reportRequirements, {});
+  const keep = useSubmitKeepingValues(action);
   const [name, setName] = useState("");
   const adv = adventures.find((a) => a.name === name);
   const open = (list: ReportAdventure[]) => list.filter((a) => !a.finished);
 
   return (
-    <form action={action} className="card space-y-4">
+    <form action={action} onSubmit={keep} className="card space-y-4">
       <input type="hidden" name="scout_id" value={scoutId} />
       <input type="hidden" name="rank" value={rank} />
 

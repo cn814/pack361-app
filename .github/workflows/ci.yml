@@ -5,10 +5,15 @@ on:
   push:
     branches: [main]
 
+# Read-only token: CI only checks code.
+permissions:
+  contents: read
+
 jobs:
   app:
     name: Lint, typecheck, build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,13 +24,16 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
 
   database:
     name: Permission tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     services:
       postgres:
-        image: postgres:16
+        # Same major version as the Supabase database.
+        image: postgres:17
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: packtest

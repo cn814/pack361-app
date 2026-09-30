@@ -92,7 +92,7 @@ export default function SafetyPage() {
         title="Your choices"
         items={[
           "Phone alerts are off unless you turn them on, and you can turn them off at any time.",
-          "You decide whether your scout may appear in pack photos, and anyone can ask for a photo to be taken down. It's hidden right away.",
+          "You decide whether your scout may appear in pack photos, and anyone can request that a photo be removed. It's hidden right away, and a leader removes it.",
           "Campout pages saved for use without signal stay on your phone only, and are deleted when you sign out.",
           "You can update your phone number and the name you go by on the My family page.",
           <>

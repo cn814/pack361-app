@@ -128,9 +128,13 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       for (const c of list) {
-        if ("focus" in c) {
-          c.navigate(url);
-          return c.focus();
+        if ("focus" in c && "navigate" in c) {
+          // navigate() fails for a window this worker doesn't control (iOS home-screen app
+          // opened before the worker took over); open the link in a new window instead.
+          return c
+            .focus()
+            .then((w) => (w || c).navigate(url))
+            .catch(() => self.clients.openWindow(url));
         }
       }
       return self.clients.openWindow(url);

@@ -3,11 +3,12 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, CircleCheck, ImagePlus, TriangleAlert } from "lucide-react";
-import { uploadPhoto } from "@/app/(app)/photos/actions";
+import { finishUpload, uploadPhoto } from "@/app/(app)/photos/actions";
 
-/** Re-draw the photo at a smaller size. Re-encoding drops location (GPS) and camera data. */
-async function shrink(file: File, max: number, quality: number): Promise<Blob> {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+const isHeic = (f: File) => /heic|heif/i.test(f.type) || /\.(heic|heif)$/i.test(f.name);
+
+/** Draw a decoded photo at a smaller size. Re-encoding drops location (GPS) and camera data. */
+function draw(bitmap: ImageBitmap, max: number, quality: number): Promise<Blob> {
   const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
   const w = Math.round(bitmap.width * scale);
   const h = Math.round(bitmap.height * scale);
@@ -15,10 +16,19 @@ async function shrink(file: File, max: number, quality: number): Promise<Blob> {
   canvas.width = w;
   canvas.height = h;
   canvas.getContext("2d")!.drawImage(bitmap, 0, 0, w, h);
-  bitmap.close();
   return new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Couldn't read that photo"))), "image/jpeg", quality),
   );
+}
+
+/** Decode once, then make the full-size and thumbnail copies from the same image. */
+async function shrinkBoth(file: File): Promise<{ full: Blob; thumb: Blob }> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  try {
+    return { full: await draw(bitmap, 2048, 0.82), thumb: await draw(bitmap, 480, 0.75) };
+  } finally {
+    bitmap.close();
+  }
 }
 
 export default function PhotoUploader({
@@ -40,39 +50,45 @@ export default function PhotoUploader({
   const [caption, setCaption] = useState("");
   const [ok, setOk] = useState(false);
   const [progress, setProgress] = useState<{ done: number; failed: number } | null>(null);
-  const [finished, setFinished] = useState<{ sent: number; failed: number } | null>(null);
+  const [finished, setFinished] = useState<{ sent: number; failed: number; heic: number } | null>(null);
   const busy = progress !== null;
 
   async function upload() {
     setFinished(null);
     let done = 0;
     let failed = 0;
+    let heic = 0;
+    const failedFiles: File[] = [];
     setProgress({ done, failed });
     for (const f of files) {
       try {
+        const { full, thumb } = await shrinkBoth(f);
         const form = new FormData();
-        form.set("full", await shrink(f, 2048, 0.82), "photo.jpg");
-        form.set("thumb", await shrink(f, 480, 0.75), "thumb.jpg");
+        form.set("full", full, "photo.jpg");
+        form.set("thumb", thumb, "thumb.jpg");
         form.set("event_id", eventId);
         form.set("caption", caption);
         const res = await uploadPhoto(form);
-        if (res.error) failed++;
-        else done++;
+        if (res.error) throw new Error(res.error);
+        done++;
       } catch {
         failed++;
+        failedFiles.push(f);
+        if (isHeic(f)) heic++;
       }
       setProgress({ done, failed });
     }
+    if (done > 0) await finishUpload().catch(() => {});
     if (done > 0 && failed === 0) {
       // All sent: go back and say so in a pop-up (see components/Toast).
       const back = returnTo ?? `/photos?album=${eventId || "other"}`;
       router.push(`${back}${back.includes("?") ? "&" : "?"}done=${leader ? "photos-added" : "photos-sent"}&n=${done}`);
       return;
     }
+    // Keep just the ones that didn't go, so "Upload" tries those again.
     setProgress(null);
-    setFinished({ sent: done, failed });
-    setFiles([]);
-    setCaption("");
+    setFinished({ sent: done, failed, heic });
+    setFiles(failedFiles);
     if (input.current) input.current.value = "";
     router.refresh();
   }
@@ -170,8 +186,13 @@ export default function PhotoUploader({
       )}
       {finished && finished.failed > 0 && (
         <p className="flex items-start gap-1.5 text-sm font-semibold text-danger">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {finished.failed} photo
-          {finished.failed > 1 ? "s" : ""} couldn&apos;t be uploaded. Try those again.
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <span>
+            {finished.failed} photo{finished.failed > 1 ? "s" : ""} couldn&apos;t be uploaded and {finished.failed > 1 ? "are" : "is"} still
+            listed above. Tap Upload to try again.
+            {finished.heic > 0 &&
+              " Some are iPhone HEIC photos, which this browser can't open. Upload them from the iPhone itself, or set the iPhone camera to Most Compatible (Settings → Camera → Formats)."}
+          </span>
         </p>
       )}
     </div>

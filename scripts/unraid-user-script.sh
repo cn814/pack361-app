@@ -31,8 +31,10 @@ mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
 NAME="pack361-$(date +%Y-%m-%d_%H%M).dump"
 
-docker run --rm \
-  -e DB_URL="$PACK361_DB_URL" \
+# "-e DB_URL" with no value passes it from this script's environment, so the password never
+# shows up in the process list.
+DB_URL="$PACK361_DB_URL" docker run --rm \
+  -e DB_URL \
   -v "$BACKUP_DIR:/backup" \
   "$IMAGE" \
   sh -c "pg_dump --format=custom --no-owner --no-privileges --schema=public --schema=private \

@@ -46,6 +46,8 @@ export interface PackEvent {
   leaders_only?: boolean;
   twh_uid?: string | null;
   twh_url?: string | null;
+  archived_at?: string | null;
+  archived_reason?: "removed_in_twh" | "hidden" | null;
   links?: EventLink[];
   sections?: EventSection[];
 }

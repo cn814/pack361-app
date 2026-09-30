@@ -48,7 +48,8 @@ export async function getOpenJobs(days = 45, limit = 4): Promise<OpenJob[]> {
     .from("volunteer_slots")
     .select("id, role_title, capacity, is_urgent, event:events!inner(id, title, category, starts_at), signups:volunteer_signups(adult_id)")
     .gte("event.starts_at", now)
-    .lte("event.starts_at", until);
+    .lte("event.starts_at", until)
+    .is("event.archived_at", null);
   const rows = (data ?? []) as unknown as {
     id: string;
     role_title: string;

@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 /**
  * Thin bar across the top of the screen that starts the instant an in-app link is tapped
  * and disappears when the new page arrives, so a tap never feels ignored.
  */
 export default function NavProgress() {
-  const path = usePathname();
-  // The page we were on when the tap happened; the bar shows until the path changes.
+  // Path plus query: links like /events?view=mine change only the query.
+  const search = useSearchParams().toString();
+  const path = usePathname() + (search ? `?${search}` : "");
+  // The page we were on when the tap happened; the bar shows until it changes.
   const [from, setFrom] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export default function NavProgress() {
       const url = new URL(a.href, location.href);
       if (url.origin !== location.origin || url.pathname.startsWith("/api/")) return;
       if (url.pathname === location.pathname && url.search === location.search) return;
-      setFrom(location.pathname);
+      setFrom(location.pathname + location.search);
       clearTimeout(timer);
       timer = setTimeout(() => setFrom(null), 15000);
     };

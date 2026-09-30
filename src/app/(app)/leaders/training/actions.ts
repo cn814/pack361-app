@@ -20,19 +20,23 @@ export async function saveTraining(_prev: ActionResult, form: FormData): Promise
   if (adultId !== me.id && !isAdmin(me)) return { error: "You can only update your own training." };
   if (completed && !DATE.test(completed)) return { error: "Pick the date you finished it." };
   if (expires && !DATE.test(expires)) return { error: "Pick the expiration date." };
-  if (!expires && completed) expires = defaultExpiry(course, completed) ?? "";
 
   const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("adult_trainings")
+    .select("completed_on, expires_on")
+    .eq("adult_id", adultId)
+    .eq("course", course)
+    .maybeSingle();
+  // A renewal: the finish date changed but the Expires box still shows the old expiry (it's
+  // filled in for editing), or it's before the new finish date. Work it out from the new date.
+  const renewed = completed && existing && completed !== existing.completed_on && (expires === (existing.expires_on ?? "") || (expires && expires <= completed));
+  if (completed && (!expires || renewed)) expires = defaultExpiry(course, completed) ?? (renewed ? "" : expires);
+
   if (!completed && !expires) {
     await supabase.from("adult_trainings").delete().eq("adult_id", adultId).eq("course", course);
   } else {
     const row = { completed_on: completed || null, expires_on: expires || null };
-    const { data: existing } = await supabase
-      .from("adult_trainings")
-      .select("course")
-      .eq("adult_id", adultId)
-      .eq("course", course)
-      .maybeSingle();
     const { error } = existing
       ? await supabase.from("adult_trainings").update(row).eq("adult_id", adultId).eq("course", course)
       : await supabase.from("adult_trainings").insert({ adult_id: adultId, course, ...row });

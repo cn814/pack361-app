@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useSubmitKeepingValues } from "@/components/ActionForm";
 import { ArrowRight, KeyRound, Mail } from "lucide-react";
 import { sendLoginEmail, verifyLoginCode, type LoginState } from "./actions";
 
@@ -14,6 +15,7 @@ const initial: LoginState = { step: "email", email: "" };
 export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
   const [sent, sendAction, sending] = useActionState(sendLoginEmail, initial);
   const [verify, verifyAction, verifying] = useActionState(verifyLoginCode, initial);
+  const keepCode = useSubmitKeepingValues(verifyAction);
 
   const onCodeStep = sent.step === "code";
   const email = sent.email;
@@ -48,12 +50,21 @@ export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
   }
 
   const resend = (
-    <form action={sendAction}>
-      <input type="hidden" name="email" value={email} />
-      <button type="submit" className="w-full text-center text-xs font-bold text-pine underline" disabled={sending}>
-        {sending ? "Sending…" : "Didn't get it? Send a new link"}
-      </button>
-    </form>
+    <>
+      <form action={sendAction}>
+        <input type="hidden" name="email" value={email} />
+        <button type="submit" className="w-full text-center text-xs font-bold text-pine underline" disabled={sending}>
+          {sending ? "Sending…" : "Didn't get it? Send a new link"}
+        </button>
+      </form>
+      <p className="text-center text-[11px] text-muted">
+        Still nothing after a few minutes? It may be a different email than the one the pack has. Write to{" "}
+        <a href="mailto:info@pack361.org" className="font-semibold text-pine underline">
+          info@pack361.org
+        </a>{" "}
+        and we&apos;ll get you in.
+      </p>
+    </>
   );
 
   if (!codeEnabled) {
@@ -75,7 +86,7 @@ export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
       <p className="rounded-xl bg-mint px-3 py-2.5 text-sm text-pine">
         We sent a sign-in email to <strong>{email}</strong>. Tap the link in it, or type the code below.
       </p>
-      <form action={verifyAction} className="space-y-3">
+      <form action={verifyAction} onSubmit={keepCode} className="space-y-3">
         <input type="hidden" name="email" value={email} />
         <label className="block">
           <span className="mb-1 block text-xs font-semibold text-navy">Code from the email</span>

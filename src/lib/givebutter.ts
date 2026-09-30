@@ -21,6 +21,7 @@ async function fetchAll(path: string): Promise<Json[]> {
     const res: Response = await fetch(url, {
       headers: { Authorization: `Bearer ${key}`, Accept: "application/json" },
       cache: "no-store",
+      signal: AbortSignal.timeout(20000),
     });
     if (!res.ok) throw new Error(`Givebutter ${path} returned ${res.status}`);
     const body = (await res.json()) as { data?: Json[]; links?: { next?: string | null } };

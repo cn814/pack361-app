@@ -4,6 +4,7 @@ import ContactForm from "@/components/ContactForm";
 import FeedbackForm from "@/components/FeedbackForm";
 import PhotoPermission from "@/components/PhotoPermission";
 import PushToggle from "@/components/PushToggle";
+import InstallHelp from "@/components/InstallHelp";
 import TrainingEditor, { stateText } from "@/components/TrainingEditor";
 import { displayName, getFamilyAdults, getMyScouts, isLeader, requireMember } from "@/lib/data";
 import { getMyTraining } from "@/lib/training-data";
@@ -86,6 +87,7 @@ export default async function FamilyPage() {
         </p>
         <PushToggle />
       </section>
+      <InstallHelp compact />
 
       <section className="card space-y-3">
         <h2 className="section-title">My contact info</h2>

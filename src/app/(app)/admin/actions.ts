@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, getSignIns, welcomeBudget } from "@/lib/roster-data";
 import { APP_URL, emailConfigured, sendEmails, type Email } from "@/lib/email";
 import type { SettingKey } from "@/lib/settings";
-import { syncTwh, twhConfigured } from "@/lib/twh";
+import { syncSummary, syncTwh, twhConfigured } from "@/lib/twh";
 import { RANKS } from "@/lib/advancement";
 import type { AppRole, DenRank } from "@/lib/types";
 
@@ -253,7 +253,7 @@ function welcomeEmail(a: { first_name: string; preferred_name: string | null; em
       "Pack 361 has a private app for families: the pack calendar, campout details and packing lists, your scout's advancement, announcements, volunteer sign-ups and pack photos, all in one place.",
       `To sign in, open the app and enter this email address (${a.email}). We'll email you a one-time code, so there's no password to remember.`,
       `${APP_URL}/login`,
-      "Tip: on your phone, add it to your home screen so it opens like an app. On iPhone, open it in Safari, tap Share, then Add to Home Screen. On Android, tap the menu, then Add to Home screen.",
+      "Tip: on your phone, add it to your home screen so it opens like an app. On iPhone (Safari or Chrome), tap the Share button (the square with an arrow: at the bottom in Safari, at the right end of the address bar in Chrome), then Add to Home Screen. On Android, tap the menu, then Add to Home screen.",
       `Only families and leaders on the Pack 361 roster can sign in. You can read how we protect your family's information at ${APP_URL}/safety.`,
       "See you at the next pack meeting!\nPack 361",
     ],
@@ -317,10 +317,7 @@ export async function syncTroopWebHost(): Promise<ActionResult> {
     // RLS lets admins write events, so the sync runs as the signed-in admin.
     const r = await syncTwh(await createClient());
     revalidatePath("/", "layout");
-    return {
-      ok: true,
-      message: `Synced ${r.feed} TroopWebHost events: ${r.added} new, ${r.updated} updated, ${r.linked} matched to existing, ${r.removed} removed${r.kept ? `, ${r.kept} kept (have volunteers)` : ""}.`,
-    };
+    return r.errors.length || r.skipped ? { error: syncSummary(r) } : { ok: true, message: syncSummary(r) };
   } catch (e) {
     return { error: `Sync failed: ${e instanceof Error ? e.message : "unknown error"}` };
   }

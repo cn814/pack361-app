@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/data";
-import { sendPushTo } from "@/lib/push";
+import { isPushEndpoint, sendPushTo } from "@/lib/push";
 
 interface SubJson {
   endpoint?: string;
@@ -11,7 +11,7 @@ interface SubJson {
 
 export async function savePushSubscription(sub: SubJson, userAgent: string): Promise<{ error?: string }> {
   const me = await requireMember();
-  if (!sub?.endpoint?.startsWith("https://") || !sub.keys?.p256dh || !sub.keys?.auth) return { error: "Invalid subscription." };
+  if (!sub?.endpoint || !isPushEndpoint(sub.endpoint) || !sub.keys?.p256dh || !sub.keys?.auth) return { error: "Invalid subscription." };
   const supabase = await createClient();
   // Same device re-subscribing: replace the old row
   await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);

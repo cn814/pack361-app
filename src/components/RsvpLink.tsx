@@ -1,12 +1,13 @@
 import { CalendarCheck } from "lucide-react";
 import type { PackEvent } from "@/lib/types";
-
-const TWH_HOME = process.env.NEXT_PUBLIC_TWH_URL ?? "https://www.troopwebhostcs.org/Pack361EllicottCity/";
+import { rsvpHref } from "@/lib/twh-link";
+import { isPast } from "@/lib/format";
 
 /** RSVP on TroopWebHost, for events that come from the pack's TroopWebHost calendar. */
 export default function RsvpLink({ e, variant = "button" }: { e: PackEvent; variant?: "button" | "link" | "dark" }) {
-  if (!e.twh_uid) return null;
-  const href = e.twh_url || TWH_HOME;
+  // Nothing to RSVP to once the event is over or off the calendar.
+  if (!e.twh_uid || e.archived_at || isPast(e.ends_at ?? e.starts_at)) return null;
+  const href = rsvpHref(e);
   if (variant === "link") {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-pine underline">
