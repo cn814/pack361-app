@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { CircleCheck, MapPin, Users } from "lucide-react";
 import type { PackEvent } from "@/lib/types";
 import { fmtRange } from "@/lib/format";
 
@@ -9,7 +9,12 @@ const CATEGORY_STYLE: Record<string, string> = {
   Pack: "bg-gold-50 text-gold-700",
 };
 
-export default function EventRow({ e }: { e: PackEvent }) {
+export interface SignupSummary {
+  families: number;
+  mine: boolean;
+}
+
+export default function EventRow({ e, signup }: { e: PackEvent; signup?: SignupSummary }) {
   const isCampout = e.category === "Campout";
   const body = (
     <div className="flex items-start gap-3">
@@ -33,6 +38,18 @@ export default function EventRow({ e }: { e: PackEvent }) {
             {e.location_name}
           </p>
         )}
+        {signup && (
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+            {signup.mine && (
+              <span className="inline-flex items-center gap-1 font-bold text-pine">
+                <CircleCheck className="h-3.5 w-3.5" aria-hidden /> You&apos;re signed up
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 text-muted">
+              <Users className="h-3.5 w-3.5" aria-hidden /> {signup.families} {signup.families === 1 ? "family" : "families"} going
+            </span>
+          </p>
+        )}
       </div>
     </div>
   );
@@ -43,7 +60,7 @@ export default function EventRow({ e }: { e: PackEvent }) {
   ) : (
     <div className="card">
       {body}
-      {e.signup_url && (
+      {e.signup_url && !signup?.mine && (
         <a href={e.signup_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-xs font-bold text-pine underline">
           RSVP / pay on Givebutter
         </a>

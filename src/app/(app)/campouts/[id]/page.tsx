@@ -2,18 +2,23 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CalendarDays, MapPin, Navigation, Ticket } from "lucide-react";
 import PackingChecklist from "@/components/PackingChecklist";
-import { getEvent, getItinerary, getPackingList, requireMember } from "@/lib/data";
+import EventSignup from "@/components/EventSignup";
+import { EventLinks, EventSections } from "@/components/EventInfo";
+import { getEvent, getItinerary, getPackingList, isLeader, requireMember } from "@/lib/data";
+import { getCampaigns, getOrders } from "@/lib/fundraising-data";
 import { fmtDay, fmtRange, fmtTime, mapsLink } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Campout" };
 
 export default async function CampoutPage({ params }: PageProps<"/campouts/[id]">) {
-  await requireMember();
+  const me = await requireMember();
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const event = await getEvent(id);
   if (!event) notFound();
-  const [itinerary, packing] = await Promise.all([getItinerary(id), getPackingList(id)]);
+  const [itinerary, packing, campaigns] = await Promise.all([getItinerary(id), getPackingList(id), getCampaigns()]);
+  const campaign = campaigns.find((c) => c.event_id === id) ?? null;
+  const orders = campaign ? await getOrders([campaign.id]) : [];
 
   const byDay = new Map<string, typeof itinerary>();
   for (const i of itinerary) byDay.set(fmtDay(i.starts_at), [...(byDay.get(fmtDay(i.starts_at)) ?? []), i]);
@@ -47,6 +52,18 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
         </div>
       </section>
 
+      {campaign && (
+        <EventSignup
+          campaign={campaign}
+          orders={orders}
+          myFamilyId={me.family_id}
+          leader={isLeader(me)}
+          signupUrl={event.signup_url}
+        />
+      )}
+
+      <EventLinks links={event.links ?? []} />
+
       <section className="space-y-3">
         <h2 className="section-title">Schedule</h2>
         {itinerary.length === 0 ? (
@@ -72,6 +89,8 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
           ))
         )}
       </section>
+
+      <EventSections sections={event.sections ?? []} />
 
       <section className="space-y-3">
         <h2 className="section-title">Packing checklist</h2>

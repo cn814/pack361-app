@@ -36,6 +36,11 @@ export default function PostAnnouncement() {
           <input type="checkbox" name="pinned" className="h-4 w-4 accent-pine" /> Pin to top
         </label>
       </div>
+      <label className="flex items-center gap-2 text-sm text-navy">
+        <input type="hidden" name="notify" value="off" />
+        <input type="checkbox" name="notify" value="on" defaultChecked className="h-4 w-4 accent-pine" /> Send a phone alert to
+        families who turned alerts on
+      </label>
       {state.error && <p className="text-sm text-danger">{state.error}</p>}
       <div className="flex gap-2">
         <button type="submit" className="btn-primary flex-1" disabled={pending}>

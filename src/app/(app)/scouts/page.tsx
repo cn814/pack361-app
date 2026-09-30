@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, ClipboardCheck, FileUp, ShoppingBag, Stamp } from "lucide-react";
+import { ChevronRight, ClipboardCheck, FileUp, Grid3x3, Printer, ShoppingBag, Stamp } from "lucide-react";
 import { ProgressBar, ProgressSummary } from "@/components/RankProgress";
 import { getMyScouts, isLeader, requireMember } from "@/lib/data";
 import {
@@ -15,6 +15,7 @@ import {
 } from "@/lib/advancement-data";
 import { RANK_LABEL, rankProgress, type CatalogAdventure } from "@/lib/advancement";
 import { timeAgo } from "@/lib/format";
+import { getSettings } from "@/lib/settings";
 import type { Scout } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Scouts" };
@@ -27,17 +28,18 @@ function progressFor(s: Scout, records: ScoutRecord[], catalog: CatalogAdventure
 export default async function ScoutsPage() {
   const me = await requireMember();
   const leader = isLeader(me);
-  const [mine, catalog, reviewable] = await Promise.all([
+  const [mine, catalog, reviewable, settings] = await Promise.all([
     getMyScouts(),
     getCatalog(),
     leader ? getReviewableScouts() : Promise.resolve([] as Scout[]),
+    getSettings(),
   ]);
   const reviewIds = reviewable.map((s) => s.id);
   const [records, pending, approved, awards, lastImport] = await Promise.all([
     getRecords([...new Set([...mine, ...reviewable].map((s) => s.id))]),
     leader ? getSubmissions({ status: ["submitted"] }) : Promise.resolve([]),
     leader ? getSubmissions({ status: ["approved"] }) : Promise.resolve([]),
-    getAwardsToHandOut(reviewIds),
+    getAwardsToHandOut(reviewIds, settings.awards_tracked_from),
     leader ? getLastImport() : Promise.resolve(null),
   ]);
   const inScope = (id: string) => reviewIds.includes(id);
@@ -96,6 +98,7 @@ export default async function ScoutsPage() {
             <Tool href="/scouts/review" icon={ClipboardCheck} label="Approve reports" count={pendingCount} />
             <Tool href="/scouts/review#record" icon={Stamp} label="Enter in Scoutbook" count={approvedCount} />
             <Tool href="/scouts/awards" icon={ShoppingBag} label="Awards to hand out" count={awards.length} />
+            <Tool href="/scouts/awards/sheet" icon={Printer} label="Awards night sheet" sub="Printable, by den" />
             {isAdmin(me) && (
               <Tool
                 href="/scouts/import"
@@ -110,7 +113,14 @@ export default async function ScoutsPage() {
 
       {denOrder.map((den) => (
         <section key={den} className="card space-y-1">
-          <h2 className="section-title">{den}</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="section-title">{den}</h2>
+            {dens.get(den)![0].den && (
+              <Link href={`/scouts/den/${dens.get(den)![0].den!.id}`} className="inline-flex items-center gap-1 text-xs font-bold text-pine">
+                <Grid3x3 className="h-3.5 w-3.5" aria-hidden /> Den grid
+              </Link>
+            )}
+          </div>
           <ul className="divide-y divide-line">
             {dens.get(den)!.map((s) => {
               const p = progressFor(s, records, catalog);

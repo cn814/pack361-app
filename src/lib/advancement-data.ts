@@ -59,7 +59,7 @@ export const getCatalog = cache(async (): Promise<CatalogAdventure[]> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("adventures")
-    .select("rank, name, required, req_count, special, sort_order")
+    .select("rank, name, required, req_count, special, sort_order, home, home_idea, info_url")
     .order("sort_order");
   return (data ?? []) as CatalogAdventure[];
 });
@@ -119,8 +119,11 @@ export async function getSubmissions(filter: { scoutId?: string; status?: Submis
   return (data ?? []) as unknown as Submission[];
 }
 
-/** Scoutbook shows approved-but-not-awarded items: the patches and pins to buy. */
-export async function getAwardsToHandOut(scoutIds: string[]): Promise<ScoutRecord[]> {
+/**
+ * Scoutbook shows approved-but-not-awarded items: the patches and pins to buy.
+ * Items finished before the pack's "awards tracked from" date count as already handed out.
+ */
+export async function getAwardsToHandOut(scoutIds: string[], since: string): Promise<ScoutRecord[]> {
   if (!scoutIds.length) return [];
   const supabase = await createClient();
   const { data } = await supabase
@@ -130,8 +133,9 @@ export async function getAwardsToHandOut(scoutIds: string[]): Promise<ScoutRecor
     .in("kind", ["adventure", "rank", "award"])
     .eq("approved", true)
     .eq("awarded", false)
+    .gte("completed_on", since)
     .order("completed_on")
-    .limit(1000);
+    .limit(2000);
   return (data ?? []) as ScoutRecord[];
 }
 

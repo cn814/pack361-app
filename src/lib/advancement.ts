@@ -24,6 +24,9 @@ export interface CatalogAdventure {
   req_count: number;
   special: boolean;
   sort_order: number;
+  home?: "home" | "some" | "den" | null;
+  home_idea?: string | null;
+  info_url?: string | null;
 }
 
 export type RecordKind = "rank" | "adventure" | "requirement" | "award";
@@ -232,6 +235,9 @@ export interface AdventureProgress {
   name: string;
   required: boolean;
   special: boolean;
+  home: "home" | "some" | "den" | null;
+  idea: string | null;
+  url: string | null;
   reqCount: number;
   reqsDone: number;
   done: boolean;
@@ -272,6 +278,9 @@ export function rankProgress(
       name: a.name,
       required: a.required,
       special: a.special,
+      home: a.home ?? null,
+      idea: a.home_idea ?? null,
+      url: a.info_url ?? null,
       reqCount: a.req_count,
       reqsDone: adv ? a.req_count : Math.min(reqNumbers(reqs), a.req_count),
       done: !!adv,
@@ -300,4 +309,38 @@ export function earnedRanks(records: AdvancementRecord[]): AdvancementRecord[] {
 export function fmtShortDate(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+/** Up to `n` unfinished adventures a family can work on at home: required first, then started electives, then others. */
+export function homeSuggestions(p: RankProgress, catalog: CatalogAdventure[], n = 3): AdventureProgress[] {
+  const started = new Set(p.electives.map((e) => e.name));
+  const otherElectives: AdventureProgress[] = catalog
+    .filter((a) => a.rank === p.rank && !a.required && !started.has(a.name) && a.home === "home")
+    .map((a) => ({
+      name: a.name,
+      required: false,
+      special: a.special,
+      home: a.home ?? null,
+      idea: a.home_idea ?? null,
+      url: a.info_url ?? null,
+      reqCount: a.req_count,
+      reqsDone: 0,
+      done: false,
+      approved: false,
+      completedOn: null,
+    }));
+  const needElectives = p.electivesDone < ELECTIVES_NEEDED;
+  const pool = [
+    ...p.required.filter((a) => !a.done && a.home === "home"),
+    ...(needElectives ? p.electives.filter((a) => !a.done && a.home !== "den") : []),
+    ...(needElectives ? otherElectives : []),
+  ];
+  return pool.filter((a) => a.idea).slice(0, n);
+}
+
+/** Label for an award item on shopping lists and the awards night sheet. */
+export function awardLabel(r: { kind: RecordKind; adventure: string | null; item: string; rank: DenRank | null }): string {
+  if (r.kind === "adventure") return `${r.adventure ?? r.item}${r.rank ? ` (${RANK_LABEL[r.rank]})` : ""}`;
+  if (r.kind === "rank") return r.item.replace(/ Rank$/, "") + " rank patch";
+  return r.item;
 }

@@ -40,6 +40,21 @@ export interface PackEvent {
   details: string | null;
   signup_url: string | null;
   den_id: string | null;
+  links?: EventLink[];
+  sections?: EventSection[];
+}
+
+export interface EventLink {
+  label: string;
+  url: string;
+  note?: string | null;
+}
+
+export interface EventSection {
+  title: string;
+  tone?: "warn" | "info" | null;
+  body?: string | null;
+  items?: string[];
 }
 
 export interface Announcement {

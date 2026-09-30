@@ -6,8 +6,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const me = await requireMember();
   const initials = (displayName(me)[0] + me.last_name[0]).toUpperCase();
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-md">
-      <header className="sticky top-0 z-40 flex items-center justify-between bg-pine px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow-md">
+    <div className="mx-auto min-h-dvh w-full max-w-md print:max-w-none">
+      <header className="print:hidden sticky top-0 z-40 flex items-center justify-between bg-pine px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow-md">
         <Link href="/" className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icon.svg" alt="" className="h-9 w-9 rounded-xl ring-1 ring-white/20" />
@@ -24,7 +24,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           {initials}
         </Link>
       </header>
-      <main className="space-y-4 px-4 pb-28 pt-4">{children}</main>
+      <main className="space-y-4 px-4 pb-28 pt-4 print:pb-0">{children}</main>
       <BottomNav />
     </div>
   );

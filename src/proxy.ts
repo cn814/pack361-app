@@ -2,7 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Paths anyone can open without signing in
-const PUBLIC_PATHS = ["/login", "/auth", "/manifest.webmanifest", "/icon.svg"];
+// (the calendar feed and cron job check their own token/secret)
+const PUBLIC_PATHS = ["/login", "/auth", "/manifest.webmanifest", "/icon.svg", "/sw.js", "/api/calendar", "/api/cron"];
 
 export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
