@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, getSignIns, welcomeBudget } from "@/lib/roster-data";
 import { APP_URL, emailConfigured, sendEmails, type Email } from "@/lib/email";
 import type { SettingKey } from "@/lib/settings";
+import { syncTwh, twhConfigured } from "@/lib/twh";
 import { RANKS } from "@/lib/advancement";
 import type { AppRole, DenRank } from "@/lib/types";
 
@@ -304,4 +305,23 @@ export async function resolveFeedback(form: FormData) {
     .update(reopen ? { resolved_at: null, resolved_by: null } : { resolved_at: new Date().toISOString(), resolved_by: me.id })
     .eq("id", id);
   revalidatePath("/admin", "layout");
+}
+
+// ---------------------------------------------------------------------------
+// TroopWebHost calendar
+// ---------------------------------------------------------------------------
+export async function syncTroopWebHost(): Promise<ActionResult> {
+  await requireAdmin();
+  if (!twhConfigured()) return { error: "Add TWH_CALENDAR_URL in Vercel first (TroopWebHost → My Stuff → Subscribe to Calendar)." };
+  try {
+    // RLS lets admins write events, so the sync runs as the signed-in admin.
+    const r = await syncTwh(await createClient());
+    revalidatePath("/", "layout");
+    return {
+      ok: true,
+      message: `Synced ${r.feed} TroopWebHost events: ${r.added} new, ${r.updated} updated, ${r.linked} matched to existing, ${r.removed} removed${r.kept ? `, ${r.kept} kept (have volunteers)` : ""}.`,
+    };
+  } catch (e) {
+    return { error: `Sync failed: ${e instanceof Error ? e.message : "unknown error"}` };
+  }
 }
