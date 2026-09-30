@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // Givebutter REST API v1: https://docs.givebutter.com (Bearer API key, paginated { data, links, meta }).
 const BASE = "https://api.givebutter.com/v1";
 const PAID = new Set(["succeeded", "authorized", "captured", "paid", "completed"]);
-const FUNDRAISER_HINT = /attire|apparel|shirt|hoodie|popcorn|donation|fundrais/i;
+const STORE_HINT = /attire|apparel|shirt|hoodie|merch|store/i;
 
 type Json = Record<string, unknown>;
 
@@ -123,7 +123,7 @@ export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
       donors: num(c.donors),
       end_at: str(c.end_at) ?? str((c.event as Json | undefined)?.end_at),
       event_id: eventFor(c),
-      show_as_fundraiser: keepFlag.get(id) ?? FUNDRAISER_HINT.test(str(c.title) ?? ""),
+      show_as_fundraiser: keepFlag.get(id) ?? STORE_HINT.test(str(c.title) ?? ""),
       families_registered: new Set(mine.map((o) => o.family_id ?? o.email ?? String(o.id))).size,
       tickets_sold: mine.reduce((n, o) => n + o.tickets, 0),
       synced_at: new Date().toISOString(),

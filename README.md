@@ -23,7 +23,7 @@ npm run dev
 ## Folders
 | Path | What |
 |---|---|
-| `supabase/migrations/` | Database schema, security rules, storage buckets (`..._init.sql`), then `..._harden_functions.sql`, `..._private_helpers.sql`, `..._advancement.sql` (adventure catalog + Scoutbook import) and `..._pack_features.sql` (settings, Givebutter, push, popcorn, calendar). Run in order. |
+| `supabase/migrations/` | Database schema, security rules, storage buckets (`..._init.sql`), then `..._harden_functions.sql`, `..._private_helpers.sql`, `..._advancement.sql` (adventure catalog + Scoutbook import) and `..._pack_features.sql` (settings, Givebutter, push, calendar; its popcorn_sales table is unused for now). Run in order. |
 | `supabase/data/` | One-off data updates run in the SQL Editor (e.g. the Fall Campout details, Arrow of Light Den 8 bridging). |
 | `supabase/seed.sql` | Starter data: dens (Scoutbook numbering), pack meetings, fall events, default packing list. |
 | `supabase/import/build_roster_import.py` | Merges Scoutbook Plus + TroopWebHost data into `imports/roster_import.sql` and `imports/roster_review.md`. |
@@ -49,15 +49,14 @@ npm run dev
 - **Awards** only count items earned on or after `pack_settings.awards_tracked_from` (2026-07-01);
   older ones are treated as handed out. Leaders get a printable awards night sheet and a den grid.
 
-## Givebutter, calendar, alerts, popcorn
+## Givebutter, calendar, alerts
 - **Givebutter**: a daily Vercel Cron (`vercel.json`, 6 AM ET) and an admin "Sync now" button on
-  Fundraisers copy campaigns and orders. Campaigns link to calendar events by Givebutter id or sign-up
+  the Pack store page copy campaigns and orders. Admins choose which campaigns the store lists (pack attire). Campaigns link to calendar events by Givebutter id or sign-up
   link; families are matched by email. Families see their own orders; leaders see everyone's.
 - **Calendar**: each adult gets a private feed, `/api/calendar/<token>.ics` (Events page -> "Add the
   pack calendar"). It lists pack events only and stops working when the adult leaves the roster.
 - **Push alerts**: families turn them on from My family; leaders' new announcements notify them.
   iPhones need the app added to the home screen first.
-- **Popcorn**: admins upload the Trail's End scout sales CSV (or type totals) on the Popcorn page.
 - Needs server env vars: see `.env.example` (`SUPABASE_SECRET_KEY`, `GIVEBUTTER_API_KEY`,
   `CRON_SECRET`, VAPID keys). Without them those features stay quiet; everything else works.
 
