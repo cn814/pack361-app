@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Printer } from "lucide-react";
 import { isLeader, requireMember } from "@/lib/data";
 import { getAwardsToHandOut, getReviewableScouts } from "@/lib/advancement-data";
-import { RANK_LABEL, fmtShortDate } from "@/lib/advancement";
+import { awardLabel, fmtShortDate } from "@/lib/advancement";
+import { getSettings } from "@/lib/settings";
 
 export const metadata: Metadata = { title: "Awards to hand out" };
 
@@ -13,16 +14,12 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
   if (!isLeader(me)) redirect("/scouts");
   const { view } = await searchParams;
   const byScoutView = view === "scout";
-  const scouts = await getReviewableScouts();
-  const items = await getAwardsToHandOut(scouts.map((s) => s.id));
+  const [scouts, settings] = await Promise.all([getReviewableScouts(), getSettings()]);
+  const since = settings.awards_tracked_from;
+  const items = await getAwardsToHandOut(scouts.map((s) => s.id), since);
   const scoutById = new Map(scouts.map((s) => [s.id, s]));
 
-  const label = (r: (typeof items)[number]) =>
-    r.kind === "adventure"
-      ? `${r.adventure}${r.rank ? ` (${RANK_LABEL[r.rank]})` : ""}`
-      : r.kind === "rank"
-        ? `${r.item} patch`
-        : r.item;
+  const label = awardLabel;
   const kindLabel = { adventure: "Adventure loops & pins", rank: "Rank patches", award: "Other awards", requirement: "" };
 
   const groups = new Map<string, { title: string; kind: string; rows: typeof items }>();
@@ -37,7 +34,6 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
   const list = [...groups.values()].sort((a, b) =>
     byScoutView ? a.title.localeCompare(b.title) : a.kind.localeCompare(b.kind) || b.rows.length - a.rows.length,
   );
-  const oldest = items[0]?.completed_on;
 
   return (
     <>
@@ -46,16 +42,19 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
       </Link>
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Awards to hand out</h1>
       <p className="text-sm text-muted">
-        Approved in Scoutbook but not marked awarded: {items.length} item{items.length === 1 ? "" : "s"}
-        {oldest && `, oldest from ${fmtShortDate(oldest)}`}. Mark them awarded in Scoutbook after the pack meeting and they drop
-        off here at the next import.
+        Approved in Scoutbook but not marked awarded: {items.length} item{items.length === 1 ? "" : "s"} earned since{" "}
+        {fmtShortDate(since)}. Anything older counts as already handed out. Mark items awarded in Scoutbook after the pack
+        meeting and they drop off here at the next import.
       </p>
-      <div className="flex gap-2 text-sm font-semibold">
+      <div className="flex flex-wrap gap-2 text-sm font-semibold">
         <Link href="/scouts/awards" className={`rounded-full px-3 py-1 ${!byScoutView ? "bg-pine text-white" : "bg-white text-pine ring-1 ring-line"}`}>
           Shopping list
         </Link>
         <Link href="/scouts/awards?view=scout" className={`rounded-full px-3 py-1 ${byScoutView ? "bg-pine text-white" : "bg-white text-pine ring-1 ring-line"}`}>
           By scout
+        </Link>
+        <Link href="/scouts/awards/sheet" className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-pine ring-1 ring-line">
+          <Printer className="h-3.5 w-3.5" aria-hidden /> Awards night sheet
         </Link>
       </div>
 

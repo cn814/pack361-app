@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LogOut, ShieldCheck } from "lucide-react";
 import ContactForm from "@/components/ContactForm";
+import PushToggle from "@/components/PushToggle";
 import { dueWithin } from "@/lib/format";
 import { displayName, getFamilyAdults, getMyScouts, requireMember } from "@/lib/data";
 
@@ -49,6 +50,12 @@ export default async function FamilyPage() {
         <p className="text-[11px] text-muted">
           Wrong scout, den or email? Email <a className="font-bold text-pine underline" href="mailto:info@pack361.org">info@pack361.org</a>.
         </p>
+      </section>
+
+      <section className="card space-y-3">
+        <h2 className="section-title">Notifications</h2>
+        <p className="text-sm text-muted">Get a phone alert when a leader posts a pack announcement.</p>
+        <PushToggle />
       </section>
 
       <section className="card space-y-3">

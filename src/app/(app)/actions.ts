@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { sendPushToAll } from "@/lib/push";
 import { createClient } from "@/lib/supabase/server";
 import { isLeader, requireMember } from "@/lib/data";
 
@@ -22,6 +24,11 @@ export async function postAnnouncement(_prev: PostState, form: FormData): Promis
     is_pinned: form.get("pinned") === "on",
   });
   if (error) return { error: "Couldn't post. Try again." };
+  if (form.getAll("notify").includes("on")) {
+    after(async () => {
+      await sendPushToAll({ title: `Pack 361: ${title.slice(0, 80)}`, body: body.slice(0, 180), url: "/", tag: "announcement" }, me.id);
+    });
+  }
   revalidatePath("/");
   return { ok: true };
 }

@@ -23,7 +23,8 @@ npm run dev
 ## Folders
 | Path | What |
 |---|---|
-| `supabase/migrations/` | Database schema, security rules, storage buckets (`..._init.sql`), then `..._harden_functions.sql`, `..._private_helpers.sql` and `..._advancement.sql` (adventure catalog + Scoutbook import). Run in order. |
+| `supabase/migrations/` | Database schema, security rules, storage buckets (`..._init.sql`), then `..._harden_functions.sql`, `..._private_helpers.sql`, `..._advancement.sql` (adventure catalog + Scoutbook import) and `..._pack_features.sql` (settings, Givebutter, push, popcorn, calendar). Run in order. |
+| `supabase/data/` | One-off data updates run in the SQL Editor (e.g. the Fall Campout details, Arrow of Light Den 8 bridging). |
 | `supabase/seed.sql` | Starter data: dens (Scoutbook numbering), pack meetings, fall events, default packing list. |
 | `supabase/import/build_roster_import.py` | Merges Scoutbook Plus + TroopWebHost data into `imports/roster_import.sql` and `imports/roster_review.md`. |
 | `supabase/tests/` | Permission tests (plain Postgres + a small Supabase stand-in). |
@@ -45,6 +46,21 @@ npm run dev
 - Leaders get a shopping list of items approved in Scoutbook but not yet marked awarded.
 - The 2024 adventure catalog lives in the `adventures` table (editable in the Supabase table editor).
 
+- **Awards** only count items earned on or after `pack_settings.awards_tracked_from` (2026-07-01);
+  older ones are treated as handed out. Leaders get a printable awards night sheet and a den grid.
+
+## Givebutter, calendar, alerts, popcorn
+- **Givebutter**: a daily Vercel Cron (`vercel.json`, 6 AM ET) and an admin "Sync now" button on
+  Fundraisers copy campaigns and orders. Campaigns link to calendar events by Givebutter id or sign-up
+  link; families are matched by email. Families see their own orders; leaders see everyone's.
+- **Calendar**: each adult gets a private feed, `/api/calendar/<token>.ics` (Events page -> "Add the
+  pack calendar"). It lists pack events only and stops working when the adult leaves the roster.
+- **Push alerts**: families turn them on from My family; leaders' new announcements notify them.
+  iPhones need the app added to the home screen first.
+- **Popcorn**: admins upload the Trail's End scout sales CSV (or type totals) on the Popcorn page.
+- Needs server env vars: see `.env.example` (`SUPABASE_SECRET_KEY`, `GIVEBUTTER_API_KEY`,
+  `CRON_SECRET`, VAPID keys). Without them those features stay quiet; everything else works.
+
 ## Run the permission tests
 Needs PostgreSQL 15+:
 ```bash
@@ -55,7 +71,9 @@ psql -v ON_ERROR_STOP=1 -d packtest \
   -f supabase/migrations/20260929000100_harden_functions.sql \
   -f supabase/migrations/20260929000200_private_helpers.sql \
   -f supabase/migrations/20260929000300_advancement.sql \
+  -f supabase/migrations/20260929000400_pack_features.sql \
   -f supabase/tests/01_rls_tests.sql \
-  -f supabase/tests/02_advancement_tests.sql
+  -f supabase/tests/02_advancement_tests.sql \
+  -f supabase/tests/03_features_tests.sql
 ```
 Every check prints `PASS`. The run stops at the first `FAIL`.

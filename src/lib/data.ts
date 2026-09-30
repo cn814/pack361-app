@@ -76,7 +76,7 @@ export async function getEvent(id: string): Promise<PackEvent | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("events")
-    .select("id, title, category, starts_at, ends_at, location_name, address, details, signup_url, den_id")
+    .select("id, title, category, starts_at, ends_at, location_name, address, details, signup_url, den_id, links, sections")
     .eq("id", id)
     .maybeSingle();
   return (data as PackEvent | null) ?? null;
@@ -117,4 +117,12 @@ export async function getLeaders(): Promise<Leader[]> {
   const supabase = await createClient();
   const { data } = await supabase.rpc("leader_directory");
   return (data ?? []) as Leader[];
+}
+
+/** The signed-in adult's private calendar feed token. */
+export async function getCalendarToken(): Promise<string | null> {
+  const me = await requireMember();
+  const supabase = await createClient();
+  const { data } = await supabase.from("adults").select("calendar_token").eq("id", me.id).maybeSingle();
+  return (data?.calendar_token as string | undefined) ?? null;
 }

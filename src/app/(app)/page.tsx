@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, MapPin, Pin, Timer } from "lucide-react";
+import { ChevronRight, MapPin, Pin, Popcorn, Timer } from "lucide-react";
 import EventRow from "@/components/EventRow";
 import PostAnnouncement from "@/components/PostAnnouncement";
 import { deleteAnnouncement } from "./actions";
@@ -74,6 +74,15 @@ export default async function Home() {
           </div>
         </section>
       )}
+
+      <Link href="/fundraisers" className="card flex items-center gap-3 active:bg-surface-low">
+        <Popcorn className="h-6 w-6 shrink-0 text-gold-700" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold text-pine-950">Popcorn sale &amp; pack attire</span>
+          <span className="block text-xs text-muted">Trail&apos;s End leaderboard, shirts and hoodies</span>
+        </span>
+        <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
+      </Link>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">

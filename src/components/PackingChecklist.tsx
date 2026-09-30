@@ -98,7 +98,6 @@ export default function PackingChecklist({ eventId, items }: { eventId: string; 
                 <span className="min-w-0">
                   <span className={`block text-sm font-semibold ${on ? "text-sage line-through" : "text-ink"}`}>
                     {i.label}
-                    {i.required && !on && <span className="badge ml-2 bg-gold-50 px-1.5 text-[9px] text-gold-700">Required</span>}
                   </span>
                   {i.detail && <span className={`block text-xs ${on ? "text-sage" : "text-muted"}`}>{i.detail}</span>}
                 </span>

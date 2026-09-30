@@ -54,6 +54,14 @@ function AdventureRow({ a }: { a: AdventureProgress }) {
         ) : (
           <p className="text-xs text-muted">
             {a.reqsDone ? `${a.reqsDone} of ${a.reqCount} requirements` : `${a.reqCount} requirements`}
+            {a.url && (
+              <>
+                {" · "}
+                <a href={a.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-pine underline">
+                  what to do
+                </a>
+              </>
+            )}
           </p>
         )}
       </div>
