@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, FileUp, Images, Mail, ShieldCheck, Tent, UsersRound } from "lucide-react";
+import { ChevronRight, FileUp, Images, Inbox, Mail, ShieldCheck, Tent, UsersRound } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 import ActionForm, { Field } from "@/components/ActionForm";
 import BackLink from "@/components/BackLink";
 import { requireAdmin, welcomeBudget } from "@/lib/roster-data";
@@ -25,13 +26,24 @@ function Tile({ href, icon: Icon, label, sub }: { href: string; icon: typeof Mai
 
 export default async function AdminPage() {
   await requireAdmin();
-  const [settings, budget] = await Promise.all([getSettings(), welcomeBudget()]);
+  const supabase = await createClient();
+  const [settings, budget, { count: openMessages }] = await Promise.all([
+    getSettings(),
+    welcomeBudget(),
+    supabase.from("feedback").select("id", { count: "exact", head: true }).is("resolved_at", null),
+  ]);
   return (
     <>
       <BackLink href="/leaders" label="Leaders" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack admin</h1>
 
       <div className="space-y-2">
+        <Tile
+          href="/admin/messages"
+          icon={Inbox}
+          label={openMessages ? `Messages (${openMessages} open)` : "Messages"}
+          sub="Problems and notes sent from the app"
+        />
         <Tile href="/admin/roster" icon={UsersRound} label="Families and scouts" sub="Add families, change dens, turn off access" />
         <Tile href="/admin/dens" icon={Tent} label="Dens and den leaders" sub="Add dens, assign leaders" />
         <Tile

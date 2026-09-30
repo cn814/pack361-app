@@ -91,7 +91,7 @@ export default async function DenGridPage({ params }: PageProps<"/scouts/den/[de
         </section>
       )}
 
-      <section className="card p-0">
+      <section className="page-wide card p-0">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-xs">
             <thead>

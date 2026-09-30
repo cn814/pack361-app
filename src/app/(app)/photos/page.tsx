@@ -35,7 +35,7 @@ export default async function PhotosPage({ searchParams }: PageProps<"/photos">)
         {photos.length === 0 ? (
           <p className="card text-sm text-muted">No photos here yet.</p>
         ) : (
-          <ul className="grid grid-cols-3 gap-1.5">
+          <ul className="page-wide grid grid-cols-3 gap-1.5 sm:grid-cols-4 lg:grid-cols-6">
             {photos.map((p) => (
               <li key={p.id}>
                 <Link href={`/photos/${p.id}`} className="block aspect-square overflow-hidden rounded-lg bg-surface">
@@ -95,7 +95,7 @@ export default async function PhotosPage({ searchParams }: PageProps<"/photos">)
       {albums.length === 0 ? (
         <p className="card text-sm text-muted">No photos yet. Be the first to add some from a pack event.</p>
       ) : (
-        <ul className="grid grid-cols-2 gap-3">
+        <ul className="page-wide grid grid-cols-2 gap-3 lg:grid-cols-4">
           {albums.map((a) => (
             <li key={a.key}>
               <Link href={`/photos?album=${a.key}`} className="block overflow-hidden rounded-2xl border border-line bg-card shadow-[var(--shadow-card)]">

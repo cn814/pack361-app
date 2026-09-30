@@ -144,4 +144,22 @@ select test.expect_error($$select public.flag_photo('70000000-0000-0000-0000-000
 select test.expect_error('select * from public.roster_sign_ins()', '42501', 'anon cannot call roster_sign_ins');
 rollback;
 
+
+\echo '== Feedback'
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select test.expect_rows($$insert into public.feedback (adult_id, message) values ('30000000-0000-0000-0000-00000000000b', 'Calendar link is broken')$$, 1, 'member sends a note');
+select test.expect_error($$insert into public.feedback (adult_id, message) values ('30000000-0000-0000-0000-00000000000a', 'pretending')$$, '42501', 'cannot send as someone else');
+select test.expect_rows($$update public.feedback set resolved_at = now()$$, 0, 'sender cannot mark it handled');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select test.check(test.count('select * from public.feedback') = 0, 'other parents cannot read notes');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select test.check(test.count('select * from public.feedback') = 0, 'den leaders cannot read notes');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select test.check(test.count('select * from public.feedback') = 1, 'admins read notes');
+select test.expect_rows($$update public.feedback set resolved_at = now()$$, 1, 'admin marks a note handled');
+select test.expect_error($$update public.feedback set message = 'edited'$$, '42501', 'nobody edits the message');
+rollback;
+
 \echo '== TOOLS TESTS PASSED'

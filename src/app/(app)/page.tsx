@@ -25,153 +25,166 @@ export default async function Home() {
 
   return (
     <>
-      <section>
-        <p className="text-xs font-bold uppercase tracking-wider text-muted">Welcome back</p>
-        <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">
-          {greeting}, {displayName(me)}
-        </h1>
-        {scouts.length > 0 && (
-          <ul className="mt-2 flex flex-wrap gap-2">
-            {scouts.map((s) => (
-              <li key={s.id}>
-                <Link
-                  href={`/scouts/${s.id}`}
-                  className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-sm font-semibold text-navy active:bg-surface-low"
-                >
-                  <span className="h-2 w-2 rounded-full bg-gold" aria-hidden />
-                  {s.first_name}
-                  {s.den && <span className="font-normal text-muted">· {s.den.name}</span>}
-                  <ChevronRight className="h-3.5 w-3.5 text-muted" aria-hidden />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {next && (
-        <section className="relative overflow-hidden rounded-3xl bg-pine-950 p-5 text-white shadow-[var(--shadow-float)]">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="badge bg-gold text-pine-950">
-              <Timer className="h-3 w-3" aria-hidden /> {daysUntil(next.starts_at)}
-            </span>
-            <span className="badge bg-white/10 text-mint-200">{next.category}</span>
-          </div>
-          <h2 className="mt-2 text-xl font-extrabold leading-tight">{next.title}</h2>
-          <p className="mt-1 text-sm text-mint-200">{fmtRange(next.starts_at, next.ends_at)}</p>
-          {next.location_name && (
-            <p className="mt-0.5 flex items-center gap-1 text-sm text-mint-200">
-              <MapPin className="h-3.5 w-3.5" aria-hidden /> {next.location_name}
-            </p>
-          )}
-          <div className="mt-4 flex gap-2">
-            <Link href={eventHref(next)} className="btn-gold">
-              {next.category === "Campout" ? "Campout details" : "Details"} <ChevronRight className="h-4 w-4" aria-hidden />
-            </Link>
-            {next.signup_url && (
-              <a href={next.signup_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold">
-                RSVP / pay
-              </a>
+      <div className="page-wide flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-6">
+        <div className="contents lg:block lg:space-y-4">
+        <div className="order-1 empty:hidden">
+          <section>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted">Welcome back</p>
+            <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">
+              {greeting}, {displayName(me)}
+            </h1>
+            {scouts.length > 0 && (
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {scouts.map((s) => (
+                  <li key={s.id}>
+                    <Link
+                      href={`/scouts/${s.id}`}
+                      className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-sm font-semibold text-navy active:bg-surface-low"
+                    >
+                      <span className="h-2 w-2 rounded-full bg-gold" aria-hidden />
+                      {s.first_name}
+                      {s.den && <span className="font-normal text-muted">· {s.den.name}</span>}
+                      <ChevronRight className="h-3.5 w-3.5 text-muted" aria-hidden />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             )}
-          </div>
-        </section>
-      )}
-
-      {photoQuestion.length > 0 && (
-        <Link href="/family#photos" className="card flex items-center gap-3 border-l-4 border-l-gold">
-          <Camera className="h-6 w-6 shrink-0 text-gold-700" aria-hidden />
-          <span className="min-w-0 flex-1">
-            <span className="block font-bold text-pine-950">One quick question</span>
-            <span className="block text-xs text-muted">
-              May {photoQuestion.map((s) => s.first_name).join(" and ")} appear in the pack&apos;s private photo album?
-            </span>
-          </span>
-          <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
-        </Link>
-      )}
-
-      {jobs.length > 0 && (
-        <section className="card space-y-2">
-          <h2 className="section-title flex items-center gap-1.5">
-            <HandHelping className="h-4 w-4" aria-hidden /> Volunteers needed
-          </h2>
-          <ul className="divide-y divide-line">
-            {jobs.map((j) => (
-              <li key={j.slot_id}>
-                <Link href={`${eventHref(j.event)}#volunteer`} className="flex items-center gap-2 py-2">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-ink">
-                      {j.role_title}
-                      {j.is_urgent && <span className="badge ml-2 bg-gold text-pine-950">Needed</span>}
-                    </span>
-                    <span className="block truncate text-xs text-muted">
-                      {j.event.title} · {daysUntil(j.event.starts_at).toLowerCase()} · {j.open} open
-                    </span>
-                  </span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <div className="grid grid-cols-2 gap-2">
-        <Link href="/photos" className="card flex items-center gap-2 py-3">
-          <Images className="h-5 w-5 shrink-0 text-pine" aria-hidden />
-          <span className="font-bold text-pine-950">Pack photos</span>
-        </Link>
-        <Link href="/store" className="card flex items-center gap-2 py-3">
-          <ShoppingBag className="h-5 w-5 shrink-0 text-gold-700" aria-hidden />
-          <span className="font-bold text-pine-950">Pack store</span>
-        </Link>
-      </div>
-
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="section-title">Pack announcements</h2>
+          </section>
         </div>
-        {leader && <PostAnnouncement />}
-        {posts.length === 0 && <p className="card text-sm text-muted">No announcements yet.</p>}
-        {posts.map((p) => (
-          <article key={p.id} className="card space-y-1.5 border-t-4 border-t-pine">
-            <div className="flex items-center justify-between gap-2 text-xs">
-              <span className="flex items-center gap-1.5">
-                {p.is_pinned && <Pin className="h-3.5 w-3.5 text-gold-700" aria-label="Pinned" />}
-                <span className="badge bg-gold-50 text-gold-700">{p.category}</span>
-              </span>
-              <span className="text-muted">{timeAgo(p.created_at)}</span>
-            </div>
-            <h3 className="font-bold text-ink">{p.title}</h3>
-            <p className="whitespace-pre-line text-sm leading-relaxed text-muted">{p.body}</p>
-            <div className="flex items-center justify-between pt-1 text-xs text-muted">
-              <span>
-                {p.author ? `${displayName(p.author)} ${p.author.last_name}` : "Pack 361"}
-                {p.author?.position_title ? ` · ${p.author.position_title.split(",")[0]}` : ""}
-              </span>
-              {(p.author_id === me.id || me.role === "admin" || me.role === "cubmaster") && (
-                <form action={deleteAnnouncement}>
-                  <input type="hidden" name="id" value={p.id} />
-                  <SubmitButton className="font-semibold text-danger/80 underline">Delete</SubmitButton>
-                </form>
+        <div className="order-2 empty:hidden">
+          {next && (
+            <section className="relative overflow-hidden rounded-3xl bg-pine-950 p-5 text-white shadow-[var(--shadow-float)]">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="badge bg-gold text-pine-950">
+                  <Timer className="h-3 w-3" aria-hidden /> {daysUntil(next.starts_at)}
+                </span>
+                <span className="badge bg-white/10 text-mint-200">{next.category}</span>
+              </div>
+              <h2 className="mt-2 text-xl font-extrabold leading-tight">{next.title}</h2>
+              <p className="mt-1 text-sm text-mint-200">{fmtRange(next.starts_at, next.ends_at)}</p>
+              {next.location_name && (
+                <p className="mt-0.5 flex items-center gap-1 text-sm text-mint-200">
+                  <MapPin className="h-3.5 w-3.5" aria-hidden /> {next.location_name}
+                </p>
               )}
+              <div className="mt-4 flex gap-2">
+                <Link href={eventHref(next)} className="btn-gold">
+                  {next.category === "Campout" ? "Campout details" : "Details"} <ChevronRight className="h-4 w-4" aria-hidden />
+                </Link>
+                {next.signup_url && (
+                  <a href={next.signup_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold">
+                    RSVP / pay
+                  </a>
+                )}
+              </div>
+            </section>
+          )}
+        </div>
+        <div className="order-6 empty:hidden">
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="section-title">Pack announcements</h2>
             </div>
-          </article>
-        ))}
-      </section>
-
-      {rest.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="section-title">Coming up</h2>
-            <Link href="/events" className="text-xs font-bold text-pine">All events →</Link>
+            {leader && <PostAnnouncement />}
+            {posts.length === 0 && <p className="card text-sm text-muted">No announcements yet.</p>}
+            {posts.map((p) => (
+              <article key={p.id} className="card space-y-1.5 border-t-4 border-t-pine">
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="flex items-center gap-1.5">
+                    {p.is_pinned && <Pin className="h-3.5 w-3.5 text-gold-700" aria-label="Pinned" />}
+                    <span className="badge bg-gold-50 text-gold-700">{p.category}</span>
+                  </span>
+                  <span className="text-muted">{timeAgo(p.created_at)}</span>
+                </div>
+                <h3 className="font-bold text-ink">{p.title}</h3>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-muted">{p.body}</p>
+                <div className="flex items-center justify-between pt-1 text-xs text-muted">
+                  <span>
+                    {p.author ? `${displayName(p.author)} ${p.author.last_name}` : "Pack 361"}
+                    {p.author?.position_title ? ` · ${p.author.position_title.split(",")[0]}` : ""}
+                  </span>
+                  {(p.author_id === me.id || me.role === "admin" || me.role === "cubmaster") && (
+                    <form action={deleteAnnouncement}>
+                      <input type="hidden" name="id" value={p.id} />
+                      <SubmitButton className="font-semibold text-danger/80 underline">Delete</SubmitButton>
+                    </form>
+                  )}
+                </div>
+              </article>
+            ))}
+          </section>
+        </div>
+        </div>
+        <div className="contents lg:block lg:space-y-4">
+        <div className="order-3 empty:hidden">
+          {photoQuestion.length > 0 && (
+            <Link href="/family#photos" className="card flex items-center gap-3 border-l-4 border-l-gold">
+              <Camera className="h-6 w-6 shrink-0 text-gold-700" aria-hidden />
+              <span className="min-w-0 flex-1">
+                <span className="block font-bold text-pine-950">One quick question</span>
+                <span className="block text-xs text-muted">
+                  May {photoQuestion.map((s) => s.first_name).join(" and ")} appear in the pack&apos;s private photo album?
+                </span>
+              </span>
+              <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
+            </Link>
+          )}
+        </div>
+        <div className="order-4 empty:hidden">
+          {jobs.length > 0 && (
+            <section className="card space-y-2">
+              <h2 className="section-title flex items-center gap-1.5">
+                <HandHelping className="h-4 w-4" aria-hidden /> Volunteers needed
+              </h2>
+              <ul className="divide-y divide-line">
+                {jobs.map((j) => (
+                  <li key={j.slot_id}>
+                    <Link href={`${eventHref(j.event)}#volunteer`} className="flex items-center gap-2 py-2">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold text-ink">
+                          {j.role_title}
+                          {j.is_urgent && <span className="badge ml-2 bg-gold text-pine-950">Needed</span>}
+                        </span>
+                        <span className="block truncate text-xs text-muted">
+                          {j.event.title} · {daysUntil(j.event.starts_at).toLowerCase()} · {j.open} open
+                        </span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+        <div className="order-5 empty:hidden">
+          <div className="grid grid-cols-2 gap-2">
+            <Link href="/photos" className="card flex items-center gap-2 py-3">
+              <Images className="h-5 w-5 shrink-0 text-pine" aria-hidden />
+              <span className="font-bold text-pine-950">Pack photos</span>
+            </Link>
+            <Link href="/store" className="card flex items-center gap-2 py-3">
+              <ShoppingBag className="h-5 w-5 shrink-0 text-gold-700" aria-hidden />
+              <span className="font-bold text-pine-950">Pack store</span>
+            </Link>
           </div>
-          {rest.map((e) => (
-            <EventRow key={e.id} e={e} />
-          ))}
-        </section>
-      )}
+        </div>
+        <div className="order-7 empty:hidden">
+          {rest.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="section-title">Coming up</h2>
+                <Link href="/events" className="text-xs font-bold text-pine">All events →</Link>
+              </div>
+              {rest.map((e) => (
+                <EventRow key={e.id} e={e} />
+              ))}
+            </section>
+          )}
+        </div>
+        </div>
+      </div>
     </>
   );
 }

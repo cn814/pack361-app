@@ -9,10 +9,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const featured = await getFeaturedTab();
   const initials = (displayName(me)[0] + me.last_name[0]).toUpperCase();
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-md print:max-w-none">
+    <div className="min-h-dvh w-full lg:pl-64 print:pl-0">
       <NavProgress />
       <ServiceWorkerSetup mode="register" />
-      <header className="print:hidden sticky top-0 z-40 flex items-center justify-between bg-pine px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow-md">
+      <header className="print:hidden sticky top-0 z-40 mx-auto flex max-w-md items-center justify-between bg-pine px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow-md lg:hidden">
         <Link href="/" className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/badge.png" alt="" className="h-10 w-10 rounded-full ring-2 ring-white/25" />
@@ -29,8 +29,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           {initials}
         </Link>
       </header>
-      <main className="space-y-4 px-4 pb-28 pt-4 print:pb-0">{children}</main>
-      <BottomNav featured={featured} />
+      <main className="mx-auto w-full max-w-md space-y-4 px-4 pb-28 pt-4 lg:max-w-3xl lg:px-8 lg:pb-12 lg:pt-8 lg:has-[.page-wide]:max-w-6xl print:max-w-none print:pb-0">
+        {children}
+      </main>
+      <BottomNav featured={featured} me={{ initials, name: `${displayName(me)} ${me.last_name}` }} />
     </div>
   );
 }

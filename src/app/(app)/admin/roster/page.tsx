@@ -72,7 +72,7 @@ export default async function RosterPage({ searchParams }: PageProps<"/admin/ros
         </div>
       </details>
 
-      <section className="space-y-2">
+      <section className="page-wide space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0">
         {active.length === 0 && <p className="card text-sm text-muted">No families match “{q}”.</p>}
         {active.map((f) => (
           <FamilyRow key={f.id} f={f} />

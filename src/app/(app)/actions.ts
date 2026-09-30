@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { sendPushToAll } from "@/lib/push";
+import { notifyAdmins } from "@/lib/notify";
+import { APP_URL } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
 import { isLeader, requireMember } from "@/lib/data";
 
@@ -61,4 +63,35 @@ export async function setPhotoPermission(form: FormData) {
   await supabase.from("scouts").update({ photo_permission: answer }).eq("id", scoutId);
   revalidatePath("/family");
   revalidatePath("/");
+}
+
+const FEEDBACK_KINDS = { problem: "Problem", idea: "Idea", question: "Question", other: "Note" } as const;
+
+/** "Report a problem or send a note": saved in the app and sent to the pack admins. */
+export async function sendFeedback(_prev: PostState & { message?: string }, form: FormData): Promise<PostState & { message?: string }> {
+  const me = await requireMember();
+  const kind = String(form.get("kind") ?? "problem") as keyof typeof FEEDBACK_KINDS;
+  const message = String(form.get("message") ?? "").trim().slice(0, 4000);
+  const page = String(form.get("page") ?? "").slice(0, 200) || null;
+  if (!FEEDBACK_KINDS[kind]) return { error: "Pick what kind of note this is." };
+  if (!message) return { error: "Write a message first." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("feedback").insert({ adult_id: me.id, kind, message, page });
+  if (error) return { error: "Couldn't send that. Try again, or email info@pack361.org." };
+  const who = `${me.preferred_name || me.first_name} ${me.last_name}`;
+  after(async () => {
+    await notifyAdmins(
+      { title: `${FEEDBACK_KINDS[kind]} from ${who}`, body: message.slice(0, 160), url: "/admin/messages", tag: "feedback" },
+      {
+        subject: `Pack app ${FEEDBACK_KINDS[kind].toLowerCase()} from ${who}`,
+        paragraphs: [
+          `${who} (${me.email}) sent this from the Pack 361 app${page ? ` on ${page}` : ""}:`,
+          message,
+          "Reply to them by email, then mark it handled in Pack admin → Messages.",
+          `${APP_URL}/admin/messages`,
+        ],
+      },
+    );
+  });
+  return { ok: true, message: "Sent to the pack admins. Thanks!" };
 }

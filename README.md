@@ -89,6 +89,11 @@ npm run dev
   static files on the phone; the sign-in page clears them.
 - **Big-event tab**: the bottom bar shows a tab for the next campout, derby, Blue & Gold, regatta
   or crossover from 45 days before until 3 days after (`src/lib/featured.ts`).
+- **Messages**: "Report a problem or send a note" (My family, Leaders) saves to `feedback` and
+  alerts the admins (phone alert + email); admins handle them in Pack admin → Messages. Photo
+  uploads from families and take-down requests also alert the admins.
+- **Computers**: at the `lg` breakpoint the bottom bar becomes a left sidebar and busy pages use
+  two columns (add `page-wide` to a page element to let it use the full width). Phones are unchanged.
 - A second daily cron (`/api/cron/daily`, 5 PM ET) sends the volunteer and training reminders and
   deletes expired photos.
 
