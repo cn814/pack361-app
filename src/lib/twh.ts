@@ -158,6 +158,9 @@ interface Row {
 export async function syncTwh(db: SupabaseClient): Promise<SyncResult> {
   const url = process.env.TWH_CALENDAR_URL?.trim();
   if (!url) throw new Error("TWH_CALENDAR_URL is not set");
+  if (!/^(https?|webcal):\/\//i.test(url)) {
+    throw new Error("The saved TroopWebHost link isn't a web address. Copy the link that starts with https:// or webcal:// from My Stuff → Subscribe to Calendar.");
+  }
   const res = await fetch(url.replace(/^webcal:/i, "https:"), { cache: "no-store" });
   if (!res.ok) throw new Error(`TroopWebHost returned ${res.status}`);
   const text = await res.text();
