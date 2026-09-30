@@ -6,6 +6,7 @@ import VolunteerJobs from "@/components/VolunteerJobs";
 import RsvpLink from "@/components/RsvpLink";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
+import { EditEventLink, EventRsvp } from "@/components/EventRsvp";
 import { EventLinks, EventSections } from "@/components/EventInfo";
 import { getEvent, isLeader, requireMember } from "@/lib/data";
 import { getSlots } from "@/lib/volunteer";
@@ -89,10 +90,12 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           </ul>
         </section>
       )}
+      <EventRsvp e={event} me={me} />
       <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={isLeader(me)} />
       <EventLinks links={event.links ?? []} />
       <EventSections sections={event.sections ?? []} />
       <EventPhotosLink eventId={id} startsAt={event.starts_at} />
+      <EditEventLink e={event} me={me} />
       <ArchiveControl e={event} leader={isLeader(me)} back={`/events/${id}`} part="button" />
     </>
   );

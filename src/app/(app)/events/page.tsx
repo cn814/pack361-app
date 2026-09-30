@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CarFront, ChevronRight, Fish, Footprints, PartyPopper, Rocket, Sailboat, Tent } from "lucide-react";
+import { CarFront, ChevronRight, Fish, Footprints, PartyPopper, Plus, Rocket, Sailboat, Tent } from "lucide-react";
 import { featuredKind, type FeaturedKind } from "@/lib/featured";
 import { headers } from "next/headers";
 import EventRow from "@/components/EventRow";
@@ -56,6 +56,11 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
         </div>
       )}
       {!leader && <p className="-mt-2 text-xs text-muted">Showing pack events and your scouts&apos; dens.</p>}
+      {leader && (
+        <Link href="/events/new" className="btn-primary py-2">
+          <Plus className="h-4 w-4" aria-hidden /> Add an event
+        </Link>
+      )}
       {big.length > 0 && (
         <section className="space-y-2">
           <h2 className="section-title">Big events</h2>

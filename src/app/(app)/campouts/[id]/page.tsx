@@ -8,6 +8,7 @@ import VolunteerJobs from "@/components/VolunteerJobs";
 import RsvpLink from "@/components/RsvpLink";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
+import { EditEventLink, EventRsvp } from "@/components/EventRsvp";
 import SaveOffline from "@/components/SaveOffline";
 import { getSlots } from "@/lib/volunteer";
 import { EventLinks, EventSections } from "@/components/EventInfo";
@@ -119,6 +120,9 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
         <div className="order-4 empty:hidden">
           <EventLinks links={event.links ?? []} />
         </div>
+        <div className="order-6 empty:hidden">
+          <EventRsvp e={event} me={me} />
+        </div>
         <div className="order-7 empty:hidden">
           <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={isLeader(me)} />
         </div>
@@ -133,6 +137,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
         </div>
         </div>
       </div>
+      <EditEventLink e={event} me={me} />
       <ArchiveControl e={event} leader={isLeader(me)} back={`/campouts/${id}`} part="button" />
     </>
   );

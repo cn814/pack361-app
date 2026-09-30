@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { sendPushTo, sendPushToAll } from "@/lib/push";
-import { emailConfigured, sendEmails } from "@/lib/email";
+import { packEmailConfigured, sendBulk } from "@/lib/bulk-email";
 import { denAudience } from "@/lib/audience";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyAdmins } from "@/lib/notify";
@@ -21,7 +21,7 @@ export async function postAnnouncement(_prev: PostState, form: FormData): Promis
   const denId = String(form.get("den_id") ?? "");
   const den = /^[0-9a-f-]{36}$/i.test(denId) ? denId : null;
   const category = String(form.get("category") ?? (den ? "Den" : "General"));
-  const email = den !== null && form.getAll("email").includes("on");
+  const email = form.getAll("email").includes("on") && (den !== null || packEmailConfigured());
   if (!title || !body) return { error: "Add a title and a message." };
   const supabase = await createClient();
   // RLS: den leaders can only message the dens they lead; committee members any den.
@@ -49,22 +49,39 @@ export async function postAnnouncement(_prev: PostState, form: FormData): Promis
           { title: `${denName}: ${title.slice(0, 80)}`, body: body.slice(0, 180), url: "/inbox", tag: `den-${den}` },
         );
       }
-      if (email && emailConfigured() && people.length) {
+      if (email && people.length) {
         const from = `${me.preferred_name || me.first_name} ${me.last_name}`;
-        const err = await sendEmails(
-          people.slice(0, 100).map((p) => ({
-            to: p.email,
+        const r = await sendBulk(
+          people.map((p) => ({ email: p.email, name: `${p.preferred_name || p.first_name}` })),
+          {
             subject: `${denName}: ${title.slice(0, 100)}`,
             replyTo: me.email,
-            paragraphs: [`Hi ${p.preferred_name || p.first_name},`, body, `From ${from}, ${denName}. Reply to this email to reach them.`, `${APP_URL}/inbox`],
-          })),
+            paragraphs: [`Hi ${denName} families,`, body, `From ${from}, ${denName}. Reply to this email to reach them.`, `${APP_URL}/inbox`],
+          },
         );
-        await createAdminClient().from("announcements").update({ emailed_count: err ? 0 : Math.min(people.length, 100) }).eq("id", post.id);
+        await createAdminClient().from("announcements").update({ emailed_count: r.sent }).eq("id", post.id);
       }
     });
-  } else if (!den && notify) {
+  } else if (!den && (notify || email)) {
     after(async () => {
-      await sendPushToAll({ title: `Pack 361: ${title.slice(0, 80)}`, body: body.slice(0, 180), url: "/inbox", tag: "announcement" }, me.id);
+      if (notify) {
+        await sendPushToAll({ title: `Pack 361: ${title.slice(0, 80)}`, body: body.slice(0, 180), url: "/inbox", tag: "announcement" }, me.id);
+      }
+      // Pack-wide email: every active adult on the roster, through Brevo.
+      if (email && packEmailConfigured()) {
+        const { data } = await createAdminClient().from("adults").select("id, email, first_name, preferred_name").eq("is_active", true);
+        const people = (data ?? []) as { id: string; email: string; first_name: string; preferred_name: string | null }[];
+        const from = `${me.preferred_name || me.first_name} ${me.last_name}`;
+        const r = await sendBulk(
+          people.filter((p) => p.id !== me.id).map((p) => ({ email: p.email, name: p.preferred_name || p.first_name })),
+          {
+            subject: `Pack 361: ${title.slice(0, 100)}`,
+            replyTo: me.email,
+            paragraphs: ["Hi Pack 361 families,", body, `From ${from}. Reply to this email to reach them.`, `${APP_URL}/inbox`],
+          },
+        );
+        await createAdminClient().from("announcements").update({ emailed_count: r.sent }).eq("id", post.id);
+      }
     });
   }
   revalidatePath("/", "layout");

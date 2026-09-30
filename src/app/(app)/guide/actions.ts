@@ -24,8 +24,9 @@ export async function saveGuidePage(_prev: ActionResult, form: FormData): Promis
   const body = String(form.get("body") ?? "").replace(/\r/g, "").slice(0, 30000);
   const sort = Number(form.get("sort_order") ?? 100);
   const published = form.get("is_published") === "on";
+  const isPublic = published && form.get("is_public") === "on";
   if (!title) return { error: "Give the page a title." };
-  const row = { title, section, summary, body, sort_order: Number.isFinite(sort) ? Math.round(sort) : 100, is_published: published };
+  const row = { title, section, summary, body, sort_order: Number.isFinite(sort) ? Math.round(sort) : 100, is_published: published, is_public: isPublic };
 
   const supabase = await createClient();
   let slug: string;

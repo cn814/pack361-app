@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isLeader, requireMember } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
+import { easternToIso } from "@/lib/calendar";
+import type { ActionResult } from "@/components/ActionForm";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -26,4 +28,97 @@ export async function setEventArchived(form: FormData) {
   await supabase.from("events").update(patch).eq("id", id);
   revalidatePath("/", "layout");
   redirect(/^\/(?![\/\\])/.test(back) ? back : `/events/${id}`);
+}
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME = /^\d{2}:\d{2}$/;
+const RANKS = ["lion", "tiger", "wolf", "bear", "webelos", "aol"];
+
+/**
+ * Leaders: add or edit an event. Editing an event that came from TroopWebHost makes it the
+ * app's own (source "manual"), so the TroopWebHost sync no longer changes it.
+ */
+export async function saveEvent(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  const me = await requireMember();
+  if (!isLeader(me)) return { error: "Only leaders can add or change events." };
+  const id = String(form.get("id") ?? "");
+  const text = (k: string, max: number) => String(form.get(k) ?? "").trim().slice(0, max) || null;
+  const title = text("title", 200);
+  const category = text("category", 40) ?? "Pack";
+  const startDate = String(form.get("start_date") ?? "");
+  const endDate = String(form.get("end_date") ?? "") || startDate;
+  const allDay = form.get("all_day") === "on";
+  const startTime = String(form.get("start_time") ?? "");
+  const endTime = String(form.get("end_time") ?? "");
+  const denId = String(form.get("den_id") ?? "");
+  const ranks = form.getAll("ranks").map(String).filter((r) => RANKS.includes(r));
+  const signup = text("signup_url", 500);
+  const rsvpBy = String(form.get("rsvp_by") ?? "");
+
+  if (!title) return { error: "Give the event a name." };
+  if (!DATE.test(startDate)) return { error: "Pick the date." };
+  if (!DATE.test(endDate) || endDate < startDate) return { error: "The end date can't be before the start date." };
+  if (!allDay && !TIME.test(startTime)) return { error: "Pick a start time, or tick All day." };
+  if (!allDay && endTime && !TIME.test(endTime)) return { error: "Pick an end time." };
+  if (signup && !/^https:\/\//i.test(signup)) return { error: "The sign-up link should start with https://" };
+  if (rsvpBy && !DATE.test(rsvpBy)) return { error: "Pick the RSVP deadline." };
+
+  const starts_at = easternToIso(startDate, allDay ? "00:00" : startTime);
+  let ends_at: string | null = null;
+  if (allDay) ends_at = endDate !== startDate ? easternToIso(endDate, "00:00") : null;
+  else if (endTime) ends_at = easternToIso(endDate, endTime);
+  else if (endDate !== startDate) ends_at = easternToIso(endDate, "23:59");
+  if (ends_at && ends_at < starts_at) return { error: "The event ends before it starts." };
+
+  const row = {
+    title,
+    category,
+    starts_at,
+    ends_at,
+    all_day: allDay,
+    location_name: text("location_name", 200),
+    address: text("address", 300),
+    details: text("details", 5000),
+    signup_url: signup,
+    den_id: UUID.test(denId) ? denId : null,
+    ranks: !UUID.test(denId) && ranks.length ? ranks : null,
+    rsvp_enabled: form.get("rsvp_enabled") === "on",
+    rsvp_by: rsvpBy || null,
+  };
+  const supabase = await createClient();
+  let eventId = id;
+  if (UUID.test(id)) {
+    const { error } = await supabase.from("events").update({ ...row, source: "manual" }).eq("id", id);
+    if (error) return { error: "Couldn't save the event." };
+  } else {
+    const { data, error } = await supabase
+      .from("events")
+      .insert({ ...row, source: "manual", created_by: me.id })
+      .select("id")
+      .single();
+    if (error || !data) return { error: "Couldn't add the event." };
+    eventId = data.id as string;
+  }
+  revalidatePath("/", "layout");
+  redirect(category === "Campout" ? `/campouts/${eventId}` : `/events/${eventId}`);
+}
+
+/** Answer (or change) the family's RSVP. */
+export async function setRsvp(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireMember();
+  const id = String(form.get("event_id") ?? "");
+  const status = String(form.get("status") ?? "");
+  if (!UUID.test(id)) return { error: "Event not found." };
+  if (!["yes", "maybe", "no"].includes(status)) return { error: "Pick yes, maybe or no." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_rsvp", {
+    p_event_id: id,
+    p_status: status,
+    p_scouts: Number(form.get("scouts") ?? 0) || 0,
+    p_adults: Number(form.get("adults") ?? 0) || 0,
+    p_note: String(form.get("note") ?? ""),
+  });
+  if (error) return { error: error.message.includes("closed") ? "RSVPs for this event are closed. Contact a leader." : "Couldn't save your RSVP." };
+  revalidatePath("/", "layout");
+  return { ok: true, message: status === "no" ? "Thanks for letting us know." : "Thanks, you're on the list. You can change your answer until RSVPs close." };
 }

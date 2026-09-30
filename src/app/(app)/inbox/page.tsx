@@ -7,6 +7,7 @@ import SubmitButton from "@/components/SubmitButton";
 import { displayName, getAnnouncements, isCommittee, isLeader, requireMember } from "@/lib/data";
 import { getMessageableDens } from "@/lib/audience";
 import { getSeenAt, getTodos } from "@/lib/inbox";
+import { packEmailConfigured } from "@/lib/bulk-email";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/format";
 import { deleteAnnouncement } from "../actions";
@@ -53,7 +54,7 @@ export default async function InboxPage() {
 
       <section className="space-y-3">
         <h2 className="section-title">Announcements and den messages</h2>
-        {isLeader(me) && <PostAnnouncement dens={dens} canPostPack />}
+        {isLeader(me) && <PostAnnouncement dens={dens} canPostPack packEmail={packEmailConfigured()} />}
         {posts.length === 0 && <p className="card text-sm text-muted">Nothing yet. Pack announcements and messages from your den show up here.</p>}
         {posts.map((p) => (
           <article key={p.id} className={`card space-y-1.5 border-t-4 ${p.den_id ? "border-t-navy" : "border-t-pine"}`}>

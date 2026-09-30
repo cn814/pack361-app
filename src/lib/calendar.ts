@@ -44,7 +44,7 @@ export function easternToIso(date: string, time: string): string {
 }
 
 const EVENT_COLS =
-  "id, title, category, starts_at, ends_at, location_name, address, details, signup_url, den_id, ranks, all_day, leaders_only, twh_uid, twh_url, den:dens(name)";
+  "id, title, category, starts_at, ends_at, location_name, address, details, signup_url, den_id, ranks, all_day, leaders_only, twh_uid, twh_url, rsvp_enabled, rsvp_by, den:dens(name)";
 
 const RANK_NAME: Record<DenRank, string> = { lion: "Lions", tiger: "Tigers", wolf: "Wolves", bear: "Bears", webelos: "Webelos", aol: "AOL" };
 export function ranksLabel(ranks: DenRank[] | null | undefined): string | null {

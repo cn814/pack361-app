@@ -45,6 +45,13 @@ export default function GuideEditor({ page, sections }: { page?: GuidePage; sect
         <input type="checkbox" name="is_published" defaultChecked={page?.is_published ?? false} className="h-4 w-4 accent-pine" />
         Published (families can see it). Leave unchecked to keep it a draft for leaders.
       </label>
+      <label className="flex items-start gap-2 text-sm font-semibold text-navy">
+        <input type="checkbox" name="is_public" defaultChecked={page?.is_public ?? false} className="mt-0.5 h-4 w-4 accent-pine" />
+        <span>
+          Public: anyone can read it on pack361.org without signing in (for pages like joining the pack). Never put family
+          details on a public page.
+        </span>
+      </label>
     </ActionForm>
   );
 }

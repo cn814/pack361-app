@@ -135,7 +135,7 @@ rollback;
 \echo '== Hub: anonymous'
 begin;
 set local role anon;
-select test.expect_error('select * from public.guide_pages', '42501', 'anon cannot read the guide');
+select test.check(test.count('select * from public.guide_pages where not is_public') = 0, 'anon cannot read the members'' guide');
 select test.expect_error('select * from public.health_forms', '42501', 'anon cannot read forms');
 select test.expect_error($$select public.cast_vote('90000000-0000-0000-0000-000000000002', array[0])$$, '42501', 'anon cannot vote');
 rollback;

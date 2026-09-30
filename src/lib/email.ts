@@ -23,7 +23,7 @@ export interface Email {
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-function html(e: Email): string {
+export function renderEmailHtml(e: Email): string {
   const body = e.paragraphs
     .map((p) =>
       /^https?:\/\/\S+$/.test(p)
@@ -55,7 +55,7 @@ export async function sendEmail(e: Email): Promise<string | null> {
         to: [e.to],
         reply_to: e.replyTo ?? REPLY_TO,
         subject: e.subject,
-        html: html(e),
+        html: renderEmailHtml(e),
         text: e.paragraphs.join("\n\n"),
       }),
     });
@@ -84,7 +84,7 @@ export async function sendEmails(list: Email[]): Promise<string | null> {
           to: [e.to],
           reply_to: e.replyTo ?? REPLY_TO,
           subject: e.subject,
-          html: html(e),
+          html: renderEmailHtml(e),
           text: e.paragraphs.join("\n\n"),
         })),
       ),

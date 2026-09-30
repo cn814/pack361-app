@@ -8,6 +8,7 @@ import { getPolls, getVotedPollIds, isOpen } from "./polls";
 import { countPendingPhotos } from "./photos";
 import { easternDate } from "./tz";
 import { fmtDay } from "./format";
+import { rsvpOpen } from "./rsvp";
 
 export interface Todo {
   key: string;
@@ -45,6 +46,25 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
       : Promise.resolve(0),
   ]);
   const todos: Todo[] = [];
+
+  // Events asking for an RSVP in the next 30 days that the family hasn't answered.
+  const askingRsvp = events.filter(
+    (e) => e.kind === "event" && e.rsvp_enabled && rsvpOpen(e) && (Date.parse(e.starts_at) - Date.now()) / 86400000 <= 30,
+  );
+  if (askingRsvp.length) {
+    let q = supabase.from("event_rsvps").select("event_id").in("event_id", askingRsvp.map((e) => e.id));
+    q = me.family_id ? q.eq("family_id", me.family_id) : q.eq("adult_id", me.id);
+    const answered = new Set(((await q).data ?? []).map((r) => r.event_id as string));
+    for (const e of askingRsvp.filter((e) => !answered.has(e.id)).slice(0, 3)) {
+      todos.push({
+        key: `rsvp-${e.id}`,
+        title: `RSVP: ${e.title}`,
+        detail: `${fmtDay(e.starts_at)}${e.rsvp_by ? ` · please answer by ${fmtDay(`${e.rsvp_by}T12:00:00-04:00`)}` : ""}`,
+        href: `${e.href}#rsvp`,
+        tone: "gold",
+      });
+    }
+  }
 
   for (const p of polls.filter((p) => isOpen(p) && !voted.has(p.id)).slice(0, 3)) {
     todos.push({ key: `poll-${p.id}`, title: "Quick poll", detail: p.question, href: `/polls/${p.id}`, tone: "gold" });

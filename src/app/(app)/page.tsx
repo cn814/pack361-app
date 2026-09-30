@@ -9,6 +9,7 @@ import { deleteAnnouncement } from "./actions";
 import { displayName, getAnnouncements, getMyScouts, getUpcomingEvents, isLeader, requireMember } from "@/lib/data";
 import { getMessageableDens } from "@/lib/audience";
 import { getTodos } from "@/lib/inbox";
+import { packEmailConfigured } from "@/lib/bulk-email";
 import { daysUntil, fmtRange, timeAgo } from "@/lib/format";
 
 export default async function Home() {
@@ -92,7 +93,7 @@ export default async function Home() {
             <div className="flex items-center justify-between">
               <h2 className="section-title">Pack announcements</h2>
             </div>
-            {leader && <PostAnnouncement dens={dens} />}
+            {leader && <PostAnnouncement dens={dens} packEmail={packEmailConfigured()} />}
             {posts.length === 0 && <p className="card text-sm text-muted">No announcements yet.</p>}
             {posts.map((p) => (
               <article key={p.id} className={`card space-y-1.5 border-t-4 ${p.den_id ? "border-t-navy" : "border-t-pine"}`}>

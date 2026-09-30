@@ -10,6 +10,7 @@ export interface GuidePage {
   body: string;
   sort_order: number;
   is_published: boolean;
+  is_public: boolean;
   updated_at: string;
 }
 
@@ -25,7 +26,7 @@ export const GUIDE_SECTIONS = [
   "Using the app",
 ];
 
-const COLS = "id, slug, section, title, summary, body, sort_order, is_published, updated_at";
+const COLS = "id, slug, section, title, summary, body, sort_order, is_published, is_public, updated_at";
 
 /** Every page the signed-in person may see (drafts only for leaders; RLS decides). */
 export async function getGuidePages(): Promise<GuidePage[]> {
@@ -49,4 +50,25 @@ export function plainText(body: string): string {
     .replace(/[#>*]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/** Public pages (no sign-in), for pack361.org. Uses a client without the visitor's session. */
+export async function getPublicPage(slug: string): Promise<GuidePage | null> {
+  const { createClient: plain } = await import("@supabase/supabase-js");
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  const db = plain(url, key, { auth: { persistSession: false } });
+  const { data } = await db.from("guide_pages").select(COLS).eq("slug", slug).eq("is_public", true).eq("is_published", true).maybeSingle();
+  return (data as GuidePage | null) ?? null;
+}
+
+export async function getPublicPages(): Promise<Pick<GuidePage, "slug" | "title" | "summary">[]> {
+  const { createClient: plain } = await import("@supabase/supabase-js");
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return [];
+  const db = plain(url, key, { auth: { persistSession: false } });
+  const { data } = await db.from("guide_pages").select("slug, title, summary").eq("is_public", true).eq("is_published", true).order("sort_order");
+  return (data ?? []) as Pick<GuidePage, "slug" | "title" | "summary">[];
 }

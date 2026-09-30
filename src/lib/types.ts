@@ -47,6 +47,9 @@ export interface PackEvent {
   twh_uid?: string | null;
   twh_url?: string | null;
   archived_at?: string | null;
+  rsvp_enabled?: boolean;
+  rsvp_by?: string | null;
+  source?: string | null;
   archived_reason?: "removed_in_twh" | "hidden" | null;
   links?: EventLink[];
   sections?: EventSection[];

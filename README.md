@@ -69,7 +69,7 @@ npm run dev
 - **Push alerts**: families turn them on from My family; leaders' new announcements notify them.
   iPhones need the app added to the home screen first.
 - Needs server env vars: see `.env.example` (`SUPABASE_SECRET_KEY`, `GIVEBUTTER_API_KEY`,
-  `CRON_SECRET`, VAPID keys, `RESEND_API_KEY`, `TWH_CALENDAR_URL`). Without them those features stay
+  `CRON_SECRET`, VAPID keys, `RESEND_API_KEY`, `BREVO_API_KEY`, `TWH_CALENDAR_URL`). Without them those features stay
   quiet; everything else works.
 
 ## Leader tools
@@ -118,10 +118,20 @@ npm run dev
 - **Archive** (Events → Past events and archive): past events and archived ones, grouped by year.
   Leaders can take any event off the calendar or put it back from its page (reason `hidden`; the
   sync leaves hidden events alone).
-- **RSVP**: synced events show an RSVP button that opens the event's own TroopWebHost page. The link
-  is built from the calendar id (`2446.516@OurGroupOnline.org` → unit 2446, event 516), the same
-  "URL For This Event" TroopWebHost shows (`src/lib/twh-link.ts`). It's hidden once an event is
-  over. Givebutter links stay as "Pay / sign up".
+- **Events in the app**: leaders add events (Events → Add an event) and edit any event from its
+  page. Editing a TroopWebHost event detaches it from the sync (`source = 'manual'`), so the app is
+  the calendar of record and TroopWebHost can be dropped. Removing `TWH_CALENDAR_URL` stops the sync.
+- **RSVP**: a leader turns on "Take RSVPs" for an event (optional RSVP-by date). Each family answers
+  Going / Maybe / Can't go with how many scouts and adults (`event_rsvps`, one answer per family,
+  through `set_rsvp()`); everyone sees the headcount (`rsvp_counts()`), leaders see who's coming.
+  Unanswered open RSVPs within 30 days show in Notifications → Needs you. While `TWH_CALENDAR_URL`
+  is set, synced events without in-app RSVP still link to their TroopWebHost page
+  (`src/lib/twh-link.ts`). Givebutter links stay as "Pay / sign up".
+- **Public website** (`/join`, served as the home page of `pack361.org` and `www.pack361.org` by
+  `src/proxy.ts`): who the pack is, photos (`src/app/join/photos.ts`, files in `public/join/`) and
+  the "Joining Pack 361" guide page. Guide pages marked **Public** (and published) can be read by
+  anyone at `/join/<slug>`; every other path on those hosts redirects to `app.pack361.org`. This is
+  the only part of the app search engines may index.
 - **Big-event tab**: the bottom bar shows a tab for the next campout, Pinewood or rocket derby,
   fishing derby, Blue & Gold, regatta or crossover from 45 days before until 3 days after
   (`src/lib/featured.ts`). Upcoming lists keep an event until it ends, so a campout stays up all
@@ -137,7 +147,11 @@ npm run dev
 - **Den messages**: a leader posts to one den (den leaders: their own dens; committee, Cubmaster
   and admins: any den) from Home, Notifications or the den's page. Only that den's families and
   leaders see it (RLS). It goes out as a phone alert and, optionally, an email whose replies go to
-  the leader. Parents never message each other or scouts.
+  the leader.
+- **Pack-wide email**: leaders' announcements can also be emailed to every active adult. Bulk email
+  (pack-wide and den) goes through Brevo's free plan (300 a day, `BREVO_API_KEY`,
+  `src/lib/bulk-email.ts`), so it doesn't use up the Resend quota the sign-in codes need. Without
+  Brevo, den emails of 60 or fewer go through Resend and the pack-wide option is hidden. Parents never message each other or scouts.
 - **Pack guide** (`/guide`, `guide_pages`): searchable pages about how the pack works. Committee,
   Cubmaster and admins edit them in the app with a small Markdown subset (`src/components/GuideBody.tsx`).
   Drafts are visible to leaders only; `[Leaders: …]` placeholders are highlighted.

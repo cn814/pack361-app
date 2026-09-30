@@ -15,10 +15,13 @@ export default function PostAnnouncement({
   dens,
   canPostPack = true,
   defaultDen = "",
+  packEmail = false,
 }: {
   dens: { id: string; name: string }[];
   canPostPack?: boolean;
   defaultDen?: string;
+  /** Pack-wide email is set up (Brevo). */
+  packEmail?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [den, setDen] = useState(defaultDen || (canPostPack ? "" : (dens[0]?.id ?? "")));
@@ -79,6 +82,16 @@ export default function PostAnnouncement({
         <input type="checkbox" name="notify" value="on" defaultChecked className="h-4 w-4 accent-pine" /> Send a phone alert to{" "}
         {den ? "the den's families" : "families"} who turned alerts on
       </label>
+      {!den && packEmail && (
+        <label className="flex items-start gap-2 text-sm text-navy">
+          <input type="hidden" name="email" value="off" />
+          <input type="checkbox" name="email" value="on" className="mt-0.5 h-4 w-4 accent-pine" />
+          <span>
+            Also email every family on the roster. Replies come to you.
+            <span className="block text-[11px] text-muted">Save this for news everyone needs; phone alerts reach people faster.</span>
+          </span>
+        </label>
+      )}
       {den && (
         <label className="flex items-start gap-2 text-sm text-navy">
           <input type="hidden" name="email" value="off" />
