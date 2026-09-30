@@ -8,8 +8,8 @@ const initial: LoginState = { step: "email", email: "" };
 
 /**
  * codeEnabled: whether the sign-in email includes a one-time code as well as the link.
- * Supabase's built-in email sender only sends the link; turn this on (LOGIN_CODE_ENABLED=true)
- * once custom SMTP is set up and the email template includes {{ .Token }}.
+ * On by default (custom SMTP through Resend, template includes {{ .Token }});
+ * set LOGIN_CODE_ENABLED=false to go back to link-only emails.
  */
 export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
   const [sent, sendAction, sending] = useActionState(sendLoginEmail, initial);
@@ -40,7 +40,7 @@ export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
         </label>
         {sent.error && <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger">{sent.error}</p>}
         <button type="submit" className="btn-primary w-full" disabled={sending}>
-          {sending ? "Sending…" : "Email me a sign-in link"}
+          {sending ? "Sending…" : codeEnabled ? "Email me a sign-in link and code" : "Email me a sign-in link"}
           <ArrowRight className="h-4 w-4" aria-hidden />
         </button>
       </form>
