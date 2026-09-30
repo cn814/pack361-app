@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import SubmitButton from "@/components/SubmitButton";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Check, ChevronLeft, Stamp, Undo2 } from "lucide-react";
@@ -72,12 +73,12 @@ export default async function ReviewPage() {
                     <form action={reviewSubmissions} className="flex gap-2">
                       <input type="hidden" name="id" value={s.id} />
                       <input name="review_note" placeholder="Note (optional)" maxLength={500} className="input min-w-0 flex-1 py-2 text-sm" />
-                      <button name="decision" value="return" className="btn-ghost px-3 py-2" aria-label="Send back">
+                      <SubmitButton name="decision" value="return" className="btn-ghost px-3 py-2" aria-label="Send back">
                         <Undo2 className="h-4 w-4" aria-hidden />
-                      </button>
-                      <button name="decision" value="approve" className="btn-primary px-3 py-2">
+                      </SubmitButton>
+                      <SubmitButton name="decision" value="approve" className="btn-primary px-3 py-2">
                         <Check className="h-4 w-4" aria-hidden /> OK
-                      </button>
+                      </SubmitButton>
                     </form>
                   </li>
                 ))}
@@ -87,9 +88,9 @@ export default async function ReviewPage() {
                   {group.map((s) => (
                     <input key={s.id} type="hidden" name="id" value={s.id} />
                   ))}
-                  <button name="decision" value="approve" className="btn-primary w-full">
+                  <SubmitButton name="decision" value="approve" className="btn-primary w-full">
                     <Check className="h-4 w-4" aria-hidden /> Approve all {group.length}
-                  </button>
+                  </SubmitButton>
                 </form>
               )}
             </article>
@@ -128,9 +129,9 @@ export default async function ReviewPage() {
                 {group.map((s) => (
                   <input key={s.id} type="hidden" name="id" value={s.id} />
                 ))}
-                <button name="decision" value="record" className="btn-ghost w-full">
+                <SubmitButton name="decision" value="record" className="btn-ghost w-full">
                   <Stamp className="h-4 w-4" aria-hidden /> Entered in Scoutbook
-                </button>
+                </SubmitButton>
               </form>
             </article>
           );

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import SubmitButton from "@/components/SubmitButton";
 import { ExternalLink, ShoppingBag } from "lucide-react";
 import { SyncGivebutterButton } from "@/components/AdminForms";
 import { isLeader, requireMember } from "@/lib/data";
@@ -111,11 +112,11 @@ export default async function StorePage() {
                   <form action={setFundraiserFlag}>
                     <input type="hidden" name="id" value={c.id} />
                     <input type="hidden" name="show" value={String(!c.show_as_fundraiser)} />
-                    <button
+                    <SubmitButton
                       className={`badge shrink-0 normal-case tracking-normal ${c.show_as_fundraiser ? "bg-pine text-white" : "bg-surface text-muted"}`}
                     >
                       {c.show_as_fundraiser ? "In store" : "Hidden"}
-                    </button>
+                    </SubmitButton>
                   </form>
                 </li>
               ))}
