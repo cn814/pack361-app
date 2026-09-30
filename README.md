@@ -91,6 +91,11 @@ npm run dev
   scouts' dens or ranks (`events.den_id`, `events.ranks`), and their dens' planned meetings; leaders
   see everything (with a "My family's dens" filter). `events.leaders_only` hides committee meetings
   and Roundtable from parents (enforced by RLS). The private calendar feed follows the same rules.
+- **TroopWebHost sync** (`src/lib/twh.ts`): reads an admin's TroopWebHost calendar subscription
+  link (`TWH_CALENDAR_URL`) daily and from Pack admin → Sync now. New events are added (category,
+  ranks and leader-only guessed from the title), TroopWebHost events follow its time and place,
+  events already in the app are matched by date and title instead of duplicated, and events deleted
+  in TroopWebHost are removed unless someone has signed up to volunteer.
 - **Big-event tab**: the bottom bar shows a tab for the next campout, derby, Blue & Gold, regatta
   or crossover from 45 days before until 3 days after (`src/lib/featured.ts`).
 - **Messages**: "Report a problem or send a note" (My family, Leaders) saves to `feedback` and
