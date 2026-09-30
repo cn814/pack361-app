@@ -18,6 +18,9 @@ const SHOW = {
 } as const;
 type Show = keyof typeof SHOW;
 
+const RANKS = ["lion", "tiger", "wolf", "bear", "webelos", "aol"];
+const rankOrder = (r: string | undefined) => (r ? RANKS.indexOf(r) : 99);
+
 interface Row {
   who: string;
   name: string;
@@ -36,7 +39,7 @@ export default async function PaperworkPage({ searchParams }: PageProps<"/leader
   const activeFamilies = new Set(data.scouts.map((s) => s.family_id).filter(Boolean) as string[]);
 
   const scoutRows: Row[] = data.scouts
-    .sort((a, b) => (a.den?.rank ?? "z").localeCompare(b.den?.rank ?? "z") || (a.den?.number ?? 0) - (b.den?.number ?? 0) || a.first_name.localeCompare(b.first_name))
+    .sort((a, b) => rankOrder(a.den?.rank) - rankOrder(b.den?.rank) || (a.den?.number ?? 0) - (b.den?.number ?? 0) || a.first_name.localeCompare(b.first_name))
     .map((s) => {
       const form = data.forms.find((f) => f.scout_id === s.id);
       return { who: `s:${s.id}`, name: `${s.first_name} ${s.last_name}`, group: s.den?.name ?? "No den", form, state: formState(form) };
