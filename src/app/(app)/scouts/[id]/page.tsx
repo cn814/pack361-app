@@ -3,7 +3,7 @@ import SubmitButton from "@/components/SubmitButton";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Award, CalendarDays, CircleCheck, House, Medal, Plus } from "lucide-react";
-import { fmtMeetingDate, getUpcomingMeetings } from "@/lib/meetings";
+import { fmtMeetingDate, fmtMeetingTime, getUpcomingMeetings } from "@/lib/meetings";
 import { AdventureList, ProgressBar, ProgressSummary } from "@/components/RankProgress";
 import { isLeader, requireMember } from "@/lib/data";
 import { getCatalog, getDataAsOf, getRecords, getScout, getSubmissions } from "@/lib/advancement-data";
@@ -80,9 +80,10 @@ export default async function ScoutPage({ params, searchParams }: PageProps<"/sc
           <ul className="space-y-2">
             {meetings.map((m) => (
               <li key={m.id} className="text-sm">
-                <p className="font-bold text-ink">
-                  {fmtMeetingDate(m.meets_on)} · {m.title}
-                </p>
+                <Link href={`/meetings/${m.id}`} className="font-bold text-ink underline-offset-2 hover:underline">
+                  {fmtMeetingDate(m.meets_on)}
+                  {fmtMeetingTime(m) ? `, ${fmtMeetingTime(m)}` : ""} · {m.title}
+                </Link>
                 {(m.adventure || m.location) && (
                   <p className="text-xs text-muted">
                     {[m.adventure && m.adventure !== m.title ? m.adventure : null, m.location].filter(Boolean).join(" · ")}

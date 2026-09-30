@@ -87,6 +87,10 @@ npm run dev
   `pack_settings.photo_keep_months`. Anyone can ask for a photo to come down; it's hidden at once.
 - **Offline campouts**: the service worker (`public/sw.js`) keeps opened campout pages and the app's
   static files on the phone; the sign-in page clears them.
+- **Den-aware calendar** (`src/lib/calendar.ts`): families see pack-wide events, events for their
+  scouts' dens or ranks (`events.den_id`, `events.ranks`), and their dens' planned meetings; leaders
+  see everything (with a "My family's dens" filter). `events.leaders_only` hides committee meetings
+  and Roundtable from parents (enforced by RLS). The private calendar feed follows the same rules.
 - **Big-event tab**: the bottom bar shows a tab for the next campout, derby, Blue & Gold, regatta
   or crossover from 45 days before until 3 days after (`src/lib/featured.ts`).
 - **Messages**: "Report a problem or send a note" (My family, Leaders) saves to `feedback` and

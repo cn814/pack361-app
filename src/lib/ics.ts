@@ -7,10 +7,15 @@ export interface IcsEvent {
   location: string | null;
   description: string | null;
   url: string | null;
+  allDay?: boolean;
 }
 
 const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
 const stamp = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+
+/** Eastern-time calendar date as YYYYMMDD (all-day events). */
+const ymd = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date(iso)).replace(/-/g, "");
+const nextDay = (iso: string) => new Date(new Date(iso).getTime() + 86400000).toISOString();
 
 /** Fold lines longer than 75 octets (continuation lines start with a space). */
 function fold(line: string): string {
@@ -46,8 +51,9 @@ export function buildIcs(name: string, events: IcsEvent[], now = new Date()): st
       "BEGIN:VEVENT",
       `UID:${e.id}@pack361-app`,
       `DTSTAMP:${stamp(now.toISOString())}`,
-      `DTSTART:${stamp(e.starts_at)}`,
-      `DTEND:${stamp(end)}`,
+      ...(e.allDay
+        ? [`DTSTART;VALUE=DATE:${ymd(e.starts_at)}`, `DTEND;VALUE=DATE:${ymd(nextDay(e.ends_at ?? e.starts_at))}`]
+        : [`DTSTART:${stamp(e.starts_at)}`, `DTEND:${stamp(end)}`]),
       `SUMMARY:${esc(e.title)}`,
     );
     if (e.location) lines.push(`LOCATION:${esc(e.location)}`);

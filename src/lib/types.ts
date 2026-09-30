@@ -41,6 +41,9 @@ export interface PackEvent {
   details: string | null;
   signup_url: string | null;
   den_id: string | null;
+  ranks?: DenRank[] | null;
+  all_day?: boolean;
+  leaders_only?: boolean;
   links?: EventLink[];
   sections?: EventSection[];
 }

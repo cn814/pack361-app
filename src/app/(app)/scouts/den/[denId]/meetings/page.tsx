@@ -43,7 +43,7 @@ export default async function MeetingsPage({ params }: PageProps<"/scouts/den/[d
           <CalendarPlus className="h-5 w-5" aria-hidden /> Plan a meeting
         </summary>
         <div className="pt-3">
-          <MeetingForm action={saveMeeting} denId={denId} adventures={adventures} defaultDate={today} />
+          <MeetingForm action={saveMeeting} denId={denId} adventures={adventures} defaultDate={today} defaultStart="18:30" defaultEnd="19:30" />
         </div>
       </details>
 

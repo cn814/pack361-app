@@ -20,12 +20,18 @@ export default function MeetingForm({
   adventures,
   meeting,
   defaultDate,
+  defaultStart,
+  defaultEnd,
+  defaultLocation,
 }: {
   action: (prev: ActionResult, form: FormData) => Promise<ActionResult>;
   denId: string;
   adventures: AdventureOption[];
   meeting?: DenMeeting;
   defaultDate?: string;
+  defaultStart?: string;
+  defaultEnd?: string;
+  defaultLocation?: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(action, {});
   const [adventure, setAdventure] = useState(meeting?.adventure ?? "");
@@ -37,16 +43,28 @@ export default function MeetingForm({
     <form action={formAction} className="space-y-3">
       {meeting && <input type="hidden" name="id" value={meeting.id} />}
       <input type="hidden" name="den_id" value={denId} />
+      <label className="block space-y-1">
+        <span className="text-xs font-bold text-navy">Date</span>
+        <input className="input" type="date" name="meets_on" required defaultValue={meeting?.meets_on ?? defaultDate} />
+      </label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block space-y-1">
-          <span className="text-xs font-bold text-navy">Date</span>
-          <input className="input" type="date" name="meets_on" required defaultValue={meeting?.meets_on ?? defaultDate} />
+          <span className="text-xs font-bold text-navy">Starts</span>
+          <input className="input" type="time" name="start_time" defaultValue={meeting?.start_time?.slice(0, 5) ?? defaultStart ?? ""} />
         </label>
         <label className="block space-y-1">
-          <span className="text-xs font-bold text-navy">Where</span>
-          <input className="input" name="location" defaultValue={meeting?.location ?? ""} placeholder="Church room 4" />
+          <span className="text-xs font-bold text-navy">Ends</span>
+          <input className="input" type="time" name="end_time" defaultValue={meeting?.end_time?.slice(0, 5) ?? defaultEnd ?? ""} />
         </label>
       </div>
+      <label className="block space-y-1">
+        <span className="text-xs font-bold text-navy">Where</span>
+        <input className="input" name="location" defaultValue={meeting?.location ?? defaultLocation ?? ""} placeholder="Church room 4, or a place name" />
+      </label>
+      <label className="block space-y-1">
+        <span className="text-xs font-bold text-navy">Address (for off-site meetings)</span>
+        <input className="input" name="address" defaultValue={meeting?.address ?? ""} placeholder="Street, town" />
+      </label>
 
       <label className="block space-y-1">
         <span className="text-xs font-bold text-navy">Adventure</span>

@@ -41,6 +41,9 @@ export async function saveMeeting(_prev: ActionResult, form: FormData): Promise<
     adventure: adv?.name ?? null,
     requirements: [...new Set(reqs)].sort((a, b) => Number(a) - Number(b)),
     location: String(form.get("location") ?? "").trim().slice(0, 120) || null,
+    address: String(form.get("address") ?? "").trim().slice(0, 200) || null,
+    start_time: /^\d{2}:\d{2}(:\d{2})?$/.test(String(form.get("start_time") ?? "")) ? String(form.get("start_time")) : null,
+    end_time: /^\d{2}:\d{2}(:\d{2})?$/.test(String(form.get("end_time") ?? "")) ? String(form.get("end_time")) : null,
     family_note: String(form.get("family_note") ?? "").trim().slice(0, 500) || null,
   };
   if (id) {

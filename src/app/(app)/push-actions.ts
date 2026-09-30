@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/data";
+import { sendPushTo } from "@/lib/push";
 
 interface SubJson {
   endpoint?: string;
@@ -28,4 +29,18 @@ export async function removePushSubscription(endpoint: string): Promise<void> {
   await requireMember();
   const supabase = await createClient();
   await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
+}
+
+/** Send a test alert to the signed-in adult's own phones and browsers. */
+export async function sendTestPush(): Promise<{ message: string; ok: boolean }> {
+  const me = await requireMember();
+  const r = await sendPushTo([me.id], {
+    title: "Pack 361 test alert",
+    body: "Alerts are working on this device.",
+    url: "/family",
+    tag: "test",
+  });
+  if (r.sent) return { ok: true, message: `Sent to ${r.sent} device${r.sent === 1 ? "" : "s"}. It should appear in a few seconds.` };
+  if (r.errors.length) return { ok: false, message: `Couldn't send: ${r.errors[0]}` };
+  return { ok: false, message: "No devices with alerts turned on for your account." };
 }
