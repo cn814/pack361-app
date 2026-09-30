@@ -94,7 +94,7 @@ function scoped<Q extends { or: (f: string) => any; eq: (c: string, v: unknown) 
  * newest first, for the Archive page.
  */
 export async function loadArchive(db: SupabaseClient, scope: DenScope, before: string, limit = 400): Promise<(CalItem & { archived_reason: string | null })[]> {
-  const cols = `${EVENT_COLS}, archived_reason`;
+  const cols = `${EVENT_COLS}, archived_at, archived_reason`;
   const [{ data: past }, { data: archived }] = await Promise.all([
     scoped(db.from("events").select(cols).lt("starts_at", before).order("starts_at", { ascending: false }).limit(limit), scope),
     scoped(db.from("events").select(cols).not("archived_at", "is", null).gte("starts_at", before).order("starts_at", { ascending: false }).limit(limit), scope),

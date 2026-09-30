@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CircleCheck, MapPin, Users } from "lucide-react";
 import type { PackEvent } from "@/lib/types";
 import RsvpLink from "@/components/RsvpLink";
-import { fmtRange } from "@/lib/format";
+import { fmtRange, isPast } from "@/lib/format";
 
 const CATEGORY_STYLE: Record<string, string> = {
   Campout: "bg-mint text-pine",
@@ -24,6 +24,9 @@ export default function EventRow({
   signup?: SignupSummary;
 }) {
   const isCampout = e.category === "Campout";
+  // Nothing to sign up for once it's over or off the calendar (the archive shows these).
+  const over = Boolean(e.archived_at) || isPast(e.ends_at ?? e.starts_at);
+  const signupLink = !signup?.mine && !over ? e.signup_url : null;
   const href = e.href ?? (isCampout ? `/campouts/${e.id}` : `/events/${e.id}`);
   const body = (
     <div className="flex items-start gap-3">
@@ -68,7 +71,7 @@ export default function EventRow({
       <Link href={href} className="block">
         {body}
       </Link>
-      {e.twh_uid && (
+      {e.twh_uid && !over && (
         <div className="mt-2">
           <RsvpLink e={e} variant="link" />
         </div>
@@ -79,12 +82,12 @@ export default function EventRow({
       <Link href={href} className="block">
         {body}
       </Link>
-      {(e.twh_uid || (e.signup_url && !signup?.mine)) && (
+      {((e.twh_uid && !over) || signupLink) && (
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
           <RsvpLink e={e} variant="link" />
-          {e.signup_url && !signup?.mine && (
-            <a href={e.signup_url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-pine underline">
-              {/givebutter/i.test(e.signup_url) ? "Pay / order on Givebutter" : "Sign up"}
+          {signupLink && (
+            <a href={signupLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-pine underline">
+              {/givebutter/i.test(signupLink) ? "Pay / order on Givebutter" : "Sign up"}
             </a>
           )}
         </div>
