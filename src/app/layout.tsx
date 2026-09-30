@@ -5,7 +5,6 @@ export const metadata: Metadata = {
   title: { default: "Pack 361", template: "%s · Pack 361" },
   description: "Private member app for Cub Scout Pack 361, Ellicott City MD",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.svg", apple: "/icon.svg" },
   appleWebApp: { capable: true, title: "Pack 361", statusBarStyle: "default" },
   robots: { index: false, follow: false }, // private site: keep out of search engines
 };

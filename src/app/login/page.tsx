@@ -13,7 +13,7 @@ export default function LoginPage() {
         <div className="h-1.5 bg-pine" />
         <div className="p-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon.svg" alt="" className="mx-auto mb-3 h-16 w-16 rounded-2xl shadow-[var(--shadow-card)]" />
+          <img src="/badge.png" alt="" className="mx-auto mb-3 h-24 w-24 rounded-full shadow-[var(--shadow-float)]" />
           <span className="badge mb-2 bg-mint text-pine">
             <Lock className="h-3 w-3" aria-hidden /> Pack members only
           </span>
