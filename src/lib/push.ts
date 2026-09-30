@@ -15,6 +15,20 @@ export interface PushPayload {
 
 /** Send a notification to every subscribed phone/browser. Dead subscriptions are removed. */
 export async function sendPushToAll(payload: PushPayload, exceptAdultId?: string): Promise<{ sent: number; removed: number }> {
+  return sendPush(payload, { exceptAdultId });
+}
+
+/** Send a notification to specific adults' phones/browsers. */
+export async function sendPushTo(adultIds: string[], payload: PushPayload): Promise<{ sent: number; removed: number }> {
+  if (!adultIds.length) return { sent: 0, removed: 0 };
+  return sendPush(payload, { onlyAdultIds: adultIds });
+}
+
+async function sendPush(
+  payload: PushPayload,
+  opts: { exceptAdultId?: string; onlyAdultIds?: string[] },
+): Promise<{ sent: number; removed: number }> {
+  const { exceptAdultId, onlyAdultIds } = opts;
   if (!pushConfigured()) return { sent: 0, removed: 0 };
   webpush.setVapidDetails(
     process.env.VAPID_SUBJECT ?? "mailto:cnealen@gmail.com",
@@ -22,10 +36,12 @@ export async function sendPushToAll(payload: PushPayload, exceptAdultId?: string
     process.env.VAPID_PRIVATE_KEY!,
   );
   const db = createAdminClient();
-  const { data: subs } = await db
+  let q = db
     .from("push_subscriptions")
     .select("id, adult_id, endpoint, p256dh, auth, adult:adults!inner(is_active)")
     .eq("adult.is_active", true);
+  if (onlyAdultIds) q = q.in("adult_id", onlyAdultIds);
+  const { data: subs } = await q;
   const body = JSON.stringify(payload);
   let sent = 0;
   const dead: string[] = [];

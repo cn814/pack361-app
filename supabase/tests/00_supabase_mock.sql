@@ -10,12 +10,12 @@ end $$;
 grant anon, authenticated, service_role to postgres;
 
 create schema auth;
-create table auth.users (id uuid primary key default gen_random_uuid(), email text unique);
+create table auth.users (id uuid primary key default gen_random_uuid(), email text unique, last_sign_in_at timestamptz);
 create function auth.uid() returns uuid language sql stable as $$
-    select nullif(current_setting('request.jwt.claims', true)::json->>'sub', '')::uuid
+    select nullif(nullif(current_setting('request.jwt.claims', true), '')::json->>'sub', '')::uuid
 $$;
 create function auth.role() returns text language sql stable as $$
-    select coalesce(current_setting('request.jwt.claims', true)::json->>'role', current_user::text)
+    select coalesce(nullif(current_setting('request.jwt.claims', true), '')::json->>'role', current_user::text)
 $$;
 grant usage on schema auth to anon, authenticated, service_role;
 

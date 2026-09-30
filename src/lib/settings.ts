@@ -2,11 +2,14 @@ import "server-only";
 import { cache } from "react";
 import { createClient } from "./supabase/server";
 
-export type SettingKey = "awards_tracked_from";
+export type SettingKey = "awards_tracked_from" | "photo_keep_months" | "email_daily_limit";
 
-const DEFAULTS: Record<SettingKey, string> = {
+export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   awards_tracked_from: "2026-07-01",
+  photo_keep_months: "24",
+  email_daily_limit: "80",
 };
+const DEFAULTS = SETTING_DEFAULTS;
 
 /** Pack-wide settings (members read, admins change). */
 export const getSettings = cache(async (): Promise<Record<SettingKey, string>> => {

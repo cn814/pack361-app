@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, ClipboardCheck, FileUp, Grid3x3, Printer, ShoppingBag, Stamp } from "lucide-react";
+import { CalendarDays, ChevronRight, ClipboardCheck, FileUp, Grid3x3, Printer, ShoppingBag, Stamp } from "lucide-react";
 import { ProgressBar, ProgressSummary } from "@/components/RankProgress";
 import { getMyScouts, isLeader, requireMember } from "@/lib/data";
 import {
@@ -116,9 +116,14 @@ export default async function ScoutsPage() {
           <div className="flex items-center justify-between">
             <h2 className="section-title">{den}</h2>
             {dens.get(den)![0].den && (
-              <Link href={`/scouts/den/${dens.get(den)![0].den!.id}`} className="inline-flex items-center gap-1 text-xs font-bold text-pine">
-                <Grid3x3 className="h-3.5 w-3.5" aria-hidden /> Den grid
-              </Link>
+              <span className="flex items-center gap-3">
+                <Link href={`/scouts/den/${dens.get(den)![0].den!.id}/meetings`} className="inline-flex items-center gap-1 text-xs font-bold text-pine">
+                  <CalendarDays className="h-3.5 w-3.5" aria-hidden /> Meetings
+                </Link>
+                <Link href={`/scouts/den/${dens.get(den)![0].den!.id}`} className="inline-flex items-center gap-1 text-xs font-bold text-pine">
+                  <Grid3x3 className="h-3.5 w-3.5" aria-hidden /> Den grid
+                </Link>
+              </span>
             )}
           </div>
           <ul className="divide-y divide-line">

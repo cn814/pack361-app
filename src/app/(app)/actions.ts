@@ -50,3 +50,15 @@ export async function updateMyContact(_prev: PostState, form: FormData): Promise
   revalidatePath("/family");
   return { ok: true };
 }
+
+/** A family answers "may this scout appear in pack photos?" (RLS: own scouts only). */
+export async function setPhotoPermission(form: FormData) {
+  await requireMember();
+  const scoutId = String(form.get("scout_id") ?? "");
+  const answer = String(form.get("answer") ?? "");
+  if (answer !== "yes" && answer !== "no") return;
+  const supabase = await createClient();
+  await supabase.from("scouts").update({ photo_permission: answer }).eq("id", scoutId);
+  revalidatePath("/family");
+  revalidatePath("/");
+}

@@ -42,7 +42,7 @@ export default function SafetyPage() {
         items={[
           "No one-on-one digital contact: the app has no private messaging. Leaders post announcements to all families, and nothing is sent to scouts directly.",
           "Scouts don't have accounts. Only parents, guardians and registered leaders on the pack roster can sign in.",
-          "Leaders see a reminder before their Safeguarding Youth training expires.",
+          "Leaders' Safeguarding Youth training dates are tracked, with reminders before it expires.",
           "Each campout page lists the pack's campout rules, including two-deep leadership and family-only tenting.",
           <>
             The Scouts First Helpline (<a className="font-semibold text-pine underline" href="tel:18447268871">1-844-726-8871</a>) is
@@ -60,6 +60,8 @@ export default function SafetyPage() {
           "Den leaders see their own den; committee leaders see the pack for approvals and awards.",
           "Parents' phone numbers and emails aren't shown to other parents. The leader directory lists only leaders.",
           "Your calendar subscription link is private to you and contains only pack events.",
+          "Volunteer sign-ups show other families only your first name and last initial.",
+          "Pack photos are visible only to signed-in pack families. A leader approves every photo a parent uploads, and scouts whose families haven't said yes aren't shown.",
         ]}
       />
 
@@ -67,8 +69,9 @@ export default function SafetyPage() {
         icon={Database}
         title="What we keep, and what we don't"
         items={[
-          "We keep: parent and leader names, emails and phone numbers; scout names, dens and BSA member IDs; advancement copied from Scoutbook; event sign-ups and pack store orders from Givebutter.",
+          "We keep: parent and leader names, emails and phone numbers; scout names, dens and BSA member IDs; advancement copied from Scoutbook; den meeting attendance; leader training dates; volunteer sign-ups; event sign-ups and pack store orders from Givebutter; and pack photos.",
           "We don't keep: birthdates, home addresses, medical forms, payment card numbers (Givebutter handles payments) or passwords.",
+          "Photos are resized and their location (GPS) data removed before they're stored, and they're deleted automatically after a set time.",
           "When a family leaves the pack, their access is turned off.",
         ]}
       />
@@ -89,6 +92,8 @@ export default function SafetyPage() {
         title="Your choices"
         items={[
           "Phone alerts are off unless you turn them on, and you can turn them off at any time.",
+          "You decide whether your scout may appear in pack photos, and anyone can ask for a photo to be taken down. It's hidden right away.",
+          "Campout pages saved for use without signal stay on your phone only, and are deleted when you sign out.",
           "You can update your phone number and the name you go by on the My family page.",
           <>
             To correct or remove your family&apos;s information, email{" "}

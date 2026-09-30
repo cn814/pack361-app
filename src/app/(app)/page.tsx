@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SubmitButton from "@/components/SubmitButton";
-import { ChevronRight, MapPin, Pin, ShoppingBag, Timer } from "lucide-react";
+import { Camera, ChevronRight, HandHelping, Images, MapPin, Pin, ShoppingBag, Timer } from "lucide-react";
+import { eventHref, getOpenJobs } from "@/lib/volunteer";
 import EventRow from "@/components/EventRow";
 import PostAnnouncement from "@/components/PostAnnouncement";
 import { deleteAnnouncement } from "./actions";
@@ -9,7 +10,13 @@ import { daysUntil, fmtRange, timeAgo } from "@/lib/format";
 
 export default async function Home() {
   const me = await requireMember();
-  const [scouts, events, posts] = await Promise.all([getMyScouts(), getUpcomingEvents(8), getAnnouncements(15)]);
+  const [scouts, events, posts, jobs] = await Promise.all([
+    getMyScouts(),
+    getUpcomingEvents(8),
+    getAnnouncements(15),
+    getOpenJobs(),
+  ]);
+  const photoQuestion = scouts.filter((s) => !s.photo_permission);
   const next = events[0];
   const rest = events.slice(1, 5);
   const leader = isLeader(me);
@@ -58,15 +65,9 @@ export default async function Home() {
             </p>
           )}
           <div className="mt-4 flex gap-2">
-            {next.category === "Campout" ? (
-              <Link href={`/campouts/${next.id}`} className="btn-gold">
-                Campout details <ChevronRight className="h-4 w-4" aria-hidden />
-              </Link>
-            ) : (
-              <Link href="/events" className="btn-gold">
-                Full calendar <ChevronRight className="h-4 w-4" aria-hidden />
-              </Link>
-            )}
+            <Link href={eventHref(next)} className="btn-gold">
+              {next.category === "Campout" ? "Campout details" : "Details"} <ChevronRight className="h-4 w-4" aria-hidden />
+            </Link>
             {next.signup_url && (
               <a href={next.signup_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold">
                 RSVP / pay
@@ -76,14 +77,56 @@ export default async function Home() {
         </section>
       )}
 
-      <Link href="/store" className="card flex items-center gap-3 active:bg-surface-low">
-        <ShoppingBag className="h-6 w-6 shrink-0 text-gold-700" aria-hidden />
-        <span className="min-w-0 flex-1">
-          <span className="block font-bold text-pine-950">Pack store</span>
-          <span className="block text-xs text-muted">Pack 361 shirts and hoodies</span>
-        </span>
-        <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
-      </Link>
+      {photoQuestion.length > 0 && (
+        <Link href="/family#photos" className="card flex items-center gap-3 border-l-4 border-l-gold">
+          <Camera className="h-6 w-6 shrink-0 text-gold-700" aria-hidden />
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold text-pine-950">One quick question</span>
+            <span className="block text-xs text-muted">
+              May {photoQuestion.map((s) => s.first_name).join(" and ")} appear in the pack&apos;s private photo album?
+            </span>
+          </span>
+          <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
+        </Link>
+      )}
+
+      {jobs.length > 0 && (
+        <section className="card space-y-2">
+          <h2 className="section-title flex items-center gap-1.5">
+            <HandHelping className="h-4 w-4" aria-hidden /> Volunteers needed
+          </h2>
+          <ul className="divide-y divide-line">
+            {jobs.map((j) => (
+              <li key={j.slot_id}>
+                <Link href={`${eventHref(j.event)}#volunteer`} className="flex items-center gap-2 py-2">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-ink">
+                      {j.role_title}
+                      {j.is_urgent && <span className="badge ml-2 bg-gold text-pine-950">Needed</span>}
+                    </span>
+                    <span className="block truncate text-xs text-muted">
+                      {j.event.title} · {daysUntil(j.event.starts_at).toLowerCase()} · {j.open} open
+                    </span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <Link href="/photos" className="card flex items-center gap-2 py-3">
+          <Images className="h-5 w-5 shrink-0 text-pine" aria-hidden />
+          <span className="font-bold text-pine-950">Pack photos</span>
+        </Link>
+        <Link href="/store" className="card flex items-center gap-2 py-3">
+          <ShoppingBag className="h-5 w-5 shrink-0 text-gold-700" aria-hidden />
+          <span className="font-bold text-pine-950">Pack store</span>
+        </Link>
+      </div>
+
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">

@@ -63,7 +63,34 @@ npm run dev
 - **Push alerts**: families turn them on from My family; leaders' new announcements notify them.
   iPhones need the app added to the home screen first.
 - Needs server env vars: see `.env.example` (`SUPABASE_SECRET_KEY`, `GIVEBUTTER_API_KEY`,
-  `CRON_SECRET`, VAPID keys). Without them those features stay quiet; everything else works.
+  `CRON_SECRET`, VAPID keys, `RESEND_API_KEY`). Without them those features stay quiet; everything
+  else works.
+
+## Leader tools
+- **Pack admin** (Leaders → Pack admin; admins and Cubmaster): add and edit families, adults, scouts
+  and dens, assign den leaders, change app roles, turn off access when a family leaves, and pack
+  settings. Nobody needs to run database commands for roster changes.
+- **Welcome emails**: sends each adult one "the app is ready" email in batches under the daily
+  limit (`pack_settings.email_daily_limit`; the free Resend plan allows 100 a day including sign-in
+  codes). Needs `RESEND_API_KEY`.
+- **Den meetings** (Scouts → a den → Meetings): plan a meeting around an adventure and its
+  requirements, take attendance, then report the requirements for everyone present in one tap.
+  They arrive already approved on the "Enter in Scoutbook" list. Families see upcoming meetings.
+- **Volunteer jobs**: leaders add jobs on any event or campout page; families sign up. The home
+  page lists open spots. Volunteers get a reminder the day before (phone alert, or email).
+- **Training**: `adult_trainings` tracks Safeguarding Youth, position-specific, Hazardous Weather,
+  BALOO, Safe Swim and Safety Afloat. Leaders update their own dates on My family; admins update
+  anyone's. Reminders go out 60, 30, 7 and 0 days before expiry.
+- **Photos**: private bucket `pack-photos`. Each family answers a photo permission question per
+  scout (unanswered = no). Parents' uploads wait for a leader; leaders' go straight in. Photos are
+  resized in the browser (which strips GPS data), and are deleted after
+  `pack_settings.photo_keep_months`. Anyone can ask for a photo to come down; it's hidden at once.
+- **Offline campouts**: the service worker (`public/sw.js`) keeps opened campout pages and the app's
+  static files on the phone; the sign-in page clears them.
+- **Big-event tab**: the bottom bar shows a tab for the next campout, derby, Blue & Gold, regatta
+  or crossover from 45 days before until 3 days after (`src/lib/featured.ts`).
+- A second daily cron (`/api/cron/daily`, 5 PM ET) sends the volunteer and training reminders and
+  deletes expired photos.
 
 ## Run the permission tests
 Needs PostgreSQL 15+ and an empty database:

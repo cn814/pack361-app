@@ -1,26 +1,34 @@
 import type { Metadata } from "next";
 import { LogOut, ShieldCheck } from "lucide-react";
 import ContactForm from "@/components/ContactForm";
+import PhotoPermission from "@/components/PhotoPermission";
 import PushToggle from "@/components/PushToggle";
-import { dueWithin } from "@/lib/format";
-import { displayName, getFamilyAdults, getMyScouts, requireMember } from "@/lib/data";
+import TrainingEditor, { stateText } from "@/components/TrainingEditor";
+import { displayName, getFamilyAdults, getMyScouts, isLeader, requireMember } from "@/lib/data";
+import { getMyTraining } from "@/lib/training-data";
+import { trainingState } from "@/lib/training";
 
 export const metadata: Metadata = { title: "My family" };
 
 export default async function FamilyPage() {
   const me = await requireMember();
-  const [scouts, adults] = await Promise.all([getMyScouts(), getFamilyAdults()]);
-  const yptSoon = dueWithin(me.ypt_expires_on, 60) ? me.ypt_expires_on : null;
+  const [scouts, adults, training] = await Promise.all([getMyScouts(), getFamilyAdults(), getMyTraining(me.id)]);
+  const leader = isLeader(me) || Boolean(me.position_title);
+  const ypt = training.find((t) => t.course === "ypt");
+  const yptState = trainingState(ypt);
+  const yptWarn = leader && yptState !== "current";
 
   return (
     <>
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">My family</h1>
 
-      {yptSoon && (
+      {yptWarn && (
         <p className="flex items-start gap-2 rounded-2xl border border-gold-100 bg-gold-50 p-3 text-sm text-gold-800">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          Your Safeguarding Youth training expires {new Date(yptSoon + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.
-          Renew it at my.scouting.org.
+          <span>
+            Safeguarding Youth training: {yptState === "missing" ? "no date recorded yet" : stateText(ypt).toLowerCase()}. Take or
+            renew it at my.scouting.org, then add the date under My training below.
+          </span>
         </p>
       )}
 
@@ -52,9 +60,29 @@ export default async function FamilyPage() {
         </p>
       </section>
 
+      {scouts.length > 0 && (
+        <section id="photos" className="card scroll-mt-20 space-y-3">
+          <h2 className="section-title">Pack photo album</h2>
+          <p className="text-sm text-muted">
+            Leaders only approve photos showing scouts whose families said yes. Photos are visible only to signed-in pack
+            families, and you can change your answer any time.
+          </p>
+          <PhotoPermission scouts={scouts} />
+        </section>
+      )}
+
+      {leader && (
+        <section className="card space-y-1">
+          <h2 className="section-title">My training</h2>
+          <TrainingEditor adultId={me.id} rows={training} />
+        </section>
+      )}
+
       <section className="card space-y-3">
         <h2 className="section-title">Notifications</h2>
-        <p className="text-sm text-muted">Get a phone alert when a leader posts a pack announcement.</p>
+        <p className="text-sm text-muted">
+          Get phone alerts for pack announcements, reminders for jobs you volunteer for, and (for leaders) training renewals.
+        </p>
         <PushToggle />
       </section>
 

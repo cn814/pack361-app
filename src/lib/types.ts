@@ -27,6 +27,7 @@ export interface Scout {
   last_name: string;
   family_id: string;
   den: Den | null;
+  photo_permission?: "yes" | "no" | null;
 }
 
 export interface PackEvent {
