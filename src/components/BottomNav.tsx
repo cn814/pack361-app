@@ -109,22 +109,25 @@ export default function BottomNav({
                 href={href}
                 aria-current={active ? "page" : undefined}
                 onClick={tap(href, match)}
-                className={`flex min-w-14 flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-[11px] font-semibold transition active:scale-90 active:bg-mint lg:min-w-0 lg:flex-row lg:gap-3 lg:px-3 lg:py-2.5 lg:text-sm lg:active:scale-100 lg:active:bg-white/15 ${
+                className={`flex min-w-14 flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 transition active:scale-90 active:bg-mint lg:min-w-0 lg:flex-row lg:gap-3 lg:px-3 lg:py-2.5 lg:text-sm lg:font-semibold lg:active:scale-100 lg:active:bg-white/15 ${
                   active
-                    ? "text-pine lg:bg-white/10 lg:text-white"
+                    ? "text-[12.5px] font-extrabold text-pine lg:bg-white/10 lg:text-white"
                     : special
-                      ? "text-gold-800 lg:text-gold lg:hover:bg-white/5"
-                      : "text-muted lg:text-mint-200 lg:hover:bg-white/5 lg:hover:text-white"
+                      ? "text-[11px] font-semibold text-gold-800 lg:text-gold lg:hover:bg-white/5"
+                      : "text-[11px] font-medium text-muted lg:text-mint-200 lg:hover:bg-white/5 lg:hover:text-white"
                 }`}
               >
                 {special ? (
                   <span
-                    className={`-mt-0.5 flex h-7 w-7 items-center justify-center rounded-full lg:mt-0 ${active ? "bg-pine text-white lg:bg-gold lg:text-pine-950" : "bg-gold text-pine-950"}`}
+                    className={`-mt-0.5 flex items-center justify-center rounded-full lg:mt-0 lg:h-7 lg:w-7 ${active ? "h-8 w-8 bg-pine text-white ring-2 ring-mint lg:bg-gold lg:text-pine-950 lg:ring-0" : "h-7 w-7 bg-gold text-pine-950"}`}
                   >
                     <Icon className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                   </span>
                 ) : (
-                  <Icon className="h-5 w-5 lg:mx-1" strokeWidth={active ? 2.5 : 2} aria-hidden />
+                  // The current page's icon sits in a light green pill (phones), so it's clear where you are.
+                  <span className={`flex h-7 w-12 items-center justify-center rounded-full lg:h-auto lg:w-auto ${active ? "bg-mint lg:bg-transparent" : ""}`}>
+                    <Icon className={`${active ? "h-6 w-6" : "h-5 w-5"} lg:mx-1 lg:h-5 lg:w-5`} strokeWidth={active ? 2.75 : 2} aria-hidden />
+                  </span>
                 )}
                 <span className="max-w-16 truncate lg:max-w-none">{label}</span>
               </Link>
