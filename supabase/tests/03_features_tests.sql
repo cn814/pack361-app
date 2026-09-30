@@ -68,7 +68,7 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000
 select test.check(test.count('select * from public.givebutter_orders') = 3, 'leaders see all orders');
 select test.expect_rows($$update public.pack_settings set value = '2020-01-01'$$, 0, 'den leader cannot change settings');
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
-select test.expect_rows($$update public.pack_settings set value = '12000' where key = 'popcorn_goal'$$, 1, 'admin changes a setting');
+select test.expect_rows($$update public.pack_settings set value = '150' where key = 'popcorn_scout_goal'$$, 1, 'admin changes a setting');
 select test.expect_rows($$insert into public.popcorn_sales (scout_id, amount) values ('40000000-0000-0000-0000-000000000002', 120)$$, 1, 'admin enters popcorn sales');
 select test.expect_rows($$update public.givebutter_campaigns set show_as_fundraiser = true where id = 745658$$, 1, 'admin relabels a campaign');
 select test.check((select count(*) from public.adventures where home_idea is not null) = 148, 'every adventure has a home idea');

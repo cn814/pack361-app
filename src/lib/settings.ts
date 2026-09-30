@@ -4,14 +4,14 @@ import { createClient } from "./supabase/server";
 
 export type SettingKey =
   | "awards_tracked_from"
-  | "popcorn_goal"
+  | "popcorn_scout_goal"
   | "popcorn_ends"
   | "popcorn_store_url"
   | "popcorn_note";
 
 const DEFAULTS: Record<SettingKey, string> = {
   awards_tracked_from: "2026-07-01",
-  popcorn_goal: "0",
+  popcorn_scout_goal: "100", // Trail's End goal per scout, in dollars
   popcorn_ends: "",
   popcorn_store_url: "",
   popcorn_note: "",

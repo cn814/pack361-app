@@ -42,8 +42,8 @@ export function PopcornSettingsForm({ v }: { v: Record<string, string> }) {
   return (
     <form action={action} className="space-y-2">
       <label className="block text-xs font-semibold text-navy">
-        Pack goal ($)
-        <input name="popcorn_goal" inputMode="numeric" defaultValue={v.popcorn_goal} className="input mt-1 py-2" />
+        Goal per scout ($)
+        <input name="popcorn_scout_goal" inputMode="numeric" defaultValue={v.popcorn_scout_goal} className="input mt-1 py-2" />
       </label>
       <label className="block text-xs font-semibold text-navy">
         Sale ends (e.g. Nov 15)
