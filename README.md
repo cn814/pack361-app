@@ -66,18 +66,14 @@ npm run dev
   `CRON_SECRET`, VAPID keys). Without them those features stay quiet; everything else works.
 
 ## Run the permission tests
-Needs PostgreSQL 15+:
+Needs PostgreSQL 15+ and an empty database:
 ```bash
 createdb packtest
-psql -v ON_ERROR_STOP=1 -d packtest \
-  -f supabase/tests/00_supabase_mock.sql \
-  -f supabase/migrations/20260929000000_init.sql \
-  -f supabase/migrations/20260929000100_harden_functions.sql \
-  -f supabase/migrations/20260929000200_private_helpers.sql \
-  -f supabase/migrations/20260929000300_advancement.sql \
-  -f supabase/migrations/20260929000400_pack_features.sql \
-  -f supabase/tests/01_rls_tests.sql \
-  -f supabase/tests/02_advancement_tests.sql \
-  -f supabase/tests/03_features_tests.sql
+DATABASE_URL=postgres://localhost/packtest npm run test:db
 ```
-Every check prints `PASS`. The run stops at the first `FAIL`.
+Every check prints `PASS`; the run stops at the first `FAIL`. GitHub runs these, plus lint,
+typecheck and build, on every pull request (`.github/workflows/ci.yml`).
+
+## Contributing
+See [CONTRIBUTING.md](CONTRIBUTING.md): no real pack data or secrets in the repo, youth-protection
+rules, local setup with your own Supabase project, and how pull requests are reviewed.
