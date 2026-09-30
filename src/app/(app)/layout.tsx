@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <header className="print:hidden sticky top-0 z-40 flex items-center justify-between bg-pine px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow-md">
         <Link href="/" className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon.svg" alt="" className="h-9 w-9 rounded-xl ring-1 ring-white/20" />
+          <img src="/badge.png" alt="" className="h-10 w-10 rounded-full ring-2 ring-white/25" />
           <span>
             <span className="block text-sm font-bold leading-tight">Pack 361</span>
             <span className="block text-xs text-mint-200/80">Ellicott City, MD</span>
