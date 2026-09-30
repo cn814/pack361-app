@@ -83,6 +83,10 @@ body {
   100% { transform: translateX(100%) scaleX(0.3); }
 }
 
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+}
+
 @keyframes skeleton-pulse {
   50% { opacity: 0.45; }
 }

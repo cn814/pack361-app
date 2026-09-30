@@ -1,6 +1,8 @@
 import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 import NavProgress from "@/components/NavProgress";
+import Toast from "@/components/Toast";
+import { Suspense } from "react";
 import ServiceWorkerSetup from "@/components/ServiceWorkerSetup";
 import { displayName, getFeaturedTab, requireMember } from "@/lib/data";
 
@@ -11,6 +13,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="min-h-dvh w-full lg:pl-64 print:pl-0">
       <NavProgress />
+      <Suspense>
+        <Toast />
+      </Suspense>
       <ServiceWorkerSetup mode="register" />
       <header className="print:hidden sticky top-0 z-40 mx-auto flex max-w-md items-center justify-between bg-pine px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow-md lg:hidden">
         <Link href="/" className="flex items-center gap-3">

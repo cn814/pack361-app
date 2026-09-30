@@ -18,11 +18,13 @@ export default async function UploadPage({ searchParams }: PageProps<"/photos/up
     if (one) recent.unshift(one);
   }
   const events = recent.map((e) => ({ id: e.id, title: e.title, when: fmtDay(e.starts_at) }));
+  const from = typeof event === "string" ? recent.find((e) => e.id === event) : undefined;
+  const fromHref = from ? (from.category === "Campout" ? `/campouts/${from.id}` : `/events/${from.id}`) : null;
   const leader = isLeader(me);
 
   return (
     <>
-      <BackLink href={typeof event === "string" && recent.some((e) => e.id === event) ? `/events/${event}` : "/photos"} label={typeof event === "string" && recent.some((e) => e.id === event) ? "Event" : "Pack photos"} />
+      <BackLink href={fromHref ?? "/photos"} label={from ? from.title : "Pack photos"} />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Upload photos</h1>
       <p className="-mt-2 text-sm text-muted">
         {leader
@@ -38,6 +40,7 @@ export default async function UploadPage({ searchParams }: PageProps<"/photos/up
           events={events}
           defaultEventId={typeof event === "string" && events.some((e) => e.id === event) ? event : undefined}
           leader={leader}
+          returnTo={fromHref ?? undefined}
         />
       </section>
     </>
