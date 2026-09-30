@@ -1,10 +1,11 @@
 // "Big" pack events that get their own tab in the bottom bar in the weeks before they happen.
 // Pure functions: used by the server (to pick the event) and the client (for the icon).
 
-export type FeaturedKind = "campout" | "derby" | "space_derby" | "regatta" | "blue_gold" | "crossover";
+export type FeaturedKind = "campout" | "derby" | "space_derby" | "fishing" | "regatta" | "blue_gold" | "crossover";
 
 const KINDS: { kind: FeaturedKind; label: string; match: (title: string, category: string) => boolean }[] = [
   { kind: "space_derby", label: "Derby", match: (t) => /space\s*derby|rocket/i.test(t) },
+  { kind: "fishing", label: "Fishing", match: (t) => /fish/i.test(t) },
   { kind: "derby", label: "Derby", match: (t, c) => /derby/i.test(c) || /pinewood|derby/i.test(t) },
   { kind: "regatta", label: "Regatta", match: (t) => /regatta/i.test(t) },
   { kind: "blue_gold", label: "Blue & Gold", match: (t, c) => /blue\s*(&|and|n)\s*gold/i.test(`${t} ${c}`) },

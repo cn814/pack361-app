@@ -7,6 +7,7 @@ import {
   Award,
   CalendarDays,
   CarFront,
+  Fish,
   Footprints,
   House,
   PartyPopper,
@@ -22,6 +23,7 @@ import type { FeaturedKind, FeaturedTab } from "@/lib/featured";
 const FEATURED_ICON: Record<FeaturedKind, LucideIcon> = {
   campout: Tent,
   derby: CarFront,
+  fishing: Fish,
   space_derby: Rocket,
   regatta: Sailboat,
   blue_gold: PartyPopper,
@@ -63,7 +65,13 @@ export default function BottomNav({ featured, me }: { featured: FeaturedTab | nu
     { href: "/leaders", label: "Leaders", icon: Users, match: (p) => p.startsWith("/leaders") || p.startsWith("/admin") },
   ];
 
-  const tap = (href: string, match: (p: string) => boolean) => () => !match(path) && setTapped({ href, from: path });
+  const tap = (href: string, match: (p: string) => boolean) => () => {
+    if (match(path)) return;
+    const t = { href, from: path };
+    setTapped(t);
+    // If the page never arrives (offline), stop highlighting the tapped tab.
+    setTimeout(() => setTapped((cur) => (cur === t ? null : cur)), 15000);
+  };
 
   return (
     <nav

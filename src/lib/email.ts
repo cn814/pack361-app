@@ -1,4 +1,5 @@
 import "server-only";
+import { startOfEasternDay } from "./tz";
 
 // Pack email goes out through Resend (the same service that sends sign-in codes).
 // Needs RESEND_API_KEY in the server environment; without it, email features stay switched off.
@@ -46,6 +47,7 @@ export async function sendEmail(e: Email): Promise<string | null> {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(15000),
       body: JSON.stringify({
         from: FROM,
         to: [e.to],
@@ -73,6 +75,7 @@ export async function sendEmails(list: Email[]): Promise<string | null> {
     const res = await fetch("https://api.resend.com/emails/batch", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(20000),
       body: JSON.stringify(
         list.map((e) => ({
           from: FROM,
@@ -94,13 +97,5 @@ export async function sendEmails(list: Email[]): Promise<string | null> {
 
 /** Start of today in Eastern time, as an ISO timestamp (for "sent today" counts). */
 export function startOfTodayEastern(): string {
-  const now = new Date();
-  const ymd = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(now);
-  const offset = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", timeZoneName: "shortOffset" })
-    .formatToParts(now)
-    .find((p) => p.type === "timeZoneName")!
-    .value.replace("GMT", "");
-  const sign = offset.startsWith("-") ? "-" : "+";
-  const hours = offset.replace(/^[+-]/, "").split(":")[0].padStart(2, "0");
-  return new Date(`${ymd}T00:00:00${sign}${hours}:00`).toISOString();
+  return startOfEasternDay();
 }

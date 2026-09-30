@@ -1,16 +1,21 @@
 // All pack events are in Maryland; format in Eastern time regardless of where the server runs.
-const TZ = "America/New_York";
+import { TZ, daysBetween, easternDate } from "./tz";
+
+// Built once: creating a formatter is slow, and the calendar formats hundreds of dates.
+const dayFmt = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short", month: "short", day: "numeric" });
+const timeFmt = new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", minute: "2-digit" });
+const monthFmt = new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "long", year: "numeric" });
 
 export function fmtDay(iso: string) {
-  return new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short", month: "short", day: "numeric" }).format(new Date(iso));
+  return dayFmt.format(new Date(iso));
 }
 
 export function fmtTime(iso: string) {
-  return new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", minute: "2-digit" }).format(new Date(iso));
+  return timeFmt.format(new Date(iso));
 }
 
 export function fmtMonth(iso: string) {
-  return new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "long", year: "numeric" }).format(new Date(iso));
+  return monthFmt.format(new Date(iso));
 }
 
 export function fmtRange(start: string, end: string | null, allDay = false) {
@@ -20,9 +25,12 @@ export function fmtRange(start: string, end: string | null, allDay = false) {
   return sameDay ? `${fmtDay(start)} · ${fmtTime(start)}–${fmtTime(end)}` : `${fmtDay(start)} – ${fmtDay(end)}`;
 }
 
-export function daysUntil(iso: string) {
-  const d = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
-  if (d <= 0) return "Today";
+/** "Today", "Tomorrow", "In 5 days" by calendar day in Eastern time; "Happening now" mid-event. */
+export function daysUntil(iso: string, endIso?: string | null) {
+  const today = easternDate(Date.now());
+  const d = daysBetween(today, easternDate(iso));
+  if (d < 0) return endIso && daysBetween(today, easternDate(endIso)) >= 0 ? "Happening now" : "Today";
+  if (d === 0) return "Today";
   if (d === 1) return "Tomorrow";
   return `In ${d} days`;
 }

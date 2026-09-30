@@ -5,6 +5,7 @@ import BackLink from "@/components/BackLink";
 import VolunteerJobs from "@/components/VolunteerJobs";
 import RsvpLink from "@/components/RsvpLink";
 import EventPhotosLink from "@/components/EventPhotosLink";
+import ArchiveControl from "@/components/ArchiveControl";
 import { EventLinks, EventSections } from "@/components/EventInfo";
 import { getEvent, isLeader, requireMember } from "@/lib/data";
 import { getSlots } from "@/lib/volunteer";
@@ -39,7 +40,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
 
   return (
     <>
-      <BackLink href="/events" label="Calendar" />
+      <BackLink href={event.archived_at ? "/events/archive" : "/events"} label={event.archived_at ? "Archive" : "Calendar"} />
       <section className="card space-y-2 border-t-4 border-t-gold">
         <div className="flex flex-wrap gap-2">
           <span className="badge bg-gold-50 text-gold-700">{event.category}</span>
@@ -70,6 +71,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           )}
         </div>
       </section>
+      {event.archived_at && <ArchiveControl e={event} leader={false} back={`/events/${id}`} part="note" />}
       {elsewhere.length > 0 && (
         <section className="card space-y-2 border-l-4 border-l-gold">
           <h2 className="section-title">Meeting somewhere else tonight</h2>
@@ -91,6 +93,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <EventLinks links={event.links ?? []} />
       <EventSections sections={event.sections ?? []} />
       <EventPhotosLink eventId={id} startsAt={event.starts_at} />
+      <ArchiveControl e={event} leader={isLeader(me)} back={`/events/${id}`} part="button" />
     </>
   );
 }

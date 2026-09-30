@@ -43,7 +43,9 @@ dump() {
     pg_dump "${ARGS[@]}" --dbname="$PACK361_DB_URL"
   elif command -v docker >/dev/null 2>&1; then
     # No local pg_dump 17+: use the official image (nothing is installed on this machine).
-    docker run --rm -e DB_URL="$PACK361_DB_URL" postgres:17-alpine \
+    # "-e DB_URL" (no value) passes it from this shell's environment, so the password never
+    # appears in the process list.
+    DB_URL="$PACK361_DB_URL" docker run --rm -e DB_URL postgres:17-alpine \
       sh -c 'pg_dump '"${ARGS[*]}"' --dbname="$DB_URL"'
   else
     echo "Need pg_dump 17+ (PostgreSQL client tools) or Docker." >&2
@@ -52,17 +54,23 @@ dump() {
 }
 
 dump > "$OUT.part"
+# Quick check that the backup is readable and has the main tables, before it counts as a backup.
+check() {
+  if command -v pg_restore >/dev/null 2>&1; then pg_restore --list "$1"
+  elif command -v docker >/dev/null 2>&1; then docker run --rm -i postgres:17-alpine pg_restore --list < "$1"
+  else echo "TABLE DATA public scouts"; fi   # can't check without tools; the size check below still runs
+}
+LIST="$(check "$OUT.part" || true)"
+if [ ! -s "$OUT.part" ] || [[ "$LIST" != *"TABLE DATA public scouts"* ]]; then
+  echo "Backup looks incomplete; kept as $OUT.part for a look" >&2
+  exit 1
+fi
 mv "$OUT.part" "$OUT"
 
 if [ -n "${ENCRYPT_TO:-}" ]; then
   gpg --batch --yes --encrypt --recipient "$ENCRYPT_TO" --output "$OUT.gpg" "$OUT"
   rm -f "$OUT"
   OUT="$OUT.gpg"
-fi
-
-# Quick check that the backup is readable and has the main tables.
-if [[ "$OUT" == *.dump ]] && command -v pg_restore >/dev/null 2>&1; then
-  pg_restore --list "$OUT" | grep -q "TABLE DATA public scouts" || { echo "Backup looks incomplete: $OUT" >&2; exit 1; }
 fi
 
 find "$DIR" -maxdepth 1 -name 'pack361-*.dump*' -type f -mtime +"$KEEP_DAYS" -delete

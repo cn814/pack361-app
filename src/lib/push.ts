@@ -62,8 +62,10 @@ async function sendPush(
       .filter((s) => s.adult_id !== exceptAdultId)
       .map(async (s) => {
         try {
+          if (!isPushEndpoint(s.endpoint)) throw Object.assign(new Error("not a push service"), { statusCode: 410 });
           await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, body, {
             TTL: 60 * 60 * 24,
+            timeout: 10000,
           });
           sent++;
         } catch (e) {
@@ -79,4 +81,17 @@ async function sendPush(
   );
   if (dead.length) await db.from("push_subscriptions").delete().in("id", dead);
   return { sent, removed: dead.length, errors };
+}
+
+/** Browsers' push services. The server only ever sends to these (never to an arbitrary URL). */
+export function isPushEndpoint(endpoint: string): boolean {
+  try {
+    const u = new URL(endpoint);
+    return (
+      u.protocol === "https:" &&
+      /(^|\.)(fcm\.googleapis\.com|push\.apple\.com|push\.services\.mozilla\.com|notify\.windows\.com|android\.googleapis\.com)$/.test(u.hostname)
+    );
+  } catch {
+    return false;
+  }
 }

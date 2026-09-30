@@ -75,7 +75,7 @@ export default async function PhotosPage({ searchParams }: PageProps<"/photos">)
 
       {flagged && (
         <p className="flex items-center gap-2 rounded-2xl border border-mint-200 bg-mint p-3 text-sm font-semibold text-pine">
-          <CircleCheck className="h-4 w-4 shrink-0" aria-hidden /> Thanks. That photo is hidden until a leader reviews it.
+          <CircleCheck className="h-4 w-4 shrink-0" aria-hidden /> Thanks, your removal request was sent. The photo is hidden until a leader takes care of it.
         </p>
       )}
       {leader && pending > 0 && (

@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
+const HELP = "info@pack361.org";
+
 export type LoginState = { step: "email" | "code"; email: string; message?: string; error?: string };
 
 function cleanEmail(v: FormDataEntryValue | null) {
@@ -23,11 +25,15 @@ export async function sendLoginEmail(_prev: LoginState, form: FormData): Promise
     options: { emailRedirectTo: `${origin}/auth/confirm` },
   });
   if (error) {
-    const wait = /rate|seconds/i.test(error.message);
+    // Sign-in emails are rate limited (per address, and for the whole pack per hour) to protect
+    // the pack's email quota. Either way, a person can always reach us.
+    const wait = /rate|seconds|too many/i.test(error.message);
     return {
       step: "email",
       email,
-      error: wait ? "Too many tries. Wait a minute and try again." : "Couldn't send the email. Try again in a minute.",
+      error: wait
+        ? `Too many sign-in emails were sent just now. Wait a few minutes and try again. Still stuck? Email ${HELP} and we'll get you in.`
+        : `Couldn't send the email. Try again in a minute, or email ${HELP} and we'll get you in.`,
     };
   }
   // Same message whether or not the address is on the roster (doesn't reveal who's in the pack).
@@ -40,6 +46,15 @@ export async function verifyLoginCode(_prev: LoginState, form: FormData): Promis
   if (token.length < 6) return { step: "code", email, error: "Enter the code from the email." };
   const supabase = await createClient();
   const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
-  if (error) return { step: "code", email, error: "That code didn't work or has expired. Request a new one." };
+  if (error) {
+    const wait = /rate|seconds|too many/i.test(error.message);
+    return {
+      step: "code",
+      email,
+      error: wait
+        ? `Too many tries. Wait a few minutes, or email ${HELP} for help.`
+        : "That code didn't work or has expired. Request a new one below.",
+    };
+  }
   redirect("/");
 }

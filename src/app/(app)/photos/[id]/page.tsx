@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Download, Flag, Trash2 } from "lucide-react";
+import { Download, Flag, ShieldCheck } from "lucide-react";
 import ActionForm from "@/components/ActionForm";
 import BackLink from "@/components/BackLink";
-import SubmitButton from "@/components/SubmitButton";
 import { isLeader, requireMember } from "@/lib/data";
 import { getPhoto } from "@/lib/photos";
 import { fmtDay } from "@/lib/format";
-import { deletePhoto, flagPhoto } from "../actions";
+import { flagPhoto } from "../actions";
 
 export const metadata: Metadata = { title: "Photo" };
 
@@ -19,7 +18,9 @@ export default async function PhotoPage({ params }: PageProps<"/photos/[id]">) {
   const photo = await getPhoto(id);
   if (!photo) notFound();
   const album = photo.event_id ?? "other";
-  const canDelete = isLeader(me) || (photo.uploader_id === me.id && photo.status === "pending_review");
+  const leader = isLeader(me);
+  // Only leaders remove photos (from Photo review). Everyone else asks for removal.
+  const canRequest = photo.status === "approved" || photo.uploader_id === me.id || leader;
 
   return (
     <>
@@ -46,28 +47,27 @@ export default async function PhotoPage({ params }: PageProps<"/photos/[id]">) {
             <Download className="h-4 w-4" aria-hidden /> Save
           </a>
         )}
-        {canDelete && (
-          <form action={deletePhoto} className="flex-1">
-            <input type="hidden" name="id" value={photo.id} />
-            <input type="hidden" name="back" value={`/photos?album=${album}`} />
-            <SubmitButton className="btn-ghost w-full border-danger py-2 text-danger">
-              <Trash2 className="h-4 w-4" aria-hidden /> Delete
-            </SubmitButton>
-          </form>
+        {leader && photo.status !== "approved" && (
+          <Link href="/photos/review" className="btn-ghost flex-1 py-2">
+            <ShieldCheck className="h-4 w-4" aria-hidden /> Review
+          </Link>
         )}
       </div>
       <p className="px-1 text-[11px] text-muted">Please keep pack photos within the pack. Don&apos;t post them on public social media.</p>
 
-      {photo.status === "approved" && (
+      {canRequest && (
         <details className="card">
           <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-bold text-danger">
-            <Flag className="h-4 w-4" aria-hidden /> Ask to take this photo down
+            <Flag className="h-4 w-4" aria-hidden /> Request removal
           </summary>
           <div className="pt-3">
             <ActionForm action={flagPhoto} submit="Send request" busy="Sending…" buttonClass="btn-ghost w-full border-danger text-danger">
               <input type="hidden" name="id" value={photo.id} />
               <textarea className="input min-h-20" name="reason" placeholder="Why? (optional, only leaders see this)" maxLength={500} />
-              <p className="text-[11px] text-muted">The photo is hidden right away until a leader looks at it.</p>
+              <p className="text-[11px] text-muted">
+                The photo is hidden from families right away, and a leader removes it. Photos can&apos;t be deleted from the
+                album directly.
+              </p>
             </ActionForm>
           </div>
         </details>

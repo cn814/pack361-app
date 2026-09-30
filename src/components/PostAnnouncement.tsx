@@ -1,5 +1,6 @@
 "use client";
 
+import { useSubmitKeepingValues } from "@/components/ActionForm";
 import { useActionState, useState } from "react";
 import { Megaphone } from "lucide-react";
 import { postAnnouncement, type PostState } from "@/app/(app)/actions";
@@ -13,6 +14,7 @@ export default function PostAnnouncement() {
     if (result.ok) setOpen(false);
     return result;
   }, {});
+  const keep = useSubmitKeepingValues(action);
 
   if (!open) {
     return (
@@ -22,7 +24,7 @@ export default function PostAnnouncement() {
     );
   }
   return (
-    <form action={action} className="card space-y-3">
+    <form action={action} onSubmit={keep} className="card space-y-3">
       <h2 className="font-bold text-pine-950">New announcement</h2>
       <input name="title" required maxLength={140} placeholder="Title" className="input" />
       <textarea name="body" required rows={4} maxLength={4000} placeholder="Message for pack families" className="input" />

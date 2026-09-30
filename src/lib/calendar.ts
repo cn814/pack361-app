@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PackEvent } from "./types";
 import { LEADER_ROLES, type AppRole, type DenRank } from "./types";
+import { easternDate, easternWallToIso } from "./tz";
 
 // One calendar for everyone: pack-wide events, plus events and den meetings for the dens a
 // family belongs to. Leaders see every den. Used by the app pages (signed-in client, RLS
@@ -34,23 +35,12 @@ export async function denScopeFor(
   return { dens: [...new Set(dens.map((d) => d.id))], ranks: [...new Set(dens.map((d) => d.rank))] };
 }
 
-/** YYYY-MM-DD in Eastern time. */
-export function easternDate(iso: string): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date(iso));
-}
+export { easternDate } from "./tz";
 
 /** A wall-clock date and time in Eastern time, as an ISO timestamp. */
 export function easternToIso(date: string, time: string): string {
   const [h, m] = time.split(":").map(Number);
-  // Find the Eastern offset on that date (EDT -4 / EST -5).
-  const probe = new Date(`${date}T12:00:00Z`);
-  const off = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", timeZoneName: "shortOffset" })
-    .formatToParts(probe)
-    .find((p) => p.type === "timeZoneName")!
-    .value.replace("GMT", "");
-  const hours = Number(off || 0);
-  const utc = Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)), h - hours, m);
-  return new Date(utc).toISOString();
+  return easternWallToIso(Number(date.slice(0, 4)), Number(date.slice(5, 7)), Number(date.slice(8, 10)), h, m);
 }
 
 const EVENT_COLS =
@@ -69,38 +59,85 @@ export async function loadCalendar(
   opts: { since: string; limit?: number },
 ): Promise<CalItem[]> {
   const limit = opts.limit ?? 100;
-  let evq = db.from("events").select(EVENT_COLS).gte("starts_at", opts.since).order("starts_at").limit(limit);
-  if (scope !== "all") {
-    const parts = ["and(den_id.is.null,ranks.is.null)"];
-    if (scope.dens.length) parts.push(`den_id.in.(${scope.dens.join(",")})`);
-    if (scope.ranks.length) parts.push(`ranks.ov.{${scope.ranks.join(",")}}`);
-    evq = evq.or(parts.join(",")).eq("leaders_only", false);
-  }
+  // Multi-day events (campouts) stay on the calendar until they end, so look back two weeks
+  // for starts and keep the ones still running at `since`.
+  const lookBack = new Date(new Date(opts.since).getTime() - 14 * 86400000).toISOString();
+  let evq = db
+    .from("events")
+    .select(EVENT_COLS)
+    .gte("starts_at", lookBack)
+    .is("archived_at", null)
+    .order("starts_at")
+    .limit(limit + 40);
+  evq = scoped(evq, scope);
   const sinceDate = easternDate(opts.since);
   let mq = db.from("den_meetings").select(MEETING_COLS).gte("meets_on", sinceDate).order("meets_on").limit(limit);
   if (scope !== "all") mq = mq.in("den_id", scope.dens.length ? scope.dens : ["00000000-0000-0000-0000-000000000000"]);
-  const [{ data: events }, { data: meetings }] = await Promise.all([evq, mq]);
+  const [{ data: allEvents }, { data: meetings }] = await Promise.all([evq, mq]);
+  const since = Date.parse(opts.since);
+  const events = ((allEvents ?? []) as unknown as PackEvent[]).filter((e) => Date.parse(e.ends_at ?? e.starts_at) >= since || Date.parse(e.starts_at) >= since);
+  return merge(events, (meetings ?? []) as unknown as MeetingRow[], scope, limit);
+}
 
+/** Pack-wide events plus the family's dens and ranks; leader-only events only for leaders. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function scoped<Q extends { or: (f: string) => any; eq: (c: string, v: unknown) => any }>(q: Q, scope: DenScope): Q {
+  if (scope === "all") return q;
+  const parts = ["and(den_id.is.null,ranks.is.null)"];
+  if (scope.dens.length) parts.push(`den_id.in.(${scope.dens.join(",")})`);
+  if (scope.ranks.length) parts.push(`ranks.ov.{${scope.ranks.join(",")}}`);
+  return q.or(parts.join(",")).eq("leaders_only", false);
+}
+
+/**
+ * Past events and events moved to the archive (removed in TroopWebHost or hidden by a leader),
+ * newest first, for the Archive page.
+ */
+export async function loadArchive(db: SupabaseClient, scope: DenScope, before: string, limit = 400): Promise<(CalItem & { archived_reason: string | null })[]> {
+  const cols = `${EVENT_COLS}, archived_reason`;
+  const [{ data: past }, { data: archived }] = await Promise.all([
+    scoped(db.from("events").select(cols).lt("starts_at", before).order("starts_at", { ascending: false }).limit(limit), scope),
+    scoped(db.from("events").select(cols).not("archived_at", "is", null).gte("starts_at", before).order("starts_at", { ascending: false }).limit(limit), scope),
+  ]);
+  const cutoff = Date.parse(before);
+  const byId = new Map<string, PackEvent & { den: { name: string } | null; archived_reason: string | null }>();
+  for (const e of [...(archived ?? []), ...(past ?? [])] as unknown as (PackEvent & { den: { name: string } | null; archived_reason: string | null })[]) {
+    // Past = over before `before` (a campout that's still going stays on the calendar).
+    if (e.archived_reason || Date.parse(e.ends_at ?? e.starts_at) < cutoff) byId.set(e.id, e);
+  }
+  return [...byId.values()]
+    .map((e) => ({
+      ...e,
+      kind: "event" as const,
+      href: e.category === "Campout" ? `/campouts/${e.id}` : `/events/${e.id}`,
+      den_name: e.den?.name ?? ranksLabel(e.ranks),
+    }))
+    .sort((a, b) => Date.parse(b.starts_at) - Date.parse(a.starts_at));
+}
+
+interface MeetingRow {
+  id: string;
+  den_id: string;
+  meets_on: string;
+  title: string;
+  adventure: string | null;
+  location: string | null;
+  address: string | null;
+  family_note: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  den: { name: string; meeting_info: string | null } | null;
+}
+
+function merge(events: PackEvent[], meetings: MeetingRow[], scope: DenScope, limit: number): CalItem[] {
   const items: CalItem[] = [
-    ...((events ?? []) as unknown as (PackEvent & { den: { name: string } | null })[]).map((e) => ({
+    ...(events as (PackEvent & { den?: { name: string } | null })[]).map((e) => ({
       ...e,
       kind: "event" as const,
       href: e.category === "Campout" ? `/campouts/${e.id}` : `/events/${e.id}`,
       den_name: e.den?.name ?? ranksLabel(e.ranks),
     })),
-    ...((meetings ?? []) as unknown as {
-      id: string;
-      den_id: string;
-      meets_on: string;
-      title: string;
-      adventure: string | null;
-      location: string | null;
-      address: string | null;
-      family_note: string | null;
-      start_time: string | null;
-      end_time: string | null;
-      den: { name: string; meeting_info: string | null } | null;
-    }[]).map((m) => ({
+    ...meetings.map((m) => ({
       id: m.id,
       kind: "meeting" as const,
       href: `/meetings/${m.id}`,
@@ -129,6 +166,6 @@ export async function loadCalendar(
           return !(scope.dens.length && scope.dens.every((d) => elsewhere.has(d)));
         });
   return visible
-    .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+    .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at))
     .slice(0, limit);
 }

@@ -14,7 +14,7 @@ export default async function PhotoRulesPage() {
     "A leader checks every photo from a parent before it appears, and turns down any photo showing a scout without permission.",
     "No names on photos: captions use first names only, and we don't post photos where a full name, school or home address can be read.",
     "Photos are resized and their location (GPS) and camera data are removed before they're stored.",
-    "Anyone can ask for a photo to come down. It's hidden right away until a leader reviews it.",
+    "Anyone can request that a photo be removed (Request removal on the photo). It's hidden right away, and a leader removes it. Only leaders delete photos, so nothing disappears by accident.",
     `Photos are deleted automatically after ${settings.photo_keep_months} months.`,
     "Please keep pack photos within the pack: don't repost them on public social media.",
   ];

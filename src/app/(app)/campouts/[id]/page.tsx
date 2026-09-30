@@ -7,6 +7,7 @@ import EventSignup from "@/components/EventSignup";
 import VolunteerJobs from "@/components/VolunteerJobs";
 import RsvpLink from "@/components/RsvpLink";
 import EventPhotosLink from "@/components/EventPhotosLink";
+import ArchiveControl from "@/components/ArchiveControl";
 import SaveOffline from "@/components/SaveOffline";
 import { getSlots } from "@/lib/volunteer";
 import { EventLinks, EventSections } from "@/components/EventInfo";
@@ -37,7 +38,8 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
 
   return (
     <>
-      <BackLink href="/events" label="Events" />
+      <BackLink href={event.archived_at ? "/events/archive" : "/events"} label={event.archived_at ? "Archive" : "Events"} />
+      {event.archived_at && <ArchiveControl e={event} leader={false} back={`/campouts/${id}`} part="note" />}
       <div className="page-wide flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
         <div className="contents lg:block lg:space-y-4">
         <div className="order-1 empty:hidden">
@@ -131,6 +133,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
         </div>
         </div>
       </div>
+      <ArchiveControl e={event} leader={isLeader(me)} back={`/campouts/${id}`} part="button" />
     </>
   );
 }

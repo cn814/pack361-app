@@ -29,16 +29,26 @@ function Tile({ href, icon: Icon, label, sub }: { href: string; icon: typeof Mai
 export default async function AdminPage() {
   await requireAdmin();
   const supabase = await createClient();
-  const [settings, budget, { count: openMessages }] = await Promise.all([
+  const [settings, budget, { count: openMessages }, { data: photoBytes }] = await Promise.all([
     getSettings(),
     welcomeBudget(),
     supabase.from("feedback").select("id", { count: "exact", head: true }).is("resolved_at", null),
+    supabase.rpc("photo_storage_bytes"),
   ]);
-  const { data: lastSyncRow } = await supabase.from("pack_settings").select("value").eq("key", "twh_last_sync").maybeSingle();
-  let lastSync: { at: string; feed: number } | null = null;
-  try {
-    lastSync = lastSyncRow ? JSON.parse(lastSyncRow.value as string) : null;
-  } catch {}
+  // Supabase's free plan includes 1 GB of file storage.
+  const photoMb = Math.round(Number(photoBytes ?? 0) / 1e6);
+  const photoPct = Math.round((Number(photoBytes ?? 0) / 1e9) * 100);
+  const { data: runRows } = await supabase.from("pack_settings").select("key, value").in("key", ["twh_last_sync", "daily_last_run"]);
+  const read = <T,>(key: string): T | null => {
+    try {
+      const v = runRows?.find((r) => r.key === key)?.value;
+      return v ? (JSON.parse(v as string) as T) : null;
+    } catch {
+      return null;
+    }
+  };
+  const lastSync = read<{ at: string; feed: number; skipped?: string; errors?: string[] }>("twh_last_sync");
+  const lastRun = read<{ at: string; ok: boolean; failed: string[] }>("daily_last_run");
   return (
     <>
       <BackLink href="/leaders" label="Leaders" />
@@ -60,7 +70,12 @@ export default async function AdminPage() {
           sub={emailConfigured() ? `${budget.sentToday} of ${budget.limit} sent today` : "Needs the email key in Vercel"}
         />
         <Tile href="/leaders/training" icon={ShieldCheck} label="Leader training" sub="Youth Protection and other courses" />
-        <Tile href="/photos/review" icon={Images} label="Photo review" sub="Approve uploads, handle removal requests" />
+        <Tile
+          href="/photos/review"
+          icon={Images}
+          label="Photo review"
+          sub={`Approve uploads, handle removal requests · ${photoMb} MB of 1 GB storage used (${photoPct}%)`}
+        />
         <Tile href="/scouts/import" icon={FileUp} label="Import Scoutbook" sub="Advancement export from Scoutbook Plus" />
       </div>
 
@@ -70,8 +85,17 @@ export default async function AdminPage() {
           <>
             <p className="text-sm text-muted">
               Events sync from TroopWebHost every afternoon.{" "}
-              {lastSync ? `Last sync ${timeAgo(lastSync.at)} (${lastSync.feed} events).` : "Not synced yet."}
+              {lastSync ? `Last sync ${timeAgo(lastSync.at)} (${lastSync.feed} events).` : "Not synced yet."} Events removed in
+              TroopWebHost move to the archive; nothing is deleted.
             </p>
+            {(lastSync?.skipped || lastSync?.errors?.length) && (
+              <p className="rounded-xl bg-gold-50 p-2 text-xs text-gold-800">{[lastSync.skipped, ...(lastSync.errors ?? [])].filter(Boolean).join(" ")}</p>
+            )}
+            {lastRun && !lastRun.ok && (
+              <p className="rounded-xl bg-danger-50 p-2 text-xs text-danger">
+                The nightly jobs had a problem {timeAgo(lastRun.at)}: {lastRun.failed.join(", ")}. Check the Vercel logs.
+              </p>
+            )}
             <ActionForm action={syncTroopWebHost} submit="Sync now" busy="Syncing…" buttonClass="btn-ghost w-full" />
           </>
         ) : (
@@ -91,7 +115,10 @@ export default async function AdminPage() {
           <Field label="Keep photos for (months)" hint="Photos older than this are deleted automatically.">
             <input className="input" type="number" min={1} max={120} name="photo_keep_months" defaultValue={settings.photo_keep_months} />
           </Field>
-          <Field label="Emails per day" hint="The free email plan allows 100 a day, including sign-in codes. Keep some room for those.">
+          <Field
+            label="Welcome emails per day"
+            hint="The free email plan allows 100 emails a day in total. Each family you welcome then signs in (another email), so 40 a day leaves room for their sign-ins and reminders."
+          >
             <input className="input" type="number" min={0} max={1000} name="email_daily_limit" defaultValue={settings.email_daily_limit} />
           </Field>
         </ActionForm>

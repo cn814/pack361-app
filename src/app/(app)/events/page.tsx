@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CarFront, ChevronRight, Footprints, PartyPopper, Rocket, Sailboat, Tent } from "lucide-react";
+import { CarFront, ChevronRight, Fish, Footprints, PartyPopper, Rocket, Sailboat, Tent } from "lucide-react";
 import { featuredKind, type FeaturedKind } from "@/lib/featured";
 import { headers } from "next/headers";
 import EventRow from "@/components/EventRow";
@@ -14,6 +14,7 @@ const ICON: Record<FeaturedKind, typeof Tent> = {
   campout: Tent,
   derby: CarFront,
   space_derby: Rocket,
+  fishing: Fish,
   regatta: Sailboat,
   blue_gold: PartyPopper,
   crossover: Footprints,
@@ -68,7 +69,7 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-extrabold">{e.title}</span>
                   <span className="block text-xs text-mint-200">
-                    {fmtRange(e.starts_at, e.ends_at, e.all_day)} · {daysUntil(e.starts_at).toLowerCase()}
+                    {fmtRange(e.starts_at, e.ends_at, e.all_day)} · {daysUntil(e.starts_at, e.ends_at).toLowerCase()}
                   </span>
                 </span>
                 <ChevronRight className="h-5 w-5 shrink-0 text-mint-200" aria-hidden />
@@ -87,6 +88,10 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
           ))}
         </section>
       ))}
+      <Link href="/events/archive" className="card flex items-center justify-between text-sm font-bold text-pine">
+        Past events and archive
+        <ChevronRight className="h-4 w-4" aria-hidden />
+      </Link>
     </>
   );
 }

@@ -7,7 +7,7 @@ export type SettingKey = "awards_tracked_from" | "photo_keep_months" | "email_da
 export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   awards_tracked_from: "2026-07-01",
   photo_keep_months: "24",
-  email_daily_limit: "80",
+  email_daily_limit: "40",
 };
 const DEFAULTS = SETTING_DEFAULTS;
 

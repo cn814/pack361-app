@@ -5,6 +5,7 @@ import { createClient } from "./supabase/server";
 import type { Adult, Announcement, ItineraryItem, Leader, PackEvent, PackingItem, Scout } from "./types";
 import { LEADER_ROLES } from "./types";
 import { denScopeFor, loadCalendar, type CalItem } from "./calendar";
+import { startOfEasternDay } from "./tz";
 import { FEATURE_DAYS_AFTER, FEATURE_DAYS_BEFORE, featuredKind, type FeaturedTab } from "./featured";
 
 /** The signed-in adult's roster row, or null if they're signed in but not on the roster. */
@@ -17,6 +18,7 @@ export const getMe = cache(async (): Promise<{ email: string; adult: Adult | nul
     .from("adults")
     .select("id, family_id, first_name, last_name, preferred_name, email, phone, role, position_title, ypt_expires_on")
     .eq("user_id", sub)
+    .eq("is_active", true)
     .maybeSingle();
   return { email: String(claims?.claims?.email ?? ""), adult: (data as Adult | null) ?? null };
 });
@@ -68,17 +70,28 @@ export async function getFamilyAdults(): Promise<Adult[]> {
  */
 export async function getUpcomingEvents(limit = 50, opts: { mine?: boolean } = {}): Promise<CalItem[]> {
   const me = await requireMember();
-  const supabase = await createClient();
-  const scope = await denScopeFor(supabase, opts.mine ? { ...me, role: "parent" } : me);
-  const since = new Date(Date.now() - 12 * 3600 * 1000).toISOString(); // keep today's events visible
-  return loadCalendar(supabase, scope, { since, limit });
+  const who = opts.mine || !isLeader(me) ? "family" : "all";
+  // Everything today stays up all day; campouts stay up until they end.
+  const today = Date.parse(startOfEasternDay());
+  return (await calendarWindow(who)).filter((e) => Date.parse(e.ends_at ?? e.starts_at) >= today).slice(0, limit);
 }
+
+/**
+ * The calendar from ten days ago on, read once per request and shared by the bottom bar's
+ * featured tab and the page. "family" = pack-wide plus the family's own dens (leaders too).
+ */
+const calendarWindow = cache(async (who: "family" | "all"): Promise<CalItem[]> => {
+  const me = await requireMember();
+  const supabase = await createClient();
+  const scope = await denScopeFor(supabase, who === "family" ? { ...me, role: "parent" } : me);
+  return loadCalendar(supabase, scope, { since: new Date(Date.now() - 10 * 86400000).toISOString(), limit: 300 });
+});
 
 export async function getEvent(id: string): Promise<PackEvent | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("events")
-    .select("id, title, category, starts_at, ends_at, location_name, address, details, signup_url, den_id, ranks, all_day, leaders_only, twh_uid, twh_url, links, sections")
+    .select("id, title, category, starts_at, ends_at, location_name, address, details, signup_url, den_id, ranks, all_day, leaders_only, twh_uid, twh_url, archived_at, archived_reason, links, sections")
     .eq("id", id)
     .maybeSingle();
   return (data as PackEvent | null) ?? null;
@@ -134,12 +147,9 @@ export async function getCalendarToken(): Promise<string | null> {
  * bottom bar. Null when nothing big is coming up.
  */
 export const getFeaturedTab = cache(async (): Promise<FeaturedTab | null> => {
-  const me = await requireMember();
-  const supabase = await createClient();
   const now = Date.now();
   // Pack-wide events plus this family's own dens and ranks (leaders included).
-  const scope = await denScopeFor(supabase, { ...me, role: "parent" });
-  const items = await loadCalendar(supabase, scope, { since: new Date(now - 10 * 86400000).toISOString(), limit: 80 });
+  const items = await calendarWindow("family");
   for (const e of items) {
     if (e.kind !== "event" || new Date(e.starts_at).getTime() > now + FEATURE_DAYS_BEFORE * 86400000) continue;
     const k = featuredKind(e);

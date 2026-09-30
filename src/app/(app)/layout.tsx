@@ -12,8 +12,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const initials = (displayName(me)[0] + me.last_name[0]).toUpperCase();
   return (
     <div className="min-h-dvh w-full lg:pl-64 print:pl-0">
-      <NavProgress />
       <Suspense>
+        <NavProgress />
         <Toast />
       </Suspense>
       <ServiceWorkerSetup mode="register" />

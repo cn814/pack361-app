@@ -89,8 +89,11 @@ GitHub runs the same checks on every pull request.
 - **Tailwind CSS v4.** Design tokens are in `src/app/globals.css` (`@theme`). Shared classes
   (`card`, `btn-primary`, `badge`...) are in `@layer components`. `design/DESIGN.md` has the style guide.
 - **Data access:** server components and server actions call Supabase with the signed-in user's
-  session, so Row Level Security applies. Only the Givebutter sync, push alerts and calendar feed
-  use the server-only secret key (`src/lib/supabase/admin.ts`).
+  session, so Row Level Security applies. Only the cron jobs (Givebutter, reminders, TroopWebHost
+  sync, photo clean-up), push and admin alerts, the calendar feed and cleaning up a failed photo
+  upload use the server-only secret key (`src/lib/supabase/admin.ts`).
+- **Nothing that syncs deletes.** Events leave the calendar by moving to the archive
+  (`archived_at`), and only leaders delete photos. Keep it that way: data is hard to get back.
 - **Database changes:** add a new, higher-numbered file in `supabase/migrations/`. Don't edit a
   migration that has already been applied to production. Say in the pull request that it includes a
   migration, because a maintainer applies it to production by hand.

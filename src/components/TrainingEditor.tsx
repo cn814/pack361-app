@@ -46,7 +46,7 @@ export default function TrainingEditor({ adultId, rows, onlyRequired = false }: 
                       <input className="input py-2" type="date" name="completed_on" defaultValue={row?.completed_on ?? ""} />
                     </Field>
                     {c.years ? (
-                      <Field label="Expires" hint={`Blank = ${c.years} years after finishing`}>
+                      <Field label="Expires" hint={`Blank = ${c.years} years after finishing. Updates itself when you change the finish date.`}>
                         <input className="input py-2" type="date" name="expires_on" defaultValue={row?.expires_on ?? ""} />
                       </Field>
                     ) : (

@@ -58,7 +58,7 @@ export default async function Home() {
             <section className="relative overflow-hidden rounded-3xl bg-pine-950 p-5 text-white shadow-[var(--shadow-float)]">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="badge bg-gold text-pine-950">
-                  <Timer className="h-3 w-3" aria-hidden /> {daysUntil(next.starts_at)}
+                  <Timer className="h-3 w-3" aria-hidden /> {daysUntil(next.starts_at, next.ends_at)}
                 </span>
                 <span className="badge bg-white/10 text-mint-200">{next.category}</span>
                 {next.den_name && <span className="badge bg-white/10 text-gold">{next.den_name}</span>}
