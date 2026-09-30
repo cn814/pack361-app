@@ -5,6 +5,11 @@ schedules with an offline packing checklist, leader directory, family profile, a
 (rank progress from Scoutbook, families report requirements, den leaders approve).
 Next.js 16 (App Router) on Vercel, Supabase (Postgres + Auth) for data and login.
 
+Live at **https://app.pack361.org** (CNAME `app` → Vercel in Squarespace DNS for pack361.org;
+pack361-app.vercel.app still works). Supabase Auth Site URL is https://app.pack361.org and both
+addresses are in the redirect allow list. pack361.org's root records (Squarespace site, Mailgun
+email forwarding) are separate; put any new email-sending records on a subdomain.
+
 ## Run locally
 ```bash
 cp .env.example .env.local   # fill in the Supabase URL and publishable key
