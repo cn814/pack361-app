@@ -25,7 +25,8 @@ export default async function FundraisersPage() {
   const shown = campaigns.filter((c) => c.show_as_fundraiser && c.status !== "inactive");
   const orders = await getOrders(shown.map((c) => c.id));
   const popcornTotal = (sales ?? []).reduce((n, r) => n + Number(r.amount), 0);
-  const popcornGoal = Number(settings.popcorn_goal) || 0;
+  const scoutGoal = Number(settings.popcorn_scout_goal) || 0;
+  const atGoal = scoutGoal ? (sales ?? []).filter((r) => Number(r.amount) >= scoutGoal).length : 0;
   const lastSync = campaigns.reduce<string | null>((m, c) => (!m || c.synced_at > m ? c.synced_at : m), null);
 
   return (
@@ -39,9 +40,9 @@ export default async function FundraisersPage() {
           </span>
           <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
         </div>
-        {popcornGoal > 0 && <ProgressBar percent={Math.min(100, Math.round((popcornTotal / popcornGoal) * 100))} />}
         <p className="text-sm text-muted">
-          {money(popcornTotal)} sold{popcornGoal ? ` of ${money(popcornGoal)} goal` : ""}
+          {money(popcornTotal)} sold by the pack
+          {scoutGoal ? ` · ${atGoal} ${atGoal === 1 ? "scout has" : "scouts have"} reached the ${money(scoutGoal)} goal` : ""}
           {settings.popcorn_ends && ` · ends ${settings.popcorn_ends}`}
         </p>
       </Link>

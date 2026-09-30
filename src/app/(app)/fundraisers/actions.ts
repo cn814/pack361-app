@@ -36,7 +36,7 @@ export async function setFundraiserFlag(form: FormData) {
   revalidatePath("/fundraisers");
 }
 
-const SETTING_KEYS = ["popcorn_goal", "popcorn_ends", "popcorn_store_url", "popcorn_note"] as const;
+const SETTING_KEYS = ["popcorn_scout_goal", "popcorn_ends", "popcorn_store_url", "popcorn_note"] as const;
 
 export async function savePopcornSettings(_prev: ActionState, form: FormData): Promise<ActionState> {
   const me = await requireMember();

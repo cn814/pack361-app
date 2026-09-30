@@ -37,16 +37,18 @@ export default async function PopcornPage() {
   ]);
   const sales = ((data ?? []) as unknown as SaleRow[]).filter((r) => r.scout?.is_active && Number(r.amount) > 0);
   const total = sales.reduce((n, r) => n + Number(r.amount), 0);
-  const goal = Number(settings.popcorn_goal) || 0;
+  const goal = Number(settings.popcorn_scout_goal) || 0; // per scout
+  const atGoal = goal ? sales.filter((r) => Number(r.amount) >= goal).length : 0;
   const updated = sales.reduce<string | null>((m, r) => (!m || r.updated_at > m ? r.updated_at : m), null);
   const mineIds = new Set(mine.map((s) => s.id));
 
-  const dens = new Map<string, { total: number; sellers: number; rank: number }>();
+  const dens = new Map<string, { total: number; sellers: number; atGoal: number; rank: number }>();
   for (const r of sales) {
     const name = r.scout?.den?.name ?? "No den";
-    const d = dens.get(name) ?? { total: 0, sellers: 0, rank: r.scout?.den ? RANKS.indexOf(r.scout.den.rank) : 99 };
+    const d = dens.get(name) ?? { total: 0, sellers: 0, atGoal: 0, rank: r.scout?.den ? RANKS.indexOf(r.scout.den.rank) : 99 };
     d.total += Number(r.amount);
     d.sellers++;
+    if (goal > 0 && Number(r.amount) >= goal) d.atGoal++;
     dens.set(name, d);
   }
   const denBoard = [...dens.entries()].sort((a, b) => b[1].total - a[1].total);
@@ -62,11 +64,23 @@ export default async function PopcornPage() {
           <Popcorn className="h-6 w-6 text-gold-700" aria-hidden /> Popcorn sale
         </h1>
         {settings.popcorn_note && <p className="text-sm text-navy">{settings.popcorn_note}</p>}
+        {goal > 0 && (
+          <p className="rounded-xl bg-gold-50 p-3 text-sm font-semibold text-gold-800">
+            Goal: every scout sells {money(goal)}.
+          </p>
+        )}
         <div className="flex items-end justify-between">
-          <span className="text-3xl font-extrabold text-pine">{money(total)}</span>
-          {goal > 0 && <span className="text-sm text-muted">of {money(goal)} goal</span>}
+          <span>
+            <span className="block text-3xl font-extrabold text-pine">{money(total)}</span>
+            <span className="text-xs text-muted">sold by the pack</span>
+          </span>
+          {goal > 0 && (
+            <span className="text-right text-sm text-muted">
+              <b className="block text-2xl text-pine-950">{atGoal}</b>
+              {atGoal === 1 ? "scout" : "scouts"} at goal
+            </span>
+          )}
         </div>
-        {goal > 0 && <ProgressBar percent={Math.min(100, Math.round((total / goal) * 100))} className="h-3" />}
         <p className="text-xs text-muted">
           {settings.popcorn_ends ? `Sale ends ${settings.popcorn_ends}. ` : ""}
           {updated ? `Totals from Trail's End, updated ${timeAgo(updated)}.` : "Totals appear after the first Trail's End update."}
@@ -88,11 +102,21 @@ export default async function PopcornPage() {
           <h2 className="section-title">My scouts</h2>
           <ul className="divide-y divide-line">
             {mine.map((s) => {
-              const r = sales.find((x) => x.scout_id === s.id);
+              const amt = Number(sales.find((x) => x.scout_id === s.id)?.amount ?? 0);
+              const done = goal > 0 && amt >= goal;
               return (
-                <li key={s.id} className="flex justify-between py-2 text-sm">
-                  <span className="font-semibold text-ink">{s.first_name}</span>
-                  <span className="font-extrabold text-pine">{money(r?.amount ?? 0)}</span>
+                <li key={s.id} className="space-y-1 py-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-ink">
+                      {s.first_name}
+                      {done && <span className="ml-1.5 badge bg-gold text-pine-950">Goal reached</span>}
+                    </span>
+                    <span className="font-extrabold text-pine">
+                      {money(amt)}
+                      {goal > 0 && <span className="font-normal text-muted"> of {money(goal)}</span>}
+                    </span>
+                  </div>
+                  {goal > 0 && <ProgressBar percent={Math.min(100, Math.round((amt / goal) * 100))} />}
                 </li>
               );
             })}
@@ -109,6 +133,7 @@ export default async function PopcornPage() {
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-ink">
                     {i + 1}. {name}
+                    {goal > 0 && <span className="ml-1 text-xs font-normal text-muted">{d.atGoal} at goal</span>}
                   </span>
                   <span className="font-extrabold text-pine">{money(d.total)}</span>
                 </div>
@@ -131,7 +156,10 @@ export default async function PopcornPage() {
                   {i + 1}. {r.scout?.first_name} {r.scout?.last_name[0]}.
                   <span className="ml-1 text-xs font-normal text-muted">{r.scout?.den?.name}</span>
                 </span>
-                <span className="text-pine">{money(r.amount)}</span>
+                <span className="text-pine">
+                  {goal > 0 && Number(r.amount) >= goal && <span aria-label="goal reached">✓ </span>}
+                  {money(r.amount)}
+                </span>
               </li>
             ))}
           </ol>

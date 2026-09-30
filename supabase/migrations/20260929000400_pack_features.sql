@@ -18,7 +18,7 @@ create table public.pack_settings (
 );
 insert into public.pack_settings (key, value) values
     ('awards_tracked_from', '2026-07-01'),   -- older approved items count as already handed out
-    ('popcorn_goal', '10000'),
+    ('popcorn_scout_goal', '100'),           -- Trail's End goal per scout, in dollars
     ('popcorn_ends', ''),
     ('popcorn_store_url', ''),
     ('popcorn_note', 'Sell with the Trail''s End app (storefront, wagon and online sales all count).');
