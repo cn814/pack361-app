@@ -1,51 +1,27 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ChevronRight, ExternalLink, Popcorn, ShoppingBag } from "lucide-react";
-import { ProgressBar } from "@/components/RankProgress";
+import { ExternalLink, ShoppingBag } from "lucide-react";
 import { SyncGivebutterButton } from "@/components/AdminForms";
 import { isLeader, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
 import { getCampaigns, getOrders, isPaid, money } from "@/lib/fundraising-data";
-import { getSettings } from "@/lib/settings";
-import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/format";
 import { setFundraiserFlag } from "./actions";
 
-export const metadata: Metadata = { title: "Fundraisers" };
+export const metadata: Metadata = { title: "Pack store" };
 
-export default async function FundraisersPage() {
+export default async function StorePage() {
   const me = await requireMember();
   const leader = isLeader(me);
-  const supabase = await createClient();
-  const [campaigns, settings, { data: sales }] = await Promise.all([
-    getCampaigns(),
-    getSettings(),
-    supabase.from("popcorn_sales").select("amount"),
-  ]);
+  const campaigns = await getCampaigns();
+  // show_as_fundraiser = "listed in the Pack store"
   const shown = campaigns.filter((c) => c.show_as_fundraiser && c.status !== "inactive");
   const orders = await getOrders(shown.map((c) => c.id));
-  const popcornTotal = (sales ?? []).reduce((n, r) => n + Number(r.amount), 0);
-  const scoutGoal = Number(settings.popcorn_scout_goal) || 0;
-  const atGoal = scoutGoal ? (sales ?? []).filter((r) => Number(r.amount) >= scoutGoal).length : 0;
   const lastSync = campaigns.reduce<string | null>((m, c) => (!m || c.synced_at > m ? c.synced_at : m), null);
 
   return (
     <>
-      <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Fundraisers</h1>
-
-      <Link href="/popcorn" className="card block space-y-2 border-t-4 border-t-gold active:bg-surface-low">
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2 font-extrabold text-pine-950">
-            <Popcorn className="h-5 w-5 text-gold-700" aria-hidden /> Popcorn sale (Trail&apos;s End)
-          </span>
-          <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
-        </div>
-        <p className="text-sm text-muted">
-          {money(popcornTotal)} sold by the pack
-          {scoutGoal ? ` · ${atGoal} ${atGoal === 1 ? "scout has" : "scouts have"} reached the ${money(scoutGoal)} goal` : ""}
-          {settings.popcorn_ends && ` · ends ${settings.popcorn_ends}`}
-        </p>
-      </Link>
+      <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack store</h1>
+      <p className="-mt-2 text-sm text-muted">Pack 361 shirts, hoodies and gear, ordered through Givebutter.</p>
 
       {shown.map((c) => {
         const mine = orders.filter((o) => o.campaign_id === c.id && isPaid(o) && me.family_id && o.family_id === me.family_id);
@@ -56,10 +32,6 @@ export default async function FundraisersPage() {
             <h2 className="flex items-center gap-2 font-extrabold text-pine-950">
               <ShoppingBag className="h-5 w-5 text-pine" aria-hidden /> {c.title}
             </h2>
-            {c.goal ? <ProgressBar percent={Math.min(100, Math.round((Number(c.raised) / c.goal) * 100))} /> : null}
-            <p className="text-sm text-muted">
-              {money(c.raised)} raised{c.goal ? ` of ${money(c.goal)}` : ""} · {c.donors ?? all.length} orders
-            </p>
             {mine.length > 0 && (
               <div className="rounded-xl bg-mint p-3 text-sm text-pine">
                 <p className="font-bold">Your order{mine.length > 1 ? "s" : ""}</p>
@@ -79,12 +51,14 @@ export default async function FundraisersPage() {
             )}
             {c.url && (
               <a href={c.url} target="_blank" rel="noopener noreferrer" className="btn-gold w-full">
-                <ExternalLink className="h-4 w-4" aria-hidden /> {mine.length ? "Order more" : "Order / give on Givebutter"}
+                <ExternalLink className="h-4 w-4" aria-hidden /> {mine.length ? "Order more" : "Shop on Givebutter"}
               </a>
             )}
             {leader && all.length > 0 && (
               <details className="text-sm">
-                <summary className="cursor-pointer font-semibold text-pine">All orders ({all.length})</summary>
+                <summary className="cursor-pointer font-semibold text-pine">
+                  All orders ({all.length}, {money(c.raised)})
+                </summary>
                 <ul className="mt-2 divide-y divide-line">
                   {all.map((o) => (
                     <li key={o.id} className="py-1.5">
@@ -106,16 +80,21 @@ export default async function FundraisersPage() {
         );
       })}
 
-      {campaigns.length === 0 && (
-        <p className="card text-sm text-muted">Givebutter fundraisers show here once the pack&apos;s Givebutter account is connected.</p>
+      {shown.length === 0 && (
+        <section className="card space-y-2">
+          <p className="text-sm text-muted">Pack shirts and hoodies are on Givebutter.</p>
+          <a href="https://givebutter.com/pack361-attire" target="_blank" rel="noopener noreferrer" className="btn-gold w-full">
+            <ExternalLink className="h-4 w-4" aria-hidden /> Shop pack attire
+          </a>
+        </section>
       )}
 
       {isAdmin(me) && (
         <section className="card space-y-3">
           <h2 className="section-title">Givebutter (admins)</h2>
           <p className="text-xs text-muted">
-            {lastSync ? `Last synced ${timeAgo(lastSync)}. ` : ""}Syncs every morning; event sign-ups show on the calendar and
-            campout pages.
+            {lastSync ? `Last synced ${timeAgo(lastSync)}. ` : ""}Syncs every morning. Choose which Givebutter campaigns are
+            listed in the store; event sign-ups show on the calendar and campout pages either way.
           </p>
           <SyncGivebutterButton />
           {campaigns.length > 0 && (
@@ -135,7 +114,7 @@ export default async function FundraisersPage() {
                     <button
                       className={`badge shrink-0 normal-case tracking-normal ${c.show_as_fundraiser ? "bg-pine text-white" : "bg-surface text-muted"}`}
                     >
-                      {c.show_as_fundraiser ? "Shown" : "Hidden"}
+                      {c.show_as_fundraiser ? "In store" : "Hidden"}
                     </button>
                   </form>
                 </li>

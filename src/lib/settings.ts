@@ -2,19 +2,10 @@ import "server-only";
 import { cache } from "react";
 import { createClient } from "./supabase/server";
 
-export type SettingKey =
-  | "awards_tracked_from"
-  | "popcorn_scout_goal"
-  | "popcorn_ends"
-  | "popcorn_store_url"
-  | "popcorn_note";
+export type SettingKey = "awards_tracked_from";
 
 const DEFAULTS: Record<SettingKey, string> = {
   awards_tracked_from: "2026-07-01",
-  popcorn_scout_goal: "100", // Trail's End goal per scout, in dollars
-  popcorn_ends: "",
-  popcorn_store_url: "",
-  popcorn_note: "",
 };
 
 /** Pack-wide settings (members read, admins change). */

@@ -1,0 +1,36 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { requireMember } from "@/lib/data";
+import { isAdmin } from "@/lib/advancement-data";
+import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
+import { givebutterConfigured, syncGivebutter } from "@/lib/givebutter";
+
+export type ActionState = { ok?: boolean; error?: string; message?: string };
+
+export async function syncGivebutterNow(): Promise<ActionState> {
+  const me = await requireMember();
+  if (!isAdmin(me)) return { error: "Only pack admins can sync." };
+  if (!adminConfigured() || !givebutterConfigured()) {
+    return { error: "Add GIVEBUTTER_API_KEY and SUPABASE_SECRET_KEY in Vercel first." };
+  }
+  try {
+    const r = await syncGivebutter(createAdminClient());
+    revalidatePath("/", "layout");
+    return { ok: true, message: `Synced ${r.campaigns} campaigns and ${r.orders} orders (${r.matchedFamilies} pack families matched).` };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Sync failed." };
+  }
+}
+
+export async function setFundraiserFlag(form: FormData) {
+  const me = await requireMember();
+  if (!isAdmin(me)) return;
+  const supabase = await createClient();
+  await supabase
+    .from("givebutter_campaigns")
+    .update({ show_as_fundraiser: form.get("show") === "true" })
+    .eq("id", Number(form.get("id")));
+  revalidatePath("/store");
+}
