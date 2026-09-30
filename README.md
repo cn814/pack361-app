@@ -108,6 +108,17 @@ npm run dev
 - A second daily cron (`/api/cron/daily`, 5 PM ET) sends the volunteer and training reminders and
   deletes expired photos.
 
+## Backups
+The free Supabase plan has no downloadable backups, so an admin keeps local ones:
+`scripts/backup-db.sh` (Linux/macOS/NAS) or `scripts/backup-db.ps1` (Windows). Each writes a
+Postgres custom-format dump of the app's data (`public` and `private` schemas) with a date in the
+name, deletes ones older than 60 days, and can GPG-encrypt (`ENCRYPT_TO`). It uses a local
+`pg_dump` 17+ or, if there isn't one, the `postgres:17-alpine` Docker image. The connection string
+(Supabase → Connect → Session pooler) stays in `~/.config/pack361/backup.env` or an environment
+variable, never in the repo. Photos are in Supabase Storage and aren't included.
+
+To look inside a backup: `pg_restore -f backup.sql pack361-….dump` writes it out as SQL.
+
 ## Run the permission tests
 Needs PostgreSQL 15+ and an empty database:
 ```bash
