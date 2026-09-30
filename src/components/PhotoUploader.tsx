@@ -53,6 +53,16 @@ export default function PhotoUploader({
   const [finished, setFinished] = useState<{ sent: number; failed: number; heic: number } | null>(null);
   const busy = progress !== null;
 
+  /** After the picker closes: let iPhone Safari re-settle the page, then show the next step. */
+  function picked(f: File[]) {
+    setFiles((cur) => [...cur, ...f].slice(0, 20));
+    setTimeout(() => {
+      window.scrollBy(0, 1);
+      window.scrollBy(0, -1);
+      document.getElementById("photo-confirm")?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 300);
+  }
+
   async function upload() {
     setFinished(null);
     let done = 0;
@@ -118,8 +128,7 @@ export default function PhotoUploader({
             className="sr-only"
             disabled={busy}
             onChange={(e) => {
-              const f = Array.from(e.target.files ?? []);
-              setFiles((cur) => [...cur, ...f].slice(0, 20));
+              picked(Array.from(e.target.files ?? []));
               e.target.value = "";
             }}
           />
@@ -135,8 +144,7 @@ export default function PhotoUploader({
             className="sr-only"
             disabled={busy}
             onChange={(e) => {
-              const f = Array.from(e.target.files ?? []);
-              setFiles((cur) => [...cur, ...f].slice(0, 20));
+              picked(Array.from(e.target.files ?? []));
               e.target.value = "";
             }}
           />
@@ -164,7 +172,7 @@ export default function PhotoUploader({
         <span className="block text-[11px] text-muted">Please don&apos;t use scouts&apos; last names.</span>
       </label>
 
-      <label className="flex items-start gap-2 rounded-xl bg-gold-50 p-3 text-sm text-gold-800">
+      <label id="photo-confirm" className="flex scroll-mb-24 items-start gap-2 rounded-xl bg-gold-50 p-3 text-sm text-gold-800">
         <input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-pine" disabled={busy} />
         <span>
           These are from a pack or den activity, every scout shown is in appropriate clothing, and no names, uniforms with

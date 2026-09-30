@@ -49,6 +49,9 @@ export default function BottomNav({ featured, me }: { featured: FeaturedTab | nu
   if (tapped && tapped.from !== path) setTapped(null); // the new page arrived
   const pending = tapped && tapped.from === path ? tapped.href : null;
 
+  // Step-by-step screens (uploading photos) hide the phone tab bar: after the photo picker
+  // closes, iPhone Safari can draw the fixed bar in the middle of the page, over the form.
+  const focused = path.startsWith("/photos/upload");
   const onFeatured = (p: string) => Boolean(featured && p.startsWith(featured.href));
   const tabs: Tab[] = [
     { href: "/", label: "Home", icon: House, match: (p) => p === "/" },
@@ -76,7 +79,7 @@ export default function BottomNav({ featured, me }: { featured: FeaturedTab | nu
   return (
     <nav
       aria-label="Main"
-      className="print:hidden fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:inset-y-0 lg:right-auto lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-t-0 lg:bg-pine-950 lg:pb-0 lg:backdrop-blur-none"
+      className={`${focused ? "max-lg:hidden " : ""}print:hidden fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:inset-y-0 lg:right-auto lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-t-0 lg:bg-pine-950 lg:pb-0 lg:backdrop-blur-none`}
     >
       <Link href="/" className="hidden items-center gap-3 px-5 pb-6 pt-6 lg:flex">
         {/* eslint-disable-next-line @next/next/no-img-element */}
