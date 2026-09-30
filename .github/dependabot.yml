@@ -8,6 +8,15 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # Node types follow the Node version the app runs on (22, see package.json "engines").
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # Wait until Next.js's lint setup supports these (both broke `npm run lint` in Sept 2026).
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
