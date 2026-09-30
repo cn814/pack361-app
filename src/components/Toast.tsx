@@ -36,21 +36,27 @@ export default function Toast() {
 
   useEffect(() => {
     if (!shown) return;
-    const t = setTimeout(() => setShown(null), 4500);
+    const t = setTimeout(() => setShown(null), 5000);
     return () => clearTimeout(t);
   }, [shown]);
 
   if (!shown) return null;
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-4 z-50 flex justify-center px-4 print:hidden" role="status" aria-live="polite">
-      <button
-        type="button"
-        onClick={() => setShown(null)}
-        className="pointer-events-auto flex max-w-sm items-start gap-2 rounded-2xl bg-pine-950 px-4 py-3 text-left text-sm font-semibold text-white shadow-[var(--shadow-float)] animate-[toast-in_200ms_ease-out]"
-      >
-        <CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-gold" aria-hidden />
-        <span>{shown}</span>
-      </button>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-pine-950/30 px-6 backdrop-blur-[2px] animate-[fade-in_150ms_ease-out] print:hidden"
+      role="status"
+      aria-live="polite"
+      onClick={() => setShown(null)}
+    >
+      <div className="flex w-full max-w-xs flex-col items-center gap-3 rounded-3xl bg-white px-6 py-7 text-center shadow-[var(--shadow-float)] animate-[toast-in_220ms_cubic-bezier(0.2,0.9,0.3,1.2)]">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-mint">
+          <CircleCheck className="h-10 w-10 text-pine" strokeWidth={2.5} aria-hidden />
+        </span>
+        <p className="text-lg font-extrabold leading-snug text-pine-950">{shown}</p>
+        <button type="button" className="btn-primary w-full" onClick={() => setShown(null)}>
+          OK
+        </button>
+      </div>
     </div>
   );
 }
