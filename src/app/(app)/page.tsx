@@ -3,6 +3,7 @@ import SubmitButton from "@/components/SubmitButton";
 import { Camera, ChevronRight, HandHelping, Images, MapPin, Pin, ShoppingBag, Timer } from "lucide-react";
 import { eventHref, getOpenJobs } from "@/lib/volunteer";
 import EventRow from "@/components/EventRow";
+import RsvpLink from "@/components/RsvpLink";
 import PostAnnouncement from "@/components/PostAnnouncement";
 import { deleteAnnouncement } from "./actions";
 import { displayName, getAnnouncements, getMyScouts, getUpcomingEvents, isLeader, requireMember } from "@/lib/data";
@@ -73,9 +74,10 @@ export default async function Home() {
                 <Link href={next.href} className="btn-gold">
                   {next.category === "Campout" ? "Campout details" : next.kind === "meeting" ? "Meeting details" : "Details"} <ChevronRight className="h-4 w-4" aria-hidden />
                 </Link>
+                <RsvpLink e={next} variant="dark" />
                 {next.signup_url && (
                   <a href={next.signup_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold">
-                    RSVP / pay
+                    {next.twh_uid ? "Pay" : "RSVP / pay"}
                   </a>
                 )}
               </div>

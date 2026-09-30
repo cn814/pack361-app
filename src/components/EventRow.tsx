@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CircleCheck, MapPin, Users } from "lucide-react";
 import type { PackEvent } from "@/lib/types";
+import RsvpLink from "@/components/RsvpLink";
 import { fmtRange } from "@/lib/format";
 
 const CATEGORY_STYLE: Record<string, string> = {
@@ -63,18 +64,30 @@ export default function EventRow({
     </div>
   );
   return isCampout ? (
-    <Link href={href} className="card block transition active:translate-y-px">
-      {body}
-    </Link>
+    <div className="card">
+      <Link href={href} className="block">
+        {body}
+      </Link>
+      {e.twh_uid && (
+        <div className="mt-2">
+          <RsvpLink e={e} variant="link" />
+        </div>
+      )}
+    </div>
   ) : (
     <div className="card">
       <Link href={href} className="block">
         {body}
       </Link>
-      {e.signup_url && !signup?.mine && (
-        <a href={e.signup_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-xs font-bold text-pine underline">
-          RSVP / pay on Givebutter
-        </a>
+      {(e.twh_uid || (e.signup_url && !signup?.mine)) && (
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+          <RsvpLink e={e} variant="link" />
+          {e.signup_url && !signup?.mine && (
+            <a href={e.signup_url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-pine underline">
+              {/givebutter/i.test(e.signup_url) ? "Pay / order on Givebutter" : "Sign up"}
+            </a>
+          )}
+        </div>
       )}
     </div>
   );

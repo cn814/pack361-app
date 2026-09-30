@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { CalendarDays, MapPin, Navigation, Ticket } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import VolunteerJobs from "@/components/VolunteerJobs";
+import RsvpLink from "@/components/RsvpLink";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import { EventLinks, EventSections } from "@/components/EventInfo";
 import { getEvent, isLeader, requireMember } from "@/lib/data";
@@ -56,6 +57,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         )}
         {event.details && <p className="whitespace-pre-line pt-1 text-sm text-ink">{event.details}</p>}
         <div className="flex flex-wrap gap-2 pt-2">
+          <RsvpLink e={event} />
           {place && (
             <a href={mapsLink(place)} target="_blank" rel="noopener noreferrer" className="btn-ghost py-2">
               <Navigation className="h-4 w-4" aria-hidden /> Directions
@@ -63,7 +65,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           )}
           {event.signup_url && (
             <a href={event.signup_url} target="_blank" rel="noopener noreferrer" className="btn-gold py-2">
-              <Ticket className="h-4 w-4" aria-hidden /> RSVP / pay
+              <Ticket className="h-4 w-4" aria-hidden /> {event.twh_uid ? "Pay / sign up" : "RSVP / pay"}
             </a>
           )}
         </div>
