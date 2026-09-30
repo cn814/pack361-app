@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useSyncExternalStore } from "react";
 import { useSubmitKeepingValues } from "@/components/ActionForm";
 import { ArrowRight, KeyRound, Mail } from "lucide-react";
 import { sendLoginEmail, verifyLoginCode, type LoginState } from "./actions";
@@ -16,6 +16,13 @@ export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
   const [sent, sendAction, sending] = useActionState(sendLoginEmail, initial);
   const [verify, verifyAction, verifying] = useActionState(verifyLoginCode, initial);
   const keepCode = useSubmitKeepingValues(verifyAction);
+  // Opened from the home screen: the email's link would open the browser, not this app.
+  const standalone = useSyncExternalStore(
+    () => () => {},
+    () =>
+      window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true,
+    () => false,
+  );
 
   const onCodeStep = sent.step === "code";
   const email = sent.email;
@@ -83,9 +90,16 @@ export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
 
   return (
     <div className="space-y-3 text-left">
-      <p className="rounded-xl bg-mint px-3 py-2.5 text-sm text-pine">
-        We sent a sign-in email to <strong>{email}</strong>. Tap the link in it, or type the code below.
-      </p>
+      {standalone ? (
+        <p className="rounded-xl bg-mint px-3 py-2.5 text-sm text-pine">
+          We sent a sign-in email to <strong>{email}</strong>. <strong>Type the 6-digit code from it below.</strong> Don&apos;t
+          tap the link in the email: it opens your browser, not this app.
+        </p>
+      ) : (
+        <p className="rounded-xl bg-mint px-3 py-2.5 text-sm text-pine">
+          We sent a sign-in email to <strong>{email}</strong>. Type the code from it below, or tap the link in it.
+        </p>
+      )}
       <form action={verifyAction} onSubmit={keepCode} className="space-y-3">
         <input type="hidden" name="email" value={email} />
         <label className="block">
@@ -109,10 +123,12 @@ export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
           {verifying ? "Checking…" : "Sign in"}
         </button>
       </form>
-      <p className="text-center text-xs text-muted">
-        Using the app from your home screen? Type the code here instead of tapping the link, so you stay signed in inside
-        the app.
-      </p>
+      {!standalone && (
+        <p className="text-center text-xs text-muted">
+          Using the app from your home screen? Type the code there instead of tapping the link. Links in email always open
+          your browser, not the home-screen app.
+        </p>
+      )}
       {resend}
     </div>
   );
