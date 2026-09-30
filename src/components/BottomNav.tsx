@@ -13,6 +13,7 @@ import {
   Rocket,
   Sailboat,
   Tent,
+  Images,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -35,7 +36,11 @@ interface Tab {
   featured?: boolean;
 }
 
-export default function BottomNav({ featured }: { featured: FeaturedTab | null }) {
+/**
+ * Main navigation. Phones: a bottom tab bar. Computers (lg and up): a left sidebar with the
+ * same tabs plus the pack name, Photos and My family.
+ */
+export default function BottomNav({ featured, me }: { featured: FeaturedTab | null; me: { initials: string; name: string } }) {
   const path = usePathname();
   // Highlight the tapped tab right away instead of waiting for the page to load.
   const [tapped, setTapped] = useState<{ href: string; from: string } | null>(null);
@@ -58,12 +63,22 @@ export default function BottomNav({ featured }: { featured: FeaturedTab | null }
     { href: "/leaders", label: "Leaders", icon: Users, match: (p) => p.startsWith("/leaders") || p.startsWith("/admin") },
   ];
 
+  const tap = (href: string, match: (p: string) => boolean) => () => !match(path) && setTapped({ href, from: path });
+
   return (
     <nav
       aria-label="Main"
-      className="print:hidden fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]"
+      className="print:hidden fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:inset-y-0 lg:right-auto lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-t-0 lg:bg-pine-950 lg:pb-0 lg:backdrop-blur-none"
     >
-      <ul className="mx-auto flex max-w-md justify-around px-2">
+      <Link href="/" className="hidden items-center gap-3 px-5 pb-6 pt-6 lg:flex">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/badge.png" alt="" className="h-12 w-12 rounded-full ring-2 ring-white/20" />
+        <span>
+          <span className="block font-extrabold leading-tight text-white">Pack 361</span>
+          <span className="block text-xs text-mint-200/80">Ellicott City, MD</span>
+        </span>
+      </Link>
+      <ul className="mx-auto flex max-w-md justify-around px-2 lg:mx-0 lg:max-w-none lg:flex-1 lg:flex-col lg:justify-start lg:gap-1 lg:px-3">
         {tabs.map(({ href, label, icon: Icon, match, featured: special }) => {
           const active = pending ? pending === href : match(path);
           return (
@@ -71,24 +86,53 @@ export default function BottomNav({ featured }: { featured: FeaturedTab | null }
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
-                onClick={() => !match(path) && setTapped({ href, from: path })}
-                className={`flex min-w-14 flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-[11px] font-semibold transition active:scale-90 active:bg-mint ${
-                  active ? "text-pine" : special ? "text-gold-800" : "text-muted"
+                onClick={tap(href, match)}
+                className={`flex min-w-14 flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-[11px] font-semibold transition active:scale-90 active:bg-mint lg:min-w-0 lg:flex-row lg:gap-3 lg:px-3 lg:py-2.5 lg:text-sm lg:active:scale-100 lg:active:bg-white/15 ${
+                  active
+                    ? "text-pine lg:bg-white/10 lg:text-white"
+                    : special
+                      ? "text-gold-800 lg:text-gold lg:hover:bg-white/5"
+                      : "text-muted lg:text-mint-200 lg:hover:bg-white/5 lg:hover:text-white"
                 }`}
               >
                 {special ? (
-                  <span className={`-mt-0.5 flex h-7 w-7 items-center justify-center rounded-full ${active ? "bg-pine text-white" : "bg-gold text-pine-950"}`}>
+                  <span
+                    className={`-mt-0.5 flex h-7 w-7 items-center justify-center rounded-full lg:mt-0 ${active ? "bg-pine text-white lg:bg-gold lg:text-pine-950" : "bg-gold text-pine-950"}`}
+                  >
                     <Icon className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                   </span>
                 ) : (
-                  <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} aria-hidden />
+                  <Icon className="h-5 w-5 lg:mx-1" strokeWidth={active ? 2.5 : 2} aria-hidden />
                 )}
-                <span className="max-w-16 truncate">{label}</span>
+                <span className="max-w-16 truncate lg:max-w-none">{label}</span>
               </Link>
             </li>
           );
         })}
+        <li className="hidden lg:block">
+          <Link
+            href="/photos"
+            onClick={tap("/photos", (p) => p.startsWith("/photos"))}
+            aria-current={path.startsWith("/photos") ? "page" : undefined}
+            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
+              (pending ? pending === "/photos" : path.startsWith("/photos")) ? "bg-white/10 text-white" : "text-mint-200 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <Images className="mx-1 h-5 w-5" aria-hidden /> Photos
+          </Link>
+        </li>
       </ul>
+      <Link
+        href="/family"
+        onClick={tap("/family", (p) => p.startsWith("/family"))}
+        className={`m-3 hidden items-center gap-3 rounded-xl p-2 transition lg:flex ${path.startsWith("/family") ? "bg-white/10" : "hover:bg-white/5"}`}
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold text-xs font-extrabold text-pine-950">{me.initials}</span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-white">{me.name}</span>
+          <span className="block text-xs text-mint-200/80">My family</span>
+        </span>
+      </Link>
     </nav>
   );
 }

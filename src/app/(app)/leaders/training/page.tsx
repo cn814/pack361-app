@@ -57,7 +57,7 @@ export default async function TrainingPage() {
         </div>
       </div>
 
-      <ul className="space-y-2">
+      <ul className="page-wide space-y-2 lg:grid lg:grid-cols-2 lg:items-start lg:gap-2 lg:space-y-0">
         {sorted.map((l) => {
           const canEdit = admin || l.id === me.id;
           const head = (

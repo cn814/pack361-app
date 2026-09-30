@@ -64,8 +64,8 @@ export default async function ScoutsPage() {
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Scouts</h1>
 
       {mine.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="section-title">{mine.length > 1 ? "My scouts" : "My scout"}</h2>
+        <section className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
+          <h2 className="section-title lg:col-span-2">{mine.length > 1 ? "My scouts" : "My scout"}</h2>
           {mine.map((s) => {
             const p = progressFor(s, records, catalog);
             return (
@@ -94,7 +94,7 @@ export default async function ScoutsPage() {
       {leader && (
         <section className="space-y-2">
           <h2 className="section-title">Leader tools</h2>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
             <Tool href="/scouts/review" icon={ClipboardCheck} label="Approve reports" count={pendingCount} />
             <Tool href="/scouts/review#record" icon={Stamp} label="Enter in Scoutbook" count={approvedCount} />
             <Tool href="/scouts/awards" icon={ShoppingBag} label="Awards to hand out" count={awards.length} />
@@ -111,6 +111,7 @@ export default async function ScoutsPage() {
         </section>
       )}
 
+      <div className="page-wide space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
       {denOrder.map((den) => (
         <section key={den} className="card space-y-1">
           <div className="flex items-center justify-between">
@@ -151,6 +152,7 @@ export default async function ScoutsPage() {
           </ul>
         </section>
       ))}
+      </div>
 
       {!mine.length && !reviewable.length && (
         <p className="card text-sm text-muted">No scouts are linked to your account.</p>

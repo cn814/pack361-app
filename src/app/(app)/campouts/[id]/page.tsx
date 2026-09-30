@@ -37,82 +37,98 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
   return (
     <>
       <BackLink href="/events" label="Events" />
-      <section className="card space-y-2 border-t-4 border-t-pine">
-        <span className="badge bg-mint text-pine">{event.category}</span>
-        <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-pine-950">{event.title}</h1>
-        <p className="flex items-center gap-1.5 text-sm text-muted">
-          <CalendarDays className="h-4 w-4" aria-hidden /> {fmtRange(event.starts_at, event.ends_at)}
-        </p>
-        {place && (
-          <p className="flex items-start gap-1.5 text-sm text-muted">
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {place}
-          </p>
-        )}
-        {event.details && <p className="whitespace-pre-line pt-1 text-sm text-ink">{event.details}</p>}
-        <div className="flex flex-wrap gap-2 pt-2">
-          {place && (
-            <a href={mapsLink(place)} target="_blank" rel="noopener noreferrer" className="btn-ghost py-2">
-              <Navigation className="h-4 w-4" aria-hidden /> Directions
-            </a>
-          )}
-          {event.signup_url && (
-            <a href={event.signup_url} target="_blank" rel="noopener noreferrer" className="btn-gold py-2">
-              <Ticket className="h-4 w-4" aria-hidden /> RSVP / pay
-            </a>
+      <div className="page-wide flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
+        <div className="contents lg:block lg:space-y-4">
+        <div className="order-1 empty:hidden">
+          <section className="card space-y-2 border-t-4 border-t-pine">
+            <span className="badge bg-mint text-pine">{event.category}</span>
+            <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-pine-950">{event.title}</h1>
+            <p className="flex items-center gap-1.5 text-sm text-muted">
+              <CalendarDays className="h-4 w-4" aria-hidden /> {fmtRange(event.starts_at, event.ends_at)}
+            </p>
+            {place && (
+              <p className="flex items-start gap-1.5 text-sm text-muted">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {place}
+              </p>
+            )}
+            {event.details && <p className="whitespace-pre-line pt-1 text-sm text-ink">{event.details}</p>}
+            <div className="flex flex-wrap gap-2 pt-2">
+              {place && (
+                <a href={mapsLink(place)} target="_blank" rel="noopener noreferrer" className="btn-ghost py-2">
+                  <Navigation className="h-4 w-4" aria-hidden /> Directions
+                </a>
+              )}
+              {event.signup_url && (
+                <a href={event.signup_url} target="_blank" rel="noopener noreferrer" className="btn-gold py-2">
+                  <Ticket className="h-4 w-4" aria-hidden /> RSVP / pay
+                </a>
+              )}
+            </div>
+          </section>
+        </div>
+        <div className="order-2 empty:hidden">
+          {campaign && (
+            <EventSignup
+              campaign={campaign}
+              orders={orders}
+              myFamilyId={me.family_id}
+              leader={isLeader(me)}
+              signupUrl={event.signup_url}
+            />
           )}
         </div>
-      </section>
-
-      {campaign && (
-        <EventSignup
-          campaign={campaign}
-          orders={orders}
-          myFamilyId={me.family_id}
-          leader={isLeader(me)}
-          signupUrl={event.signup_url}
-        />
-      )}
-
-      <SaveOffline />
-
-      <EventLinks links={event.links ?? []} />
-
-      <section className="space-y-3">
-        <h2 className="section-title">Schedule</h2>
-        {itinerary.length === 0 ? (
-          <p className="card text-sm text-muted">The camping chair hasn&apos;t posted the schedule yet.</p>
-        ) : (
-          [...byDay.entries()].map(([day, items]) => (
-            <div key={day} className="card space-y-3">
-              <h3 className="font-bold text-pine-950">{day}</h3>
-              <ol className="space-y-3">
-                {items.map((i) => (
-                  <li key={i.id} className="flex gap-3">
-                    <span className="w-16 shrink-0 text-xs font-bold text-gold-800">{fmtTime(i.starts_at)}</span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-ink">{i.title}</span>
-                      {(i.location || i.notes) && (
-                        <span className="block text-xs text-muted">{[i.location, i.notes].filter(Boolean).join(" · ")}</span>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          ))
-        )}
-      </section>
-
-      <EventSections sections={event.sections ?? []} />
-
-      <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={isLeader(me)} />
-
-      <section className="space-y-3">
-        <h2 className="section-title">Packing checklist</h2>
-        <PackingChecklist eventId={event.id} items={packing} />
-      </section>
-
-      <EventPhotosLink eventId={id} startsAt={event.starts_at} />
+        <div className="order-5 empty:hidden">
+          <section className="space-y-3">
+            <h2 className="section-title">Schedule</h2>
+            {itinerary.length === 0 ? (
+              <p className="card text-sm text-muted">The camping chair hasn&apos;t posted the schedule yet.</p>
+            ) : (
+              [...byDay.entries()].map(([day, items]) => (
+                <div key={day} className="card space-y-3">
+                  <h3 className="font-bold text-pine-950">{day}</h3>
+                  <ol className="space-y-3">
+                    {items.map((i) => (
+                      <li key={i.id} className="flex gap-3">
+                        <span className="w-16 shrink-0 text-xs font-bold text-gold-800">{fmtTime(i.starts_at)}</span>
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold text-ink">{i.title}</span>
+                          {(i.location || i.notes) && (
+                            <span className="block text-xs text-muted">{[i.location, i.notes].filter(Boolean).join(" · ")}</span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ))
+            )}
+          </section>
+        </div>
+        <div className="order-6 empty:hidden">
+          <EventSections sections={event.sections ?? []} />
+        </div>
+        </div>
+        <div className="contents lg:block lg:space-y-4">
+        <div className="order-3 empty:hidden">
+          <SaveOffline />
+        </div>
+        <div className="order-4 empty:hidden">
+          <EventLinks links={event.links ?? []} />
+        </div>
+        <div className="order-7 empty:hidden">
+          <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={isLeader(me)} />
+        </div>
+        <div className="order-8 empty:hidden">
+          <section className="space-y-3">
+            <h2 className="section-title">Packing checklist</h2>
+            <PackingChecklist eventId={event.id} items={packing} />
+          </section>
+        </div>
+        <div className="order-9 empty:hidden">
+          <EventPhotosLink eventId={id} startsAt={event.starts_at} />
+        </div>
+        </div>
+      </div>
     </>
   );
 }

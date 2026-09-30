@@ -6,6 +6,8 @@ import type { ActionResult } from "@/components/ActionForm";
 import { createClient } from "@/lib/supabase/server";
 import { isLeader, requireMember } from "@/lib/data";
 import { PHOTO_BUCKET } from "@/lib/photos";
+import { after } from "next/server";
+import { notifyAdmins } from "@/lib/notify";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 const MAX_FULL = 3_500_000;
@@ -53,6 +55,11 @@ export async function uploadPhoto(form: FormData): Promise<{ error?: string; app
     return { error: "Upload failed. Try again." };
   }
   revalidatePath("/photos", "layout");
+  if (!leader) {
+    after(() =>
+      notifyAdmins({ title: "New pack photos to review", body: "A family uploaded photos for the album.", url: "/photos/review", tag: "photo-review" }),
+    );
+  }
   return { approved: leader };
 }
 
@@ -102,6 +109,19 @@ export async function flagPhoto(_prev: ActionResult, form: FormData): Promise<Ac
   const supabase = await createClient();
   const { error } = await supabase.rpc("flag_photo", { p_photo_id: id, p_reason: reason });
   if (error) return { error: "Couldn't send that request." };
+  after(() =>
+    notifyAdmins(
+      { title: "Photo take-down request", body: reason ? reason.slice(0, 160) : "A family asked for a photo to come down.", url: "/photos/review", tag: "photo-flag" },
+      {
+        subject: "A family asked for a pack photo to be taken down",
+        paragraphs: [
+          "Someone asked for a photo in the pack album to be taken down. It's hidden from families until a leader reviews it.",
+          reason ? `Their reason: ${reason}` : "They didn't give a reason.",
+          `${process.env.NEXT_PUBLIC_APP_URL ?? "https://app.pack361.org"}/photos/review`,
+        ],
+      },
+    ),
+  );
   revalidatePath("/photos", "layout");
   redirect("/photos?flagged=1");
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import FeedbackForm from "@/components/FeedbackForm";
 import { Mail, Phone, Settings, ShieldAlert, ShieldCheck } from "lucide-react";
 import { getLeaders, isLeader, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
@@ -28,7 +29,7 @@ export default async function LeadersPage() {
           )}
         </div>
       )}
-      <ul className="space-y-2">
+      <ul className="space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0">
         {leaders.map((l) => (
           <li key={l.adult_id} className="card flex items-center justify-between gap-3 py-3">
             <div className="min-w-0">
@@ -58,6 +59,7 @@ export default async function LeadersPage() {
           call 911.
         </p>
       </div>
+      <FeedbackForm page="Leaders" />
     </>
   );
 }

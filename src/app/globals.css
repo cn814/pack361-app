@@ -66,6 +66,12 @@ body {
   a.card:active {
     transform: scale(0.985);
   }
+  @media (hover: hover) {
+    a.card:hover {
+      border-color: var(--color-outline);
+      box-shadow: var(--shadow-float);
+    }
+  }
   button:disabled {
     cursor: default;
   }

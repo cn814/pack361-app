@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LogOut, ShieldCheck } from "lucide-react";
 import ContactForm from "@/components/ContactForm";
+import FeedbackForm from "@/components/FeedbackForm";
 import PhotoPermission from "@/components/PhotoPermission";
 import PushToggle from "@/components/PushToggle";
 import TrainingEditor, { stateText } from "@/components/TrainingEditor";
@@ -90,6 +91,8 @@ export default async function FamilyPage() {
         <h2 className="section-title">My contact info</h2>
         <ContactForm phone={me.phone} preferred={me.preferred_name} />
       </section>
+
+      <FeedbackForm page="My family" />
 
       <form action="/auth/signout" method="post">
         <button className="btn-ghost w-full">

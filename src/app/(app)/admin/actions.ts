@@ -289,3 +289,19 @@ export async function sendWelcomeEmails(_prev: ActionResult, form: FormData): Pr
     message: `Sent ${batch.length} welcome email${batch.length === 1 ? "" : "s"}.${rest > 0 ? ` ${rest} more to send tomorrow.` : ""}`,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Messages from families
+// ---------------------------------------------------------------------------
+export async function resolveFeedback(form: FormData) {
+  const me = await requireAdmin();
+  const id = str(form, "id");
+  if (!UUID.test(id)) return;
+  const reopen = str(form, "reopen") === "1";
+  const supabase = await createClient();
+  await supabase
+    .from("feedback")
+    .update(reopen ? { resolved_at: null, resolved_by: null } : { resolved_at: new Date().toISOString(), resolved_by: me.id })
+    .eq("id", id);
+  revalidatePath("/admin", "layout");
+}
