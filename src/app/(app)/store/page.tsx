@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import SubmitButton from "@/components/SubmitButton";
-import { ExternalLink, ShoppingBag } from "lucide-react";
+import { ExternalLink, MapPin, Shirt, ShoppingBag } from "lucide-react";
 import { SyncGivebutterButton } from "@/components/AdminForms";
 import { isLeader, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
@@ -23,6 +23,39 @@ export default async function StorePage() {
     <>
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack store</h1>
       <p className="-mt-2 text-sm text-muted">Pack 361 shirts, hoodies and gear, ordered through Givebutter.</p>
+
+      <section className="card space-y-2 border-l-4 border-l-navy">
+        <h2 className="flex items-center gap-2 font-extrabold text-pine-950">
+          <Shirt className="h-5 w-5 text-navy" aria-hidden /> Uniforms, handbooks and badges
+        </h2>
+        <p className="text-sm text-ink">
+          Official Cub Scout uniforms, rank handbooks and patches come from the Scout Shop. We&apos;re in the{" "}
+          <b>Baltimore Area Council</b>, so pick that council for the council shoulder patch.
+        </p>
+        <a href="https://www.scoutshop.org/" target="_blank" rel="noopener noreferrer" className="btn-primary w-full py-2">
+          <ExternalLink className="h-4 w-4" aria-hidden /> Shop at scoutshop.org
+        </a>
+        <details className="text-sm">
+          <summary className="cursor-pointer text-xs font-bold text-pine">Scout Shops near us</summary>
+          <ul className="mt-2 space-y-2 text-xs text-ink">
+            <li className="flex gap-2">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pine" aria-hidden />
+              <span>
+                <b>Hanover</b> (closest, off Dorsey Rd): 7502 Connelly Dr, Suite 120, Hanover, MD 21076 ·{" "}
+                <a href="tel:4105536913" className="text-pine underline">410-553-6913</a>
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pine" aria-hidden />
+              <span>
+                <b>Baltimore</b>: 701 Wyman Park Dr, Baltimore, MD 21211 ·{" "}
+                <a href="tel:4103380144" className="text-pine underline">410-338-0144</a>
+              </span>
+            </li>
+          </ul>
+          <p className="mt-2 text-[11px] text-muted">Call ahead for hours.</p>
+        </details>
+      </section>
 
       {shown.map((c) => {
         const mine = orders.filter((o) => o.campaign_id === c.id && isPaid(o) && me.family_id && o.family_id === me.family_id);
