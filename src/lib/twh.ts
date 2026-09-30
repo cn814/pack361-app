@@ -21,7 +21,18 @@ export interface FeedEvent {
   ends_at: string | null;
   all_day: boolean;
   cancelled: boolean;
+  /** The event's page on TroopWebHost (where families RSVP), when the feed includes it. */
+  url: string | null;
 }
+
+/** A TroopWebHost / OurGroupOnline link, if the text contains one. */
+function twhLink(s: string | null | undefined): string | null {
+  const m = s?.match(/https?:\/\/[^\s<>"')]*(troopwebhost|ourgrouponline)[^\s<>"')]*/i);
+  return m ? m[0] : null;
+}
+
+/** Where families RSVP when an event has no direct TroopWebHost link. */
+export const TWH_HOME = process.env.NEXT_PUBLIC_TWH_URL ?? "https://www.troopwebhostcs.org/Pack361EllicottCity/";
 
 const unescape = (v: string) => v.replace(/\\n/gi, "\n").replace(/\\([,;\\])/g, "$1").trim();
 
@@ -69,6 +80,7 @@ export function parseIcs(text: string): FeedEvent[] {
           ends_at: end?.iso ?? null,
           all_day: start.allDay,
           cancelled: /CANCELLED/i.test(cur.STATUS?.value ?? ""),
+          url: twhLink(cur.URL?.value) ?? twhLink(cur.DESCRIPTION ? unescape(cur.DESCRIPTION.value) : null),
         });
       }
       cur = null;
@@ -133,7 +145,8 @@ function similar(a: string, b: string) {
   for (const w of A) if (B.has(w)) same++;
   return same > 0 && same >= Math.min(A.size, B.size) / 2;
 }
-const firstUrl = (s: string | null) => s?.match(/https?:\/\/[^\s<>"')]+/)?.[0] ?? null;
+const firstUrl = (s: string | null) =>
+  (s?.match(/https?:\/\/[^\s<>"')]+/g) ?? []).find((u) => !/troopwebhost|ourgrouponline/i.test(u)) ?? null;
 
 export interface SyncResult {
   added: number;
@@ -189,12 +202,13 @@ export async function syncTwh(db: SupabaseClient): Promise<SyncResult> {
         (r) => !r.twh_uid && !claimed.has(r.id) && easternDay(r.starts_at) === easternDay(e.starts_at) && similar(r.title, e.title),
       );
       if (row) {
-        await db.from("events").update({ twh_uid: e.uid, twh_synced_at: stamp }).eq("id", row.id);
+        await db.from("events").update({ twh_uid: e.uid, twh_url: e.url, twh_synced_at: stamp }).eq("id", row.id);
         result.linked++;
       }
     }
     if (row) {
       claimed.add(row.id);
+      if (row.source !== "troopwebhost") await db.from("events").update({ twh_url: e.url, twh_synced_at: stamp }).eq("id", row.id);
       // Only events that came from TroopWebHost follow its title, time and place.
       if (row.source === "troopwebhost") {
         const patch = {
@@ -205,6 +219,7 @@ export async function syncTwh(db: SupabaseClient): Promise<SyncResult> {
           location_name: e.location,
           details: e.description ?? row.details,
           signup_url: row.signup_url ?? firstUrl(e.description),
+          twh_url: e.url,
           twh_synced_at: stamp,
         };
         await db.from("events").update(patch).eq("id", row.id);
@@ -217,6 +232,7 @@ export async function syncTwh(db: SupabaseClient): Promise<SyncResult> {
       source: "troopwebhost",
       external_id: e.uid,
       twh_uid: e.uid,
+      twh_url: e.url,
       twh_synced_at: stamp,
       title: e.title.slice(0, 200),
       category: c.category,
