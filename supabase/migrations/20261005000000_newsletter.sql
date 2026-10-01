@@ -2,8 +2,9 @@
 -- family: the next two weeks of events with their RSVP, anything waiting on them (RSVPs, money
 -- due, medical forms, registration), the week's announcements and open volunteer jobs. It
 -- replaces TroopWebHost's Sunday newsletter.
---   pack_settings.newsletter_mode  'off', 'admins' (only pack admins get it, for trying it out
---                                  while TroopWebHost still sends its own) or 'everyone'.
+--   pack_settings.newsletter_mode  'off', 'test' (only the people in newsletter_test_adults get
+--                                  it, while TroopWebHost still sends its own) or 'everyone'.
+--                                  ('admins' was the first name for testing and means the same.)
 --   newsletter_sends               one row per adult per week, so a retry never sends twice.
 
 insert into public.pack_settings (key, value) values ('newsletter_mode', 'admins')

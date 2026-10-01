@@ -15,12 +15,22 @@ import type { DenRank } from "./types";
 // cron), the same for everyone in a family. It replaces TroopWebHost's Sunday newsletter.
 // Built with the secret-key client, so every query below is limited to the family by hand.
 
-export type NewsletterMode = "off" | "admins" | "everyone";
+export type NewsletterMode = "off" | "test" | "everyone";
 export const NEWSLETTER_MODES: Record<NewsletterMode, string> = {
   off: "Off",
-  admins: "Pack admins only (to try it out)",
+  test: "Testing: only the people ticked below",
   everyone: "Every family",
 };
+
+/** The saved setting as a mode ("admins" was the first name for testing). */
+export function newsletterMode(v: string | null | undefined): NewsletterMode {
+  return v === "off" || v === "everyone" ? v : "test";
+}
+
+/** Adult ids from the newsletter_test_adults setting. */
+export function testAdultIds(v: string | null | undefined): string[] {
+  return (v ?? "").split(",").map((x) => x.trim()).filter((x) => /^[0-9a-f-]{36}$/i.test(x));
+}
 
 /** Regular meetings: shown on the list, but not nagged about in "Needs your answer". */
 const ROUTINE = new Set(["Den Meeting", "Pack Meeting", "Committee"]);
@@ -284,7 +294,7 @@ ${l.where ? `<div style="font-size:12px;color:#414844">${esc(l.where)}</div>` : 
   const parts: string[] = [];
   if (preview) {
     parts.push(
-      `<p style="margin:0 0 14px;padding:10px 12px;border-radius:10px;background:#fef6e7;color:#7e5700;font-size:12px">Preview: only pack admins get this newsletter for now. Turn it on for every family in Pack admin → Weekly newsletter.</p>`,
+      `<p style="margin:0 0 14px;padding:10px 12px;border-radius:10px;background:#fef6e7;color:#7e5700;font-size:12px">Test copy: only the people ticked in Pack admin → Weekly newsletter get this for now.</p>`,
     );
   }
   parts.push(
@@ -334,7 +344,7 @@ ${parts.join("\n")}
 </div></body></html>`;
 
   const t: string[] = [];
-  if (preview) t.push("Preview: only pack admins get this newsletter for now.", "");
+  if (preview) t.push("Test copy: only the people ticked in Pack admin get this for now.", "");
   t.push(`Pack 361 · ${weekLabel}`, `Hi ${name}, here's what's coming up${n.familyName ? ` for the ${n.familyName} family` : ""}.`, "");
   if (n.needs.length) t.push("NEEDS YOUR ATTENTION", ...n.needs.map((x) => `- ${x.text} ${link(x.href)}`), "");
   const tl = (list: Line[]) => (list.length ? list.map((l) => `- ${l.when}: ${l.title}${l.where ? `, ${l.where}` : ""}${l.rsvp ? ` [${l.rsvp}]` : l.askRsvp ? ` [RSVP: ${link(l.href)}]` : ""}`) : ["- Nothing on the calendar."]);
@@ -348,10 +358,10 @@ ${parts.join("\n")}
 // ---------------------------------------------------------------------------
 // Sending
 // ---------------------------------------------------------------------------
-async function getMode(db: SupabaseClient): Promise<NewsletterMode> {
-  const { data } = await db.from("pack_settings").select("value").eq("key", "newsletter_mode").maybeSingle();
-  const v = (data?.value as string | undefined) ?? "admins";
-  return v === "off" || v === "everyone" ? v : "admins";
+async function getMode(db: SupabaseClient): Promise<{ mode: NewsletterMode; testIds: string[] }> {
+  const { data } = await db.from("pack_settings").select("key, value").in("key", ["newsletter_mode", "newsletter_test_adults"]);
+  const get = (k: string) => ((data ?? []) as { key: string; value: string }[]).find((r) => r.key === k)?.value;
+  return { mode: newsletterMode(get("newsletter_mode")), testIds: testAdultIds(get("newsletter_test_adults")) };
 }
 
 /** Build one person's newsletter (for a preview). */
@@ -378,11 +388,12 @@ export async function sendPreview(db: SupabaseClient, adultId: string): Promise<
  */
 export async function runWeeklyNewsletter(db: SupabaseClient, opts: { force?: boolean } = {}) {
   if (!opts.force && !isSundayEastern()) return { skipped: "not Sunday" };
-  const mode = await getMode(db);
+  const { mode, testIds } = await getMode(db);
   if (mode === "off") return { skipped: "turned off" };
+  if (mode === "test" && !testIds.length) return { skipped: "testing, but nobody is ticked" };
   const week = weekOf();
   let q = db.from("adults").select(RECIPIENT_COLS).eq("is_active", true).not("email", "is", null);
-  if (mode === "admins") q = q.eq("role", "admin");
+  if (mode === "test") q = q.in("id", testIds);
   const [{ data: people, error }, { data: done }] = await Promise.all([q, db.from("newsletter_sends").select("adult_id").eq("week_of", week)]);
   if (error) throw new Error(error.message);
   const sent = new Set(((done ?? []) as { adult_id: string }[]).map((d) => d.adult_id));
@@ -396,7 +407,7 @@ export async function runWeeklyNewsletter(db: SupabaseClient, opts: { force?: bo
     const key = r.family_id ?? `adult:${r.id}`;
     try {
       if (!cache.has(key)) cache.set(key, await familyNews(db, r));
-      const n = render(cache.get(key)!, r, week, mode === "admins");
+      const n = render(cache.get(key)!, r, week, mode === "test");
       const res = await sendPersonal([{ email: r.email, name: `${r.preferred_name || r.first_name} ${r.last_name}`, ...n }]);
       if (res.error) {
         errors.push(res.error);

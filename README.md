@@ -299,8 +299,8 @@ npm run dev
   in the next 45 days, registration renewals, open polls), the week's announcements and open
   volunteer jobs. Sent one by one through Brevo (`sendPersonal()`); `newsletter_sends` keeps one row
   per adult per week so a rerun never sends twice. Pack admin → Weekly newsletter sets who gets it
-  (`newsletter_mode`: off, pack admins only, every family; it starts at admins only while
-  TroopWebHost still sends its own), shows this week's for your family, and emails you a copy.
+  (`newsletter_mode`: off, testing (only the leaders ticked in `newsletter_test_adults`), every
+  family; it stays on testing while TroopWebHost still sends its own), shows this week's for your family, and emails you a copy.
 - A second daily cron (`/api/cron/daily`, 21:00 UTC = 5 PM EDT / 4 PM EST) runs, in order:
   1. volunteer reminders, 2. training expiry reminders, 3. Scouting America registration reminders
   (each by push, or email when no push reached a phone; the three share one budget of 40 emails a

@@ -9,7 +9,7 @@ import { getSettings } from "@/lib/settings";
 import { emailConfigured } from "@/lib/email";
 import { emailNewsletterPreview, saveNewsletterMode, saveSettings, syncTroopWebHost } from "./actions";
 import { brevoConfigured } from "@/lib/bulk-email";
-import { NEWSLETTER_MODES, type NewsletterMode } from "@/lib/newsletter";
+import { NEWSLETTER_MODES, newsletterMode, testAdultIds, type NewsletterMode } from "@/lib/newsletter";
 import { twhConfigured } from "@/lib/twh";
 import { timeAgo } from "@/lib/format";
 
@@ -39,6 +39,15 @@ export default async function AdminPage() {
     supabase.from("feedback").select("id", { count: "exact", head: true }).is("resolved_at", null),
     supabase.rpc("storage_usage"),
   ]);
+  // People who can get the newsletter's test copy: pack leadership, the Cubmaster and admins.
+  const { data: testerRows } = await supabase
+    .from("adults")
+    .select("id, first_name, preferred_name, last_name")
+    .in("role", ["admin", "cubmaster", "committee"])
+    .eq("is_active", true)
+    .order("first_name");
+  const testers = (testerRows ?? []) as { id: string; first_name: string; preferred_name: string | null; last_name: string }[];
+  const testIds = testAdultIds(settings.newsletter_test_adults);
   // Supabase's free plan includes 1 GB of file storage, shared by every bucket.
   const usage = (storageRows ?? []) as { bucket_id: string; bytes: number }[];
   const bytesIn = (bucket: string) => Number(usage.find((u) => u.bucket_id === bucket)?.bytes ?? 0);
@@ -157,8 +166,8 @@ export default async function AdminPage() {
           waiting on them (RSVPs, money due, medical forms, registration), the week&apos;s announcements and open volunteer jobs.
         </p>
         <ActionForm action={saveNewsletterMode} submit="Save" buttonClass="btn-ghost w-full">
-          <Field label="Who gets it" hint="While TroopWebHost still sends its own newsletter, keep it to pack admins.">
-            <select className="input" name="newsletter_mode" defaultValue={settings.newsletter_mode}>
+          <Field label="Who gets it" hint="While TroopWebHost still sends its own newsletter, keep it to testing.">
+            <select className="input" name="newsletter_mode" defaultValue={newsletterMode(settings.newsletter_mode)}>
               {(Object.keys(NEWSLETTER_MODES) as NewsletterMode[]).map((m) => (
                 <option key={m} value={m}>
                   {NEWSLETTER_MODES[m]}
@@ -166,6 +175,15 @@ export default async function AdminPage() {
               ))}
             </select>
           </Field>
+          <fieldset className="space-y-1">
+            <legend className="text-xs font-bold text-navy">Test copy goes to</legend>
+            {testers.map((a) => (
+              <label key={a.id} className="flex items-center gap-2 text-sm text-ink">
+                <input type="checkbox" name="tester" value={a.id} defaultChecked={testIds.includes(a.id)} className="h-4 w-4 accent-pine" />
+                {a.preferred_name || a.first_name} {a.last_name}
+              </label>
+            ))}
+          </fieldset>
         </ActionForm>
         <div className="grid grid-cols-2 gap-2">
           <Link href="/admin/newsletter" className="btn-ghost py-2">

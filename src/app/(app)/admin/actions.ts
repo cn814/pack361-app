@@ -263,12 +263,21 @@ export async function saveSettings(_prev: ActionResult, form: FormData): Promise
 export async function saveNewsletterMode(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   await requireAdmin();
   const mode = str(form, "newsletter_mode");
-  if (!["off", "admins", "everyone"].includes(mode)) return { error: "Choose who gets the newsletter." };
+  if (!["off", "test", "everyone"].includes(mode)) return { error: "Choose who gets the newsletter." };
+  const testers = form.getAll("tester").map(String).filter((x) => UUID.test(x)).slice(0, 20);
+  if (mode === "test" && !testers.length) return { error: "Tick at least one person to get the test copy." };
+  const now = new Date().toISOString();
   const supabase = await createClient();
-  const { error } = await supabase.from("pack_settings").upsert({ key: "newsletter_mode", value: mode, updated_at: new Date().toISOString() });
+  const { error } = await supabase.from("pack_settings").upsert([
+    { key: "newsletter_mode", value: mode, updated_at: now },
+    { key: "newsletter_test_adults", value: testers.join(","), updated_at: now },
+  ]);
   if (error) return { error: "Couldn't save that." };
   revalidatePath("/admin");
-  return { ok: true, message: mode === "everyone" ? "Every family gets it from next Sunday" : mode === "admins" ? "Only pack admins get it" : "Turned off" };
+  return {
+    ok: true,
+    message: mode === "everyone" ? "Every family gets it from next Sunday" : mode === "test" ? `${testers.length} ${testers.length === 1 ? "person gets" : "people get"} the test copy` : "Turned off",
+  };
 }
 
 /** Email this week's newsletter to the admin who asked (it isn't counted as their Sunday copy). */

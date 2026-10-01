@@ -18,7 +18,8 @@ export type SettingKey =
   | "dues_sibling_discount_cents"
   | "registration_billing"
   | "newsletter_mode"
-  | "public_site_url";
+  | "public_site_url"
+  | "newsletter_test_adults";
 
 // Fee amounts start at 0 (pack dues at $255 per scout): leaders keep them up to date on Leaders → Money.
 export const SETTING_DEFAULTS: Record<SettingKey, string> = {
@@ -38,6 +39,7 @@ export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   registration_billing: "off",
   newsletter_mode: "admins",
   public_site_url: "https://app.pack361.org/join",
+  newsletter_test_adults: "",
 };
 const DEFAULTS = SETTING_DEFAULTS;
 
