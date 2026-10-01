@@ -74,7 +74,7 @@ export default async function TrainingPage({ searchParams }: PageProps<"/leaders
         <p className="text-sm text-muted">
           To count as trained, every leader needs current Safeguarding Youth (renewed each year) plus the training for their
           position. Cubmasters and den leaders also need Hazardous Weather. Reminders go out 60, 30 and 7 days before
-          anything expires.
+          anything expires, and on the day.
         </p>
         {admin && (
           <Link href="/leaders/training/import" className="btn-ghost py-2">

@@ -111,7 +111,7 @@ export default async function Home() {
                 <RsvpLink e={next} variant="dark" />
                 {next.signup_url && (
                   <a href={next.signup_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold">
-                    {next.twh_uid ? "Pay" : "RSVP / pay"}
+                    {next.source === "council" ? "Register with the council" : "Sign up / pay"}
                   </a>
                 )}
               </div>

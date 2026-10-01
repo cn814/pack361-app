@@ -50,8 +50,11 @@ export default function AddFeeForm({
   families,
   people,
   events,
+  registrationBilling,
 }: {
   defaults: FeeDefaults;
+  /** The pack bills Scouting America and council registration (off by default: families pay it at my.scouting.org). */
+  registrationBilling: boolean;
   dens: { id: string; name: string }[];
   families: { id: string; name: string }[];
   people: { value: string; label: string }[];
@@ -94,7 +97,7 @@ export default function AddFeeForm({
     <ActionForm action={addFee} submit="Add fee" busy="Adding…">
       <Field label="What it's for">
         <select className="input" name="kind" value={kind} onChange={(e) => changeKind(e.target.value as ChargeKind)}>
-          {(Object.keys(KIND_LABEL) as ChargeKind[]).map((k) => (
+          {(Object.keys(KIND_LABEL) as ChargeKind[]).filter((k) => registrationBilling || (k !== "national" && k !== "council")).map((k) => (
             <option key={k} value={k}>
               {KIND_LABEL[k]}
             </option>

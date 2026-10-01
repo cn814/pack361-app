@@ -47,13 +47,16 @@ export function timeAgo(iso: string) {
   return fmtDay(iso);
 }
 
-/** True when a YYYY-MM-DD date falls within the next `days` days (or is already past). */
-export function dueWithin(dateStr: string | null, days: number) {
-  if (!dateStr) return false;
-  return new Date(dateStr + "T12:00:00").getTime() - Date.now() < days * 86400000;
-}
-
 /** Has this moment already passed? */
 export function isPast(iso: string) {
   return new Date(iso).getTime() <= Date.now();
+}
+
+/**
+ * Is the event over? An all-day event runs to the end of its last Eastern day (its times are
+ * stored as midnight), anything else to its end time, or its start when it has none.
+ */
+export function eventOver(e: { starts_at: string; ends_at: string | null; all_day?: boolean | null }) {
+  if (e.all_day) return easternDate(e.ends_at ?? e.starts_at) < easternDate(Date.now());
+  return isPast(e.ends_at ?? e.starts_at);
 }

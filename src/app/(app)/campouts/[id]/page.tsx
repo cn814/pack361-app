@@ -65,7 +65,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
               )}
               {event.signup_url && (
                 <a href={event.signup_url} target="_blank" rel="noopener noreferrer" className="btn-gold py-2">
-                  <Ticket className="h-4 w-4" aria-hidden /> {event.twh_uid ? "Pay / sign up" : "RSVP / pay"}
+                  <Ticket className="h-4 w-4" aria-hidden /> {event.source === "council" ? "Register with the council" : "Sign up / pay"}
                 </a>
               )}
             </div>

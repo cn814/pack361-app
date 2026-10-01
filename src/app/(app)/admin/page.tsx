@@ -13,6 +13,8 @@ import { timeAgo } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Pack admin" };
 
+const startedOver = (at: string, minutes: number) => Date.parse(at) < Date.now() - minutes * 60000;
+
 function Tile({ href, icon: Icon, label, sub }: { href: string; icon: typeof Mail; label: string; sub: string }) {
   return (
     <Link href={href} className="card flex items-center gap-3 py-3">
@@ -54,7 +56,10 @@ export default async function AdminPage() {
     }
   };
   const lastSync = read<{ at: string; feed: number; skipped?: string; errors?: string[] }>("twh_last_sync");
-  const lastRun = read<{ at: string; ok: boolean; failed: string[] }>("daily_last_run");
+  const lastRun = read<{ at: string; ok: boolean; failed: string[]; running?: string | null }>("daily_last_run");
+  // A run still "running" well past the 5-minute limit was cut off in that step.
+  const cutOff = lastRun?.running && startedOver(lastRun.at, 10) ? lastRun.running : null;
+  const runProblem = lastRun && (cutOff || (!lastRun.running && !lastRun.ok)) ? [...lastRun.failed, ...(cutOff ? [`${cutOff} (didn't finish)`] : [])] : null;
   return (
     <>
       <BackLink href="/leaders" label="Leaders" />
@@ -128,9 +133,9 @@ export default async function AdminPage() {
             {(lastSync?.skipped || lastSync?.errors?.length) && (
               <p className="rounded-xl bg-gold-50 p-2 text-xs text-gold-800">{[lastSync.skipped, ...(lastSync.errors ?? [])].filter(Boolean).join(" ")}</p>
             )}
-            {lastRun && !lastRun.ok && (
+            {lastRun && runProblem && (
               <p className="rounded-xl bg-danger-50 p-2 text-xs text-danger">
-                The nightly jobs had a problem {timeAgo(lastRun.at)}: {lastRun.failed.join(", ")}. Check the Vercel logs.
+                The nightly jobs had a problem {timeAgo(lastRun.at)}: {runProblem.join(", ")}. Check the Vercel logs.
               </p>
             )}
             <ActionForm action={syncTroopWebHost} submit="Sync now" busy="Syncing…" buttonClass="btn-ghost w-full" />
@@ -154,13 +159,13 @@ export default async function AdminPage() {
           </Field>
           <Field
             label="Welcome emails per day"
-            hint="The free email plan allows 100 emails a day in total. Each family you welcome then signs in (another email), so 40 a day leaves room for their sign-ins and reminders."
+            hint="The free email plan allows 100 emails a day in total, shared by welcome emails, sign-in codes and up to 40 nightly reminder emails (most reminders go to phones instead). Each family you welcome then signs in, which is another email, so 40 welcomes a day can crowd out sign-in codes on a heavy reminder day. 30 is safer."
           >
             <input className="input" type="number" min={0} max={1000} name="email_daily_limit" defaultValue={settings.email_daily_limit} />
           </Field>
         </ActionForm>
         <p className="text-[11px] text-muted">
-          Dues, registration fee amounts and other ways to pay are on{" "}
+          {settings.registration_billing === "on" ? "Dues, registration fee amounts" : "Dues"} and other ways to pay are on{" "}
           <Link href="/leaders/money?tab=settings" className="font-semibold text-pine underline">
             Leaders → Money
           </Link>

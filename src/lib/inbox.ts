@@ -29,12 +29,16 @@ export const getSeenAt = cache(async (): Promise<string | null> => {
   return (data?.seen_at as string | undefined) ?? null;
 });
 
+/** Regular meetings: no RSVP to-do for these. */
+const ROUTINE_CATEGORIES = new Set(["Den Meeting", "Pack Meeting", "Committee"]);
+
 /** Things waiting on this person: polls to answer, forms, money due, photo questions, leader queues. */
 export const getTodos = cache(async (): Promise<Todo[]> => {
   const me = await requireMember();
   const supabase = await createClient();
   const leader = isLeader(me);
-  const [polls, voted, scouts, paperwork, charges, events, pendingPhotos, waitingForms, openNotes, reportedPayments] = await Promise.all([
+  const rsvpQ = supabase.from("event_rsvps").select("event_id, event:events!inner(starts_at)").gte("event.starts_at", new Date().toISOString());
+  const [polls, voted, scouts, paperwork, charges, events, pendingPhotos, waitingForms, openNotes, reportedPayments, myRsvps] = await Promise.all([
     getPolls(20),
     getVotedPollIds(me),
     getMyScouts(),
@@ -51,17 +55,24 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
     isCommittee(me)
       ? supabase.from("charges").select("id", { count: "exact", head: true }).eq("status", "reported").then((r) => r.count ?? 0)
       : Promise.resolve(0),
+    // What this family (or an adult without one) has already answered, for upcoming events.
+    (me.family_id ? rsvpQ.eq("family_id", me.family_id) : rsvpQ.eq("adult_id", me.id)).then((r) => r.data ?? []),
   ]);
   const todos: Todo[] = [];
 
-  // Events asking for an RSVP in the next 30 days that the family hasn't answered.
+  // Events in the next 30 days the family hasn't answered. Every event takes RSVPs, so regular
+  // meetings (and app-planned den meetings, kind "meeting") are left out: families can still RSVP
+  // on them, but they'd flood the list. Campouts, outings and special events stay.
   const askingRsvp = events.filter(
-    (e) => e.kind === "event" && e.rsvp_enabled && rsvpOpen(e) && (Date.parse(e.starts_at) - Date.now()) / 86400000 <= 30,
+    (e) =>
+      e.kind === "event" &&
+      !ROUTINE_CATEGORIES.has(e.category) &&
+      e.rsvp_enabled &&
+      rsvpOpen(e) &&
+      (Date.parse(e.starts_at) - Date.now()) / 86400000 <= 30,
   );
   if (askingRsvp.length) {
-    let q = supabase.from("event_rsvps").select("event_id").in("event_id", askingRsvp.map((e) => e.id));
-    q = me.family_id ? q.eq("family_id", me.family_id) : q.eq("adult_id", me.id);
-    const answered = new Set(((await q).data ?? []).map((r) => r.event_id as string));
+    const answered = new Set(myRsvps.map((r) => r.event_id as string));
     for (const e of askingRsvp.filter((e) => !answered.has(e.id)).slice(0, 3)) {
       todos.push({
         key: `rsvp-${e.id}`,

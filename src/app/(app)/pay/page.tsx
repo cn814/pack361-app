@@ -36,7 +36,9 @@ export default async function PayPage() {
       <h1 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-pine-950">
         <HandCoins className="h-6 w-6 text-pine" aria-hidden /> Pay the pack
       </h1>
-      <p className="-mt-1 text-sm text-muted">Pack dues, registration fees, campouts and events, all in one place.</p>
+      <p className="-mt-1 text-sm text-muted">
+        {settings.registration_billing === "on" ? "Pack dues, registration fees, campouts and events" : "Pack dues, campouts and events"}, all in one place.
+      </p>
 
       {duesUrl && duesItems.length > 0 && <DuesPayCard items={duesItems} url={duesUrl} />}
 

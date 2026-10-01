@@ -41,32 +41,6 @@ ${body}
 </div></body></html>`;
 }
 
-/** Send one email. Returns an error message, or null when it was accepted. */
-export async function sendEmail(e: Email): Promise<string | null> {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return "Email isn't set up yet (RESEND_API_KEY).";
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(15000),
-      body: JSON.stringify({
-        from: FROM,
-        to: [e.to],
-        reply_to: e.replyTo ?? REPLY_TO,
-        subject: e.subject,
-        html: renderEmailHtml(e),
-        text: e.paragraphs.join("\n\n"),
-      }),
-    });
-    if (res.ok) return null;
-    const body = (await res.json().catch(() => ({}))) as { message?: string };
-    return body.message ?? `Email service error ${res.status}`;
-  } catch {
-    return "Couldn't reach the email service.";
-  }
-}
-
 /** Send up to 100 emails in one request (Resend batch API). Returns an error message or null. */
 export async function sendEmails(list: Email[]): Promise<string | null> {
   const key = process.env.RESEND_API_KEY;

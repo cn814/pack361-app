@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CircleCheck, MapPin, Users } from "lucide-react";
 import type { PackEvent } from "@/lib/types";
 import RsvpLink from "@/components/RsvpLink";
-import { fmtRange, isPast } from "@/lib/format";
+import { eventOver, fmtRange } from "@/lib/format";
 
 const CATEGORY_STYLE: Record<string, string> = {
   Campout: "bg-mint text-pine",
@@ -25,7 +25,7 @@ export default function EventRow({
 }) {
   const isCampout = e.category === "Campout";
   // Nothing to sign up for once it's over or off the calendar (the archive shows these).
-  const over = Boolean(e.archived_at) || isPast(e.ends_at ?? e.starts_at);
+  const over = Boolean(e.archived_at) || eventOver(e);
   const signupLink = !signup?.mine && !over ? e.signup_url : null;
   const href = e.href ?? (isCampout ? `/campouts/${e.id}` : `/events/${e.id}`);
   const body = (
@@ -72,7 +72,7 @@ export default function EventRow({
       <Link href={href} className="block">
         {body}
       </Link>
-      {e.twh_uid && !over && (
+      {e.rsvp_enabled && !over && (
         <div className="mt-2">
           <RsvpLink e={e} variant="link" />
         </div>
@@ -83,7 +83,7 @@ export default function EventRow({
       <Link href={href} className="block">
         {body}
       </Link>
-      {((e.twh_uid && !over) || signupLink) && (
+      {((e.rsvp_enabled && !over) || signupLink) && (
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
           <RsvpLink e={e} variant="link" />
           {signupLink && (

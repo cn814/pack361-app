@@ -15,15 +15,6 @@ export const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Pack admin",
 };
 
-/** What each app role can do, shown next to the role picker. */
-export const ROLE_HELP: Record<AppRole, string> = {
-  parent: "Sees their own family and scouts.",
-  den_leader: "Also sees the roster, approves reports for their den(s), posts announcements.",
-  committee: "Den leader access for the whole pack, plus Money, the Pack guide and council events.",
-  cubmaster: "Everything, including roster changes and imports.",
-  admin: "Everything, including roster changes and imports.",
-};
-
 export async function requireAdmin(): Promise<Adult> {
   const me = await requireMember();
   if (!isAdmin(me)) redirect("/leaders");

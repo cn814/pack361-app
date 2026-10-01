@@ -40,7 +40,7 @@ async function sendPush(
   const { exceptAdultId, onlyAdultIds } = opts;
   if (!pushConfigured()) return { sent: 0, removed: 0, errors: ["Push keys are not set on the server."] };
   try {
-    webpush.setVapidDetails((process.env.VAPID_SUBJECT ?? "mailto:cnealen@gmail.com").trim(), vapidPublic(), vapidPrivate());
+    webpush.setVapidDetails((process.env.VAPID_SUBJECT ?? "mailto:info@pack361.org").trim(), vapidPublic(), vapidPrivate());
   } catch (e) {
     const msg = `Push keys are not valid: ${e instanceof Error ? e.message : e}`;
     console.error("[push]", msg);

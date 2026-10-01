@@ -4,6 +4,7 @@ import FeedbackForm from "@/components/FeedbackForm";
 import { BookOpen, FileText, FolderOpen, HandCoins, Landmark, Mail, Phone, Settings, ShieldAlert, ShieldCheck, Vote } from "lucide-react";
 import { getLeaders, isCommittee, isLeader, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
+import { ROLE_LABEL } from "@/lib/roster-data";
 
 export const metadata: Metadata = { title: "Leaders" };
 
@@ -54,7 +55,7 @@ export default async function LeadersPage() {
           <li key={l.adult_id} className="card flex items-center justify-between gap-3 py-3">
             <div className="min-w-0">
               <p className="truncate font-bold text-ink">{l.name}</p>
-              <p className="text-xs font-semibold text-pine">{l.position_title ?? l.role.replace("_", " ")}</p>
+              <p className="text-xs font-semibold text-pine">{l.position_title ?? ROLE_LABEL[l.role]}</p>
               {l.dens && <p className="truncate text-[11px] text-muted">{l.dens}</p>}
             </div>
             <div className="flex shrink-0 gap-2">

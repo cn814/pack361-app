@@ -23,9 +23,11 @@ Drop the files in `pack361-app/imports/` (that folder is git-ignored; roster fil
 | 6 | **Event participation** | TroopWebHostCS → **Calendar** → **Export Event Participation to Excel** | future: attendance / camping nights |
 
 ## Givebutter: nothing to export
-The connector already reads the pack's Givebutter account ("Cub Scouts Pack 361 - Ellicott City"):
-campaigns, events and ticket counts. The upcoming picnic and fall campout in `supabase/seed.sql` came from there.
-Later, the app can show "dues paid / campout paid" per family by matching Givebutter tickets to roster emails.
+The app syncs the pack's Givebutter account ("Cub Scouts Pack 361 - Ellicott City") itself every
+morning, and leaders can tap "Sync now": campaigns, event sign-ups and store orders come in
+automatically. The upcoming picnic and fall campout in `supabase/seed.sql` came from there.
+Pack dues paid on Givebutter are already matched to each family and scout and marked paid
+(Leaders → Money → Givebutter dues).
 
 ## Facts that aren't in any export
 - Chartered organization name
