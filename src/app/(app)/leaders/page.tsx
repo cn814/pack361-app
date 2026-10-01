@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import FeedbackForm from "@/components/FeedbackForm";
-import { BookOpen, FileText, FolderOpen, HandCoins, Landmark, Mail, Phone, Settings, ShieldAlert, ShieldCheck, Vote } from "lucide-react";
+import { BookOpen, FileText, FolderOpen, HandCoins, Landmark, Mail, Phone, Receipt, Settings, ShieldAlert, ShieldCheck, Vote } from "lucide-react";
+import { countWaitingRequests } from "@/lib/finance-data";
 import { getLeaders, isCommittee, isLeader, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
 import { ROLE_LABEL } from "@/lib/roster-data";
@@ -15,6 +16,8 @@ export default async function LeadersPage() {
   const leaders = (await getLeaders()).sort(
     (a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9) || a.name.localeCompare(b.name),
   );
+  const waiting = isCommittee(me) ? await countWaitingRequests() : null;
+  const toHandle = waiting ? waiting.toReview + waiting.toPay : 0;
   return (
     <>
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack leaders</h1>
@@ -41,6 +44,7 @@ export default async function LeadersPage() {
           {isCommittee(me) && (
             <Link href="/leaders/money" className="btn-ghost py-2">
               <HandCoins className="h-4 w-4" aria-hidden /> Money
+              {toHandle > 0 && <span className="rounded-full bg-gold px-1.5 text-[11px] font-extrabold text-pine-950">{toHandle}</span>}
             </Link>
           )}
           {isAdmin(me) && (
@@ -50,6 +54,9 @@ export default async function LeadersPage() {
           )}
         </div>
       )}
+      <Link href="/reimburse" className="btn-ghost py-2">
+        <Receipt className="h-4 w-4" aria-hidden /> Get paid back for pack purchases
+      </Link>
       <ul className="space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0">
         {leaders.map((l) => (
           <li key={l.adult_id} className="card flex items-center justify-between gap-3 py-3">

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Form from "next/form";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AlertTriangle, CircleCheck, Download, ExternalLink, Info } from "lucide-react";
+import { AlertTriangle, BarChart3, CircleCheck, Download, ExternalLink, Info, Receipt } from "lucide-react";
+import { countWaitingRequests } from "@/lib/finance-data";
 import ActionForm, { Field } from "@/components/ActionForm";
 import AddFeeForm from "@/components/AddFeeForm";
 import { SyncGivebutterButton } from "@/components/AdminForms";
@@ -67,7 +68,8 @@ export default async function MoneyPage({ searchParams }: PageProps<"/leaders/mo
   const sp = await searchParams;
   const tab: Tab = one(sp.tab) in TABS ? (one(sp.tab) as Tab) : "charges";
   const note = one(sp.note).slice(0, 200);
-  const [settings, all, problems] = await Promise.all([getSettings(), getAllCharges(), getPaymentProblems()]);
+  const [settings, all, problems, waiting] = await Promise.all([getSettings(), getAllCharges(), getPaymentProblems(), countWaitingRequests()]);
+  const toHandle = waiting.toReview + waiting.toPay;
   const duesCampaign = await getDuesCampaign(settings.dues_givebutter_campaign_id);
   const duesOrders = duesCampaign ? await getDuesOrders(duesCampaign.id) : [];
   const toReview = duesOrders.filter((o) => o.dues_match === "needs_review").length;
@@ -90,6 +92,16 @@ export default async function MoneyPage({ searchParams }: PageProps<"/leaders/mo
           <CircleCheck className="h-4 w-4 shrink-0" aria-hidden /> {note}
         </p>
       )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <Link href="/leaders/money/expenses" className="btn-ghost py-2">
+          <Receipt className="h-4 w-4" aria-hidden /> Expenses
+          {toHandle > 0 && <span className="rounded-full bg-gold px-1.5 text-[11px] font-extrabold text-pine-950">{toHandle}</span>}
+        </Link>
+        <Link href="/leaders/money/reports" className="btn-ghost py-2">
+          <BarChart3 className="h-4 w-4" aria-hidden /> Reports
+        </Link>
+      </div>
 
       {!onlinePaymentsReady() && (
         <p className="flex items-start gap-2 rounded-xl bg-gold-50 p-3 text-xs text-gold-800">
