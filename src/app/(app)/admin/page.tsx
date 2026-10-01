@@ -7,7 +7,9 @@ import BackLink from "@/components/BackLink";
 import { requireAdmin, welcomeBudget } from "@/lib/roster-data";
 import { getSettings } from "@/lib/settings";
 import { emailConfigured } from "@/lib/email";
-import { saveSettings, syncTroopWebHost } from "./actions";
+import { emailNewsletterPreview, saveNewsletterMode, saveSettings, syncTroopWebHost } from "./actions";
+import { brevoConfigured } from "@/lib/bulk-email";
+import { NEWSLETTER_MODES, type NewsletterMode } from "@/lib/newsletter";
 import { twhConfigured } from "@/lib/twh";
 import { timeAgo } from "@/lib/format";
 
@@ -145,6 +147,34 @@ export default async function AdminPage() {
             Not connected. In TroopWebHost, open My Stuff → Subscribe to Calendar, copy the link, and add it in Vercel as
             TWH_CALENDAR_URL (Secret, Production). Then redeploy.
           </p>
+        )}
+      </section>
+
+      <section className="card space-y-3" id="newsletter">
+        <h2 className="section-title">Weekly newsletter</h2>
+        <p className="text-sm text-muted">
+          Every Sunday morning each adult gets one email for their family: the next two weeks of events with their RSVP, anything
+          waiting on them (RSVPs, money due, medical forms, registration), the week&apos;s announcements and open volunteer jobs.
+        </p>
+        <ActionForm action={saveNewsletterMode} submit="Save" buttonClass="btn-ghost w-full">
+          <Field label="Who gets it" hint="While TroopWebHost still sends its own newsletter, keep it to pack admins.">
+            <select className="input" name="newsletter_mode" defaultValue={settings.newsletter_mode}>
+              {(Object.keys(NEWSLETTER_MODES) as NewsletterMode[]).map((m) => (
+                <option key={m} value={m}>
+                  {NEWSLETTER_MODES[m]}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </ActionForm>
+        <div className="grid grid-cols-2 gap-2">
+          <Link href="/admin/newsletter" className="btn-ghost py-2">
+            See this week&apos;s
+          </Link>
+          <ActionForm action={emailNewsletterPreview} submit="Email it to me" busy="Sending…" buttonClass="btn-ghost w-full py-2" className="space-y-1" />
+        </div>
+        {!brevoConfigured() && settings.newsletter_mode === "everyone" && (
+          <p className="rounded-xl bg-gold-50 p-2 text-xs text-gold-800">Sending to every family needs BREVO_API_KEY in Vercel.</p>
         )}
       </section>
 

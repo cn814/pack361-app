@@ -19,6 +19,8 @@ export interface Email {
   paragraphs: string[];
   /** Where replies go (default info@pack361.org), e.g. the den leader who wrote it. */
   replyTo?: string;
+  /** A finished HTML body (the weekly newsletter) instead of the standard layout. */
+  html?: string;
 }
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -58,7 +60,7 @@ export async function sendEmails(list: Email[]): Promise<string | null> {
           to: [e.to],
           reply_to: e.replyTo ?? REPLY_TO,
           subject: e.subject,
-          html: renderEmailHtml(e),
+          html: e.html ?? renderEmailHtml(e),
           text: e.paragraphs.join("\n\n"),
         })),
       ),

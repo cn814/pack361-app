@@ -1,9 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
 import { givebutterConfigured, syncGivebutter } from "@/lib/givebutter";
+import { runWeeklyNewsletter } from "@/lib/newsletter";
 
-// Daily Vercel Cron (vercel.json). Vercel sends "Authorization: Bearer <CRON_SECRET>".
-export const maxDuration = 60;
+// The morning Vercel Cron (vercel.json, 10:00 UTC = 6 AM EDT / 5 AM EST). Vercel sends
+// "Authorization: Bearer <CRON_SECRET>". Every day: the Givebutter sync. Sundays: the weekly
+// family newsletter (after the sync, so dues paid overnight don't show as owed).
+export const maxDuration = 300;
 
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -11,12 +14,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   if (!adminConfigured()) return NextResponse.json({ error: "SUPABASE_SECRET_KEY not set" }, { status: 503 });
+  const db = createAdminClient();
+  const out: Record<string, unknown> = {};
+  let failed = false;
+
   // Not connected yet (waiting on the Givebutter key): nothing to do, and not a failure.
-  if (!givebutterConfigured()) return NextResponse.json({ ok: true, skipped: "GIVEBUTTER_API_KEY not set" });
-  try {
-    const result = await syncGivebutter(createAdminClient());
-    return NextResponse.json({ ok: true, ...result });
-  } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "sync failed" }, { status: 500 });
+  if (!givebutterConfigured()) out.givebutter = { skipped: "GIVEBUTTER_API_KEY not set" };
+  else {
+    try {
+      out.givebutter = await syncGivebutter(db);
+    } catch (e) {
+      failed = true;
+      out.givebutter = { error: e instanceof Error ? e.message : "sync failed" };
+    }
   }
+
+  try {
+    out.newsletter = await runWeeklyNewsletter(db);
+  } catch (e) {
+    failed = true;
+    out.newsletter = { error: e instanceof Error ? e.message : "newsletter failed" };
+  }
+
+  return NextResponse.json({ ok: !failed, ...out }, { status: failed ? 500 : 200 });
 }

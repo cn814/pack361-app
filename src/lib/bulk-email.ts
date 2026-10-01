@@ -72,3 +72,48 @@ export async function sendBulk(list: BulkRecipient[], e: BulkEmail): Promise<{ s
   const error = await sendEmails(unique.map((r) => ({ to: r.email, subject: e.subject, paragraphs: e.paragraphs, replyTo: e.replyTo })));
   return { sent: error ? 0 : unique.length, error };
 }
+
+export interface PersonalEmail {
+  email: string;
+  name?: string;
+  subject: string;
+  html: string;
+  text: string;
+}
+
+/**
+ * Emails that differ per person (the weekly newsletter): one request each through Brevo, or
+ * the main service for a handful when Brevo isn't set up.
+ */
+export async function sendPersonal(list: PersonalEmail[]): Promise<{ sent: number; error: string | null }> {
+  if (!list.length) return { sent: 0, error: null };
+  if (brevoConfigured()) {
+    let sent = 0;
+    for (const m of list) {
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: { "api-key": process.env.BREVO_API_KEY!.trim(), "Content-Type": "application/json", Accept: "application/json" },
+        signal: AbortSignal.timeout(20000),
+        body: JSON.stringify({
+          sender: sender(),
+          to: [{ email: m.email, ...(m.name ? { name: m.name } : {}) }],
+          subject: m.subject,
+          htmlContent: m.html,
+          textContent: m.text,
+          replyTo: { email: process.env.EMAIL_REPLY_TO ?? "info@pack361.org" },
+        }),
+      }).catch(() => null);
+      if (!res) return { sent, error: "Couldn't reach the email service." };
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        return { sent, error: body.message ?? `Email service error ${res.status}` };
+      }
+      sent++;
+    }
+    return { sent, error: null };
+  }
+  if (!emailConfigured()) return { sent: 0, error: "Email isn't set up." };
+  if (list.length > 20) return { sent: 0, error: "Add BREVO_API_KEY to send this many personal emails." };
+  const error = await sendEmails(list.map((m) => ({ to: m.email, subject: m.subject, paragraphs: m.text.split("\n\n"), html: m.html })));
+  return { sent: error ? 0 : list.length, error };
+}

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import type { ActionResult } from "@/components/ActionForm";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, getSignIns, welcomeBudget } from "@/lib/roster-data";
+import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
+import { sendPreview } from "@/lib/newsletter";
 import { APP_URL, emailConfigured, sendEmails, type Email } from "@/lib/email";
 import type { SettingKey } from "@/lib/settings";
 import { syncSummary, syncTwh, twhConfigured } from "@/lib/twh";
@@ -248,6 +250,28 @@ export async function saveSettings(_prev: ActionResult, form: FormData): Promise
   if (error) return { error: "Couldn't save settings." };
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Weekly newsletter
+// ---------------------------------------------------------------------------
+export async function saveNewsletterMode(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const mode = str(form, "newsletter_mode");
+  if (!["off", "admins", "everyone"].includes(mode)) return { error: "Choose who gets the newsletter." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("pack_settings").upsert({ key: "newsletter_mode", value: mode, updated_at: new Date().toISOString() });
+  if (error) return { error: "Couldn't save that." };
+  revalidatePath("/admin");
+  return { ok: true, message: mode === "everyone" ? "Every family gets it from next Sunday" : mode === "admins" ? "Only pack admins get it" : "Turned off" };
+}
+
+/** Email this week's newsletter to the admin who asked (it isn't counted as their Sunday copy). */
+export async function emailNewsletterPreview(): Promise<ActionResult> {
+  const me = await requireAdmin();
+  if (!adminConfigured()) return { error: "The server's secret key isn't set." };
+  const error = await sendPreview(createAdminClient(), me.id);
+  return error ? { error } : { ok: true, message: `Sent to ${me.email}` };
 }
 
 // ---------------------------------------------------------------------------

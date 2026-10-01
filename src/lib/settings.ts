@@ -16,7 +16,8 @@ export type SettingKey =
   | "pay_other_how"
   | "dues_givebutter_campaign_id"
   | "dues_sibling_discount_cents"
-  | "registration_billing";
+  | "registration_billing"
+  | "newsletter_mode";
 
 // Fee amounts start at 0 (pack dues at $255 per scout): leaders keep them up to date on Leaders → Money.
 export const SETTING_DEFAULTS: Record<SettingKey, string> = {
@@ -34,6 +35,7 @@ export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   dues_givebutter_campaign_id: "",
   dues_sibling_discount_cents: "1000",
   registration_billing: "off",
+  newsletter_mode: "admins",
 };
 const DEFAULTS = SETTING_DEFAULTS;
 
