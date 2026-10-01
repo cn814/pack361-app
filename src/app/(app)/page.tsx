@@ -25,6 +25,8 @@ export default async function Home() {
     myDenMeetingButtons(),
   ]);
   const next = events[0];
+  // The big card already has an RSVP button for the next event, so don't list it again below.
+  const todoList = next ? todos.filter((t) => t.key !== `rsvp-${next.id}`) : todos;
   const rest = events.slice(1, 5);
   const leader = isLeader(me);
   const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", hour12: false }).format(new Date()));
@@ -161,9 +163,9 @@ export default async function Home() {
         </div>
         <div className="contents lg:block lg:space-y-4">
         <div className="order-3 empty:hidden">
-          {todos.length > 0 && (
+          {todoList.length > 0 && (
             <section className="space-y-2">
-              {todos.slice(0, 3).map((t) => (
+              {todoList.slice(0, 3).map((t) => (
                 <Link
                   key={t.key}
                   href={t.href}
@@ -176,9 +178,9 @@ export default async function Home() {
                   <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
                 </Link>
               ))}
-              {todos.length > 3 && (
+              {todoList.length > 3 && (
                 <Link href="/inbox" prefetch={false} className="block px-1 text-xs font-bold text-pine">
-                  {todos.length - 3} more in Notifications →
+                  {todoList.length - 3} more in Notifications →
                 </Link>
               )}
             </section>

@@ -64,7 +64,9 @@ export default async function DensPage() {
         return (
           <section key={d.id} className={`card space-y-2 ${d.is_active ? "" : "opacity-60"}`}>
             <div className="flex items-baseline justify-between gap-2">
-              <h2 className="font-extrabold text-pine-950">{d.name}</h2>
+              <h2 className="font-extrabold text-pine-950">
+                {d.name} <span className="text-xs font-semibold text-muted">Den {d.number}</span>
+              </h2>
               <span className="text-xs text-muted">
                 {counts.get(d.id) ?? 0} scouts{d.is_active ? "" : " · inactive"}
               </span>
