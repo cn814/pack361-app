@@ -286,7 +286,8 @@ export async function buildFinanceReport(opts: { from: string; to: string; seaso
   const dens = new Map<string, number>();
   for (const t of txns) if (t.dir === "out" && t.den) dens.set(t.den, (dens.get(t.den) ?? 0) + t.amountCents);
 
-  const owed = waiting.filter((e: ExpenseRow) => e.status === "approved");
+  // Approved but not paid back, for this period (it's already counted in money out).
+  const owed = expenses.filter((e: ExpenseRow) => e.status === "approved");
   const review = waiting.filter((e: ExpenseRow) => e.status === "submitted");
   const unpaid = charges.filter((c) => (c.status === "open" || c.status === "reported") && inRange(c.due_on ?? easternDate(c.created_at), from, to));
 

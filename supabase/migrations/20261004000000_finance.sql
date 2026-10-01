@@ -97,7 +97,8 @@ create table public.finance_income (
     amount_cents  int not null check (amount_cents between 1 and 10000000),
     category_id   uuid not null references public.finance_categories(id) on delete restrict,
     description   text not null check (length(trim(description)) between 1 and 200),
-    received_via  text check (received_via in ('check', 'cash', 'deposit', 'paypal', 'givebutter', 'other')),
+    -- No 'givebutter': Givebutter orders are counted on their own.
+    received_via  text check (received_via in ('check', 'cash', 'deposit', 'paypal', 'other')),
     reference     text check (length(reference) <= 60),
     note          text check (length(note) <= 500),
     created_by    uuid references public.adults(id) on delete set null default private.current_adult_id(),
@@ -168,6 +169,7 @@ create table public.expenses (
     updated_at      timestamptz not null default now(),
     updated_by      uuid references public.adults(id) on delete set null,
     check (paid_by = 'pack' or adult_id is not null),
+    check (paid_by = 'member' or adult_id is null),
     check (paid_by = 'member' or status = 'paid'),
     check (status <> 'paid' or paid_on is not null),
     check (status in ('submitted', 'declined') or category_id is not null),
@@ -203,6 +205,9 @@ begin
     if tg_op = 'UPDATE' then
         new.created_by := old.created_by;
         new.created_at := old.created_at;
+        new.paid_by    := old.paid_by;      -- delete and record it again instead
+    elsif me is not null then
+        new.created_by := me;
     end if;
 
     -- The secret key (jobs, scripts) is trusted.
@@ -230,7 +235,11 @@ begin
         return new;
     end if;
 
-    -- Leadership.
+    -- Leadership. Your own request is someone else's to change once it's approved.
+    if tg_op = 'UPDATE' and old.paid_by = 'member' and old.adult_id = me and old.status in ('approved', 'paid') then
+        raise exception 'Another leadership member has to change your own request once it''s approved'
+            using errcode = '42501';
+    end if;
     if new.paid_by = 'member' and new.adult_id = me
        and new.status in ('approved', 'paid')
        and (tg_op = 'INSERT' or old.status is distinct from new.status) then
@@ -274,10 +283,16 @@ revoke execute on function private.expenses_guard() from public, anon, authentic
 create trigger expenses_guard before insert or update on public.expenses
     for each row execute function private.expenses_guard();
 
--- Members delete (withdraw) only their own requests that leadership hasn't acted on.
+-- Members delete (withdraw) only their own requests that leadership hasn't acted on, and
+-- nobody deletes their own request once it's approved.
 create or replace function private.expenses_delete_guard()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
+    if auth.uid() is not null and old.paid_by = 'member' and old.status <> 'submitted'
+       and old.adult_id = private.current_adult_id() then
+        raise exception 'Another leadership member has to delete your own request once it''s approved'
+            using errcode = '42501';
+    end if;
     if auth.uid() is not null and not private.is_committee()
        and (old.status <> 'submitted' or old.adult_id is distinct from private.current_adult_id()) then
         raise exception 'Leadership is already handling this request' using errcode = '42501';
@@ -355,12 +370,22 @@ $$;
 revoke execute on function private.receipt_locked(text) from public, anon;
 grant execute on function private.receipt_locked(text) to authenticated;
 
+-- Is this receipt on one of my own requests (say, one leadership recorded for me)?
+create or replace function private.receipt_is_mine(p_path text)
+returns boolean language sql stable security definer set search_path = '' as $$
+    select exists (select 1 from public.expenses e
+                    where e.receipt_path = p_path and e.adult_id = private.current_adult_id())
+$$;
+revoke execute on function private.receipt_is_mine(text) from public, anon;
+grant execute on function private.receipt_is_mine(text) to authenticated;
+
 create policy "receipts read" on storage.objects for select to authenticated
     using (bucket_id = 'receipts'
            and (private.is_committee()
                 or (private.is_member()
-                    and (storage.foldername(name))[1] = 'r'
-                    and (storage.foldername(name))[2] = private.current_adult_id()::text)));
+                    and (((storage.foldername(name))[1] = 'r'
+                          and (storage.foldername(name))[2] = private.current_adult_id()::text)
+                         or private.receipt_is_mine(name)))));
 
 create policy "receipts upload" on storage.objects for insert to authenticated
     with check (bucket_id = 'receipts'

@@ -1,7 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./supabase/server";
-import { adminConfigured, createAdminClient } from "./supabase/admin";
 import { MAX_RECEIPT_BYTES, RECEIPTS_BUCKET, receiptExt, receiptTypeFor } from "./finance";
 
 const UUID_FILE = "[0-9a-f-]{36}";
@@ -34,13 +33,13 @@ export async function checkUploadedReceipt(
   return { receipt_path: path, receipt_name: name.slice(0, 200), receipt_mime: type.mime, receipt_bytes: Number(file.size_bytes) };
 }
 
-/** Remove receipt files (best effort). The person's own key first; the secret key if that can't. */
+/**
+ * Remove receipt files (best effort), with the person's own key: the storage rules let
+ * leadership remove any receipt and members only their own that no approved request uses.
+ */
 export async function removeReceipts(paths: (string | null | undefined)[]) {
   const list = paths.filter((p): p is string => Boolean(p));
   if (!list.length) return;
   const supabase = await createClient();
-  const { data } = await supabase.storage.from(RECEIPTS_BUCKET).remove(list);
-  const gone = new Set((data ?? []).map((o) => o.name));
-  const left = list.filter((p) => !gone.has(p));
-  if (left.length && adminConfigured()) await createAdminClient().storage.from(RECEIPTS_BUCKET).remove(left);
+  await supabase.storage.from(RECEIPTS_BUCKET).remove(list);
 }

@@ -27,7 +27,7 @@ import { centsToInput, fmtMoney } from "@/lib/money";
 import { fmtShortDate } from "@/lib/advancement";
 import { daysBetween, easternDate } from "@/lib/tz";
 import { todayEastern } from "@/lib/money-data";
-import { deleteExpense, deleteIncome, saveBudget, saveCategory, saveIncome } from "./actions";
+import { deleteExpense, deleteIncome, saveBudget, saveCategory, saveIncome, toggleCategory } from "./actions";
 
 export const metadata: Metadata = { title: "Expenses" };
 
@@ -43,7 +43,8 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/leaders
   const note = one(sp.note).slice(0, 120);
   const settings = await getSettings();
   const seasons = await getFinanceSeasons(settings.dues_season);
-  const season = seasons.includes(one(sp.season)) ? one(sp.season) : settings.dues_season;
+  const season = seasonRange(one(sp.season)) ? one(sp.season) : settings.dues_season;
+  if (!seasons.includes(season)) seasons.unshift(season);
   const [waiting, categories] = await Promise.all([getExpenses({ status: ["submitted", "approved"] }), getCategories({ withArchived: true })]);
   const toReview = waiting.filter((e) => e.status === "submitted");
   const toPay = waiting.filter((e) => e.status === "approved");
@@ -419,12 +420,12 @@ async function BudgetTab({ season, seasons, categories }: { season: string; seas
   const sum = (list: FinanceCategory[]) => list.reduce((s, c) => s + (budget.get(c.id) ?? 0), 0);
   // Offer next season too, so the new budget can be entered in the spring.
   const next = (() => {
-    const y = Number(seasons[0].slice(0, 4)) + 1;
+    const y = Math.max(...seasons.map((s) => Number(s.slice(0, 4)))) + 1;
     return `${y}-${String((y + 1) % 100).padStart(2, "0")}`;
   })();
   return (
     <>
-      <SeasonPicker tab="budget" season={season} seasons={[next, ...seasons]} />
+      <SeasonPicker tab="budget" season={season} seasons={seasons.includes(next) ? seasons : [next, ...seasons]} />
       <section className="card space-y-3">
         <h2 className="section-title">Budget for {season}</h2>
         <p className="text-xs text-muted">Leave a line blank if it isn&apos;t budgeted. Reports compare what really came in and went out against these.</p>
@@ -462,25 +463,30 @@ async function BudgetTab({ season, seasons, categories }: { season: string; seas
         <p className="text-xs text-muted">Rename a category or hide one you no longer use (it stays in old reports).</p>
         <ul className="divide-y divide-line">
           {categories.map((c) => (
-            <li key={c.id} className="py-2">
-              <ActionForm action={saveCategory} className="flex flex-wrap items-center gap-2" buttonClass="btn-ghost px-3 py-1.5 text-xs" submit="Rename">
+            <li key={c.id} className="flex flex-wrap items-center gap-2 py-2">
+              <ActionForm action={saveCategory} className="flex min-w-0 flex-1 items-center gap-2" buttonClass="btn-ghost px-3 py-1.5 text-xs" submit="Rename">
                 <input type="hidden" name="id" value={c.id} />
-                <span className="w-10 text-[10px] font-bold uppercase text-muted">{c.kind === "income" ? "In" : "Out"}</span>
+                <span className="w-8 shrink-0 text-[10px] font-bold uppercase text-muted">{c.kind === "income" ? "In" : "Out"}</span>
                 <input
                   name="name"
                   defaultValue={c.name}
                   maxLength={60}
+                  required
                   aria-label="Category name"
-                  className={`min-w-0 flex-1 rounded-lg border border-line bg-white px-2 py-1.5 text-sm ${c.archived_at ? "text-muted" : ""}`}
+                  className={`min-w-0 flex-1 rounded-lg border border-line bg-white px-2 py-1.5 text-sm ${c.archived_at ? "text-muted line-through" : ""}`}
                 />
-                {c.source ? (
-                  <span className="text-[11px] text-muted">Counted by the app</span>
-                ) : (
+              </ActionForm>
+              {c.source ? (
+                <span className="text-[11px] text-muted">Counted by the app</span>
+              ) : (
+                <form action={toggleCategory}>
+                  <input type="hidden" name="id" value={c.id} />
+                  <input type="hidden" name="season" value={season} />
                   <SubmitButton name="do" value={c.archived_at ? "show" : "hide"} className="rounded-lg px-2 py-1.5 text-xs font-bold text-navy underline">
                     {c.archived_at ? "Show" : "Hide"}
                   </SubmitButton>
-                )}
-              </ActionForm>
+                </form>
+              )}
             </li>
           ))}
         </ul>

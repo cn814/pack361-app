@@ -6,7 +6,7 @@ export type ExpenseStatus = "submitted" | "approved" | "paid" | "declined";
 export type ExpensePaidBy = "pack" | "member";
 export type PayMeBy = "check" | "cash" | "paypal" | "zelle" | "venmo" | "other";
 export type PaidVia = "check" | "cash" | "paypal" | "zelle" | "venmo" | "card" | "transfer" | "other";
-export type ReceivedVia = "check" | "cash" | "deposit" | "paypal" | "givebutter" | "other";
+export type ReceivedVia = "check" | "cash" | "deposit" | "paypal" | "other";
 export type IncomeSource = "dues" | "event" | "registration" | "other_charges" | "givebutter";
 
 export const EXPENSE_STATUS_LABEL: Record<ExpenseStatus, string> = {
@@ -48,7 +48,6 @@ export const RECEIVED_VIA_LABEL: Record<ReceivedVia, string> = {
   cash: "Cash",
   deposit: "Bank deposit",
   paypal: "PayPal",
-  givebutter: "Givebutter",
   other: "Other",
 };
 

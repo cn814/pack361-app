@@ -199,3 +199,54 @@ values ('e1000000-0000-0000-0000-000000000004', current_date, 1200, 'Tape', '300
 select test.expect_rows($$delete from public.expenses where id = 'e1000000-0000-0000-0000-000000000004' returning id$$, 1,
                         'parent can withdraw a request leadership has not acted on');
 rollback;
+
+\echo '== Finance: review fixes'
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select test.expect_error($$insert into public.expenses (spent_on, amount_cents, description, paid_by, adult_id, status, category_id, paid_on)
+                          values (current_date, 100, 'x', 'pack', '30000000-0000-0000-0000-00000000000d', 'paid', test.cat('Den meetings'), current_date)$$,
+                         '23514', 'pack spending has nobody to pay back');
+insert into public.expenses (id, spent_on, amount_cents, description, paid_by, status, category_id, paid_on)
+values ('e1000000-0000-0000-0000-000000000010', current_date, 100, 'Pack thing', 'pack', 'paid', test.cat('Den meetings'), current_date);
+update public.expenses set paid_by = 'member' where id = 'e1000000-0000-0000-0000-000000000010';
+select test.check((select paid_by from public.expenses where id = 'e1000000-0000-0000-0000-000000000010') = 'pack', 'who paid never changes');
+select test.expect_error($$update public.expenses set paid_by = 'member', adult_id = '30000000-0000-0000-0000-00000000000d' where id = 'e1000000-0000-0000-0000-000000000010'$$,
+                         '23514', 'pack spending cannot become your own paid request');
+insert into public.expenses (id, spent_on, amount_cents, description, adult_id, category_id, created_by)
+values ('e1000000-0000-0000-0000-000000000011', current_date, 1000, 'Mine', '30000000-0000-0000-0000-00000000000d', test.cat('Den meetings'), '30000000-0000-0000-0000-00000000000a');
+select test.check((select created_by from public.expenses where id = 'e1000000-0000-0000-0000-000000000011') = '30000000-0000-0000-0000-00000000000d',
+                  'who recorded it is always the person signed in');
+commit;
+
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a7"}', true);
+update public.expenses set status = 'approved' where id = 'e1000000-0000-0000-0000-000000000011';
+insert into public.expenses (id, spent_on, amount_cents, description, adult_id, status, category_id,
+                             receipt_path, receipt_name, receipt_mime, receipt_bytes)
+values ('e1000000-0000-0000-0000-000000000012', current_date, 700, 'Bought for Alex', '30000000-0000-0000-0000-00000000000a', 'approved',
+        test.cat('Den meetings'), 'r/30000000-0000-0000-0000-0000000000a7/e0000000-0000-0000-0000-000000000012.jpg', 'r.jpg', 'image/jpeg', 10);
+commit;
+insert into storage.objects (bucket_id, name, metadata)
+values ('receipts', 'r/30000000-0000-0000-0000-0000000000a7/e0000000-0000-0000-0000-000000000012.jpg', '{"size": 10, "mimetype": "image/jpeg"}');
+
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select test.expect_error($$update public.expenses set amount_cents = 99999 where id = 'e1000000-0000-0000-0000-000000000011'$$,
+                         '42501', 'leadership cannot change their own request once someone approved it');
+select test.expect_error($$delete from public.expenses where id = 'e1000000-0000-0000-0000-000000000011'$$,
+                         '42501', 'leadership cannot delete their own approved request');
+rollback;
+
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select test.check(test.count($$select * from storage.objects where name = 'r/30000000-0000-0000-0000-0000000000a7/e0000000-0000-0000-0000-000000000012.jpg'$$) = 1,
+                  'a member can open the receipt leadership attached to their request');
+select test.check(test.count($$select * from storage.objects where bucket_id = 'receipts' and name like 'r/30000000-0000-0000-0000-0000000000a7/%'$$) = 1,
+                  'but no other receipts of that leader');
+select test.expect_error($$insert into public.finance_income (received_on, amount_cents, category_id, description) values (current_date, 1, test.cat('Bank interest'), 'x')$$,
+                         '42501', 'parent cannot record income');
+rollback;

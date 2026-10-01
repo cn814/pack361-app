@@ -3,18 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ActionResult } from "@/components/ActionForm";
-import { isCommittee, requireMember } from "@/lib/data";
+import { displayName, isCommittee, requireMember } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { parseAmount, seasonRange } from "@/lib/finance";
 import { readRequestFields } from "@/lib/finance-form";
 import { checkUploadedReceipt, isOwnReceiptPath, removeReceipts } from "@/lib/finance-receipts";
-import { notifyDecision } from "@/lib/finance-notify";
+import { notifyDecision, notifyNewRequest } from "@/lib/finance-notify";
 import { todayEastern } from "@/lib/money-data";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const PAID_VIA = ["check", "cash", "paypal", "zelle", "venmo", "card", "transfer", "other"];
-const RECEIVED_VIA = ["check", "cash", "deposit", "paypal", "givebutter", "other"];
+const RECEIVED_VIA = ["check", "cash", "deposit", "paypal", "other"];
 const BASE = "/leaders/money/expenses";
 
 async function requireLeadership() {
@@ -38,7 +38,7 @@ function backTo(form: FormData, fallback = BASE): string {
 /** Explain a database refusal in plain words. */
 function why(error: { code?: string; message?: string } | null, fallback: string): string {
   if (!error) return fallback;
-  if (error.code === "42501" && /own request/.test(error.message ?? "")) return "Another leadership member has to approve or pay back your own request.";
+  if (error.code === "42501" && /own request/.test(error.message ?? "")) return `${error.message}.`;
   if (error.code === "22023") return error.message ?? fallback;
   if (error.code === "23514") return "Pick a budget category before approving or paying it.";
   return fallback;
@@ -177,6 +177,15 @@ export async function saveExpense(_prev: ActionResult, form: FormData): Promise<
   if (!id) {
     const { error } = await supabase.from("expenses").insert(row);
     if (error) return fail(why(error, "Couldn't save that expense. Try again."));
+    // Your own request waits for another leadership member: tell the treasurer.
+    if (row.status === "submitted") {
+      await notifyNewRequest({
+        who: `${displayName(me)} ${me.last_name}`,
+        amountCents: row.amount_cents as number,
+        description: row.description as string,
+        requesterId: me.id,
+      });
+    }
   } else {
     const { data, error } = await supabase.from("expenses").update(row).eq("id", id).select("id").maybeSingle();
     if (error || !data) return fail(why(error, "Couldn't save your changes. Try again."));
@@ -278,14 +287,11 @@ export async function saveCategory(_prev: ActionResult, form: FormData): Promise
   const id = String(form.get("id") ?? "");
   const name = String(form.get("name") ?? "").replace(/\s+/g, " ").trim().slice(0, 60);
   const kind = String(form.get("kind") ?? "");
-  const act = String(form.get("do") ?? "save");
   const supabase = await createClient();
   if (id) {
     if (!UUID.test(id)) return { error: "Category not found." };
-    const patch: Record<string, unknown> =
-      act === "hide" ? { archived_at: new Date().toISOString() } : act === "show" ? { archived_at: null } : { name };
-    if (act === "save" && !name) return { error: "Give it a name." };
-    const { error } = await supabase.from("finance_categories").update(patch).eq("id", id);
+    if (!name) return { error: "Give it a name." };
+    const { error } = await supabase.from("finance_categories").update({ name }).eq("id", id);
     if (error) return { error: error.code === "23505" ? "There's already a category with that name." : "Couldn't save that." };
   } else {
     if (kind !== "income" && kind !== "expense") return { error: "Choose money in or money out." };
@@ -294,5 +300,19 @@ export async function saveCategory(_prev: ActionResult, form: FormData): Promise
     if (error) return { error: error.code === "23505" ? "There's already a category with that name." : "Couldn't add that." };
   }
   refresh();
-  return { ok: true, message: act === "hide" ? "Hidden" : act === "show" ? "Shown again" : "Saved" };
+  return { ok: true, message: id ? "Renamed" : "Added" };
+}
+
+/** Leadership: hide a category from the lists (it stays in old reports), or show it again. */
+export async function toggleCategory(form: FormData) {
+  await requireLeadership();
+  const id = String(form.get("id") ?? "");
+  const hide = form.get("do") === "hide";
+  const season = String(form.get("season") ?? "");
+  if (UUID.test(id)) {
+    const supabase = await createClient();
+    await supabase.from("finance_categories").update({ archived_at: hide ? new Date().toISOString() : null }).eq("id", id);
+    refresh();
+  }
+  redirect(`${BASE}?tab=budget${seasonRange(season) ? `&season=${season}` : ""}&note=${hide ? "Category+hidden" : "Category+shown"}`);
 }

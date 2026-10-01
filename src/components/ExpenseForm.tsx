@@ -251,7 +251,7 @@ export default function ExpenseForm({
         </>
       )}
       {leader && (
-        <Field label="Note for the books (optional)">
+        <Field label="Note (optional)" hint={who === "pack" ? undefined : "The person being paid back can see this note."}>
           <textarea className="input min-h-16" name="review_note" maxLength={500} defaultValue={values?.review_note ?? ""} />
         </Field>
       )}
