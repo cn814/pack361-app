@@ -13,21 +13,25 @@ export type SettingKey =
   | "national_adult_cents"
   | "council_youth_cents"
   | "council_adult_cents"
-  | "pay_other_how";
+  | "pay_other_how"
+  | "dues_givebutter_campaign_id"
+  | "dues_sibling_discount_cents";
 
-// Fee amounts start at 0: leaders fill in the pack's real amounts on Leaders → Money.
+// Fee amounts start at 0 (pack dues at $255 per scout): leaders keep them up to date on Leaders → Money.
 export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   awards_tracked_from: "2026-07-01",
   photo_keep_months: "24",
   email_daily_limit: "40",
   dues_season: "2026-27",
   registration_year: "",
-  dues_amount_cents: "0",
+  dues_amount_cents: "25500",
   national_youth_cents: "0",
   national_adult_cents: "0",
   council_youth_cents: "0",
   council_adult_cents: "0",
   pay_other_how: "",
+  dues_givebutter_campaign_id: "",
+  dues_sibling_discount_cents: "1000",
 };
 const DEFAULTS = SETTING_DEFAULTS;
 

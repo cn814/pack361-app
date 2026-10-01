@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Form from "next/form";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AlertTriangle, CircleCheck, Download, Info } from "lucide-react";
+import { AlertTriangle, CircleCheck, Download, ExternalLink, Info } from "lucide-react";
 import ActionForm, { Field } from "@/components/ActionForm";
 import AddFeeForm from "@/components/AddFeeForm";
+import { SyncGivebutterButton } from "@/components/AdminForms";
+import DuesMatchForm, { type MatchFamily } from "@/components/DuesMatchForm";
 import BackLink from "@/components/BackLink";
 import SubmitButton from "@/components/SubmitButton";
 import { isCommittee, requireMember } from "@/lib/data";
@@ -16,6 +18,9 @@ import { paypalEnv } from "@/lib/paypal";
 import {
   daysAgoIso,
   getAllCharges,
+  getDuesCampaign,
+  getDuesOrders,
+  getGivebutterCampaigns,
   getPaymentProblems,
   getRsvpTotals,
   inSeason,
@@ -23,6 +28,8 @@ import {
   rsvpMismatch,
   summarize,
   todayEastern,
+  type DuesCampaign,
+  type DuesOrder,
   type LeaderCharge,
 } from "@/lib/money-data";
 import {
@@ -41,11 +48,12 @@ import {
 } from "@/lib/money";
 import { fmtShortDate } from "@/lib/advancement";
 import { easternDate } from "@/lib/tz";
-import { addRegistrationFees, chargeAction, savePaySettings, setRemitted } from "./actions";
+import { givebutterConfigured } from "@/lib/givebutter";
+import { addDuesCharges, addRegistrationFees, chargeAction, savePaySettings, setNotDues, setRemitted } from "./actions";
 
 export const metadata: Metadata = { title: "Money" };
 
-const TABS = { charges: "Charges", registration: "Registration", add: "Add a fee", settings: "Settings" } as const;
+const TABS = { charges: "Charges", dues: "Givebutter dues", registration: "Registration", add: "Add a fee", settings: "Settings" } as const;
 type Tab = keyof typeof TABS;
 const SHOW_MAX = 300;
 
@@ -58,6 +66,9 @@ export default async function MoneyPage({ searchParams }: PageProps<"/leaders/mo
   const tab: Tab = one(sp.tab) in TABS ? (one(sp.tab) as Tab) : "charges";
   const note = one(sp.note).slice(0, 200);
   const [settings, all, problems] = await Promise.all([getSettings(), getAllCharges(), getPaymentProblems()]);
+  const duesCampaign = await getDuesCampaign(settings.dues_givebutter_campaign_id);
+  const duesOrders = duesCampaign ? await getDuesOrders(duesCampaign.id) : [];
+  const toReview = duesOrders.filter((o) => o.dues_match === "needs_review").length;
   const season = all.filter((c) => c.status !== "canceled" && inSeason(c, settings));
   const sum = summarize(season);
   const needAmount = all.filter((c) => c.amount_cents === 0 && (c.status === "open" || c.status === "reported"));
@@ -100,6 +111,18 @@ export default async function MoneyPage({ searchParams }: PageProps<"/leaders/mo
             {migrated ? ` (${migrated} moved from the old dues list)` : ""}. Set each amount before confirming it, or waive it.{" "}
             <Link href="/leaders/money?scope=all&amount=none" className="font-bold underline">
               Show them below
+            </Link>
+          </span>
+        </p>
+      )}
+
+      {toReview > 0 && tab !== "dues" && (
+        <p className="flex items-start gap-2 rounded-xl bg-gold-50 p-3 text-xs text-gold-800">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <span>
+            {toReview} Givebutter dues payment{toReview === 1 ? " needs" : "s need"} matching to a family.{" "}
+            <Link href="/leaders/money?tab=dues" className="font-bold underline">
+              Match {toReview === 1 ? "it" : "them"}
             </Link>
           </span>
         </p>
@@ -148,11 +171,13 @@ export default async function MoneyPage({ searchParams }: PageProps<"/leaders/mo
             className={`rounded-full px-3 py-1.5 ${tab === t ? "bg-pine text-white" : "border border-line bg-white text-navy"}`}
           >
             {TABS[t]}
+            {t === "dues" && toReview > 0 ? ` (${toReview})` : ""}
           </Link>
         ))}
       </div>
 
       {tab === "charges" && <ChargesTab all={all} settings={settings} sp={sp} />}
+      {tab === "dues" && <DuesTab campaign={duesCampaign} orders={duesOrders} />}
       {tab === "registration" && <RegistrationTab all={all} settings={settings} year={one(sp.year)} />}
       {tab === "add" && <AddTab settings={settings} />}
       {tab === "settings" && <SettingsTab settings={settings} />}
@@ -297,6 +322,7 @@ async function ChargesTab({
 function ChargeItem({ c, back, mismatch }: { c: LeaderCharge; back: string; mismatch: number | null }) {
   const who = chargeFor(c);
   const online = c.status === "paid" && c.paid_via === "paypal";
+  const givebutter = c.status === "paid" && c.paid_via === "givebutter";
   const unpaid = c.status === "open" || c.status === "reported";
   const details = [
     KIND_LABEL[c.kind],
@@ -394,6 +420,11 @@ function ChargeItem({ c, back, mismatch }: { c: LeaderCharge; back: string; mism
           <SubmitButton name="do" value="cancel" className="rounded-lg px-2 py-1.5 text-xs font-bold text-danger underline">
             Cancel
           </SubmitButton>
+        )}
+        {givebutter && (
+          <span className="text-[11px] text-muted">
+            Paid on Givebutter. Refunds happen in Givebutter. If you reopen it, the next sync won&apos;t mark it paid again.
+          </span>
         )}
         {online && (
           <span className="text-[11px] text-muted">
@@ -569,8 +600,36 @@ async function AddTab({ settings }: { settings: Awaited<ReturnType<typeof getSet
     council_youth: settingCents(settings, "council_youth_cents"),
     council_adult: settingCents(settings, "council_adult_cents"),
   };
+  const duesFull = settingCents(settings, "dues_amount_cents");
+  const duesNext = Math.max(duesFull - settingCents(settings, "dues_sibling_discount_cents"), 0);
   return (
     <>
+      <section className="card space-y-2 border-l-4 border-l-gold">
+        <h2 className="section-title">Dues shortcut</h2>
+        {duesFull > 0 ? (
+          <>
+            <p className="text-sm text-ink">
+              Adds pack dues for every active scout: {fmtMoney(duesFull)} for the first scout in a family
+              {duesNext !== duesFull ? ` and ${fmtMoney(duesNext)} for each brother or sister` : ""}. Scouts who already have dues for{" "}
+              {settings.dues_season} are skipped, and so are families who already have one dues charge for the whole family. Safe to run
+              again after new families join.
+            </p>
+            <ActionForm action={addDuesCharges} submit={`Set up dues for ${settings.dues_season}`} busy="Adding…" className="space-y-2">
+              <Field label="Due (optional)">
+                <input type="date" name="due_on" className="input" />
+              </Field>
+            </ActionForm>
+          </>
+        ) : (
+          <p className="text-sm text-muted">
+            Set the dues amount in{" "}
+            <Link href="/leaders/money?tab=settings" className="font-semibold text-pine underline">
+              Settings
+            </Link>{" "}
+            first.
+          </p>
+        )}
+      </section>
       <section className="card space-y-2 border-l-4 border-l-gold">
         <h2 className="section-title">Registration shortcut</h2>
         {year ? (
@@ -622,8 +681,12 @@ async function AddTab({ settings }: { settings: Awaited<ReturnType<typeof getSet
 // ---------------------------------------------------------------------------
 // Settings
 // ---------------------------------------------------------------------------
-function SettingsTab({ settings }: { settings: Awaited<ReturnType<typeof getSettings>> }) {
+async function SettingsTab({ settings }: { settings: Awaited<ReturnType<typeof getSettings>> }) {
   const dollars = (k: Parameters<typeof settingCents>[1]) => centsToInput(settingCents(settings, k) || null);
+  const campaigns = await getGivebutterCampaigns();
+  const chosen = campaigns.find((c) => String(c.id) === settings.dues_givebutter_campaign_id) ?? null;
+  // Nothing picked yet: suggest the campaign with "dues" in its name (it's saved only when you press Save).
+  const suggested = chosen ? null : (campaigns.find((c) => /dues/i.test(c.title)) ?? null);
   return (
     <section className="card space-y-3">
       <h2 className="section-title">Amounts and how to pay</h2>
@@ -632,10 +695,43 @@ function SettingsTab({ settings }: { settings: Awaited<ReturnType<typeof getSett
           <Field label="Dues season" hint="Like 2026-27">
             <input className="input" name="dues_season" defaultValue={settings.dues_season} required />
           </Field>
-          <Field label="Pack dues ($)" hint="Per family">
+          <Field label="Pack dues ($)" hint="Per scout">
             <input className="input" name="dues_amount_cents" inputMode="decimal" defaultValue={dollars("dues_amount_cents")} placeholder="0" />
           </Field>
         </div>
+        <Field label="Sibling discount ($)" hint="Taken off the dues for each brother or sister after the first scout in a family.">
+          <input
+            className="input"
+            name="dues_sibling_discount_cents"
+            inputMode="decimal"
+            defaultValue={dollars("dues_sibling_discount_cents")}
+            placeholder="0"
+          />
+        </Field>
+        <Field
+          label="Givebutter dues campaign"
+          hint={
+            campaigns.length
+              ? "Families pay dues here. Payments in it are matched to families and marked paid when Givebutter syncs."
+              : "No Givebutter campaigns yet. Sync Givebutter below first."
+          }
+        >
+          <select className="input" name="dues_givebutter_campaign_id" defaultValue={String(chosen?.id ?? suggested?.id ?? "")}>
+            <option value="">None (families don&apos;t pay dues on Givebutter)</option>
+            {campaigns.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.title}
+                {suggested?.id === c.id ? " (suggested)" : ""}
+              </option>
+            ))}
+          </select>
+        </Field>
+        {suggested && <p className="text-[11px] font-semibold text-gold-800">Suggested from its name. Press Save to use it.</p>}
+        {chosen?.url && (
+          <a href={chosen.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-pine underline">
+            Open the dues campaign on Givebutter <ExternalLink className="h-3 w-3" aria-hidden />
+          </a>
+        )}
         <Field label="Registration year" hint="The year Scouting America and council fees are for, like 2027.">
           <input className="input" name="registration_year" inputMode="numeric" maxLength={4} defaultValue={settings.registration_year} />
         </Field>
@@ -658,6 +754,125 @@ function SettingsTab({ settings }: { settings: Awaited<ReturnType<typeof getSett
           <textarea className="input min-h-20" name="pay_other_how" maxLength={600} defaultValue={settings.pay_other_how} />
         </Field>
       </ActionForm>
+      <div className="space-y-1 border-t border-line pt-3">
+        <h3 className="text-xs font-bold text-navy">Givebutter</h3>
+        <p className="text-[11px] text-muted">
+          {givebutterConfigured()
+            ? "Givebutter syncs once a day. Sync now to pick up new campaigns and dues payments right away."
+            : "Givebutter isn't connected yet (the API key goes in Vercel)."}
+        </p>
+        <SyncGivebutterButton />
+      </div>
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Givebutter dues: payments in the dues campaign and how each was matched
+// ---------------------------------------------------------------------------
+const MATCH_LABEL: Record<string, { text: string; style: string }> = {
+  matched: { text: "Matched", style: "bg-mint text-pine" },
+  partial: { text: "Partly matched", style: "bg-gold-50 text-gold-800" },
+  needs_review: { text: "Needs review", style: "bg-gold-50 text-gold-800" },
+  not_dues: { text: "Not dues", style: "bg-surface text-muted" },
+};
+const PAID_STATUSES = ["succeeded", "authorized", "captured", "paid", "completed"];
+
+async function DuesTab({ campaign, orders }: { campaign: DuesCampaign | null; orders: DuesOrder[] }) {
+  if (!campaign) {
+    return (
+      <p className="card text-sm text-muted">
+        Pick the Givebutter dues campaign in{" "}
+        <Link href="/leaders/money?tab=settings" className="font-semibold text-pine underline">
+          Settings
+        </Link>{" "}
+        first.
+      </p>
+    );
+  }
+  const supabase = await createClient();
+  const [{ data: families }, { data: scouts }] = await Promise.all([
+    supabase.from("families").select("id, family_name").eq("is_active", true).order("family_name"),
+    supabase.from("scouts").select("id, family_id, first_name").eq("is_active", true).order("created_at").order("first_name"),
+  ]);
+  const familyName = new Map((families ?? []).map((f) => [f.id as string, f.family_name as string]));
+  const matchFamilies: MatchFamily[] = (families ?? []).map((f) => ({
+    id: f.id as string,
+    name: `${f.family_name} family`,
+    scouts: (scouts ?? []).filter((s) => s.family_id === f.id).map((s) => ({ id: s.id as string, first_name: s.first_name as string })),
+  }));
+  const scoutName = new Map((scouts ?? []).map((s) => [s.id as string, s.first_name as string]));
+  const sorted = [...orders].sort((a, b) => Number(b.dues_match === "needs_review") - Number(a.dues_match === "needs_review"));
+  const back = "/leaders/money?tab=dues";
+  return (
+    <>
+      <p className="flex flex-wrap items-center gap-x-2 px-1 text-sm text-muted">
+        <span>
+          Payments in <b className="text-ink">{campaign.title}</b>. Matched ones mark each scout&apos;s dues paid.
+        </span>
+        {campaign.url && (
+          <a href={campaign.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-pine underline">
+            Givebutter <ExternalLink className="h-3 w-3" aria-hidden />
+          </a>
+        )}
+      </p>
+      {sorted.length === 0 ? (
+        <p className="card text-sm text-muted">No payments synced yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {sorted.map((o) => {
+            const m = o.dues_match ? MATCH_LABEL[o.dues_match] : { text: "Not checked yet", style: "bg-surface text-muted" };
+            const fam = o.family_id ? familyName.get(o.family_id) : null;
+            const kids = (o.matched_scout_ids ?? []).map((id) => scoutName.get(id)).filter(Boolean);
+            const unpaid = Boolean(o.status) && !PAID_STATUSES.includes(String(o.status).toLowerCase());
+            return (
+              <li key={o.id} className="card space-y-1 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-ink">{o.name || "Someone"}</span>
+                    <span className="block text-[11px] text-muted">
+                      {[
+                        o.created_at ? fmtShortDate(easternDate(o.created_at)) : null,
+                        fam ? `${fam} family` : null,
+                        kids.length ? kids.join(", ") : null,
+                        unpaid ? `Givebutter says ${o.status}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                    {o.dues_note && <span className="block text-xs text-muted">{o.dues_note}</span>}
+                  </span>
+                  <span className="shrink-0 text-right">
+                    <span className="block text-sm font-extrabold text-ink">{fmtMoney(Math.round(Number(o.amount ?? 0) * 100))}</span>
+                    <span className={`badge normal-case tracking-normal ${m.style}`}>{m.text}</span>
+                  </span>
+                </div>
+                {!o.dues_applied_at && !unpaid && (
+                  <div className="flex flex-wrap items-start gap-2">
+                    <details className="min-w-0 flex-1">
+                      <summary className="cursor-pointer text-xs font-bold text-pine">Match to…</summary>
+                      <DuesMatchForm orderId={o.id} families={matchFamilies} familyId={o.family_id} />
+                    </details>
+                    <form action={setNotDues}>
+                      <input type="hidden" name="order_id" value={o.id} />
+                      <input type="hidden" name="back" value={back} />
+                      <SubmitButton className="rounded-lg px-2 py-0.5 text-xs font-bold text-navy underline">Not dues</SubmitButton>
+                    </form>
+                  </div>
+                )}
+                {o.dues_match === "not_dues" && (
+                  <form action={setNotDues}>
+                    <input type="hidden" name="order_id" value={o.id} />
+                    <input type="hidden" name="undo" value="1" />
+                    <input type="hidden" name="back" value={back} />
+                    <SubmitButton className="rounded-lg px-0 py-0.5 text-xs font-bold text-navy underline">It is dues after all</SubmitButton>
+                  </form>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </>
   );
 }

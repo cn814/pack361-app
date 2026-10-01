@@ -9,7 +9,7 @@ import InstallHelp from "@/components/InstallHelp";
 import PaperworkCard from "@/components/PaperworkCard";
 import PaymentsCard from "@/components/PaymentsCard";
 import { getMyPaperwork } from "@/lib/paperwork";
-import { getMyCharges } from "@/lib/payments";
+import { getDuesPayUrl, getMyCharges } from "@/lib/payments";
 import TrainingEditor, { stateText } from "@/components/TrainingEditor";
 import TrainingStatus, { MyScoutingLink } from "@/components/TrainingStatus";
 import ActionForm, { Field } from "@/components/ActionForm";
@@ -22,13 +22,14 @@ export const metadata: Metadata = { title: "My family" };
 
 export default async function FamilyPage() {
   const me = await requireMember();
-  const [scouts, adults, training, paperwork, charges, mine] = await Promise.all([
+  const [scouts, adults, training, paperwork, charges, mine, duesUrl] = await Promise.all([
     getMyScouts(),
     getFamilyAdults(),
     getMyTraining(me.id),
     getMyPaperwork(me),
     getMyCharges(me),
     getMyPositions(me),
+    getDuesPayUrl(),
   ]);
   const leader = isLeader(me) || Boolean(me.position_title) || mine.positions.length > 0;
   const status = trainedStatus(mine.positions, training);
@@ -75,7 +76,7 @@ export default async function FamilyPage() {
         </ul>
       </section>
 
-      <PaymentsCard charges={charges} />
+      <PaymentsCard charges={charges} duesUrl={duesUrl} />
 
       <PaperworkCard people={paperwork.people} ownerUserKey={me.id} />
       <Link href="/family/files" className="card flex items-center gap-3">

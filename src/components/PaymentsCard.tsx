@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { CircleCheck, HandCoins } from "lucide-react";
+import { CircleCheck, ExternalLink, HandCoins } from "lucide-react";
 import { chargeFor, fmtMoney, PAID_VIA_LABEL, type ChargeRow } from "@/lib/money";
 import { fmtShortDate } from "@/lib/advancement";
 import { easternDate } from "@/lib/tz";
 
-/** My family: what's due (with a Pay button) and the last few things paid. */
-export default function PaymentsCard({ charges }: { charges: ChargeRow[] }) {
+/**
+ * My family: what's due (with a Pay button) and the last few things paid. With a Givebutter dues
+ * page (duesUrl), dues are paid there and everything else on the Pay page.
+ */
+export default function PaymentsCard({ charges, duesUrl = null }: { charges: ChargeRow[]; duesUrl?: string | null }) {
   const due = charges.filter((c) => c.status === "open" && c.amount_cents > 0);
   const waiting = charges.filter((c) => c.status === "reported");
   const paid = charges
@@ -13,7 +16,9 @@ export default function PaymentsCard({ charges }: { charges: ChargeRow[] }) {
     .sort((a, b) => (b.paid_at ?? b.created_at).localeCompare(a.paid_at ?? a.created_at))
     .slice(0, 3);
   if (!due.length && !waiting.length && !paid.length) return null;
-  const total = due.reduce((s, c) => s + c.amount_cents, 0);
+  const duesDue = duesUrl ? due.filter((c) => c.kind === "dues") : [];
+  const duesTotal = duesDue.reduce((s, c) => s + c.amount_cents, 0);
+  const total = due.reduce((s, c) => s + c.amount_cents, 0) - duesTotal;
   return (
     <section id="payments" className="card scroll-mt-20 space-y-3">
       <h2 className="section-title flex items-center gap-1.5">
@@ -40,9 +45,20 @@ export default function PaymentsCard({ charges }: { charges: ChargeRow[] }) {
             })}
           </ul>
           {due.length > 5 && <p className="text-xs text-muted">and {due.length - 5} more</p>}
-          <Link href="/pay" className="btn-gold w-full">
-            <HandCoins className="h-4 w-4" aria-hidden /> Pay {fmtMoney(total)}
-          </Link>
+          {duesUrl && duesDue.length > 0 && (
+            <>
+              <a href={duesUrl} target="_blank" rel="noopener noreferrer" className="btn-gold w-full">
+                Pay dues on Givebutter ({fmtMoney(duesTotal)}) <ExternalLink className="h-4 w-4" aria-hidden />
+              </a>
+              <p className="text-[11px] text-muted">The pack takes dues on Givebutter. It shows as paid here within a day.</p>
+            </>
+          )}
+          {due.length > duesDue.length && (
+            <Link href="/pay" className={duesDue.length ? "btn-ghost w-full" : "btn-gold w-full"}>
+              <HandCoins className="h-4 w-4" aria-hidden /> Pay {duesDue.length ? "everything else, " : ""}
+              {fmtMoney(total)}
+            </Link>
+          )}
         </>
       ) : (
         <p className="flex items-center gap-1.5 text-sm font-semibold text-pine">

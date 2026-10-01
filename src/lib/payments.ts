@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./supabase/server";
+import { getSettings } from "./settings";
 import { adminConfigured } from "./supabase/admin";
 import { CHARGE_COLUMNS, type ChargeRow } from "./money";
 import { firstCapture, paypalConfigured, valueToCents, type PayPalOrder } from "./paypal";
@@ -92,4 +93,18 @@ export async function chargesStillOpen(db: SupabaseClient, payment: { id: string
       return c && c.status === "open" && c.amount_cents === payment.charge_cents[i] && c.pending_payment_id === payment.id;
     })
   );
+}
+
+/**
+ * The Givebutter page families pay pack dues on: the dues campaign picked on Leaders → Money,
+ * once it has synced with a link. null = dues are paid like everything else.
+ */
+export async function getDuesPayUrl(): Promise<string | null> {
+  const settings = await getSettings();
+  const id = settings.dues_givebutter_campaign_id;
+  if (!/^\d{1,18}$/.test(id)) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.from("givebutter_campaigns").select("url").eq("id", Number(id)).maybeSingle();
+  const url = (data?.url as string | null) ?? null;
+  return url && /^https:\/\//i.test(url) ? url : null;
 }

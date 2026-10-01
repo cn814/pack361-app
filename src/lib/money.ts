@@ -2,7 +2,7 @@
 
 export type ChargeKind = "dues" | "national" | "council" | "event" | "other";
 export type ChargeStatus = "open" | "reported" | "paid" | "waived" | "canceled";
-export type PaidVia = "paypal" | "cash" | "check" | "other";
+export type PaidVia = "paypal" | "givebutter" | "cash" | "check" | "other";
 
 export const CHARGE_KINDS: ChargeKind[] = ["dues", "national", "council", "event", "other"];
 export const CHARGE_STATUSES: ChargeStatus[] = ["open", "reported", "paid", "waived", "canceled"];
@@ -43,6 +43,7 @@ export const STATUS_STYLE: Record<ChargeStatus, string> = {
 
 export const PAID_VIA_LABEL: Record<PaidVia, string> = {
   paypal: "PayPal",
+  givebutter: "Givebutter",
   cash: "Cash",
   check: "Check",
   other: "Other",

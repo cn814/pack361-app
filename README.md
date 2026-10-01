@@ -31,7 +31,7 @@ npm run dev
 ## Folders
 | Path | What |
 |---|---|
-| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init`, `harden_functions`, `private_helpers`, `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback`, `den_calendar`, `twh_sync`, `twh_rsvp`, `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages), `twh_replacement` (in-app RSVP, public guide pages), `payments` (charges, PayPal, event fees; replaces dues), `documents` (documents library), `council_events` (council calendar picker), `training_plus` (more courses, member IDs, training import). |
+| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init`, `harden_functions`, `private_helpers`, `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback`, `den_calendar`, `twh_sync`, `twh_rsvp`, `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages), `twh_replacement` (in-app RSVP, public guide pages), `payments` (charges, PayPal, event fees; replaces dues), `documents` (documents library), `council_events` (council calendar picker), `training_plus` (more courses, member IDs, training import), `givebutter_dues` (dues paid on Givebutter). |
 | `supabase/data/` | One-off data updates run in the SQL Editor (e.g. the Fall Campout details, Arrow of Light Den 8 bridging). |
 | `supabase/seed.sql` | Starter data: dens (Scoutbook numbering), pack meetings, fall events, default packing list. |
 | `supabase/import/build_roster_import.py` | Merges Scoutbook Plus + TroopWebHost data into `imports/roster_import.sql` and `imports/roster_review.md`. |
@@ -59,9 +59,10 @@ npm run dev
   older ones are treated as handed out. Leaders get a printable awards night sheet and a den grid.
 
 ## Givebutter, calendar, alerts
-- **Givebutter**: a daily Vercel Cron (`vercel.json`, 10:00 UTC = 6 AM EDT / 5 AM EST) and an admin "Sync now" button on
-  the Pack store page copy campaigns and orders. Admins choose which campaigns the store lists (pack attire). Campaigns link to calendar events by Givebutter id or sign-up
-  link; families are matched by email. Families see their own orders; leaders see everyone's.
+- **Givebutter**: a daily Vercel Cron (`vercel.json`, 10:00 UTC = 6 AM EDT / 5 AM EST) and a "Sync now" button (admins on
+  the Pack store page, the committee on Leaders → Money → Settings) copy campaigns and orders. Admins choose which campaigns the store lists (pack attire). Campaigns link to calendar events by Givebutter id or sign-up
+  link; families are matched by email. Families see their own orders; the committee sees everyone's; other leaders see
+  everyone's except dues payments.
 - **Calendar**: each adult gets a private feed, `/api/calendar/<token>.ics` (Events page -> "Add the
   pack calendar"). It follows the den-aware rules below (pack events plus their dens' events and
   meetings; leaders get everything), leaves out archived events, and stops working when the adult
@@ -200,6 +201,26 @@ npm run dev
   fees, confirms payments, tracks national and council fees per person including when they were sent
   to the council, sets amounts and "other ways to pay", and downloads a CSV. Env:
   `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV` (sandbox unless `live`).
+  Without PayPal keys the PayPal buttons are hidden and families report check or cash payments.
+- **Pack dues on Givebutter**: dues are per scout ($255 by default; each brother or sister after the
+  first gets the sibling discount, $10 by default, both in Money → Settings). Pick the Givebutter dues
+  campaign in Money → Settings (a campaign with "dues" in its name is suggested, not saved). Then:
+  - Money → Add a fee → "Set up dues for 2026-27" adds a dues charge per active scout
+    (`add_dues_charges()`), full price for the first scout in a family, discounted after that.
+  - `/pay` and My family show open dues with a "Pay dues on Givebutter" button (new tab) as the way
+    to pay dues; PayPal and "I paid another way" stay for everything else.
+  - Each Givebutter sync matches paid, not-yet-applied orders in the dues campaign
+    (`src/lib/givebutter-dues.ts`): the family by payer email, then the parent email answer; the
+    scouts by first name from the "Full Name of Scout(s)" answer (split on commas, "and", "&", "/",
+    ";"), or, with no names that match, all the family's scouts when the amount is exactly their dues.
+    `apply_givebutter_dues()` (secret key only) marks each scout's dues paid on Givebutter, splitting
+    the amount so it adds up exactly, and marks the order done. Paid, waived and canceled charges are
+    never touched. Scout names, phone numbers and addresses from Givebutter are used only during the
+    sync and never stored; the order keeps the matched scout ids and a short note without names.
+  - Money → Givebutter dues lists the payments. "Needs review" ones get "Match to…" (pick the family,
+    tick its scouts; `match_givebutter_dues()`, committee only) or "Not dues" for donations.
+  - A leader can reopen a Givebutter-paid charge (refund it in Givebutter); the sync won't mark it
+    paid again.
 - **Polls** (`/polls`): leaders ask the pack or one den; single or multiple choice, optional
   one-answer-per-family, closing date, results for voters or leaders only. Votes go through
   `cast_vote()`; `poll_results()` returns counts, never names (leaders see who answered what).

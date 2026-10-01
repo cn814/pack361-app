@@ -216,16 +216,68 @@ export async function savePaySettings(_prev: ActionResult, form: FormData): Prom
   const year = String(form.get("registration_year") ?? "").trim();
   if (year && !/^\d{4}$/.test(year)) return { error: "Write the registration year like 2027." };
   values.registration_year = year;
-  for (const k of ["dues_amount_cents", "national_youth_cents", "national_adult_cents", "council_youth_cents", "council_adult_cents"]) {
+  for (const k of [
+    "dues_amount_cents",
+    "dues_sibling_discount_cents",
+    "national_youth_cents",
+    "national_adult_cents",
+    "council_youth_cents",
+    "council_adult_cents",
+  ]) {
     const raw = String(form.get(k) ?? "").trim();
     const c = raw ? parseDollars(raw) : 0;
     if (c === null) return { error: "Write amounts in dollars, like 60 or 12.50 (up to $1,000)." };
     values[k] = String(c);
   }
   values.pay_other_how = String(form.get("pay_other_how") ?? "").trim().slice(0, 600);
+  const campaign = String(form.get("dues_givebutter_campaign_id") ?? "").trim();
+  if (campaign && !/^\d{1,18}$/.test(campaign)) return { error: "Pick the dues campaign from the list." };
+  values.dues_givebutter_campaign_id = campaign;
   const supabase = await createClient();
   const { error } = await supabase.rpc("save_pay_settings", { p_values: values });
   if (error) return { error: error.code === "22023" ? error.message : "Couldn't save settings." };
   revalidatePath("/", "layout");
   return { ok: true, message: "Saved" };
+}
+
+/** Shortcut: dues for every active scout this season (sibling discount from the 2nd scout on). */
+export async function addDuesCharges(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireCommittee();
+  const due = String(form.get("due_on") ?? "").trim();
+  if (due && !DATE.test(due)) return { error: "Pick the due date." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("add_dues_charges", { p_due_on: due || null });
+  if (error) return { error: error.code === "22023" ? `${error.message}.` : "Couldn't add dues. Try again." };
+  const r = ((data ?? []) as { added: number; skipped: number }[])[0] ?? { added: 0, skipped: 0 };
+  refresh();
+  return { ok: true, message: `Added dues for ${r.added} scout${r.added === 1 ? "" : "s"}, skipped ${r.skipped} who already have them.` };
+}
+
+/** A Givebutter dues payment the sync couldn't place: a leader picks the family and its scouts. */
+export async function matchDuesOrder(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireCommittee();
+  const order = Number(form.get("order_id"));
+  const family = String(form.get("family_id") ?? "");
+  const scouts = form.getAll("scout_id").map(String).filter((v) => UUID.test(v));
+  if (!Number.isSafeInteger(order) || order <= 0) return { error: "Pick the payment again." };
+  if (!UUID.test(family)) return { error: "Pick the family." };
+  if (!scouts.length) return { error: "Tick the scouts this payment was for." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("match_givebutter_dues", { p_order_id: order, p_family_id: family, p_scout_ids: scouts });
+  if (error) return { error: error.code === "22023" ? `${error.message}.` : "Couldn't save that. Try again." };
+  refresh();
+  return { ok: true, message: "Matched, and their dues are marked paid." };
+}
+
+/** "Not dues" (a donation, say), or undo that. */
+export async function setNotDues(form: FormData) {
+  await requireCommittee();
+  const order = Number(form.get("order_id"));
+  const undo = form.get("undo") === "1";
+  if (!Number.isSafeInteger(order) || order <= 0) back(form, "Pick the payment again.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_givebutter_not_dues", { p_order_id: order, p_not_dues: !undo });
+  if (error) back(form, "Couldn't save that. Try again.");
+  refresh();
+  back(form, undo ? "It's back on the list; the next sync tries to match it." : "Marked as not dues.");
 }

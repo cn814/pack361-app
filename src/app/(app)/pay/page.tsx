@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CircleCheck, HandCoins } from "lucide-react";
+import DuesPayCard from "@/components/DuesPayCard";
 import PayCheckout, { type PayItem } from "@/components/PayCheckout";
 import { requireMember } from "@/lib/data";
 import { getSettings } from "@/lib/settings";
-import { getMyCharges, onlinePaymentsReady } from "@/lib/payments";
+import { getDuesPayUrl, getMyCharges, onlinePaymentsReady } from "@/lib/payments";
 import { chargeFor, fmtMoney, PAID_VIA_LABEL, STATUS_LABEL, STATUS_STYLE } from "@/lib/money";
 import { fmtShortDate } from "@/lib/advancement";
 import { easternDate } from "@/lib/tz";
@@ -14,17 +15,20 @@ export const metadata: Metadata = { title: "Pay the pack" };
 
 export default async function PayPage() {
   const me = await requireMember();
-  const [charges, settings] = await Promise.all([getMyCharges(me), getSettings()]);
+  const [charges, settings, duesUrl] = await Promise.all([getMyCharges(me), getSettings(), getDuesPayUrl()]);
   const due = charges.filter((c) => c.status === "open" && c.amount_cents > 0);
   const waiting = charges.filter((c) => c.status === "reported");
   const done = charges
     .filter((c) => c.status === "paid" || c.status === "waived")
     .sort((a, b) => (b.paid_at ?? b.created_at).localeCompare(a.paid_at ?? a.created_at))
     .slice(0, 10);
-  const items: PayItem[] = due.map((c) => {
+  const toItem = (c: (typeof due)[number]): PayItem => {
     const who = chargeFor(c);
     return { id: c.id, title: c.title, detail: who ? `For ${who}` : null, amount_cents: c.amount_cents, due_on: c.due_on };
-  });
+  };
+  // With a Givebutter dues page, dues are paid there; everything else is paid here.
+  const duesItems = duesUrl ? due.filter((c) => c.kind === "dues").map(toItem) : [];
+  const items: PayItem[] = due.filter((c) => !(duesUrl && c.kind === "dues")).map(toItem);
   const ready = onlinePaymentsReady();
 
   return (
@@ -34,6 +38,8 @@ export default async function PayPage() {
       </h1>
       <p className="-mt-1 text-sm text-muted">Pack dues, registration fees, campouts and events, all in one place.</p>
 
+      {duesUrl && duesItems.length > 0 && <DuesPayCard items={duesItems} url={duesUrl} />}
+
       {items.length ? (
         <PayCheckout
           items={items}
@@ -41,7 +47,7 @@ export default async function PayPage() {
           sandbox={paypalEnv() === "sandbox"}
           otherHow={settings.pay_other_how}
         />
-      ) : (
+      ) : duesItems.length ? null : (
         <section className="card flex items-start gap-2 text-sm text-pine">
           <CircleCheck className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
           <p className="font-semibold">You&apos;re all paid up. Thank you!</p>

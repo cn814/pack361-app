@@ -80,7 +80,7 @@ export function summarize(charges: ChargeRow[]): MoneySummary {
       const amt = c.paid_amount_cents ?? c.amount_cents;
       s.paid += amt;
       s.paidCount++;
-      if (c.paid_via === "paypal") s.online += amt;
+      if (c.paid_via === "paypal" || c.paid_via === "givebutter") s.online += amt;
       else s.offline += amt;
     } else if (c.status === "waived") s.waivedCount++;
   }
@@ -152,4 +152,52 @@ export async function getPaymentProblems(): Promise<ProblemPayment[]> {
     .order("created_at", { ascending: false })
     .limit(20);
   return (data ?? []) as unknown as ProblemPayment[];
+}
+
+export type DuesMatch = "matched" | "partial" | "needs_review" | "not_dues";
+
+export interface DuesOrder {
+  id: number;
+  name: string | null;
+  amount: number | null;
+  status: string | null;
+  created_at: string | null;
+  family_id: string | null;
+  matched_scout_ids: string[];
+  dues_match: DuesMatch | null;
+  dues_note: string | null;
+  dues_applied_at: string | null;
+}
+
+export interface DuesCampaign {
+  id: number;
+  title: string;
+  url: string | null;
+}
+
+/** Synced Givebutter campaigns, newest first (for picking the dues campaign). */
+export async function getGivebutterCampaigns(): Promise<DuesCampaign[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("givebutter_campaigns").select("id, title, url").order("id", { ascending: false });
+  return (data ?? []) as DuesCampaign[];
+}
+
+/** The dues campaign picked in Settings, if it has been synced. */
+export async function getDuesCampaign(id: string): Promise<DuesCampaign | null> {
+  if (!/^\d{1,18}$/.test(id)) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.from("givebutter_campaigns").select("id, title, url").eq("id", Number(id)).maybeSingle();
+  return (data as DuesCampaign | null) ?? null;
+}
+
+/** Orders in the dues campaign, newest first. */
+export async function getDuesOrders(campaignId: number): Promise<DuesOrder[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("givebutter_orders")
+    .select("id, name, amount, status, created_at, family_id, matched_scout_ids, dues_match, dues_note, dues_applied_at")
+    .eq("campaign_id", campaignId)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  return (data ?? []) as DuesOrder[];
 }

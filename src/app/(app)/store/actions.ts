@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requireMember } from "@/lib/data";
+import { isCommittee, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
 import { givebutterConfigured, syncGivebutter } from "@/lib/givebutter";
@@ -11,14 +11,16 @@ export type ActionState = { ok?: boolean; error?: string; message?: string };
 
 export async function syncGivebutterNow(): Promise<ActionState> {
   const me = await requireMember();
-  if (!isAdmin(me)) return { error: "Only pack admins can sync." };
+  // Admins (Store page) and the committee (Money page, for dues).
+  if (!isAdmin(me) && !isCommittee(me)) return { error: "Only pack admins and the committee can sync." };
   if (!adminConfigured() || !givebutterConfigured()) {
     return { error: "Add GIVEBUTTER_API_KEY and SUPABASE_SECRET_KEY in Vercel first." };
   }
   try {
     const r = await syncGivebutter(createAdminClient());
     revalidatePath("/", "layout");
-    return { ok: true, message: `Synced ${r.campaigns} campaigns and ${r.orders} orders (${r.matchedFamilies} pack families matched).` };
+    const dues = r.duesMatched || r.duesNeedReview ? ` Dues: ${r.duesMatched} matched, ${r.duesNeedReview} to review.` : "";
+    return { ok: true, message: `Synced ${r.campaigns} campaigns and ${r.orders} orders (${r.matchedFamilies} pack families matched).${dues}` };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Sync failed." };
   }
