@@ -3,6 +3,7 @@ import SubmitButton from "@/components/SubmitButton";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Check, ChevronLeft, Stamp, Undo2 } from "lucide-react";
+import ScoutbookGrid from "@/components/ScoutbookGrid";
 import { displayName, isLeader, requireMember } from "@/lib/data";
 import { getReviewableScouts, getSubmissions, type Submission } from "@/lib/advancement-data";
 import { RANK_LABEL, fmtShortDate } from "@/lib/advancement";
@@ -65,9 +66,9 @@ export default async function ReviewPage({ searchParams }: PageProps<"/scouts/re
       <Link href="/scouts" className="inline-flex items-center gap-1 text-sm font-semibold text-pine">
         <ChevronLeft className="h-4 w-4" aria-hidden /> Scouts
       </Link>
-      <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Approvals</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Approvals and Scoutbook</h1>
 
-      <section className="space-y-3">
+      <section className="space-y-3 lg:max-w-3xl">
         <h2 className="section-title">Reported by families ({toReview.reduce((n, g) => n + g.length, 0)})</h2>
         {toReview.length === 0 && <p className="card text-sm text-muted">Nothing waiting. Nice work.</p>}
         {toReview.map((group) => {
@@ -120,13 +121,14 @@ export default async function ReviewPage({ searchParams }: PageProps<"/scouts/re
         })}
       </section>
 
-      <section id="record" className="scroll-mt-20 space-y-3">
+      <section id="record" className="page-wide scroll-mt-20 space-y-3">
         <h2 className="section-title">Approved — enter in Scoutbook ({toRecord.reduce((n, g) => n + g.length, 0)})</h2>
         <p className="text-xs text-muted">
           After you enter these in Scoutbook Plus, tap “Entered”. The next Scoutbook import also clears them automatically.
         </p>
+        {approvedMine.length > 0 && <ScoutbookGrid list={approvedMine} />}
         {toRecord.length > 0 && (
-          <div className="flex gap-1 rounded-xl bg-surface-low p-1 text-sm font-semibold" role="tablist" aria-label="Group by">
+          <div className="flex gap-1 rounded-xl bg-surface-low p-1 text-sm font-semibold lg:hidden" role="tablist" aria-label="Group by">
             <Link
               href="/scouts/review#record"
               role="tab"
@@ -146,7 +148,7 @@ export default async function ReviewPage({ searchParams }: PageProps<"/scouts/re
           </div>
         )}
         {byReq && toRecord.length > 0 && (
-          <p className="text-xs text-muted">
+          <p className="text-xs text-muted lg:hidden">
             Matches Scoutbook Plus&apos;s way of marking one requirement for several scouts at once: pick the adventure
             and requirement, check these scouts, use this date.
           </p>
@@ -155,7 +157,7 @@ export default async function ReviewPage({ searchParams }: PageProps<"/scouts/re
         {!byReq && toRecord.map((group) => {
           const first = group[0];
           return (
-            <article key={first.scout_id} className="card space-y-2">
+            <article key={first.scout_id} className="card space-y-2 lg:hidden">
               <header className="flex items-baseline justify-between gap-2">
                 <span className="font-extrabold text-pine-950">
                   {first.scout?.first_name} {first.scout?.last_name}
@@ -188,7 +190,7 @@ export default async function ReviewPage({ searchParams }: PageProps<"/scouts/re
           toRecordByReq.map((group) => {
             const first = group[0];
             return (
-              <article key={first.id} className="card space-y-2">
+              <article key={first.id} className="card space-y-2 lg:hidden">
                 <header className="space-y-0.5">
                   <p className="font-extrabold text-pine-950">
                     {first.adventure} · requirement {first.requirement}
