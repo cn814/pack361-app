@@ -26,6 +26,10 @@ export interface FeedEvent {
   cancelled: boolean;
   /** The event's page on TroopWebHost (where families RSVP). */
   url: string | null;
+  /** The feed's own URL field, whatever site it points to. */
+  link: string | null;
+  /** CATEGORIES, comma-separated. */
+  categories: string | null;
 }
 
 /** A TroopWebHost / OurGroupOnline link, if the text contains one. */
@@ -129,8 +133,12 @@ export function parseIcs(text: string, until = Date.now() + 400 * 86400000, from
   const series = new Map<string, FeedEvent[]>(); // uid -> instances
   const overrides: { uid: string; day: string; ev: FeedEvent }[] = [];
   let cur: Props | null = null;
+  let nested = 0; // inside a VALARM (or other block) within an event: its lines aren't the event's
   for (const line of lines) {
-    if (line === "BEGIN:VEVENT") cur = {};
+    if (cur && line.startsWith("BEGIN:") && line !== "BEGIN:VEVENT") nested++;
+    else if (nested) {
+      if (line.startsWith("END:")) nested--;
+    } else if (line === "BEGIN:VEVENT") cur = {};
     else if (line === "END:VEVENT" && cur) {
       const start = cur.DTSTART && parseDate(cur.DTSTART.params, cur.DTSTART.value);
       if (cur.UID && start) {
@@ -152,6 +160,8 @@ export function parseIcs(text: string, until = Date.now() + 400 * 86400000, from
           all_day: start.allDay,
           cancelled: /CANCELLED/i.test(cur.STATUS?.value ?? ""),
           url: twhLink(cur.URL?.value) ?? twhLink(description) ?? twhEventUrl(uid),
+          link: cur.URL ? unescape(cur.URL.value) || null : null,
+          categories: cur.CATEGORIES ? cur.CATEGORIES.all.map(unescape).filter(Boolean).join(", ") || null : null,
         };
         if (cur["RECURRENCE-ID"]) {
           // One changed date of a repeating event: replaces that date's copy.

@@ -42,6 +42,7 @@ export default function EventRow({
         <div className="flex items-center gap-2">
           <span className={`badge ${CATEGORY_STYLE[e.category] ?? "bg-surface text-navy"}`}>{e.category}</span>
           {e.den_name && <span className="badge bg-gold-50 text-gold-800">{e.den_name}</span>}
+          {e.source === "council" && <span className="badge bg-surface text-navy">Council event</span>}
         </div>
         <h3 className="mt-1 font-bold text-ink">{e.title}</h3>
         <p className="text-xs text-muted">{fmtRange(e.starts_at, e.ends_at, e.all_day)}</p>
@@ -87,7 +88,7 @@ export default function EventRow({
           <RsvpLink e={e} variant="link" />
           {signupLink && (
             <a href={signupLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-pine underline">
-              {/givebutter/i.test(signupLink) ? "Pay / order on Givebutter" : "Sign up"}
+              {/givebutter/i.test(signupLink) ? "Pay / order on Givebutter" : e.source === "council" ? "Register with the council" : "Sign up"}
             </a>
           )}
         </div>

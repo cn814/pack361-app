@@ -47,6 +47,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           <span className="badge bg-gold-50 text-gold-700">{event.category}</span>
           {audience && <span className="badge bg-navy text-white">For {audience}</span>}
           {event.leaders_only && <span className="badge bg-surface text-navy">Leaders</span>}
+          {event.source === "council" && <span className="badge bg-surface text-navy">Council event</span>}
         </div>
         <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-pine-950">{event.title}</h1>
         <p className="flex items-center gap-1.5 text-sm text-muted">
@@ -67,7 +68,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           )}
           {event.signup_url && (
             <a href={event.signup_url} target="_blank" rel="noopener noreferrer" className="btn-gold py-2">
-              <Ticket className="h-4 w-4" aria-hidden /> {event.twh_uid ? "Pay / sign up" : "RSVP / pay"}
+              <Ticket className="h-4 w-4" aria-hidden /> {event.source === "council" ? "Register with the council" : event.twh_uid ? "Pay / sign up" : "RSVP / pay"}
             </a>
           )}
         </div>

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CarFront, ChevronRight, Fish, Footprints, PartyPopper, Plus, Rocket, Sailboat, Tent } from "lucide-react";
+import { CarFront, ChevronRight, Fish, Footprints, Landmark, PartyPopper, Plus, Rocket, Sailboat, Tent } from "lucide-react";
 import { featuredKind, type FeaturedKind } from "@/lib/featured";
 import { headers } from "next/headers";
 import EventRow from "@/components/EventRow";
 import CalendarSubscribe from "@/components/CalendarSubscribe";
 import { getCalendarToken } from "@/lib/data";
-import { getUpcomingEvents, isLeader, requireMember } from "@/lib/data";
+import { getUpcomingEvents, isCommittee, isLeader, requireMember } from "@/lib/data";
 import { getSignupSummaries } from "@/lib/signups";
 import { daysUntil, fmtMonth, fmtRange } from "@/lib/format";
 
@@ -57,9 +57,16 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
       )}
       {!leader && <p className="-mt-2 text-xs text-muted">Showing pack events and your scouts&apos; dens.</p>}
       {leader && (
-        <Link href="/events/new" className="btn-primary py-2">
-          <Plus className="h-4 w-4" aria-hidden /> Add an event
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/events/new" className="btn-primary flex-1 py-2">
+            <Plus className="h-4 w-4" aria-hidden /> Add an event
+          </Link>
+          {isCommittee(me) && (
+            <Link href="/events/council" className="btn-ghost flex-1 py-2">
+              <Landmark className="h-4 w-4" aria-hidden /> Council events
+            </Link>
+          )}
+        </div>
       )}
       {big.length > 0 && (
         <section className="space-y-2">
