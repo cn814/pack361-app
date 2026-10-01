@@ -357,7 +357,15 @@ export function buildPlan(rows: ReportRow[], roster: RosterAdult[], today: strin
     }
     if (idHits.length === 1) {
       adult = idHits[0];
-      if (r.last && key(r.last) !== key(adult.last_name)) warn = `Report says ${r.first} ${r.last}`;
+      // Adults can type in their own member ID, so an ID alone isn't proof: the name on the
+      // report must agree too. No name match at all means someone may have entered the wrong ID.
+      const lastOk = !r.last || key(r.last) === key(adult.last_name);
+      const firstOk = !r.first || [adult.first_name, adult.preferred_name].some((n) => n && key(n) === key(r.first));
+      if (!lastOk && !firstOk) {
+        miss(r, `Member ID is on ${fullName(adult)} in the app, but the report says ${r.first} ${r.last}. Check the member ID`);
+        continue;
+      }
+      if (!lastOk || !firstOk) warn = `Report says ${r.first} ${r.last}`;
     } else {
       const nameHits = r.first && r.last ? byName.get(key(r.first) + "|" + key(r.last)) ?? [] : [];
       if (nameHits.length > 1) {
