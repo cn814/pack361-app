@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CalendarCheck } from "lucide-react";
 import ActionForm from "@/components/ActionForm";
+import ChargeLine, { type EventCharge } from "@/components/ChargeLine";
 import { setRsvp } from "@/app/(app)/events/actions";
 
 interface Props {
@@ -14,12 +15,16 @@ interface Props {
   defaultScouts: number;
   hasFamily: boolean;
   rows?: { name: string; status: string; scouts: number; adults: number; note: string | null }[];
+  /** "$10 per family + $25 per scout", or null when the event is free. */
+  cost?: string | null;
+  /** The viewer's charge for this event, if they owe (or paid) something. */
+  charge?: EventCharge | null;
 }
 
 const LABEL = { yes: "Going", maybe: "Maybe", no: "Can't go" } as const;
 
 /** RSVP for an event: yes / maybe / no, with how many scouts and adults are coming. */
-export default function RsvpCard({ eventId, open, deadline, mine, counts, defaultScouts, hasFamily, rows }: Props) {
+export default function RsvpCard({ eventId, open, deadline, mine, counts, defaultScouts, hasFamily, rows, cost, charge }: Props) {
   const [status, setStatus] = useState<"yes" | "maybe" | "no" | "">(mine?.status ?? "");
   const [editing, setEditing] = useState(!mine);
   return (
@@ -33,6 +38,13 @@ export default function RsvpCard({ eventId, open, deadline, mine, counts, defaul
         {counts.families_maybe ? ` · ${counts.families_maybe} maybe` : ""}
         {deadline ? ` · RSVP by ${deadline}` : ""}
       </p>
+      {cost && (
+        <p className="text-sm text-ink">
+          <b>Cost:</b> {cost}
+          {!charge && open ? <span className="block text-xs text-muted">Answer yes and you can pay right in the app.</span> : null}
+        </p>
+      )}
+      <ChargeLine charge={charge ?? null} />
 
       {mine && !editing ? (
         <div className="flex items-center justify-between gap-2 rounded-xl bg-mint p-3 text-sm text-pine">

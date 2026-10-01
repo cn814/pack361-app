@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/ActionForm";
 import { isLeader, requireMember } from "@/lib/data";
-import { getSettings } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 import { easternDate } from "@/lib/tz";
 
@@ -43,20 +42,6 @@ export async function reportHealthForm(_prev: ActionResult, form: FormData): Pro
   return { ok: true, message: "Thanks! A leader will confirm it when they get the form." };
 }
 
-/** A family says they paid this season's dues. */
-export async function reportDuesPaid(): Promise<ActionResult> {
-  const me = await requireMember();
-  if (!me.family_id) return { error: "Your account isn't linked to a family." };
-  const settings = await getSettings();
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("dues_payments")
-    .upsert({ family_id: me.family_id, season: settings.dues_season, status: "submitted", paid_on: easternDate(Date.now()) });
-  if (error) return { error: "Couldn't save that. Try again." };
-  refresh();
-  return { ok: true, message: "Thanks! A leader will confirm it." };
-}
-
 /** Leaders: mark forms received. Keeps the date the family gave unless a date is entered. */
 export async function markFormsOnFile(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
@@ -85,23 +70,4 @@ export async function markFormsOnFile(_prev: ActionResult, form: FormData): Prom
   }
   refresh();
   return { ok: true, message: clear ? `Cleared ${saved}.` : `Marked ${saved} form${saved === 1 ? "" : "s"} received.` };
-}
-
-/** Leaders: mark families' dues paid (or clear). */
-export async function markDues(_prev: ActionResult, form: FormData): Promise<ActionResult> {
-  const me = await requireMember();
-  if (!isLeader(me)) return { error: "Leaders only." };
-  const ids = form.getAll("family").map(String).filter((s) => UUID.test(s));
-  const clear = form.get("intent") === "clear";
-  if (!ids.length) return { error: "Check the families who paid." };
-  const settings = await getSettings();
-  const supabase = await createClient();
-  const { error } = clear
-    ? await supabase.from("dues_payments").delete().eq("season", settings.dues_season).in("family_id", ids)
-    : await supabase
-        .from("dues_payments")
-        .upsert(ids.map((family_id) => ({ family_id, season: settings.dues_season, status: "paid", paid_on: easternDate(Date.now()) })));
-  if (error) return { error: "Couldn't save that." };
-  refresh();
-  return { ok: true, message: clear ? `Cleared ${ids.length}.` : `Marked ${ids.length} famil${ids.length === 1 ? "y" : "ies"} paid.` };
 }

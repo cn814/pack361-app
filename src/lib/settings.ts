@@ -7,20 +7,31 @@ export type SettingKey =
   | "photo_keep_months"
   | "email_daily_limit"
   | "dues_season"
-  | "dues_amount"
-  | "dues_how";
+  | "registration_year"
+  | "dues_amount_cents"
+  | "national_youth_cents"
+  | "national_adult_cents"
+  | "council_youth_cents"
+  | "council_adult_cents"
+  | "pay_other_how";
 
+// Fee amounts start at 0: leaders fill in the pack's real amounts on Leaders → Money.
 export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   awards_tracked_from: "2026-07-01",
   photo_keep_months: "24",
   email_daily_limit: "40",
   dues_season: "2026-27",
-  dues_amount: "",
-  dues_how: "",
+  registration_year: "",
+  dues_amount_cents: "0",
+  national_youth_cents: "0",
+  national_adult_cents: "0",
+  council_youth_cents: "0",
+  council_adult_cents: "0",
+  pay_other_how: "",
 };
 const DEFAULTS = SETTING_DEFAULTS;
 
-/** Pack-wide settings (members read, admins change). */
+/** Pack-wide settings (members read; admins change, and the committee changes the payment ones). */
 export const getSettings = cache(async (): Promise<Record<SettingKey, string>> => {
   const supabase = await createClient();
   const { data } = await supabase.from("pack_settings").select("key, value");
@@ -30,3 +41,9 @@ export const getSettings = cache(async (): Promise<Record<SettingKey, string>> =
   }
   return out;
 });
+
+/** A *_cents setting as a number (0 if unset or not a number). */
+export function settingCents(settings: Record<SettingKey, string>, key: SettingKey): number {
+  const n = Number(settings[key]);
+  return Number.isInteger(n) && n >= 0 ? n : 0;
+}

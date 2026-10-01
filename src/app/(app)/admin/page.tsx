@@ -121,16 +121,14 @@ export default async function AdminPage() {
           >
             <input className="input" type="number" min={0} max={1000} name="email_daily_limit" defaultValue={settings.email_daily_limit} />
           </Field>
-          <Field label="Dues season" hint="Like 2026-27. Families see their dues for this season on My family.">
-            <input className="input" name="dues_season" defaultValue={settings.dues_season} placeholder="2026-27" />
-          </Field>
-          <Field label="Dues amount" hint="Shown to families, e.g. “$60 per scout, due Oct 31”. Leave blank to hide dues.">
-            <input className="input" name="dues_amount" maxLength={200} defaultValue={settings.dues_amount} />
-          </Field>
-          <Field label="How to pay dues" hint="Instructions or a link, shown under the amount.">
-            <textarea className="input min-h-16" name="dues_how" maxLength={600} defaultValue={settings.dues_how} />
-          </Field>
         </ActionForm>
+        <p className="text-[11px] text-muted">
+          Dues, registration fee amounts and other ways to pay are on{" "}
+          <Link href="/leaders/money?tab=settings" className="font-semibold text-pine underline">
+            Leaders → Money
+          </Link>
+          .
+        </p>
       </section>
     </>
   );

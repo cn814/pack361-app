@@ -6,7 +6,9 @@ import PhotoPermission from "@/components/PhotoPermission";
 import PushToggle from "@/components/PushToggle";
 import InstallHelp from "@/components/InstallHelp";
 import PaperworkCard from "@/components/PaperworkCard";
+import PaymentsCard from "@/components/PaymentsCard";
 import { getMyPaperwork } from "@/lib/paperwork";
+import { getMyCharges } from "@/lib/payments";
 import TrainingEditor, { stateText } from "@/components/TrainingEditor";
 import { displayName, getFamilyAdults, getMyScouts, isLeader, requireMember } from "@/lib/data";
 import { getMyTraining } from "@/lib/training-data";
@@ -16,11 +18,12 @@ export const metadata: Metadata = { title: "My family" };
 
 export default async function FamilyPage() {
   const me = await requireMember();
-  const [scouts, adults, training, paperwork] = await Promise.all([
+  const [scouts, adults, training, paperwork, charges] = await Promise.all([
     getMyScouts(),
     getFamilyAdults(),
     getMyTraining(me.id),
     getMyPaperwork(me),
+    getMyCharges(me),
   ]);
   const leader = isLeader(me) || Boolean(me.position_title);
   const ypt = training.find((t) => t.course === "ypt");
@@ -54,7 +57,9 @@ export default async function FamilyPage() {
         </ul>
       </section>
 
-      <PaperworkCard people={paperwork.people} dues={paperwork.dues} />
+      <PaymentsCard charges={charges} />
+
+      <PaperworkCard people={paperwork.people} />
 
       <section className="card space-y-2">
         <h2 className="section-title">Adults on this account</h2>
