@@ -6,6 +6,7 @@ import { sendPersonal } from "./bulk-email";
 import { fmtDay, fmtRange } from "./format";
 import { fmtMoney } from "./money";
 import { formState, needsForm, type HealthForm } from "./paperwork";
+import { namesList, slipsToSign } from "./slips";
 import { fmtRegDate, needsRenewal, regStatus } from "./registration";
 import { rsvpOpen } from "./rsvp";
 import { easternDate, startOfEasternDay } from "./tz";
@@ -118,9 +119,9 @@ async function familyNews(db: SupabaseClient, r: Recipient): Promise<FamilyNews>
   const [rsvps, meetingRsvps, charges, forms, posts, polls, votes, slots] = await Promise.all([
     eventIds.length
       ? (r.family_id
-          ? db.from("event_rsvps").select("event_id, status").in("event_id", eventIds).eq("family_id", r.family_id)
-          : db.from("event_rsvps").select("event_id, status").in("event_id", eventIds).is("family_id", null).eq("adult_id", r.id)
-        ).then((x) => (x.data ?? []) as { event_id: string; status: string }[])
+          ? db.from("event_rsvps").select("event_id, status, scouts").in("event_id", eventIds).eq("family_id", r.family_id)
+          : db.from("event_rsvps").select("event_id, status, scouts").in("event_id", eventIds).is("family_id", null).eq("adult_id", r.id)
+        ).then((x) => (x.data ?? []) as { event_id: string; status: string; scouts: number }[])
       : Promise.resolve([]),
     meetingIds.length && scouts.length
       ? db
@@ -196,6 +197,25 @@ async function familyNews(db: SupabaseClient, r: Recipient): Promise<FamilyNews>
   const unanswered = soon.filter((i) => i.kind === "event" && !ROUTINE.has(i.category) && i.rsvp_enabled && rsvpOpen(i) && !said.has(i.id));
   for (const e of unanswered.slice(0, 4)) {
     needs.push({ text: `RSVP for ${e.title} (${fmtDay(e.starts_at)}${e.rsvp_by ? `, please answer by ${shortDate(e.rsvp_by)}` : ""})`, href: `${e.href}#rsvp`, button: "RSVP" });
+  }
+  // Permission slips for events they said Going to.
+  const slipEvents = soon.filter((i) => i.kind === "event" && i.slip_required && said.get(i.id) === "yes");
+  if (slipEvents.length && scouts.length) {
+    const { data: slipRows } = await db
+      .from("permission_slips")
+      .select("event_id, scout_id")
+      .in("event_id", slipEvents.map((e) => e.id))
+      .in("scout_id", scouts.map((s) => s.id));
+    const signed = new Set(((slipRows ?? []) as { event_id: string; scout_id: string }[]).map((x) => `${x.event_id}|${x.scout_id}`));
+    const goingScouts = new Map(rsvps.filter((x) => x.status === "yes").map((x) => [x.event_id, Number(x.scouts ?? 0)]));
+    const withDen = scouts.map((s) => ({ id: s.id, first_name: s.first_name, den: s.den_id && s.den ? { id: s.den_id, rank: s.den.rank } : null }));
+    for (const { event: e, names } of slipsToSign(slipEvents, goingScouts, withDen, signed, now)) {
+      needs.push({
+        text: `Permission slip for ${e.title}: sign for ${namesList(names)}${e.slip_due ? ` by ${shortDate(e.slip_due)}` : ""}`,
+        href: `${e.href}#slip`,
+        button: "Sign",
+      });
+    }
   }
   const owed = charges.reduce((s, c) => s + c.amount_cents, 0);
   if (owed > 0) {

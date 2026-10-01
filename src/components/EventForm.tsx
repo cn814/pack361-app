@@ -5,6 +5,7 @@ import ActionForm, { Field } from "@/components/ActionForm";
 import { saveEvent } from "@/app/(app)/events/actions";
 import { centsToInput } from "@/lib/money";
 import { asksForNights, nightsBetween } from "@/lib/attendance";
+import { DEFAULT_SLIP_TEXT } from "@/lib/slips";
 
 export const EVENT_CATEGORIES = [
   "Pack Meeting",
@@ -52,12 +53,26 @@ export interface EventFormValues {
   camping_nights?: number | null;
   public_on_join?: boolean;
   public_blurb?: string | null;
+  slip_required?: boolean;
+  slip_text?: string | null;
+  slip_document_id?: string | null;
+  slip_due?: string | null;
   from_twh?: boolean;
   from_council?: boolean;
 }
 
 /** Leaders: add or edit an event. */
-export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens: { id: string; name: string }[] }) {
+export default function EventForm({
+  v = {},
+  dens,
+  documents = [],
+}: {
+  v?: EventFormValues;
+  dens: { id: string; name: string }[];
+  /** Pack documents everyone can see, for attaching a printable permission slip. */
+  documents?: { id: string; title: string }[];
+}) {
+  const [slip, setSlip] = useState(Boolean(v.slip_required));
   const [allDay, setAllDay] = useState(Boolean(v.all_day));
   const [rsvp, setRsvp] = useState(v.rsvp_enabled ?? true); // every event takes RSVPs unless a leader turns it off
   const [den, setDen] = useState(v.den_id ?? "");
@@ -176,6 +191,36 @@ export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens:
           <Field label="RSVP by (optional)" hint="Families can answer through the end of this day.">
             <input className="input" type="date" name="rsvp_by" defaultValue={v.rsvp_by ?? ""} />
           </Field>
+        )}
+      </fieldset>
+
+      <fieldset className="space-y-2 rounded-xl border border-line p-3">
+        <legend className="px-1 text-xs font-bold text-navy">Permission slip</legend>
+        <label className="flex items-center gap-2 text-sm text-navy">
+          <input type="checkbox" name="slip_required" checked={slip} onChange={(e) => setSlip(e.target.checked)} className="h-4 w-4 accent-pine" />
+          Families sign a permission slip for each scout
+        </label>
+        {slip && (
+          <>
+            <Field label="What parents agree to" hint="Parents read this and sign by typing their name. Change it for this event if you need to.">
+              <textarea className="input min-h-28" name="slip_text" maxLength={4000} defaultValue={v.slip_text ?? DEFAULT_SLIP_TEXT} required />
+            </Field>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Due by (optional)">
+                <input className="input" type="date" name="slip_due" defaultValue={v.slip_due ?? ""} />
+              </Field>
+              <Field label="Printable form (optional)" hint="From Pack documents.">
+                <select className="input" name="slip_document_id" defaultValue={v.slip_document_id ?? ""}>
+                  <option value="">None</option>
+                  {documents.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.title}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+          </>
         )}
       </fieldset>
 

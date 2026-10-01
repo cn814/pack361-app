@@ -8,6 +8,11 @@ pack leadership, the Cubmaster and admins.
 `guide.html` in the same change, rebuild the PDF and commit both. The README's feature list is
 for whoever maintains the app; this guide is for the people using it.
 
+**Versions:** each update gets a new version number. Change it in three places: the cover's
+"New in version" box, the cover's footer (version and date), and a new top row in the
+**Version history** table on the last page saying what changed and which sections. New
+features and fixes bump the second number (1.1 → 1.2); a big reorganization bumps the first.
+
 ## Making the PDF
 1. Open `guide.html` in Chrome (File → Open File, or drag it into a tab).
 2. Print (Ctrl+P / Cmd+P): Destination **Save as PDF**, Paper **Letter**, Margins **Default**,

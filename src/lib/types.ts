@@ -65,6 +65,11 @@ export interface PackEvent {
   camping_nights?: number | null;
   public_on_join?: boolean;
   public_blurb?: string | null;
+  /** Families sign a permission slip for each scout (see lib/permission-slips). */
+  slip_required?: boolean;
+  slip_text?: string | null;
+  slip_document_id?: string | null;
+  slip_due?: string | null;
   /** When a leader last saved who was there. */
   attendance_taken_at?: string | null;
 }

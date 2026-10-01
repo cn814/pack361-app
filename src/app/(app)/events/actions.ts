@@ -89,6 +89,13 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
     }
   }
 
+  // Permission slip: the wording families agree to, an optional printable form, a due date.
+  const slipRequired = form.get("slip_required") === "on";
+  const slipDoc = String(form.get("slip_document_id") ?? "");
+  const slipDue = String(form.get("slip_due") ?? "");
+  if (slipRequired && !text("slip_text", 4000)) return { error: "Add the permission slip wording families agree to." };
+  if (slipRequired && slipDue && (!DATE.test(slipDue) || slipDue > endDate)) return { error: "The permission slip due date should be on or before the event." };
+
   const starts_at = easternToIso(startDate, allDay ? "00:00" : startTime);
   let ends_at: string | null = null;
   if (allDay) ends_at = endDate !== startDate ? easternToIso(endDate, "00:00") : null;
@@ -113,6 +120,10 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
     camping_nights: campingNights,
     public_on_join: form.get("public_on_join") === "on",
     public_blurb: form.get("public_on_join") === "on" ? text("public_blurb", 300) : null,
+    slip_required: slipRequired,
+    slip_text: slipRequired ? text("slip_text", 4000) : null,
+    slip_document_id: slipRequired && UUID.test(slipDoc) ? slipDoc : null,
+    slip_due: slipRequired && DATE.test(slipDue) ? slipDue : null,
     ...fees,
   };
   const supabase = await createClient();
@@ -174,4 +185,60 @@ export async function recordEventAttendance(_prev: ActionResult, form: FormData)
   revalidatePath(`/campouts/${id}`);
   revalidatePath("/leaders/attendance");
   return { ok: true, count, message: count === 1 ? "Saved: 1 scout was there." : `Saved: ${count} scouts were there.` };
+}
+
+// ---------------------------------------------------------------------------
+// Permission slips
+// ---------------------------------------------------------------------------
+function slipPaths(eventId: string) {
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath(`/campouts/${eventId}`);
+  revalidatePath("/", "layout");
+}
+
+/** A parent signs for one or more of their scouts by typing their name. */
+export async function signSlips(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireMember();
+  const eventId = String(form.get("event_id") ?? "");
+  const scouts = form.getAll("scout_id").map(String).filter((x) => UUID.test(x)).slice(0, 10);
+  const name = String(form.get("signed_name") ?? "").trim().slice(0, 120);
+  const contact = String(form.get("contact") ?? "").trim().slice(0, 200) || null;
+  if (!UUID.test(eventId)) return { error: "Unknown event." };
+  if (!scouts.length) return { error: "Tick the scouts you're signing for." };
+  if (form.get("agree") !== "on") return { error: "Tick the box to agree." };
+  if (name.length < 2) return { error: "Type your full name to sign." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("permission_slips")
+    .insert(scouts.map((scout_id) => ({ event_id: eventId, scout_id, kind: "signed", signed_name: name, contact })));
+  if (error) {
+    if (/duplicate key|permission_slips_event_id_scout_id_key/i.test(error.message)) return { error: "Already signed. Reload the page." };
+    if (/over/i.test(error.message)) return { error: "This event is over." };
+    return { error: "Couldn't sign. Try again." };
+  }
+  slipPaths(eventId);
+  return { ok: true, message: "Signed. Thank you!" };
+}
+
+/** A parent takes back their signature (to fix it); leaders remove any slip. */
+export async function removeSlip(form: FormData) {
+  await requireMember();
+  const id = String(form.get("id") ?? "");
+  const eventId = String(form.get("event_id") ?? "");
+  if (!UUID.test(id) || !UUID.test(eventId)) return;
+  const supabase = await createClient();
+  await supabase.from("permission_slips").delete().eq("id", id);
+  slipPaths(eventId);
+}
+
+/** Leaders: a paper slip came in. */
+export async function recordPaperSlip(form: FormData) {
+  const me = await requireMember();
+  if (!isLeader(me)) return;
+  const eventId = String(form.get("event_id") ?? "");
+  const scoutId = String(form.get("scout_id") ?? "");
+  if (!UUID.test(eventId) || !UUID.test(scoutId)) return;
+  const supabase = await createClient();
+  await supabase.from("permission_slips").insert({ event_id: eventId, scout_id: scoutId, kind: "paper" });
+  slipPaths(eventId);
 }

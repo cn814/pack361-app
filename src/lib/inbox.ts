@@ -3,6 +3,7 @@ import { cache } from "react";
 import { createClient } from "./supabase/server";
 import { getMyScouts, getUpcomingEvents, isCommittee, isLeader, requireMember } from "./data";
 import { isAdmin } from "./advancement-data";
+import { namesList, slipsToSign } from "./slips";
 import { formState, getMyPaperwork, needsForm } from "./paperwork";
 import { getMyCharges, totalDue } from "./payments";
 import { fmtMoney } from "./money";
@@ -55,7 +56,7 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
   const supabase = await createClient();
   const leader = isLeader(me);
   // Today's events too, so a "maybe" can come back on the day.
-  const rsvpQ = supabase.from("event_rsvps").select("event_id, status, event:events!inner(starts_at)").gte("event.starts_at", new Date(Date.now() - 86400000).toISOString());
+  const rsvpQ = supabase.from("event_rsvps").select("event_id, status, scouts, event:events!inner(starts_at)").gte("event.starts_at", new Date(Date.now() - 86400000).toISOString());
   const [polls, voted, scouts, paperwork, charges, events, pendingPhotos, waitingForms, openNotes, reportedPayments, myRsvps, hidden, waitingJoins] = await Promise.all([
     getPolls(20),
     getVotedPollIds(me),
@@ -117,6 +118,27 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
       tone: "gold",
       rsvp: { eventId: e.id, paid: paid(e), today: false },
     });
+  }
+
+  // Permission slips for events the family said Going to.
+  const slipEvents = events.filter((e) => e.kind === "event" && e.slip_required && said.get(e.id) === "yes");
+  if (slipEvents.length && scouts.length) {
+    const { data: slipRows } = await supabase
+      .from("permission_slips")
+      .select("event_id, scout_id")
+      .in("event_id", slipEvents.map((e) => e.id))
+      .in("scout_id", scouts.map((s) => s.id));
+    const signed = new Set((slipRows ?? []).map((r) => `${r.event_id}|${r.scout_id}`));
+    const goingScouts = new Map(myRsvps.filter((r) => r.status === "yes").map((r) => [r.event_id as string, Number(r.scouts ?? 0)]));
+    for (const { event: e, names } of slipsToSign(slipEvents, goingScouts, scouts, signed)) {
+      todos.push({
+        key: `slip-${e.id}`,
+        title: `Permission slip: ${e.title}`,
+        detail: `Sign for ${namesList(names)}${e.slip_due ? ` by ${fmtDay(`${e.slip_due}T12:00:00-04:00`)}` : ""}.`,
+        href: `${e.href}#slip`,
+        tone: "gold",
+      });
+    }
   }
 
   for (const p of polls.filter((p) => isOpen(p) && !voted.has(p.id) && !hidden.has(`poll-${p.id}`)).slice(0, 3)) {

@@ -86,6 +86,20 @@ npm run dev
 - **Pack admin** (Leaders → Pack admin; admins and Cubmaster): add and edit families, adults, scouts
   and dens, assign den leaders, change app roles, turn off access when a family leaves, and pack
   settings. Nobody needs to run database commands for roster changes.
+- **The roster and Scoutbook**: the roster doesn't sync from Scoutbook (there's no API). **Roster
+  check** (`/admin/roster/check`, `src/lib/roster-check.ts`) reads a Scoutbook Plus or my.scouting
+  youth roster export (CSV or .xlsx) in the browser, compares it with the app by member ID then
+  name, and lists new scouts (add to a new or existing family), den moves, member IDs to save,
+  scouts registered again and scouts missing from the export. Only the changes clicked are sent.
+- **Ask to join** (`join_requests`): someone who signs in with an email that isn't on the roster
+  can ask from the not-on-roster page (their name, phone, and scouts' names and grades). Admins get
+  a push and an email, then approve in Pack admin → Join requests with `approve_join_request()`
+  (adds the family or uses an existing one, the parent and the scouts with their dens; the login
+  links by email) or decline with a reason. Scouts' names, phone and note are cleared after the
+  decision. One open request per person, three a month, 50 waiting at most.
+- **View as** (`src/lib/view-as.ts`): leaders can preview the app as a lower role from the Leaders
+  page (a cookie, 8 hours). `getMe()` reports the previewed role, so pages show what that role
+  sees; the database still applies the person's real permissions.
 - **Welcome emails**: sends each adult one "the app is ready" email in batches under the daily
   limit (`pack_settings.email_daily_limit`, 40). The free Resend plan allows 100 emails a day in
   total, and each welcomed family then signs in (another email), so keep room for those. Needs
@@ -185,6 +199,11 @@ npm run dev
   meetings planned in the app take an RSVP per scout (`den_meeting_rsvps`), which the den leader's
   recorder uses to pre-check who's here. An event's outside sign-up link shows as "Sign up / pay"
   ("Register with the council" for council events).
+- **Permission slips** (`permission_slips`, `src/components/PermissionSlips.tsx`): a leader ticks
+  "Families sign a permission slip" on an event, with the wording (and an optional printable form
+  from Documents and a due date). Parents sign per scout by typing their name; the slip keeps the
+  name, date and the exact wording. Leaders record paper slips. Families who said Going get a to-do
+  and a newsletter line until there's a slip for as many scouts as they said are coming.
 - **Public website** (`/join`, served as the home page of `pack361.org` and `www.pack361.org` by
   `src/proxy.ts`): who the pack is, photos (`src/app/join/photos.ts`, files in `public/join/`) and
   the "Joining Pack 361" guide page. Guide pages marked **Public** (and published) can be read by

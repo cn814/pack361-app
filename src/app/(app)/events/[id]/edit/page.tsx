@@ -4,6 +4,7 @@ import BackLink from "@/components/BackLink";
 import EventForm from "@/components/EventForm";
 import { getEvent, isLeader, requireMember } from "@/lib/data";
 import { getDens } from "@/lib/roster-data";
+import { getDocuments } from "@/lib/documents";
 import { easternDate, easternParts } from "@/lib/tz";
 
 export const metadata: Metadata = { title: "Edit event" };
@@ -18,7 +19,7 @@ export default async function EditEventPage({ params }: PageProps<"/events/[id]/
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   if (!isLeader(me)) redirect(`/events/${id}`);
-  const [e, dens] = await Promise.all([getEvent(id), getDens(false)]);
+  const [e, dens, docs] = await Promise.all([getEvent(id), getDens(false), getDocuments()]);
   if (!e) notFound();
   const back = e.category === "Campout" ? `/campouts/${id}` : `/events/${id}`;
   return (
@@ -28,6 +29,7 @@ export default async function EditEventPage({ params }: PageProps<"/events/[id]/
       <section className="card">
         <EventForm
           dens={dens.map((d) => ({ id: d.id, name: d.name }))}
+          documents={docs.filter((d) => d.audience === "everyone" || d.id === e.slip_document_id).map((d) => ({ id: d.id, title: d.title }))}
           v={{
             id: e.id,
             title: e.title,
@@ -51,6 +53,10 @@ export default async function EditEventPage({ params }: PageProps<"/events/[id]/
             camping_nights: e.camping_nights ?? null,
             public_on_join: Boolean(e.public_on_join),
             public_blurb: e.public_blurb ?? null,
+            slip_required: Boolean(e.slip_required),
+            slip_text: e.slip_text ?? null,
+            slip_document_id: e.slip_document_id ?? null,
+            slip_due: e.slip_due ?? null,
             from_twh: e.source === "troopwebhost",
             from_council: e.source === "council",
           }}
