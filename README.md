@@ -12,6 +12,9 @@ join page once its DNS records point to Vercel (see **Public website** below), n
 site. Keep the Mailgun email-forwarding records as they are, and put any new email-sending records
 on a subdomain.
 
+**Handing the app to the next person:** [docs/HANDOVER.md](docs/HANDOVER.md) lists every account and
+key, who owns each, and the steps for the outgoing and incoming maintainer.
+
 **App guide for families and leaders:** `docs/guide/` (`guide.html` and the printable
 `Pack361-App-Guide.pdf`). Update it whenever a feature is added or changes, in the same change
 (how to rebuild the PDF is in `docs/guide/README.md`).
