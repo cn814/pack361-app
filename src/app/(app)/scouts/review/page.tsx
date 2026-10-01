@@ -26,7 +26,27 @@ function summarize(list: Submission[]) {
   }));
 }
 
-export default async function ReviewPage() {
+/**
+ * Group approved items the way Scoutbook Plus's multi-scout entry works: one adventure
+ * requirement and completion date, then every scout who did it.
+ */
+function groupByRequirement(list: Submission[]) {
+  const m = new Map<string, Submission[]>();
+  for (const s of list) {
+    const k = [s.rank ?? "", s.adventure, s.requirement, s.completed_on ?? ""].join("|");
+    m.set(k, [...(m.get(k) ?? []), s]);
+  }
+  return [...m.values()].sort(
+    (a, b) =>
+      (a[0].rank ?? "").localeCompare(b[0].rank ?? "") ||
+      a[0].adventure.localeCompare(b[0].adventure) ||
+      Number(a[0].requirement) - Number(b[0].requirement) ||
+      (a[0].completed_on ?? "").localeCompare(b[0].completed_on ?? ""),
+  );
+}
+
+export default async function ReviewPage({ searchParams }: PageProps<"/scouts/review">) {
+  const byReq = (await searchParams).view === "requirement";
   const me = await requireMember();
   if (!isLeader(me)) redirect("/scouts");
   const [scouts, pending, approved] = await Promise.all([
@@ -36,7 +56,9 @@ export default async function ReviewPage() {
   ]);
   const ids = new Set(scouts.map((s) => s.id));
   const toReview = groupByScout(pending.filter((s) => ids.has(s.scout_id)).reverse());
-  const toRecord = groupByScout(approved.filter((s) => ids.has(s.scout_id)).reverse());
+  const approvedMine = approved.filter((s) => ids.has(s.scout_id)).reverse();
+  const toRecord = groupByScout(approvedMine);
+  const toRecordByReq = groupByRequirement(approvedMine);
 
   return (
     <>
@@ -103,8 +125,34 @@ export default async function ReviewPage() {
         <p className="text-xs text-muted">
           After you enter these in Scoutbook Plus, tap “Entered”. The next Scoutbook import also clears them automatically.
         </p>
+        {toRecord.length > 0 && (
+          <div className="flex gap-1 rounded-xl bg-surface-low p-1 text-sm font-semibold" role="tablist" aria-label="Group by">
+            <Link
+              href="/scouts/review#record"
+              role="tab"
+              aria-selected={!byReq}
+              className={`flex-1 rounded-lg px-3 py-1.5 text-center ${!byReq ? "bg-card text-pine shadow-sm" : "text-muted"}`}
+            >
+              By scout
+            </Link>
+            <Link
+              href="/scouts/review?view=requirement#record"
+              role="tab"
+              aria-selected={byReq}
+              className={`flex-1 rounded-lg px-3 py-1.5 text-center ${byReq ? "bg-card text-pine shadow-sm" : "text-muted"}`}
+            >
+              By requirement
+            </Link>
+          </div>
+        )}
+        {byReq && toRecord.length > 0 && (
+          <p className="text-xs text-muted">
+            Matches Scoutbook Plus&apos;s way of marking one requirement for several scouts at once: pick the adventure
+            and requirement, check these scouts, use this date.
+          </p>
+        )}
         {toRecord.length === 0 && <p className="card text-sm text-muted">Nothing to enter.</p>}
-        {toRecord.map((group) => {
+        {!byReq && toRecord.map((group) => {
           const first = group[0];
           return (
             <article key={first.scout_id} className="card space-y-2">
@@ -136,6 +184,40 @@ export default async function ReviewPage() {
             </article>
           );
         })}
+        {byReq &&
+          toRecordByReq.map((group) => {
+            const first = group[0];
+            return (
+              <article key={first.id} className="card space-y-2">
+                <header className="space-y-0.5">
+                  <p className="font-extrabold text-pine-950">
+                    {first.adventure} · requirement {first.requirement}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {first.rank ? `${RANK_LABEL[first.rank]} · ` : ""}
+                    {first.completed_on ? `done ${fmtShortDate(first.completed_on)}` : "no date"} · {group.length} scout
+                    {group.length === 1 ? "" : "s"}
+                  </p>
+                </header>
+                <ul className="flex flex-wrap gap-1.5 text-sm">
+                  {group.map((s) => (
+                    <li key={s.id} className="rounded-lg bg-surface-low px-2 py-1 text-ink">
+                      {s.scout?.first_name} {s.scout?.last_name}
+                      {s.scout?.den?.name && <span className="text-[11px] text-muted"> · {s.scout.den.name}</span>}
+                    </li>
+                  ))}
+                </ul>
+                <form action={reviewSubmissions}>
+                  {group.map((s) => (
+                    <input key={s.id} type="hidden" name="id" value={s.id} />
+                  ))}
+                  <SubmitButton name="decision" value="record" className="btn-ghost w-full">
+                    <Stamp className="h-4 w-4" aria-hidden /> Entered in Scoutbook
+                  </SubmitButton>
+                </form>
+              </article>
+            );
+          })}
       </section>
     </>
   );
