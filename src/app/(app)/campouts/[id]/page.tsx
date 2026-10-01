@@ -8,6 +8,7 @@ import VolunteerJobs from "@/components/VolunteerJobs";
 import RsvpLink from "@/components/RsvpLink";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
+import EventAttendance from "@/components/EventAttendance";
 import { EditEventLink, EventRsvp } from "@/components/EventRsvp";
 import SaveOffline from "@/components/SaveOffline";
 import { getSlots } from "@/lib/volunteer";
@@ -43,7 +44,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
       {event.archived_at && <ArchiveControl e={event} leader={false} back={`/campouts/${id}`} part="note" />}
       <div className="page-wide flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
         <div className="contents lg:block lg:space-y-4">
-        <div className="order-1 empty:hidden">
+        <div className="order-1 space-y-4 empty:hidden">
           <section className="card space-y-2 border-t-4 border-t-pine">
             <span className="badge bg-mint text-pine">{event.category}</span>
             <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-pine-950">{event.title}</h1>
@@ -70,6 +71,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
               )}
             </div>
           </section>
+          <EventAttendance e={event} me={me} />
         </div>
         <div className="order-2 empty:hidden">
           {campaign && (

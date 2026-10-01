@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import SubmitButton from "@/components/SubmitButton";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Award, CalendarDays, CircleCheck, House, Medal, Plus } from "lucide-react";
-import { fmtMeetingDate, fmtMeetingTime, getUpcomingMeetings, meetingAdventures, myMeetingRsvps } from "@/lib/meetings";
+import { Award, CalendarDays, CircleCheck, ClipboardCheck, House, Medal, Plus, Tent } from "lucide-react";
+import { fmtMeetingDate, fmtMeetingTime, getUpcomingMeetings, meetingAdventures, myMeetingRsvps, todayEastern } from "@/lib/meetings";
+import { getAttendanceTotals } from "@/lib/attendance-data";
+import { nightsLabel } from "@/lib/attendance";
+import { seasonOf, seasonRange } from "@/lib/finance";
 import DenMeetingRsvp from "@/components/DenMeetingRsvp";
 import { AdventureList, ProgressBar, ProgressSummary } from "@/components/RankProgress";
 import { isLeader, requireMember } from "@/lib/data";
@@ -23,14 +26,18 @@ export default async function ScoutPage({ params, searchParams }: PageProps<"/sc
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const scout = await getScout(id);
   if (!scout) notFound();
-  const [catalog, records, submissions, asOf, settings, meetings] = await Promise.all([
+  const season = seasonOf(todayEastern());
+  const range = seasonRange(season)!;
+  const [catalog, records, submissions, asOf, settings, meetings, totals] = await Promise.all([
     getCatalog(),
     getRecords([id]),
     getSubmissions({ scoutId: id }),
     getDataAsOf([id]),
     getSettings(),
     getUpcomingMeetings(scout.den ? [scout.den.id] : [], 2),
+    getAttendanceTotals(range.from, range.to, id),
   ]);
+  const att = totals.get(id) ?? null;
   const mine = scout.family_id === me.family_id;
   const p = scout.den ? rankProgress(scout.den.rank, records, catalog) : null;
   const ranks = earnedRanks(records);
@@ -171,6 +178,32 @@ export default async function ScoutPage({ params, searchParams }: PageProps<"/sc
           </ul>
         </section>
       )}
+
+      <section className="card space-y-2">
+        <h2 className="section-title flex items-center gap-1.5">
+          <ClipboardCheck className="h-3.5 w-3.5" aria-hidden /> Attendance <span className="font-semibold normal-case tracking-normal">({season} season)</span>
+        </h2>
+        <dl className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-xl bg-surface p-2">
+            <dt className="text-[11px] font-bold text-muted">Den meetings</dt>
+            <dd className="text-xl font-extrabold text-pine-950">
+              {att?.den_meetings ?? 0}
+              {att && att.den_meetings_held > 0 && <span className="text-sm font-semibold text-muted"> of {att.den_meetings_held}</span>}
+            </dd>
+          </div>
+          <div className="rounded-xl bg-surface p-2">
+            <dt className="text-[11px] font-bold text-muted">Pack events</dt>
+            <dd className="text-xl font-extrabold text-pine-950">{att?.events ?? 0}</dd>
+          </div>
+          <div className="rounded-xl bg-surface p-2">
+            <dt className="text-[11px] font-bold text-muted">Camping nights</dt>
+            <dd className="text-xl font-extrabold text-pine-950">{att?.nights ?? 0}</dd>
+          </div>
+        </dl>
+        <p className="flex items-center gap-1.5 text-xs text-muted">
+          <Tent className="h-3.5 w-3.5" aria-hidden /> {nightsLabel(att?.nights_all ?? 0)} of camping in all, every season.
+        </p>
+      </section>
 
       <section className="card space-y-1">
         <h2 className="section-title">Ranks earned</h2>

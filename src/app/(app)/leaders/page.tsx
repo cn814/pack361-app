@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import FeedbackForm from "@/components/FeedbackForm";
-import { BookOpen, FileText, FolderOpen, HandCoins, Landmark, Mail, Phone, Receipt, Settings, ShieldAlert, ShieldCheck, Vote } from "lucide-react";
+import { BookOpen, ClipboardCheck, FileText, FolderOpen, HandCoins, Landmark, Mail, Phone, Receipt, Settings, ShieldAlert, ShieldCheck, Vote } from "lucide-react";
 import { countWaitingRequests } from "@/lib/finance-data";
 import { getLeaders, isCommittee, isLeader, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
@@ -40,6 +40,9 @@ export default async function LeadersPage() {
           </Link>
           <Link href="/events/council" className="btn-ghost py-2">
             <Landmark className="h-4 w-4" aria-hidden /> Council events
+          </Link>
+          <Link href="/leaders/attendance" className="btn-ghost py-2">
+            <ClipboardCheck className="h-4 w-4" aria-hidden /> Attendance
           </Link>
           {isCommittee(me) && (
             <Link href="/leaders/money" className="btn-ghost py-2">

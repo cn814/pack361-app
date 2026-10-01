@@ -4,6 +4,7 @@ import { useState } from "react";
 import ActionForm, { Field } from "@/components/ActionForm";
 import { saveEvent } from "@/app/(app)/events/actions";
 import { centsToInput } from "@/lib/money";
+import { asksForNights, nightsBetween } from "@/lib/attendance";
 
 export const EVENT_CATEGORIES = [
   "Pack Meeting",
@@ -48,6 +49,7 @@ export interface EventFormValues {
   fee_family_cents?: number | null;
   fee_scout_cents?: number | null;
   fee_adult_cents?: number | null;
+  camping_nights?: number | null;
   from_twh?: boolean;
   from_council?: boolean;
 }
@@ -58,6 +60,10 @@ export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens:
   const [rsvp, setRsvp] = useState(v.rsvp_enabled ?? true); // every event takes RSVPs unless a leader turns it off
   const [den, setDen] = useState(v.den_id ?? "");
   const [cost, setCost] = useState(v.fee_family_cents != null || v.fee_scout_cents != null || v.fee_adult_cents != null);
+  const [category, setCategory] = useState(v.category ?? "Pack");
+  const [startDate, setStartDate] = useState(v.start_date ?? "");
+  const [endDate, setEndDate] = useState(v.end_date ?? "");
+  const autoNights = nightsBetween(startDate, endDate || startDate);
   return (
     <ActionForm action={saveEvent} submit={v.id ? "Save event" : "Add event"}>
       {v.id && <input type="hidden" name="id" value={v.id} />}
@@ -76,7 +82,7 @@ export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens:
         <input className="input" name="title" required maxLength={200} defaultValue={v.title} placeholder="Fall Campout at Broad Creek" />
       </Field>
       <Field label="Kind of event" hint="Campouts get their own page with a schedule and packing list.">
-        <select className="input" name="category" defaultValue={v.category ?? "Pack"}>
+        <select className="input" name="category" value={category} onChange={(e) => setCategory(e.target.value)}>
           {EVENT_CATEGORIES.map((c) => (
             <option key={c}>{c}</option>
           ))}
@@ -88,7 +94,7 @@ export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens:
       </label>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Starts">
-          <input className="input" type="date" name="start_date" required defaultValue={v.start_date} />
+          <input className="input" type="date" name="start_date" required value={startDate} onChange={(e) => setStartDate(e.target.value)} />
         </Field>
         {!allDay && (
           <Field label="Time">
@@ -96,7 +102,7 @@ export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens:
           </Field>
         )}
         <Field label="Ends" hint="Blank = same day">
-          <input className="input" type="date" name="end_date" defaultValue={v.end_date} />
+          <input className="input" type="date" name="end_date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
         </Field>
         {!allDay && (
           <Field label="Time">
@@ -104,6 +110,24 @@ export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens:
           </Field>
         )}
       </div>
+      {asksForNights(category, startDate, endDate) && (
+        <Field
+          label="Camping nights (optional)"
+          hint={`Blank = ${autoNights === 1 ? "1 night" : `${autoNights} nights`} from the dates. Counts toward each scout's camping nights. Put 0 if nobody sleeps over (like day camp).`}
+        >
+          <input
+            className="input w-28"
+            type="number"
+            name="camping_nights"
+            min={0}
+            max={14}
+            step={1}
+            inputMode="numeric"
+            defaultValue={v.camping_nights ?? ""}
+            placeholder={String(autoNights)}
+          />
+        </Field>
+      )}
       <Field label="Where">
         <input className="input" name="location_name" maxLength={200} defaultValue={v.location_name ?? ""} placeholder="First Presbyterian Church of Howard County" />
       </Field>

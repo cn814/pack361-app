@@ -55,6 +55,7 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
   const ranks = form.getAll("ranks").map(String).filter((r) => RANKS.includes(r));
   const signup = text("signup_url", 500);
   const rsvpBy = String(form.get("rsvp_by") ?? "");
+  const nightsRaw = String(form.get("camping_nights") ?? "").trim();
 
   if (!title) return { error: "Give the event a name." };
   if (!DATE.test(startDate)) return { error: "Pick the date." };
@@ -63,6 +64,10 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
   if (!allDay && endTime && !TIME.test(endTime)) return { error: "Pick an end time." };
   if (signup && !/^https:\/\//i.test(signup)) return { error: "The sign-up link should start with https://" };
   if (rsvpBy && !DATE.test(rsvpBy)) return { error: "Pick the RSVP deadline." };
+  // Camping nights: blank = work it out from the dates.
+  if (nightsRaw && !/^\d{1,2}$/.test(nightsRaw)) return { error: "Camping nights should be a number from 0 to 14, or blank." };
+  const campingNights = nightsRaw ? Number(nightsRaw) : null;
+  if (campingNights !== null && campingNights > 14) return { error: "Camping nights should be a number from 0 to 14, or blank." };
 
   // Cost: empty box = no charge of that kind.
   const hasCost = form.get("has_cost") === "on";
@@ -105,6 +110,7 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
     ranks: !UUID.test(denId) && ranks.length ? ranks : null,
     rsvp_enabled: form.get("rsvp_enabled") === "on",
     rsvp_by: rsvpBy || null,
+    camping_nights: campingNights,
     ...fees,
   };
   const supabase = await createClient();
@@ -145,4 +151,25 @@ export async function setRsvp(_prev: ActionResult, form: FormData): Promise<Acti
   if (error) return { error: error.message.includes("closed") ? "RSVPs for this event are closed. Contact a leader." : "Couldn't save your RSVP." };
   revalidatePath("/", "layout");
   return { ok: true, message: status === "no" ? "Thanks for letting us know." : "Thanks, you're on the list. You can change your answer until RSVPs close." };
+}
+
+/** Leaders: save who was at an event (replaces the list). */
+export async function recordEventAttendance(_prev: ActionResult, form: FormData): Promise<ActionResult & { count?: number }> {
+  const me = await requireMember();
+  if (!isLeader(me)) return { error: "Only leaders can take attendance." };
+  const id = String(form.get("event_id") ?? "");
+  if (!UUID.test(id)) return { error: "Event not found." };
+  const scouts = [...new Set(form.getAll("scout").map(String).filter((s) => UUID.test(s)))];
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("record_event_attendance", { p_event_id: id, p_scout_ids: scouts });
+  if (error) {
+    if (error.code === "22023") return { error: "You can take attendance on the day of the event or after." };
+    if (error.code === "P0002") return { error: "Event not found." };
+    return { error: "Couldn't save attendance. Try again." };
+  }
+  const count = Number(data ?? 0);
+  revalidatePath(`/events/${id}`);
+  revalidatePath(`/campouts/${id}`);
+  revalidatePath("/leaders/attendance");
+  return { ok: true, count, message: count === 1 ? "Saved: 1 scout was there." : `Saved: ${count} scouts were there.` };
 }

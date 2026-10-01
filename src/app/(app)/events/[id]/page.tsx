@@ -6,6 +6,7 @@ import VolunteerJobs from "@/components/VolunteerJobs";
 import RsvpLink from "@/components/RsvpLink";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
+import EventAttendance from "@/components/EventAttendance";
 import { EditEventLink, EventRsvp } from "@/components/EventRsvp";
 import { EventLinks, EventSections } from "@/components/EventInfo";
 import { getEvent, isLeader, requireMember } from "@/lib/data";
@@ -74,6 +75,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         </div>
       </section>
       {event.archived_at && <ArchiveControl e={event} leader={false} back={`/events/${id}`} part="note" />}
+      <EventAttendance e={event} me={me} />
       {elsewhere.length > 0 && (
         <section className="card space-y-2 border-l-4 border-l-gold">
           <h2 className="section-title">Meeting somewhere else tonight</h2>

@@ -59,6 +59,10 @@ export interface PackEvent {
   archived_reason?: "removed_in_twh" | "hidden" | null;
   links?: EventLink[];
   sections?: EventSection[];
+  /** Camping nights a leader set; null = worked out from the dates (see lib/attendance). */
+  camping_nights?: number | null;
+  /** When a leader last saved who was there. */
+  attendance_taken_at?: string | null;
 }
 
 export interface EventLink {
