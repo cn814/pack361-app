@@ -8,7 +8,7 @@ import { getMyCharges, totalDue } from "./payments";
 import { fmtMoney } from "./money";
 import { getPolls, getVotedPollIds, isOpen } from "./polls";
 import { countPendingPhotos } from "./photos";
-import { easternDate } from "./tz";
+import { daysBetween, easternDate } from "./tz";
 import { fmtDay } from "./format";
 import { rsvpOpen } from "./rsvp";
 import { fmtRegDate, needsRenewal, regStatus } from "./registration";
@@ -19,7 +19,24 @@ export interface Todo {
   detail: string;
   href: string;
   tone: "gold" | "pine" | "danger";
+  /** RSVP right from the to-do: Going, Maybe, Can't make it. `paid` events open the event for Going (counts set the cost). */
+  rsvp?: { eventId: string; paid: boolean; today: boolean };
+  /** Can be hidden with "Not now" until this time (null = for good). */
+  hide?: { key: string; until: string | null };
 }
+
+/** Items someone hid with "Not now" that are still hidden. */
+export const getHidden = cache(async (): Promise<Set<string>> => {
+  const me = await requireMember();
+  const supabase = await createClient();
+  const { data } = await supabase.from("todo_dismissals").select("key, hidden_until").eq("adult_id", me.id);
+  const now = Date.now();
+  return new Set(
+    ((data ?? []) as { key: string; hidden_until: string | null }[])
+      .filter((d) => !d.hidden_until || Date.parse(d.hidden_until) > now)
+      .map((d) => d.key),
+  );
+});
 
 /** When this person last opened Notifications (null = never). */
 export const getSeenAt = cache(async (): Promise<string | null> => {
@@ -37,8 +54,9 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
   const me = await requireMember();
   const supabase = await createClient();
   const leader = isLeader(me);
-  const rsvpQ = supabase.from("event_rsvps").select("event_id, event:events!inner(starts_at)").gte("event.starts_at", new Date().toISOString());
-  const [polls, voted, scouts, paperwork, charges, events, pendingPhotos, waitingForms, openNotes, reportedPayments, myRsvps] = await Promise.all([
+  // Today's events too, so a "maybe" can come back on the day.
+  const rsvpQ = supabase.from("event_rsvps").select("event_id, status, event:events!inner(starts_at)").gte("event.starts_at", new Date(Date.now() - 86400000).toISOString());
+  const [polls, voted, scouts, paperwork, charges, events, pendingPhotos, waitingForms, openNotes, reportedPayments, myRsvps, hidden] = await Promise.all([
     getPolls(20),
     getVotedPollIds(me),
     getMyScouts(),
@@ -57,39 +75,61 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
       : Promise.resolve(0),
     // What this family (or an adult without one) has already answered, for upcoming events.
     (me.family_id ? rsvpQ.eq("family_id", me.family_id) : rsvpQ.eq("adult_id", me.id)).then((r) => r.data ?? []),
+    getHidden(),
   ]);
   const todos: Todo[] = [];
 
-  // Events in the next 30 days the family hasn't answered. Every event takes RSVPs, so regular
-  // meetings (and app-planned den meetings, kind "meeting") are left out: families can still RSVP
-  // on them, but they'd flood the list. Campouts, outings and special events stay.
-  const askingRsvp = events.filter(
+  // RSVPs for special events (regular meetings are left out: families can still RSVP on them,
+  // but they'd flood the list). Answer right from the to-do. Only what's close: the next two
+  // weeks, a campout or paid event in the next 30 days, or an RSVP-by date in the next two weeks;
+  // two at a time. "Maybe" hides it until the day of the event, then it asks again.
+  const today = easternDate(Date.now());
+  const said = new Map(myRsvps.map((r) => [r.event_id as string, r.status as string]));
+  const paid = (e: (typeof events)[number]) => e.fee_family_cents != null || e.fee_scout_cents != null || e.fee_adult_cents != null;
+  const daysAway = (e: (typeof events)[number]) => (Date.parse(e.starts_at) - Date.now()) / 86400000;
+  const open = events.filter((e) => e.kind === "event" && !ROUTINE_CATEGORIES.has(e.category) && e.rsvp_enabled && rsvpOpen(e));
+  for (const e of open.filter((e) => said.get(e.id) === "maybe" && easternDate(e.starts_at) === today)) {
+    todos.push({
+      key: `rsvp-${e.id}`,
+      title: `Today: ${e.title}`,
+      detail: "You said maybe. Are you going?",
+      href: `${e.href}#rsvp`,
+      tone: "gold",
+      rsvp: { eventId: e.id, paid: paid(e), today: true },
+    });
+  }
+  const ask = open.filter(
     (e) =>
-      e.kind === "event" &&
-      !ROUTINE_CATEGORIES.has(e.category) &&
-      e.rsvp_enabled &&
-      rsvpOpen(e) &&
-      (Date.parse(e.starts_at) - Date.now()) / 86400000 <= 30,
+      !said.has(e.id) &&
+      (daysAway(e) <= 14 ||
+        ((e.category === "Campout" || paid(e)) && daysAway(e) <= 30) ||
+        (e.rsvp_by ? daysBetween(today, e.rsvp_by) <= 14 : false)),
   );
-  if (askingRsvp.length) {
-    const answered = new Set(myRsvps.map((r) => r.event_id as string));
-    for (const e of askingRsvp.filter((e) => !answered.has(e.id)).slice(0, 3)) {
-      todos.push({
-        key: `rsvp-${e.id}`,
-        title: `RSVP: ${e.title}`,
-        detail: `${fmtDay(e.starts_at)}${e.rsvp_by ? ` · please answer by ${fmtDay(`${e.rsvp_by}T12:00:00-04:00`)}` : ""}`,
-        href: `${e.href}#rsvp`,
-        tone: "gold",
-      });
-    }
+  for (const e of ask.slice(0, 2)) {
+    todos.push({
+      key: `rsvp-${e.id}`,
+      title: `RSVP: ${e.title}`,
+      detail: `${fmtDay(e.starts_at)}${e.rsvp_by ? ` · please answer by ${fmtDay(`${e.rsvp_by}T12:00:00-04:00`)}` : ""}`,
+      href: `${e.href}#rsvp`,
+      tone: "gold",
+      rsvp: { eventId: e.id, paid: paid(e), today: false },
+    });
   }
 
-  for (const p of polls.filter((p) => isOpen(p) && !voted.has(p.id)).slice(0, 3)) {
-    todos.push({ key: `poll-${p.id}`, title: "Quick poll", detail: p.question, href: `/polls/${p.id}`, tone: "gold" });
+  for (const p of polls.filter((p) => isOpen(p) && !voted.has(p.id) && !hidden.has(`poll-${p.id}`)).slice(0, 3)) {
+    // "Not now" hides it until a day before it closes (for good if it has no closing date).
+    const closes = p.closes_at ? Date.parse(p.closes_at) - 86400000 : null;
+    todos.push({
+      key: `poll-${p.id}`,
+      title: "Quick poll",
+      detail: p.question,
+      href: `/polls/${p.id}`,
+      tone: "gold",
+      hide: { key: `poll-${p.id}`, until: closes === null ? null : closes > Date.now() ? new Date(closes).toISOString() : p.closes_at },
+    });
   }
 
   // Medical forms, when a campout is coming up in the next 60 days.
-  const today = easternDate(Date.now());
   const campout = events.find(
     (e) => e.kind === "event" && e.category === "Campout" && (Date.parse(e.starts_at) - Date.now()) / 86400000 <= 60,
   );

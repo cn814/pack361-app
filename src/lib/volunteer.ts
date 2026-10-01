@@ -68,3 +68,9 @@ export async function getOpenJobs(days = 45, limit = 4): Promise<OpenJob[]> {
 export function eventHref(e: { id: string; category: string }) {
   return e.category === "Campout" ? `/campouts/${e.id}` : `/events/${e.id}`;
 }
+
+/** When a volunteer job hidden with "Not now" shows again: two days before the event ("" if that's already passed). */
+export function jobComesBack(startsAt: string): string {
+  const t = Date.parse(startsAt) - 2 * 86400000;
+  return t > Date.now() ? new Date(t).toISOString() : "";
+}

@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { after } from "next/server";
-import { Bell, ChevronRight, Megaphone, Pin, Users } from "lucide-react";
+import { Bell, Megaphone, Pin, Users } from "lucide-react";
 import PostAnnouncement from "@/components/PostAnnouncement";
 import SubmitButton from "@/components/SubmitButton";
 import { displayName, getAnnouncements, isCommittee, isLeader, requireMember } from "@/lib/data";
 import { getMessageableDens } from "@/lib/audience";
 import { getSeenAt, getTodos } from "@/lib/inbox";
+import TodoCard from "@/components/TodoCard";
 import { packEmailConfigured } from "@/lib/bulk-email";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/format";
 import { deleteAnnouncement } from "../actions";
 
 export const metadata: Metadata = { title: "Notifications" };
-
-const TONE = { gold: "border-l-gold", pine: "border-l-pine", danger: "border-l-danger" };
 
 export default async function InboxPage() {
   const me = await requireMember();
@@ -41,13 +39,7 @@ export default async function InboxPage() {
         <section className="space-y-2">
           <h2 className="section-title">Needs you</h2>
           {todos.map((t) => (
-            <Link key={t.key} href={t.href} className={`card flex items-center gap-3 border-l-4 py-3 ${TONE[t.tone]}`}>
-              <span className="min-w-0 flex-1">
-                <span className="block font-bold text-pine-950">{t.title}</span>
-                <span className="block text-xs text-muted">{t.detail}</span>
-              </span>
-              <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
-            </Link>
+            <TodoCard key={t.key} t={t} />
           ))}
         </section>
       )}

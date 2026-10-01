@@ -1,14 +1,16 @@
 import Link from "next/link";
 import SubmitButton from "@/components/SubmitButton";
 import { BookOpen, ChevronRight, CircleCheck, ClipboardCheck, HandHelping, Images, MapPin, Pin, ShoppingBag, Timer, Users, Vote } from "lucide-react";
-import { eventHref, getOpenJobs } from "@/lib/volunteer";
+import { eventHref, getOpenJobs, jobComesBack } from "@/lib/volunteer";
 import EventRow from "@/components/EventRow";
 import RsvpLink from "@/components/RsvpLink";
 import PostAnnouncement from "@/components/PostAnnouncement";
 import { deleteAnnouncement } from "./actions";
 import { displayName, getAnnouncements, getMyScouts, getUpcomingEvents, isLeader, requireMember } from "@/lib/data";
 import { getMessageableDens } from "@/lib/audience";
-import { getTodos } from "@/lib/inbox";
+import { getHidden, getTodos } from "@/lib/inbox";
+import TodoCard from "@/components/TodoCard";
+import { hideTodo } from "./todo-actions";
 import { myDenMeetingButtons } from "@/lib/meetings";
 import { packEmailConfigured } from "@/lib/bulk-email";
 import { daysUntil, fmtRange, timeAgo } from "@/lib/format";
@@ -24,9 +26,13 @@ export default async function Home() {
     isLeader(me) ? getMessageableDens(me) : Promise.resolve([]),
     myDenMeetingButtons(),
   ]);
+  // Volunteer jobs someone hid with "Not now" come back two days before the event.
+  const hidden = await getHidden();
+  const openJobs = jobs.filter((j) => !hidden.has(`job-${j.slot_id}`));
+  const comeBack = jobComesBack;
   const next = events[0];
   // The big card already has an RSVP button for the next event, so don't list it again below.
-  const todoList = next ? todos.filter((t) => t.key !== `rsvp-${next.id}`) : todos;
+  const todoList = next ? todos.filter((t) => t.key !== `rsvp-${next.id}` || t.rsvp?.today) : todos;
   const rest = events.slice(1, 5);
   const leader = isLeader(me);
   const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", hour12: false }).format(new Date()));
@@ -166,17 +172,7 @@ export default async function Home() {
           {todoList.length > 0 && (
             <section className="space-y-2">
               {todoList.slice(0, 3).map((t) => (
-                <Link
-                  key={t.key}
-                  href={t.href}
-                  className={`card flex items-center gap-3 border-l-4 py-3 ${t.tone === "danger" ? "border-l-danger" : t.tone === "pine" ? "border-l-pine" : "border-l-gold"}`}
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-bold text-pine-950">{t.title}</span>
-                    <span className="block text-xs text-muted">{t.detail}</span>
-                  </span>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
-                </Link>
+                <TodoCard key={t.key} t={t} />
               ))}
               {todoList.length > 3 && (
                 <Link href="/inbox" prefetch={false} className="block px-1 text-xs font-bold text-pine">
@@ -187,13 +183,28 @@ export default async function Home() {
           )}
         </div>
         <div className="order-4 empty:hidden">
-          {jobs.length > 0 && (
+          {openJobs.length > 0 && (
             <section className="card space-y-2">
-              <h2 className="section-title flex items-center gap-1.5">
-                <HandHelping className="h-4 w-4" aria-hidden /> Volunteers needed
-              </h2>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="section-title flex items-center gap-1.5">
+                  <HandHelping className="h-4 w-4" aria-hidden /> Volunteers needed
+                </h2>
+                {openJobs.some((j) => comeBack(j.event.starts_at)) && (
+                  <form action={hideTodo}>
+                    {openJobs
+                      .filter((j) => comeBack(j.event.starts_at))
+                      .map((j) => (
+                        <span key={j.slot_id}>
+                          <input type="hidden" name="key" value={`job-${j.slot_id}`} />
+                          <input type="hidden" name="until" value={comeBack(j.event.starts_at)} />
+                        </span>
+                      ))}
+                    <SubmitButton className="rounded-lg px-2 py-1 text-[11px] font-bold text-muted underline">Not now</SubmitButton>
+                  </form>
+                )}
+              </div>
               <ul className="divide-y divide-line">
-                {jobs.map((j) => (
+                {openJobs.map((j) => (
                   <li key={j.slot_id}>
                     <Link href={`${eventHref(j.event)}#volunteer`} className="flex items-center gap-2 py-2">
                       <span className="min-w-0 flex-1">
