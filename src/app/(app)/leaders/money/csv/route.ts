@@ -19,7 +19,7 @@ const dollars = (c: number | null) => (c === null ? "" : (c / 100).toFixed(2));
 
 export async function GET(request: NextRequest) {
   const me = await getMe();
-  if (!me?.adult || !isCommittee(me.adult)) return NextResponse.json({ error: "Committee only" }, { status: 403 });
+  if (!me?.adult || !isCommittee(me.adult)) return NextResponse.json({ error: "Pack leadership only" }, { status: 403 });
   const p = request.nextUrl.searchParams;
   const kind = p.get("kind") as ChargeKind | null;
   const status = p.get("status") as ChargeStatus | null;

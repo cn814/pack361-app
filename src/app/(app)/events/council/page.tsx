@@ -131,7 +131,7 @@ export default async function CouncilEventsPage({ searchParams }: PageProps<"/ev
         <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Council events</h1>
         <p className="text-sm text-muted">
           Baltimore Area Council and National Pike District events.{" "}
-          {committee ? "Pick the ones to put on the pack calendar." : "The committee picks which ones go on the pack calendar."}
+          {committee ? "Pick the ones to put on the pack calendar." : "Pack leadership picks which ones go on the pack calendar."}
         </p>
       </div>
 
@@ -164,7 +164,7 @@ export default async function CouncilEventsPage({ searchParams }: PageProps<"/ev
             {link && <ActionForm action={checkCouncilNow} submit="Check now" busy="Checking…" buttonClass="btn-ghost w-full" />}
           </>
         ) : (
-          <p className="text-xs text-muted">The committee sets the link. The app checks the council calendar every afternoon.</p>
+          <p className="text-xs text-muted">Pack leadership sets the link. The app checks the council calendar every afternoon.</p>
         )}
         <a href={COUNCIL_CALENDAR_PAGE} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-pine underline">
           <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Open the council calendar

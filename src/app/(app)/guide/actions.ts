@@ -16,7 +16,7 @@ const slugify = (s: string) =>
 /** Committee: create or update a guide page. */
 export async function saveGuidePage(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { error: "Only committee members can edit the guide." };
+  if (!isCommittee(me)) return { error: "Only pack leadership can edit the guide." };
   const id = String(form.get("id") ?? "");
   const title = String(form.get("title") ?? "").trim().slice(0, 120);
   const section = String(form.get("section") ?? "").trim().slice(0, 60) || "Getting started";

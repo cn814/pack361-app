@@ -31,7 +31,7 @@ async function runCheck(): Promise<ActionResult> {
 /** Committee: save the council calendar link, then check it. */
 export async function saveCouncilLink(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { error: "Only the committee can change the council calendar link." };
+  if (!isCommittee(me)) return { error: "Only pack leadership can change the council calendar link." };
   const raw = String(form.get("url") ?? "").trim().slice(0, 1000);
   if (raw && !normalizeFeedUrl(raw)) return { error: "That isn't a secure web address. Paste the link that starts with webcal:// or https://." };
   const supabase = await createClient();
@@ -48,7 +48,7 @@ export async function saveCouncilLink(_prev: ActionResult, form: FormData): Prom
 /** Committee: check the council calendar now. */
 export async function checkCouncilNow(): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { error: "Only the committee can check the council calendar." };
+  if (!isCommittee(me)) return { error: "Only pack leadership can check the council calendar." };
   return runCheck();
 }
 
@@ -68,7 +68,7 @@ interface Staged {
 /** Committee: put a council event on the pack calendar. */
 export async function addCouncilEvent(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { error: "Only the committee can add council events." };
+  if (!isCommittee(me)) return { error: "Only pack leadership can add council events." };
   const uid = String(form.get("uid") ?? "");
   const supabase = await createClient();
   const { data } = await supabase

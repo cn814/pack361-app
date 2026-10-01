@@ -79,7 +79,7 @@ export async function saveDocument(_prev: ActionResult, form: FormData): Promise
   if (id && !UUID.test(id)) return fail("Document not found.");
   if (!title) return fail("Give the document a title.");
   if (!AUDIENCES.includes(audience)) return fail("Choose who can see it.");
-  if (audience === "committee" && !isCommittee(me)) return fail("Only committee members can add committee-only documents.");
+  if (audience === "committee" && !isCommittee(me)) return fail("Only pack leadership can add leadership-only documents.");
   if (denId && !UUID.test(denId)) return fail("Choose a den, or the whole pack.");
   if (!id && !newPath) return fail("Choose a file to upload.");
 

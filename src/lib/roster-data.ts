@@ -10,7 +10,7 @@ import { startOfTodayEastern } from "./email";
 export const ROLE_LABEL: Record<AppRole, string> = {
   parent: "Parent",
   den_leader: "Den leader",
-  committee: "Committee",
+  committee: "Leadership",
   cubmaster: "Cubmaster",
   admin: "Pack admin",
 };
@@ -19,7 +19,7 @@ export const ROLE_LABEL: Record<AppRole, string> = {
 export const ROLE_HELP: Record<AppRole, string> = {
   parent: "Sees their own family and scouts.",
   den_leader: "Also sees the roster, approves reports for their den(s), posts announcements.",
-  committee: "Den leader access for the whole pack.",
+  committee: "Den leader access for the whole pack, plus Money, the Pack guide and council events.",
   cubmaster: "Everything, including roster changes and imports.",
   admin: "Everything, including roster changes and imports.",
 };
