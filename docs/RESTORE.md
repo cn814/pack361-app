@@ -8,8 +8,11 @@ schema (dump, fresh database, migrations, data-only load, row counts match).
 **What a backup does not contain:**
 - **Logins** (Supabase `auth.users`). Nobody needs them: when a parent signs in again, the app
   links them to their roster row by email.
-- **Photos.** The image files live in Supabase Storage. Photo rows are in the backup, but the
-  images are not.
+- **Photos and pack documents.** The files live in Supabase Storage (`pack-photos`, `pack-docs`).
+  Their rows are in the backup, but the files are not. Keep a copy of important pack documents
+  somewhere else too (the committee's shared drive).
+- **Files families saved on their phones** ("Saved on this phone"). These never reach the server,
+  so there is nothing to back up or restore.
 - **Settings outside the database**: Vercel environment variables, Supabase Auth settings (site
   URL, redirect URLs, email templates, SMTP, rate limits). These are listed in the README.
 - **Database permissions and security rules.** Backups use `--no-privileges`. Grants, RLS policies
@@ -122,8 +125,12 @@ The Supabase project is gone or unusable.
 6. Update `backup.env` on the NAS with the new connection string, and run the User Script once
    to confirm backups work.
 7. Everyone signs in again with their email. Their roster rows, scouts and advancement are all
-   there. Photo files are gone, so remove the photo rows from Photo review, or run
-   `delete from public.photos;` in the SQL Editor.
+   there. Photo and document files are gone, so remove the photo rows from Photo review (or run
+   `delete from public.photos;` in the SQL Editor), and re-upload the documents the pack still
+   needs before deleting the old document rows.
+8. Payments recorded in the app (`charges`, `payments`) come back with the rest of the data.
+   Anything paid between the backup and the restore is still in PayPal and Givebutter: compare
+   their activity for those days with Leaders → Money and mark those charges paid.
 
 ## Practice once a year
 Do section 1 with last night's backup (it touches nothing live). It takes about ten minutes and
