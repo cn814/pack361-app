@@ -12,6 +12,7 @@ export interface Adult {
   role: AppRole;
   position_title: string | null;
   ypt_expires_on: string | null;
+  registration_expires_on?: string | null;
 }
 
 export interface Den {
@@ -28,6 +29,7 @@ export interface Scout {
   family_id: string;
   den: Den | null;
   photo_permission?: "yes" | "no" | null;
+  registration_expires_on?: string | null;
 }
 
 export interface PackEvent {

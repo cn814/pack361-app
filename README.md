@@ -31,7 +31,7 @@ npm run dev
 ## Folders
 | Path | What |
 |---|---|
-| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init`, `harden_functions`, `private_helpers`, `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback`, `den_calendar`, `twh_sync`, `twh_rsvp`, `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages), `twh_replacement` (in-app RSVP, public guide pages), `payments` (charges, PayPal, event fees; replaces dues), `documents` (documents library), `council_events` (council calendar picker), `training_plus` (more courses, member IDs, training import), `givebutter_dues` (dues paid on Givebutter). |
+| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init`, `harden_functions`, `private_helpers`, `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback`, `den_calendar`, `twh_sync`, `twh_rsvp`, `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages), `twh_replacement` (in-app RSVP, public guide pages), `payments` (charges, PayPal, event fees; replaces dues), `documents` (documents library), `council_events` (council calendar picker), `training_plus` (more courses, member IDs, training import), `givebutter_dues` (dues paid on Givebutter), `registration_expiry` (registration expiration tracking). |
 | `supabase/data/` | One-off data updates run in the SQL Editor (e.g. the Fall Campout details, Arrow of Light Den 8 bridging). |
 | `supabase/seed.sql` | Starter data: dens (Scoutbook numbering), pack meetings, fall events, default packing list. |
 | `supabase/import/build_roster_import.py` | Merges Scoutbook Plus + TroopWebHost data into `imports/roster_import.sql` and `imports/roster_review.md`. |
@@ -221,6 +221,15 @@ npm run dev
     tick its scouts; `match_givebutter_dues()`, committee only) or "Not dues" for donations.
   - A leader can reopen a Givebutter-paid charge (refund it in Givebutter); the sync won't mark it
     paid again.
+- **Registration** (Money → Registration): families renew and pay Scouting America and council
+  registration themselves at my.scouting.org; the pack doesn't collect it. The tab tracks each active
+  scout's and registered adult's expiration date (Current, Expires in N days, Expired, Unknown), with
+  an inline date per person and one date for everyone ticked (`set_registration_expiry()`, committee
+  only; a new date restarts the reminders). My family shows the dates with a "Renew at my.scouting.org"
+  link within 30 days, Notifications adds a to-do, and the daily cron reminds families 30, 7 and 0
+  days before (push, or email when push didn't reach anyone). The old per-person national/council fee
+  billing and "sent to council" tools are hidden unless `registration_billing` is turned on in
+  Money → Settings.
 - **Polls** (`/polls`): leaders ask the pack or one den; single or multiple choice, optional
   one-answer-per-family, closing date, results for voters or leaders only. Votes go through
   `cast_vote()`; `poll_results()` returns counts, never names (leaders see who answered what).
@@ -229,8 +238,8 @@ npm run dev
   `/auth/open`, which says to type the code in the app and only signs in the browser if asked.
 - **Computers**: at the `lg` breakpoint the bottom bar becomes a left sidebar and busy pages use
   two columns (add `page-wide` to a page element to let it use the full width). Phones are unchanged.
-- A second daily cron (`/api/cron/daily`, 21:00 UTC = 5 PM EDT / 4 PM EST) sends the volunteer and
-  training reminders, deletes expired photos, then syncs TroopWebHost. Each step runs even if
+- A second daily cron (`/api/cron/daily`, 21:00 UTC = 5 PM EDT / 4 PM EST) sends the volunteer,
+  training and registration reminders, deletes expired photos, then syncs TroopWebHost. Each step runs even if
   another fails; any failure returns HTTP 500 (so Vercel shows it) and a warning on Pack admin.
   Both cron routes allow 60 seconds, and every outside call has a timeout.
 - **Security headers** (`next.config.ts`): no framing, no content-type sniffing, strict referrer,

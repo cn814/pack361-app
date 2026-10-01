@@ -7,6 +7,7 @@ import { fmtRange } from "./format";
 import { eventPath } from "./featured";
 import { PHOTO_BUCKET } from "./photos";
 import { daysBetween, easternDate } from "./tz";
+import { REGISTRATION_REMINDER_DAYS, RENEW_URL } from "./registration";
 import { chargesStillOpen, settleOrder } from "./payments";
 import { captureOrder, getOrder, PayPalError, type PayPalOrder } from "./paypal";
 
@@ -148,6 +149,126 @@ export async function remindTraining(db: SupabaseClient) {
   }
   if (mail.error) throw new Error(`Training reminder emails failed: ${mail.error}`);
   return { training: done.length, later: waiting.length - done.length };
+}
+
+/**
+ * Scouting America registration: remind families 30, 7 and 0 days before a scout's registration
+ * expires (and adults about their own), once per threshold. By push to the family's active adults,
+ * or by email to each of them when no push reached anyone. Families renew and pay at my.scouting.org.
+ */
+export async function remindRegistration(db: SupabaseClient) {
+  const today = easternDate(Date.now());
+  const shift = (days: number) => easternDate(Date.now() + days * 86400000);
+  const lo = shift(-1);
+  const hi = shift(31);
+  const [scoutRes, adultRes] = await Promise.all([
+    db
+      .from("scouts")
+      .select("id, family_id, first_name, registration_expires_on, registration_reminded_days")
+      .eq("is_active", true)
+      .gte("registration_expires_on", lo)
+      .lte("registration_expires_on", hi),
+    db
+      .from("adults")
+      .select("id, family_id, first_name, preferred_name, email, registration_expires_on, registration_reminded_days")
+      .eq("is_active", true),
+  ]);
+  if (scoutRes.error) throw new Error(scoutRes.error.message);
+  if (adultRes.error) throw new Error(adultRes.error.message);
+  type AdultRow = {
+    id: string;
+    family_id: string | null;
+    first_name: string;
+    preferred_name: string | null;
+    email: string;
+    registration_expires_on: string | null;
+    registration_reminded_days: number | null;
+  };
+  const adults = (adultRes.data ?? []) as AdultRow[];
+  const scouts = (scoutRes.data ?? []) as {
+    id: string;
+    family_id: string;
+    first_name: string;
+    registration_expires_on: string;
+    registration_reminded_days: number | null;
+  }[];
+
+  // Smallest threshold at or above the days left, if that reminder hasn't gone out yet.
+  const thresholdFor = (expires: string, reminded: number | null) => {
+    const left = daysBetween(today, expires);
+    const t = [...REGISTRATION_REMINDER_DAYS].sort((a, b) => a - b).find((d) => left <= d);
+    return t === undefined || (reminded !== null && t >= reminded) ? null : t;
+  };
+  const longDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+  type Item = { table: "scouts" | "adults"; id: string; threshold: number; to: AdultRow[]; line: string };
+  const items: Item[] = [];
+  for (const s of scouts) {
+    const threshold = thresholdFor(s.registration_expires_on, s.registration_reminded_days);
+    const to = adults.filter((a) => a.family_id === s.family_id);
+    if (threshold === null || !to.length) continue;
+    items.push({
+      table: "scouts",
+      id: s.id,
+      threshold,
+      to,
+      line: `${s.first_name}'s Scouting America registration expires ${longDate(s.registration_expires_on)}. Renew at my.scouting.org.`,
+    });
+  }
+  for (const a of adults) {
+    const on = a.registration_expires_on;
+    if (!on || on < lo || on > hi) continue;
+    const threshold = thresholdFor(on, a.registration_reminded_days);
+    if (threshold === null) continue;
+    items.push({
+      table: "adults",
+      id: a.id,
+      threshold,
+      to: [a],
+      line: `Your Scouting America registration expires ${longDate(on)}. Renew at my.scouting.org.`,
+    });
+  }
+
+  const done: Item[] = [];
+  const waiting: { item: Item; emails: Email[] }[] = [];
+  for (const it of items) {
+    const res = await sendPushTo(
+      it.to.map((a) => a.id),
+      { title: "Time to renew registration", body: it.line, url: "/family", tag: `registration-${it.id}` },
+    );
+    if (res.sent) {
+      done.push(it);
+      continue;
+    }
+    waiting.push({
+      item: it,
+      emails: it.to.map((a) => ({
+        to: a.email,
+        subject: it.line.split(". ")[0],
+        paragraphs: [
+          `Hi ${a.preferred_name || a.first_name},`,
+          it.line,
+          "Families renew and pay Scouting America registration themselves at my.scouting.org; the pack doesn't collect it.",
+          RENEW_URL,
+        ],
+      })),
+    });
+  }
+  // Whole reminders only, up to the per-run email cap; the rest wait for the next run.
+  const fits: typeof waiting = [];
+  let count = 0;
+  for (const w of waiting) {
+    if (count + w.emails.length > EMAILS_PER_RUN) break;
+    fits.push(w);
+    count += w.emails.length;
+  }
+  const mail = await sendSome(fits.flatMap((w) => w.emails));
+  if (mail.sent) done.push(...fits.map((w) => w.item));
+  for (const it of done) {
+    await db.from(it.table).update({ registration_reminded_days: it.threshold }).eq("id", it.id);
+  }
+  if (mail.error) throw new Error(`Registration reminder emails failed: ${mail.error}`);
+  return { registration: done.length, emailed: mail.sent, later: items.length - done.length };
 }
 
 /** Delete photos older than the pack's keep-for setting (files and rows). */

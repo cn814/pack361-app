@@ -11,6 +11,7 @@ import { countPendingPhotos } from "./photos";
 import { easternDate } from "./tz";
 import { fmtDay } from "./format";
 import { rsvpOpen } from "./rsvp";
+import { fmtRegDate, needsRenewal, regStatus } from "./registration";
 
 export interface Todo {
   key: string;
@@ -104,6 +105,23 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
       detail: items.length === 1 ? items[0].title : `${items.length} items: ${items.slice(0, 2).map((c) => c.title).join(", ")}${items.length > 2 ? "…" : ""}`,
       href: "/pay",
       tone: "pine",
+    });
+  }
+
+  // Scouting America registration about to run out (or already out): renew at my.scouting.org.
+  const renew = [
+    ...scouts.map((s) => ({ name: s.first_name, on: s.registration_expires_on ?? null })),
+    ...(me.registration_expires_on ? [{ name: "you", on: me.registration_expires_on }] : []),
+  ].filter((r) => needsRenewal(regStatus(r.on)));
+  if (renew.length) {
+    const soonest = renew.map((r) => r.on!).sort()[0];
+    const past = regStatus(soonest).state === "expired";
+    todos.push({
+      key: "registration",
+      title: "Renew Scouting America registration",
+      detail: `For ${renew.map((r) => r.name).join(" and ")}: ${past ? "expired" : "expires"} ${fmtRegDate(soonest)}. Renew and pay at my.scouting.org (link on My family).`,
+      href: "/family",
+      tone: past ? "danger" : "gold",
     });
   }
 

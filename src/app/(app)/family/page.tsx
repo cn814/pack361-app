@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, LogOut, ShieldCheck, Smartphone } from "lucide-react";
+import { ChevronRight, ExternalLink, LogOut, ShieldCheck, Smartphone } from "lucide-react";
 import ContactForm from "@/components/ContactForm";
 import FeedbackForm from "@/components/FeedbackForm";
 import PhotoPermission from "@/components/PhotoPermission";
@@ -17,6 +17,7 @@ import { saveMyMemberId } from "@/app/(app)/leaders/training/actions";
 import { displayName, getFamilyAdults, getMyScouts, isLeader, requireMember } from "@/lib/data";
 import { getMyPositions, getMyTraining } from "@/lib/training-data";
 import { COURSE_BY_KEY, POSITION_BY_KEY, trainedStatus, trainingState } from "@/lib/training";
+import { fmtRegDate, needsRenewal, regStatus, RENEW_URL, REG_STYLE } from "@/lib/registration";
 
 export const metadata: Metadata = { title: "My family" };
 
@@ -68,12 +69,21 @@ export default async function FamilyPage() {
         {scouts.length === 0 && <p className="text-sm text-muted">No scouts are linked to your account.</p>}
         <ul className="divide-y divide-line">
           {scouts.map((s) => (
-            <li key={s.id} className="flex items-center justify-between py-2">
-              <span className="font-semibold text-ink">{s.first_name} {s.last_name}</span>
-              <span className="badge bg-mint text-pine">{s.den?.name ?? "No den"}</span>
+            <li key={s.id} className="py-2">
+              <span className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-ink">{s.first_name} {s.last_name}</span>
+                <span className="badge bg-mint text-pine">{s.den?.name ?? "No den"}</span>
+              </span>
+              <Registration expires={s.registration_expires_on ?? null} />
             </li>
           ))}
         </ul>
+        {me.registration_expires_on && (
+          <div className="border-t border-line pt-2">
+            <span className="text-sm font-semibold text-ink">Your registration</span>
+            <Registration expires={me.registration_expires_on} />
+          </div>
+        )}
       </section>
 
       <PaymentsCard charges={charges} duesUrl={duesUrl} />
@@ -165,5 +175,24 @@ export default async function FamilyPage() {
         </button>
       </form>
     </>
+  );
+}
+
+/** "Scouting America registration: expires 10/31/26", with a renew link when it's due. */
+function Registration({ expires }: { expires: string | null }) {
+  const st = regStatus(expires);
+  if (st.state === "unknown") return null;
+  return (
+    <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+      <span>
+        Scouting America registration {st.state === "expired" ? "expired" : "expires"} {fmtRegDate(expires!)}
+      </span>
+      {st.state !== "current" && <span className={`badge normal-case tracking-normal ${REG_STYLE[st.state]}`}>{st.label}</span>}
+      {needsRenewal(st) && (
+        <a href={RENEW_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-bold text-pine underline">
+          Renew at my.scouting.org <ExternalLink className="h-3 w-3" aria-hidden />
+        </a>
+      )}
+    </span>
   );
 }

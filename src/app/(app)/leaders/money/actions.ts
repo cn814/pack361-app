@@ -233,6 +233,7 @@ export async function savePaySettings(_prev: ActionResult, form: FormData): Prom
   const campaign = String(form.get("dues_givebutter_campaign_id") ?? "").trim();
   if (campaign && !/^\d{1,18}$/.test(campaign)) return { error: "Pick the dues campaign from the list." };
   values.dues_givebutter_campaign_id = campaign;
+  values.registration_billing = form.get("registration_billing") === "on" ? "on" : "off";
   const supabase = await createClient();
   const { error } = await supabase.rpc("save_pay_settings", { p_values: values });
   if (error) return { error: error.code === "22023" ? error.message : "Couldn't save settings." };
@@ -280,4 +281,48 @@ export async function setNotDues(form: FormData) {
   if (error) back(form, "Couldn't save that. Try again.");
   refresh();
   back(form, undo ? "It's back on the list; the next sync tries to match it." : "Marked as not dues.");
+}
+
+/**
+ * Registration tracker: one row's date (Save), clear one row (Clear), or one date for every
+ * ticked row (Set expiration).
+ */
+export async function setRegistrationExpiry(form: FormData) {
+  await requireCommittee();
+  const parse = (keys: string[]) => {
+    const scouts: string[] = [];
+    const adults: string[] = [];
+    for (const k of keys) {
+      const [kind, id] = k.split(":");
+      if (!UUID.test(id ?? "")) continue;
+      if (kind === "s") scouts.push(id);
+      else if (kind === "a") adults.push(id);
+    }
+    return { scouts, adults };
+  };
+  const row = String(form.get("row") ?? "");
+  const clear = String(form.get("clear") ?? "");
+  let keys: string[];
+  let on: string | null;
+  if (clear) {
+    keys = [clear];
+    on = null;
+  } else if (row) {
+    keys = [row];
+    on = String(form.get(`on_${row}`) ?? "").trim() || null;
+  } else {
+    keys = form.getAll("pick").map(String);
+    on = String(form.get("bulk_on") ?? "").trim();
+    if (!keys.length) back(form, "Tick the people first.");
+    if (!on) back(form, "Pick the expiration date.");
+  }
+  if (on && !DATE.test(on)) back(form, "Pick a date.");
+  const { scouts, adults } = parse(keys);
+  if (!scouts.length && !adults.length) back(form, "Nothing picked.");
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("set_registration_expiry", { p_scout_ids: scouts, p_adult_ids: adults, p_on: on });
+  if (error) back(form, error.code === "22023" ? `${error.message}.` : "Couldn't save that. Try again.");
+  refresh();
+  const n = Number(data ?? 0);
+  back(form, on === null ? (n ? "Date cleared." : "Nothing changed.") : n ? `Saved for ${n} ${n === 1 ? "person" : "people"}.` : "Nothing changed.");
 }

@@ -16,7 +16,7 @@ export const getMe = cache(async (): Promise<{ email: string; adult: Adult | nul
   if (!sub) return null;
   const { data } = await supabase
     .from("adults")
-    .select("id, family_id, first_name, last_name, preferred_name, email, phone, role, position_title, ypt_expires_on")
+    .select("id, family_id, first_name, last_name, preferred_name, email, phone, role, position_title, ypt_expires_on, registration_expires_on")
     .eq("user_id", sub)
     .eq("is_active", true)
     .maybeSingle();
@@ -50,7 +50,7 @@ export async function getMyScouts(): Promise<Scout[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("scouts")
-    .select("id, first_name, last_name, family_id, photo_permission, den:dens(id, rank, number, name)")
+    .select("id, first_name, last_name, family_id, photo_permission, registration_expires_on, den:dens(id, rank, number, name)")
     .eq("family_id", me.family_id)
     .eq("is_active", true)
     .order("first_name");

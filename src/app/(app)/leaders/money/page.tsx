@@ -49,7 +49,8 @@ import {
 import { fmtShortDate } from "@/lib/advancement";
 import { easternDate } from "@/lib/tz";
 import { givebutterConfigured } from "@/lib/givebutter";
-import { addDuesCharges, addRegistrationFees, chargeAction, savePaySettings, setNotDues, setRemitted } from "./actions";
+import { regStatus, REG_STYLE, RENEW_URL, type RegState } from "@/lib/registration";
+import { addDuesCharges, addRegistrationFees, chargeAction, savePaySettings, setNotDues, setRegistrationExpiry, setRemitted } from "./actions";
 
 export const metadata: Metadata = { title: "Money" };
 
@@ -178,7 +179,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/leaders/mo
 
       {tab === "charges" && <ChargesTab all={all} settings={settings} sp={sp} />}
       {tab === "dues" && <DuesTab campaign={duesCampaign} orders={duesOrders} />}
-      {tab === "registration" && <RegistrationTab all={all} settings={settings} year={one(sp.year)} />}
+      {tab === "registration" && <RegistrationTab all={all} settings={settings} year={one(sp.year)} filter={one(sp.reg)} />}
       {tab === "add" && <AddTab settings={settings} />}
       {tab === "settings" && <SettingsTab settings={settings} />}
     </>
@@ -462,6 +463,176 @@ function ChargeItem({ c, back, mismatch }: { c: LeaderCharge; back: string; mism
 async function RegistrationTab({
   all,
   settings,
+  year,
+  filter,
+}: {
+  all: LeaderCharge[];
+  settings: Awaited<ReturnType<typeof getSettings>>;
+  year: string;
+  filter: string;
+}) {
+  return (
+    <>
+      <RegistrationTracker filter={filter} />
+      {settings.registration_billing === "on" && (
+        <section className="space-y-3 border-t border-line pt-3">
+          <h2 className="section-title px-1">Registration fees billed by the pack</h2>
+          <RegistrationBilling all={all} settings={settings} year={year} />
+        </section>
+      )}
+    </>
+  );
+}
+
+// Who's registered and when it runs out. Families renew and pay at my.scouting.org.
+const REG_FILTERS = { all: "All", soon: "Expiring soon", expired: "Expired", unknown: "Unknown" } as const;
+type RegFilter = keyof typeof REG_FILTERS;
+
+async function RegistrationTracker({ filter: filterParam }: { filter: string }) {
+  const filter: RegFilter = filterParam in REG_FILTERS ? (filterParam as RegFilter) : "all";
+  const supabase = await createClient();
+  const [{ data: scouts }, { data: adults }, { data: denLeaders }] = await Promise.all([
+    supabase
+      .from("scouts")
+      .select("id, first_name, last_name, bsa_member_id, registration_expires_on, den:dens(name, rank, number)")
+      .eq("is_active", true),
+    supabase
+      .from("adults")
+      .select("id, first_name, preferred_name, last_name, role, position_title, bsa_member_id, registration_expires_on")
+      .eq("is_active", true),
+    supabase.from("den_leaders").select("adult_id, title, den:dens(name)"),
+  ]);
+  type Row = { key: string; name: string; what: string; memberId: string | null; expires: string | null; order: number };
+  const RANKS = ["lion", "tiger", "wolf", "bear", "webelos", "aol"];
+  const leads = new Map<string, string>();
+  for (const d of (denLeaders ?? []) as unknown as { adult_id: string; title: string; den: { name: string } | null }[]) {
+    leads.set(d.adult_id, `${d.title}${d.den ? `, ${d.den.name}` : ""}`);
+  }
+  const rows: Row[] = [];
+  for (const s of (scouts ?? []) as unknown as {
+    id: string;
+    first_name: string;
+    last_name: string;
+    bsa_member_id: string | null;
+    registration_expires_on: string | null;
+    den: { name: string; rank: string; number: number } | null;
+  }[]) {
+    rows.push({
+      key: `s:${s.id}`,
+      name: `${s.first_name} ${s.last_name}`,
+      what: s.den?.name ?? "No den",
+      memberId: s.bsa_member_id,
+      expires: s.registration_expires_on,
+      order: (s.den ? RANKS.indexOf(s.den.rank) : 9) * 100 + (s.den?.number ?? 0),
+    });
+  }
+  // Registered adults: the same "leaders" add_fee uses, plus anyone with a date already set.
+  for (const a of (adults ?? []) as {
+    id: string;
+    first_name: string;
+    preferred_name: string | null;
+    last_name: string;
+    role: string;
+    position_title: string | null;
+    bsa_member_id: string | null;
+    registration_expires_on: string | null;
+  }[]) {
+    if (a.role === "parent" && !a.position_title && !leads.has(a.id) && !a.registration_expires_on) continue;
+    rows.push({
+      key: `a:${a.id}`,
+      name: `${a.preferred_name || a.first_name} ${a.last_name}`,
+      what: a.position_title || leads.get(a.id) || (a.role === "parent" ? "Adult" : a.role.replace("_", " ")),
+      memberId: a.bsa_member_id,
+      expires: a.registration_expires_on,
+      order: 2000,
+    });
+  }
+  const withStatus = rows.map((r) => ({ ...r, st: regStatus(r.expires) }));
+  const counts: Record<RegState, number> = { current: 0, soon: 0, expired: 0, unknown: 0 };
+  for (const r of withStatus) counts[r.st.state]++;
+  const shown = withStatus
+    .filter((r) => filter === "all" || r.st.state === filter)
+    .sort((a, b) => a.order - b.order || a.what.localeCompare(b.what) || a.name.localeCompare(b.name));
+  const back = `/leaders/money?tab=registration${filter === "all" ? "" : `&reg=${filter}`}`;
+  return (
+    <>
+      <p className="flex items-start gap-2 rounded-xl bg-surface-low p-3 text-xs text-navy">
+        <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+        <span>
+          Families renew and pay at{" "}
+          <a href={RENEW_URL} target="_blank" rel="noopener noreferrer" className="font-bold underline">
+            my.scouting.org
+          </a>
+          ; the pack doesn&apos;t collect these fees. Families get reminders 30 days, 7 days and the day their registration
+          expires.
+        </span>
+      </p>
+      <div className="flex flex-wrap gap-2 text-xs font-semibold">
+        {(Object.keys(REG_FILTERS) as RegFilter[]).map((f) => (
+          <Link
+            key={f}
+            href={`/leaders/money?tab=registration${f === "all" ? "" : `&reg=${f}`}`}
+            className={`rounded-full px-3 py-1 ${filter === f ? "bg-navy text-white" : "border border-line bg-white text-navy"}`}
+          >
+            {REG_FILTERS[f]} ({f === "all" ? withStatus.length : counts[f]})
+          </Link>
+        ))}
+      </div>
+      {shown.length === 0 ? (
+        <p className="card text-sm text-muted">No one to show.</p>
+      ) : (
+        <form action={setRegistrationExpiry} className="space-y-2">
+          <input type="hidden" name="back" value={back} />
+          <div className="card flex flex-wrap items-end gap-2 border-l-4 border-l-gold">
+            <label className="block flex-1 space-y-1">
+              <span className="text-xs font-bold text-navy">Set expiration for the ticked people to</span>
+              <input type="date" name="bulk_on" className="input py-2" />
+            </label>
+            <SubmitButton name="do" value="bulk" className="btn-primary py-2">
+              Set expiration
+            </SubmitButton>
+          </div>
+          <ul className="card divide-y divide-line py-1">
+            {shown.map((r) => (
+              <li key={r.key} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                <input type="checkbox" name="pick" value={r.key} aria-label={`Tick ${r.name}`} className="h-5 w-5 shrink-0 accent-pine" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-ink">{r.name}</span>
+                  <span className="block text-[11px] capitalize text-muted">
+                    {r.what}
+                    {r.memberId ? <span className="normal-case"> · Member ID {r.memberId}</span> : null}
+                  </span>
+                </span>
+                <span className={`badge shrink-0 normal-case tracking-normal ${REG_STYLE[r.st.state]}`}>{r.st.label}</span>
+                <span className="flex w-full items-center gap-1.5 pl-8 sm:w-auto sm:pl-0">
+                  <input
+                    type="date"
+                    name={`on_${r.key}`}
+                    defaultValue={r.expires ?? ""}
+                    aria-label={`Expiration date for ${r.name}`}
+                    className="rounded-lg border border-line bg-white px-2 py-1 text-xs"
+                  />
+                  <SubmitButton name="row" value={r.key} className="btn-ghost px-2 py-1 text-xs">
+                    Save
+                  </SubmitButton>
+                  {r.expires && (
+                    <SubmitButton name="clear" value={r.key} className="rounded-lg px-1 py-1 text-xs font-bold text-navy underline" aria-label={`Clear the date for ${r.name}`}>
+                      Clear
+                    </SubmitButton>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </form>
+      )}
+    </>
+  );
+}
+
+async function RegistrationBilling({
+  all,
+  settings,
   year: yearParam,
 }: {
   all: LeaderCharge[];
@@ -630,32 +801,34 @@ async function AddTab({ settings }: { settings: Awaited<ReturnType<typeof getSet
           </p>
         )}
       </section>
-      <section className="card space-y-2 border-l-4 border-l-gold">
-        <h2 className="section-title">Registration shortcut</h2>
-        {year ? (
-          <>
-            <p className="text-sm text-ink">
-              Adds Scouting America registration ({fmtMoney(amounts.national_youth)} per scout, {fmtMoney(amounts.national_adult)} per
-              leader) and the council fee ({fmtMoney(amounts.council_youth)} per scout, {fmtMoney(amounts.council_adult)} per leader) for
-              every active scout and adult leader. Anyone who already has them is skipped, so it&apos;s safe to run again after new
-              families join.
+      {settings.registration_billing === "on" && (
+        <section className="card space-y-2 border-l-4 border-l-gold">
+          <h2 className="section-title">Registration shortcut</h2>
+          {year ? (
+            <>
+              <p className="text-sm text-ink">
+                Adds Scouting America registration ({fmtMoney(amounts.national_youth)} per scout, {fmtMoney(amounts.national_adult)} per
+                leader) and the council fee ({fmtMoney(amounts.council_youth)} per scout, {fmtMoney(amounts.council_adult)} per leader) for
+                every active scout and adult leader. Anyone who already has them is skipped, so it&apos;s safe to run again after new
+                families join.
+              </p>
+              <ActionForm action={addRegistrationFees} submit={`Set up registration fees for ${year}`} busy="Adding…" className="space-y-2">
+                <Field label="Due (optional)">
+                  <input type="date" name="due_on" className="input" />
+                </Field>
+              </ActionForm>
+            </>
+          ) : (
+            <p className="text-sm text-muted">
+              Set the registration year and amounts in{" "}
+              <Link href="/leaders/money?tab=settings" className="font-semibold text-pine underline">
+                Settings
+              </Link>{" "}
+              first.
             </p>
-            <ActionForm action={addRegistrationFees} submit={`Set up registration fees for ${year}`} busy="Adding…" className="space-y-2">
-              <Field label="Due (optional)">
-                <input type="date" name="due_on" className="input" />
-              </Field>
-            </ActionForm>
-          </>
-        ) : (
-          <p className="text-sm text-muted">
-            Set the registration year and amounts in{" "}
-            <Link href="/leaders/money?tab=settings" className="font-semibold text-pine underline">
-              Settings
-            </Link>{" "}
-            first.
-          </p>
-        )}
-      </section>
+          )}
+        </section>
+      )}
       <section className="card space-y-2">
         <h2 className="section-title">Add a fee</h2>
         <AddFeeForm
@@ -732,23 +905,34 @@ async function SettingsTab({ settings }: { settings: Awaited<ReturnType<typeof g
             Open the dues campaign on Givebutter <ExternalLink className="h-3 w-3" aria-hidden />
           </a>
         )}
-        <Field label="Registration year" hint="The year Scouting America and council fees are for, like 2027.">
-          <input className="input" name="registration_year" inputMode="numeric" maxLength={4} defaultValue={settings.registration_year} />
-        </Field>
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="National, per scout ($)">
-            <input className="input" name="national_youth_cents" inputMode="decimal" defaultValue={dollars("national_youth_cents")} placeholder="0" />
+        <details open={settings.registration_billing === "on"} className="space-y-3 rounded-xl border border-line p-3">
+          <summary className="cursor-pointer text-xs font-bold text-navy">Registration fees billed by the pack</summary>
+          <p className="text-[11px] text-muted">
+            Families normally renew and pay Scouting America and council registration at my.scouting.org. Turn this on only if the
+            pack collects those fees itself.
+          </p>
+          <label className="flex items-center gap-2 text-sm font-semibold text-ink">
+            <input type="checkbox" name="registration_billing" value="on" defaultChecked={settings.registration_billing === "on"} className="h-4 w-4 accent-pine" />
+            Show the registration fee tools (fee shortcut, &quot;sent to council&quot;)
+          </label>
+          <Field label="Registration year" hint="The year Scouting America and council fees are for, like 2027.">
+            <input className="input" name="registration_year" inputMode="numeric" maxLength={4} defaultValue={settings.registration_year} />
           </Field>
-          <Field label="National, per adult ($)">
-            <input className="input" name="national_adult_cents" inputMode="decimal" defaultValue={dollars("national_adult_cents")} placeholder="0" />
-          </Field>
-          <Field label="Council, per scout ($)">
-            <input className="input" name="council_youth_cents" inputMode="decimal" defaultValue={dollars("council_youth_cents")} placeholder="0" />
-          </Field>
-          <Field label="Council, per adult ($)">
-            <input className="input" name="council_adult_cents" inputMode="decimal" defaultValue={dollars("council_adult_cents")} placeholder="0" />
-          </Field>
-        </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="National, per scout ($)">
+              <input className="input" name="national_youth_cents" inputMode="decimal" defaultValue={dollars("national_youth_cents")} placeholder="0" />
+            </Field>
+            <Field label="National, per adult ($)">
+              <input className="input" name="national_adult_cents" inputMode="decimal" defaultValue={dollars("national_adult_cents")} placeholder="0" />
+            </Field>
+            <Field label="Council, per scout ($)">
+              <input className="input" name="council_youth_cents" inputMode="decimal" defaultValue={dollars("council_youth_cents")} placeholder="0" />
+            </Field>
+            <Field label="Council, per adult ($)">
+              <input className="input" name="council_adult_cents" inputMode="decimal" defaultValue={dollars("council_adult_cents")} placeholder="0" />
+            </Field>
+          </div>
+        </details>
         <p className="text-[11px] text-muted">These fill in the amount when you add a fee. Changing them doesn&apos;t change fees already added.</p>
         <Field label="Other ways to pay" hint="Shown to families on the Pay page, e.g. who checks are payable to and who takes cash.">
           <textarea className="input min-h-20" name="pay_other_how" maxLength={600} defaultValue={settings.pay_other_how} />

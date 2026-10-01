@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
-import { purgeOldPhotos, reconcilePayments, remindTraining, remindVolunteers } from "@/lib/daily-jobs";
+import { purgeOldPhotos, reconcilePayments, remindRegistration, remindTraining, remindVolunteers } from "@/lib/daily-jobs";
 import { paypalConfigured } from "@/lib/paypal";
 import { syncTwh, twhConfigured } from "@/lib/twh";
 import { syncCouncil } from "@/lib/council";
 
 // Daily Vercel Cron (vercel.json, 21:00 UTC = 5 PM EDT / 4 PM EST): volunteer reminders,
-// training expiry reminders, deleting photos past the keep-for setting, finishing PayPal
+// training expiry reminders, Scouting America registration reminders, deleting photos past the keep-for setting, finishing PayPal
 // checkouts a family's browser didn't (when PayPal is set up), then the TroopWebHost
 // calendar sync (last, so a slow TroopWebHost can't hold up the reminders). Each step runs even
 // if another fails; any failure makes the run return 500 so it shows as failed in Vercel, and
@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
   const steps: [string, () => Promise<unknown>][] = [
     ["volunteers", () => remindVolunteers(db)],
     ["training", () => remindTraining(db)],
+    ["registration", () => remindRegistration(db)],
     ["photos", () => purgeOldPhotos(db)],
   ];
   if (paypalConfigured()) steps.push(["payments", () => reconcilePayments(db)]);
