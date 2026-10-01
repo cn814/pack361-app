@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, Plus, Search } from "lucide-react";
+import { ChevronRight, ListChecks, Plus, Search } from "lucide-react";
 import ActionForm, { Field } from "@/components/ActionForm";
 import BackLink from "@/components/BackLink";
 import { AdultFields } from "@/components/RosterForms";
@@ -34,6 +34,12 @@ export default async function RosterPage({ searchParams }: PageProps<"/admin/ros
           {families.filter((f) => f.is_active).length} active families · {scoutCount} scouts
         </p>
       </div>
+
+      <Link href="/admin/roster/check" className="card flex items-center gap-2 py-3 text-sm font-semibold text-pine">
+        <ListChecks className="h-5 w-5" aria-hidden />
+        <span className="flex-1">Roster check: compare with Scoutbook</span>
+        <ChevronRight className="h-4 w-4 text-muted" aria-hidden />
+      </Link>
 
       <form className="relative" role="search">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />

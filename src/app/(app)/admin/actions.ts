@@ -369,3 +369,192 @@ export async function syncTroopWebHost(): Promise<ActionResult> {
     return { error: `Sync failed: ${e instanceof Error ? e.message : "unknown error"}` };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Ask to join
+// ---------------------------------------------------------------------------
+async function joinRequest(id: string) {
+  const supabase = await createClient();
+  const { data } = await supabase.from("join_requests").select("id, email, first_name, status").eq("id", id).maybeSingle();
+  return data as { id: string; email: string; first_name: string; status: string } | null;
+}
+
+export async function approveJoin(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const id = str(form, "id");
+  if (!UUID.test(id)) return { error: "Unknown request." };
+  const req = await joinRequest(id);
+  if (!req || req.status !== "pending") return { error: "That request was already handled." };
+  const family = str(form, "family_id");
+  const scouts: { first_name: string; last_name: string; den_id: string | null }[] = [];
+  for (const i of form.getAll("scout").map(String)) {
+    if (!/^\d$/.test(i) || !bool(form, `keep_${i}`)) continue;
+    const first = str(form, `first_${i}`, 60);
+    const last = str(form, `last_${i}`, 60);
+    if (!first || !last) return { error: "Each scout you add needs a first and last name." };
+    const den = str(form, `den_${i}`);
+    scouts.push({ first_name: first, last_name: last, den_id: UUID.test(den) ? den : null });
+  }
+  const supabase = await createClient();
+  const { data: familyId, error } = await supabase.rpc("approve_join_request", {
+    p_request: id,
+    p_family: UUID.test(family) ? family : null,
+    p_family_name: str(form, "family_name", 80) || null,
+    p_scouts: scouts,
+  });
+  if (error) {
+    if (/already has that email/i.test(error.message)) return { error: "Someone on the roster already has that email. Turn them back on in Families and scouts instead." };
+    if (/already handled/i.test(error.message)) return { error: "That request was already handled." };
+    return { error: dbError(error.message) };
+  }
+
+  let sent = "";
+  if (bool(form, "email") && emailConfigured()) {
+    const err = await sendEmails([
+      {
+        to: req.email,
+        subject: "You're on the Pack 361 app",
+        paragraphs: [
+          `Hi ${req.first_name},`,
+          "A pack admin added you to the Pack 361 roster, so the app is open to you now: the pack calendar, campout details, your scout's advancement, announcements, volunteer sign-ups and photos.",
+          `Sign in with this email address (${req.email}). We'll email you a one-time code, so there's no password to remember.`,
+          `${APP_URL}/login`,
+          "Tip: on your phone, add it to your home screen so it opens like an app.",
+          "Welcome to the pack!\nPack 361",
+        ],
+      },
+    ]);
+    sent = err ? ` The email didn't go out (${err}).` : " They've been emailed.";
+  }
+  revalidateRoster(familyId as string);
+  revalidatePath("/admin/join");
+  return { ok: true, message: `${req.first_name} is on the roster.${sent}` };
+}
+
+export async function declineJoin(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const id = str(form, "id");
+  if (!UUID.test(id)) return { error: "Unknown request." };
+  const req = await joinRequest(id);
+  if (!req || req.status !== "pending") return { error: "That request was already handled." };
+  const reason = str(form, "reason", 500);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("decline_join_request", { p_request: id, p_reason: reason || null });
+  if (error) return { error: /already handled/i.test(error.message) ? "That request was already handled." : "Couldn't save that. Try again." };
+  if (bool(form, "email") && emailConfigured()) {
+    await sendEmails([
+      {
+        to: req.email,
+        subject: "About your Pack 361 app request",
+        paragraphs: [
+          `Hi ${req.first_name},`,
+          `Thanks for asking to join the Pack 361 app. A pack admin wasn't able to add you yet.${reason ? ` Their note: “${reason}”` : ""}`,
+          "If you think this is a mistake, reply to this email and we'll sort it out.",
+          "Pack 361",
+        ],
+      },
+    ]);
+  }
+  revalidatePath("/admin", "layout");
+  return { ok: true, message: "Declined." };
+}
+
+// ---------------------------------------------------------------------------
+// Roster check (Scoutbook roster export compared in the browser; only the picked changes come here)
+// ---------------------------------------------------------------------------
+function pairs(form: FormData, a: string, b: string): [string, string][] {
+  const xs = form.getAll(a).map(String);
+  const ys = form.getAll(b).map(String);
+  return xs.slice(0, 200).map((x, i) => [x, ys[i] ?? ""]);
+}
+
+/** Move scouts to the den Scoutbook has them in. */
+export async function rosterMoveScouts(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const moves = pairs(form, "scout_id", "den_id").filter(([s, d]) => UUID.test(s) && UUID.test(d));
+  if (!moves.length) return { error: "Nothing to move." };
+  const supabase = await createClient();
+  for (const [scout, den] of moves) {
+    const { error } = await supabase.from("scouts").update({ den_id: den }).eq("id", scout);
+    if (error) return { error: dbError(error.message) };
+  }
+  revalidateRoster();
+  return { ok: true, message: moves.length === 1 ? "Moved." : `Moved ${moves.length} scouts.` };
+}
+
+/** Save BSA member IDs from Scoutbook on scouts matched by name. */
+export async function rosterSaveMemberIds(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const list = pairs(form, "scout_id", "member_id").filter(([s, m]) => UUID.test(s) && /^\d{5,12}$/.test(m));
+  if (!list.length) return { error: "Nothing to save." };
+  const supabase = await createClient();
+  let saved = 0;
+  for (const [scout, id] of list) {
+    const { error } = await supabase.from("scouts").update({ bsa_member_id: id }).eq("id", scout).is("bsa_member_id", null);
+    if (error) return { error: `${saved ? `Saved ${saved}, then: ` : ""}${dbError(error.message)}` };
+    saved++;
+  }
+  revalidateRoster();
+  return { ok: true, message: saved === 1 ? "Saved." : `Saved ${saved} member IDs.` };
+}
+
+/** Turn scouts on or off (registered again, or no longer in Scoutbook). */
+export async function rosterSetActive(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const ids = form.getAll("scout_id").map(String).filter((s) => UUID.test(s)).slice(0, 200);
+  if (!ids.length) return { error: "Nothing to change." };
+  const active = str(form, "active") === "true";
+  const supabase = await createClient();
+  const { error } = await supabase.from("scouts").update({ is_active: active }).in("id", ids);
+  if (error) return { error: dbError(error.message) };
+  revalidateRoster();
+  const n = ids.length === 1 ? "" : ` ${ids.length} scouts`;
+  return { ok: true, message: active ? `Turned back on${n}.` : `Turned off${n}.` };
+}
+
+/** Add a scout who's registered in Scoutbook: into a family, or a new family with a parent. */
+export async function rosterAddScout(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const first = str(form, "first_name", 60);
+  const last = str(form, "last_name", 60);
+  const memberId = opt(form, "bsa_member_id", 20);
+  const den = str(form, "den_id");
+  let family = str(form, "family_id");
+  if (!first || !last) return { error: "Add a first and last name." };
+  if (memberId && !/^\d{5,12}$/.test(memberId)) return { error: "BSA member IDs are numbers only." };
+  const parent = {
+    first_name: str(form, "parent_first", 60),
+    last_name: str(form, "parent_last", 60) || last,
+    email: str(form, "parent_email", 200).toLowerCase(),
+  };
+  const supabase = await createClient();
+
+  if (!UUID.test(family)) {
+    if (parent.email && !EMAIL.test(parent.email)) return { error: "The parent's email doesn't look right." };
+    if (parent.email && !parent.first_name) return { error: "Add the parent's first name, or leave their email blank." };
+    if (parent.email) {
+      const { count } = await supabase.from("adults").select("id", { count: "exact", head: true }).eq("email", parent.email);
+      if (count) return { error: "Someone on the roster already has that parent email. Pick their family instead." };
+    }
+    const { data, error } = await supabase
+      .from("families")
+      .insert({ family_name: str(form, "family_name", 80) || last })
+      .select("id")
+      .single();
+    if (error || !data) return { error: dbError(error?.message ?? "") };
+    family = data.id as string;
+    if (parent.email) {
+      const { error: aErr } = await supabase.from("adults").insert({ ...parent, family_id: family, role: "parent" });
+      if (aErr) {
+        await supabase.from("families").delete().eq("id", family);
+        return { error: dbError(aErr.message) };
+      }
+    }
+  }
+  const { error } = await supabase
+    .from("scouts")
+    .insert({ family_id: family, first_name: first, last_name: last, bsa_member_id: memberId, den_id: UUID.test(den) ? den : null });
+  if (error) return { error: dbError(error.message) };
+  revalidateRoster(family);
+  return { ok: true, message: `${first} added.${parent.email ? ` ${parent.first_name} can sign in with ${parent.email}.` : ""}` };
+}

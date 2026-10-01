@@ -56,7 +56,7 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
   const leader = isLeader(me);
   // Today's events too, so a "maybe" can come back on the day.
   const rsvpQ = supabase.from("event_rsvps").select("event_id, status, event:events!inner(starts_at)").gte("event.starts_at", new Date(Date.now() - 86400000).toISOString());
-  const [polls, voted, scouts, paperwork, charges, events, pendingPhotos, waitingForms, openNotes, reportedPayments, myRsvps, hidden] = await Promise.all([
+  const [polls, voted, scouts, paperwork, charges, events, pendingPhotos, waitingForms, openNotes, reportedPayments, myRsvps, hidden, waitingJoins] = await Promise.all([
     getPolls(20),
     getVotedPollIds(me),
     getMyScouts(),
@@ -76,6 +76,9 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
     // What this family (or an adult without one) has already answered, for upcoming events.
     (me.family_id ? rsvpQ.eq("family_id", me.family_id) : rsvpQ.eq("adult_id", me.id)).then((r) => r.data ?? []),
     getHidden(),
+    isAdmin(me)
+      ? supabase.from("join_requests").select("id", { count: "exact", head: true }).eq("status", "pending").then((r) => r.count ?? 0)
+      : Promise.resolve(0),
   ]);
   const todos: Todo[] = [];
 
@@ -187,6 +190,15 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
     });
   }
 
+  if (waitingJoins) {
+    todos.push({
+      key: "join-requests",
+      title: `${waitingJoins} ${waitingJoins === 1 ? "person" : "people"} asked to join`,
+      detail: "Signed in with an email that isn't on the roster.",
+      href: "/admin/join",
+      tone: "danger",
+    });
+  }
   if (pendingPhotos) {
     todos.push({
       key: "photos",

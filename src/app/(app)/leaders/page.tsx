@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import FeedbackForm from "@/components/FeedbackForm";
+import ViewAsPicker from "@/components/ViewAsPicker";
 import { BookOpen, ClipboardCheck, FileText, FolderOpen, HandCoins, Landmark, Mail, Phone, Receipt, Settings, ShieldAlert, ShieldCheck, UserPlus, Vote } from "lucide-react";
 import { countWaitingRequests } from "@/lib/finance-data";
 import { getLeaders, isCommittee, isLeader, requireMember } from "@/lib/data";
@@ -95,6 +96,7 @@ export default async function LeadersPage() {
           call 911.
         </p>
       </div>
+      <ViewAsPicker me={me} />
       <FeedbackForm page="Leaders" />
     </>
   );

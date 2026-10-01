@@ -7,6 +7,7 @@ import ServiceWorkerSetup from "@/components/ServiceWorkerSetup";
 import { Bell } from "lucide-react";
 import { displayName, getFeaturedTab, requireMember } from "@/lib/data";
 import { getInboxCount } from "@/lib/inbox";
+import ViewAsBanner from "@/components/ViewAsBanner";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const me = await requireMember();
@@ -54,6 +55,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </div>
         </div>
       </header>
+      <ViewAsBanner me={me} />
       <main className="mx-auto w-full max-w-md space-y-4 px-4 pb-28 pt-4 lg:max-w-3xl lg:px-8 lg:pb-12 lg:pt-8 lg:has-[.page-wide]:max-w-6xl print:max-w-none print:pb-0">
         {children}
       </main>

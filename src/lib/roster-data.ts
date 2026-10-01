@@ -5,6 +5,7 @@ import { requireMember } from "./data";
 import { isAdmin } from "./advancement-data";
 import type { Adult, AppRole, DenRank } from "./types";
 import { getSettings, SETTING_DEFAULTS } from "./settings";
+import type { JoinRequest } from "./join";
 import { startOfTodayEastern } from "./email";
 
 export const ROLE_LABEL: Record<AppRole, string> = {
@@ -152,3 +153,24 @@ export async function welcomeBudget(): Promise<{ sentToday: number; limit: numbe
   return { sentToday, limit, left: Math.max(0, limit - sentToday) };
 }
 
+
+// ---------------------------------------------------------------------------
+// Ask to join
+// ---------------------------------------------------------------------------
+const JOIN_COLS = "id, email, first_name, last_name, phone, relationship, scouts, note, status, decline_reason, family_id, decided_at, created_at";
+
+/** Waiting requests, oldest first, and the last few answered. Admins only (RLS). */
+export async function getJoinRequests(): Promise<{ waiting: JoinRequest[]; recent: JoinRequest[] }> {
+  const supabase = await createClient();
+  const [w, r] = await Promise.all([
+    supabase.from("join_requests").select(JOIN_COLS).eq("status", "pending").order("created_at"),
+    supabase.from("join_requests").select(JOIN_COLS).neq("status", "pending").order("decided_at", { ascending: false }).limit(10),
+  ]);
+  return { waiting: (w.data ?? []) as JoinRequest[], recent: (r.data ?? []) as JoinRequest[] };
+}
+
+export async function countWaitingJoins(): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase.from("join_requests").select("id", { count: "exact", head: true }).eq("status", "pending");
+  return count ?? 0;
+}

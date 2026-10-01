@@ -13,6 +13,8 @@ export interface Adult {
   position_title: string | null;
   ypt_expires_on: string | null;
   registration_expires_on?: string | null;
+  /** Set while a leader is using "View as": their real role (role is the one being previewed). */
+  real_role?: AppRole;
 }
 
 export interface Den {

@@ -1,9 +1,11 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "./supabase/server";
 import type { Adult, Announcement, ItineraryItem, Leader, PackEvent, PackingItem, Scout } from "./types";
 import { LEADER_ROLES } from "./types";
+import { VIEW_AS_COOKIE, viewAsRole } from "./view-as";
 import { denScopeFor, loadCalendar, type CalItem } from "./calendar";
 import { startOfEasternDay } from "./tz";
 import { FEATURE_DAYS_AFTER, FEATURE_DAYS_BEFORE, featuredKind, type FeaturedTab } from "./featured";
@@ -20,7 +22,14 @@ export const getMe = cache(async (): Promise<{ email: string; adult: Adult | nul
     .eq("user_id", sub)
     .eq("is_active", true)
     .maybeSingle();
-  return { email: String(claims?.claims?.email ?? ""), adult: (data as Adult | null) ?? null };
+  let adult = (data as Adult | null) ?? null;
+  if (adult) {
+    // "View as": show a leader the app as a lower role. Display only; the database still checks
+    // their real permissions.
+    const view = viewAsRole(adult.role, (await cookies()).get(VIEW_AS_COOKIE)?.value);
+    if (view) adult = { ...adult, role: view, real_role: adult.role };
+  }
+  return { email: String(claims?.claims?.email ?? ""), adult };
 });
 
 /** Use at the top of every member page: sends visitors to login and non-roster users to the help page. */

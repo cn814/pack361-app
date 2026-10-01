@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, FileUp, Files, Images, Inbox, Mail, ShieldCheck, Tent, UsersRound } from "lucide-react";
+import { ChevronRight, FileUp, Files, Images, Inbox, ListChecks, Mail, ShieldCheck, Tent, UserPlus, UsersRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ActionForm, { Field } from "@/components/ActionForm";
 import BackLink from "@/components/BackLink";
-import { requireAdmin, welcomeBudget } from "@/lib/roster-data";
+import { countWaitingJoins, requireAdmin, welcomeBudget } from "@/lib/roster-data";
 import { getSettings } from "@/lib/settings";
 import { emailConfigured } from "@/lib/email";
 import { emailNewsletterPreview, saveNewsletterMode, saveSettings, syncTroopWebHost } from "./actions";
@@ -33,11 +33,12 @@ function Tile({ href, icon: Icon, label, sub }: { href: string; icon: typeof Mai
 export default async function AdminPage() {
   await requireAdmin();
   const supabase = await createClient();
-  const [settings, budget, { count: openMessages }, { data: storageRows }] = await Promise.all([
+  const [settings, budget, { count: openMessages }, { data: storageRows }, waitingJoins] = await Promise.all([
     getSettings(),
     welcomeBudget(),
     supabase.from("feedback").select("id", { count: "exact", head: true }).is("resolved_at", null),
     supabase.rpc("storage_usage"),
+    countWaitingJoins(),
   ]);
   // People who can get the newsletter's test copy: pack leadership, the Cubmaster and admins.
   const { data: testerRows } = await supabase
@@ -83,7 +84,14 @@ export default async function AdminPage() {
           label={openMessages ? `Messages (${openMessages} open)` : "Messages"}
           sub="Problems and notes sent from the app"
         />
+        <Tile
+          href="/admin/join"
+          icon={UserPlus}
+          label={waitingJoins ? `Join requests (${waitingJoins} waiting)` : "Join requests"}
+          sub="People who signed in and asked to be added"
+        />
         <Tile href="/admin/roster" icon={UsersRound} label="Families and scouts" sub="Add families, change dens, turn off access" />
+        <Tile href="/admin/roster/check" icon={ListChecks} label="Roster check" sub="Compare with the Scoutbook roster: new scouts, den moves, who left" />
         <Tile href="/admin/dens" icon={Tent} label="Dens and den leaders" sub="Add dens, assign leaders" />
         <Tile
           href="/admin/welcome"
