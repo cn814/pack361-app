@@ -160,6 +160,76 @@ export const POSITIONS: Position[] = [
 
 export const POSITION_BY_KEY = Object.fromEntries(POSITIONS.map((p) => [p.key, p])) as Record<PositionKey, Position>;
 
+// ---------------------------------------------------------------------------
+// What "position-specific training" means for each position: the short online modules in the
+// Scouting America Learn Center (my.scouting.org → Training). From "Cub Scout Position Trained
+// Requirements", October 2025:
+// https://www.scouting.org/wp-content/uploads/2025/10/Position-Trained-Requirements-Oct2025.pdf
+// Hazardous Weather (SCO_800) is also on the Cubmaster and den leader lists; the app tracks it
+// as its own course, so it isn't repeated here.
+// ---------------------------------------------------------------------------
+export const POSITION_TRAINING_SOURCE = "https://www.scouting.org/wp-content/uploads/2025/10/Position-Trained-Requirements-Oct2025.pdf";
+
+const MODULES: Record<string, [title: string, seconds: number]> = {
+  SCO_450: ["Welcome", 122],
+  SCO_451: ["Aims and Methods of Cub Scouting", 377],
+  SCO_452: ["Bobcat", 428],
+  SCO_453: ["Advancement", 625],
+  SCO_454: ["Cub Scout Uniforms", 289],
+  SCO_455: ["Conducting a Cub Scout Den Meeting", 494],
+  SCO_456: ["Resources", 314],
+  SCO_457: ["Den Management", 327],
+  SCO_458: ["Conducting a Cub Scout Pack Meeting", 725],
+  SCO_459: ["Conducting a Pack Committee Meeting", 540],
+  SCO_460: ["Preparing Families for Outdoor", 319],
+  SCO_461: ["Keeping Cub Scouting Safe", 275],
+  SCO_462: ["Involving Adults in Cub Scouting", 526],
+  SCO_463: ["Pack Structure", 482],
+  SCO_464: ["Denners and Den Chiefs", 474],
+  SCO_465: ["Childhood Development", 448],
+  SCO_466: ["Continue the Journey", 249],
+  SCO_467: ["Pack Finance", 466],
+  SCO_468: ["Annual Program Planning", 1054],
+  SCO_469: ["Annual Charter Renewal", 396],
+  SCO_267: ["What Is a Charter", 900],
+  SCO_268: ["Scouting Units", 590],
+  SCO_269: ["The COR Position", 720],
+  SCO_270: ["BSA Standards and Volunteers", 660],
+};
+
+const CUBMASTER_MODULES = ["SCO_450", "SCO_451", "SCO_453", "SCO_454", "SCO_457", "SCO_458", "SCO_462", "SCO_460", "SCO_461", "SCO_463", "SCO_464", "SCO_465", "SCO_466"];
+const DEN_LEADER_MODULES = ["SCO_450", "SCO_451", "SCO_452", "SCO_453", "SCO_454", "SCO_455", "SCO_456", "SCO_457", "SCO_460", "SCO_461", "SCO_462", "SCO_463", "SCO_464", "SCO_465", "SCO_466"];
+const COMMITTEE_MODULES = ["SCO_450", "SCO_451", "SCO_454", "SCO_459", "SCO_462", "SCO_463", "SCO_460", "SCO_461", "SCO_466"];
+
+const POSITION_MODULES: Record<PositionKey, string[]> = {
+  cubmaster: CUBMASTER_MODULES,
+  assistant_cubmaster: CUBMASTER_MODULES,
+  den_leader: DEN_LEADER_MODULES,
+  assistant_den_leader: DEN_LEADER_MODULES,
+  committee_chair: [...COMMITTEE_MODULES.slice(0, -1), "SCO_453", "SCO_465", "SCO_467", "SCO_468", "SCO_469", "SCO_466"],
+  committee_member: COMMITTEE_MODULES,
+  cor: ["SCO_267", "SCO_268", "SCO_269", "SCO_270"],
+};
+
+export interface PositionTraining {
+  position: PositionKey;
+  label: string;
+  modules: { code: string; title: string }[];
+  minutes: number;
+}
+
+/** The online modules that make up a position's training, with the total time. */
+export function positionTraining(p: PositionKey): PositionTraining {
+  const codes = POSITION_MODULES[p];
+  const seconds = codes.reduce((n, c) => n + MODULES[c][1], 0);
+  return {
+    position: p,
+    label: POSITION_BY_KEY[p].label,
+    modules: codes.map((code) => ({ code, title: MODULES[code][0] })),
+    minutes: Math.round(seconds / 60),
+  };
+}
+
 /** Committee jobs that are listed by title rather than as "Committee Member". */
 const COMMITTEE_WORDS =
   /\b(committee|treasurer|secretary|advancement|membership|outdoor|activities|fundrais\w*|popcorn|pinewood|trainer|coordinator|chair(man|woman|person)?|quartermaster|public relations|webmaster|historian)\b/;

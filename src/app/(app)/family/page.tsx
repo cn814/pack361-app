@@ -16,7 +16,7 @@ import ActionForm, { Field } from "@/components/ActionForm";
 import { saveMyMemberId } from "@/app/(app)/leaders/training/actions";
 import { displayName, getFamilyAdults, getMyScouts, isLeader, requireMember } from "@/lib/data";
 import { getMyPositions, getMyTraining } from "@/lib/training-data";
-import { COURSE_BY_KEY, POSITION_BY_KEY, trainedStatus, trainingState } from "@/lib/training";
+import { COURSE_BY_KEY, POSITION_BY_KEY, positionLabels, trainedStatus, trainingState } from "@/lib/training";
 import { fmtRegDate, needsRenewal, regStatus, RENEW_URL, REG_STYLE } from "@/lib/registration";
 
 export const metadata: Metadata = { title: "My family" };
@@ -56,7 +56,7 @@ export default async function FamilyPage() {
         <p className="flex items-start gap-2 rounded-2xl border border-gold-100 bg-gold-50 p-3 text-sm text-gold-800">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>
-            Training still needed for your position: {status.missing.map((c) => COURSE_BY_KEY[c].label).join(", ")}.{" "}
+            Training still needed for your position: {status.missing.map((c) => (c === "position" ? `${positionLabels(status.positions)} position training` : COURSE_BY_KEY[c].label)).join(", ")}.{" "}
             <a href="#training" className="font-bold underline">
               See My training
             </a>

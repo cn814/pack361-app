@@ -1,5 +1,16 @@
 import { CircleAlert, Clock, ExternalLink, ShieldCheck } from "lucide-react";
-import { COURSE_BY_KEY, MY_SCOUTING_URL, daysLeft, positionLabels, trainingState, type TrainedStatus, type TrainingRow } from "@/lib/training";
+import {
+  COURSE_BY_KEY,
+  MY_SCOUTING_URL,
+  POSITION_BY_KEY,
+  daysLeft,
+  positionLabels,
+  positionTraining,
+  trainingState,
+  type CourseKey,
+  type TrainedStatus,
+  type TrainingRow,
+} from "@/lib/training";
 import { fmtShortDate } from "@/lib/advancement";
 
 /** Courses on record that have expired or expire within 60 days, soonest first. */
@@ -68,15 +79,48 @@ function Status({ status, compact }: { status: TrainedStatus; compact: boolean }
     );
   }
   const online = status.missing.some((c) => COURSE_BY_KEY[c].where === "my.scouting");
+  // "Position-specific training" is a different set of short online modules for each position:
+  // say which positions, and what's in each.
+  const modulePositions = status.positions.filter((p) => status.missing.some((c) => (c === "position" || c === "cor") && POSITION_BY_KEY[p].required.includes(c)));
+  const label = (c: CourseKey) => {
+    if (c !== "position") return COURSE_BY_KEY[c].label;
+    const names = modulePositions.filter((p) => p !== "cor").map((p) => POSITION_BY_KEY[p].label);
+    return names.length ? `${names.join(" and ")} position training` : COURSE_BY_KEY[c].label;
+  };
+  const sets = modulePositions.map(positionTraining);
   return (
     <div className="flex items-start gap-1.5 text-xs text-danger">
       <CircleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
-      <div className="min-w-0">
-        <p className="font-semibold">Missing: {status.missing.map((c) => COURSE_BY_KEY[c].label).join(", ")}</p>
+      <div className="min-w-0 space-y-1">
+        <p className="font-semibold">Missing: {status.missing.map(label).join(", ")}</p>
+        {compact
+          ? sets.map((t) => (
+              <p key={t.position} className="text-muted">
+                {t.label}: {t.modules.length} short online modules, about {t.minutes} minutes
+              </p>
+            ))
+          : sets.map((t) => (
+              <div key={t.position} className="rounded-lg bg-surface-low p-2 text-ink">
+                <p className="font-semibold">
+                  {t.label} training: {t.modules.length} short videos, about {t.minutes} minutes in all
+                </p>
+                <p className="text-muted">
+                  In the Learn Center at my.scouting.org, search for each code. You&apos;re
+                  trained for the position when all of them are done.
+                </p>
+                <ul className="mt-1 grid gap-x-3 gap-y-0.5 sm:grid-cols-2">
+                  {t.modules.map((m) => (
+                    <li key={m.code}>
+                      <span className="font-mono text-[11px] text-muted">{m.code}</span> {m.title}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
         {!compact && status.positions.length > 0 && <p className="text-muted">Needed to be trained for {who}.</p>}
-        {online && (
+        {online && !compact && (
           <p className="text-muted">
-            {status.missing.length === 1 ? "Take it" : "Take them"} at my.scouting.org, then add the date below. <MyScoutingLink />
+            When you&apos;re done, add the date you finished below. <MyScoutingLink />
           </p>
         )}
       </div>
