@@ -117,6 +117,7 @@ export async function getRsvpTotals(eventIds: string[]): Promise<Map<string, Rsv
  */
 export function rsvpMismatch(c: LeaderCharge, rsvps: Map<string, RsvpTotal>): number | null {
   if (c.kind !== "event" || !c.event_id || !c.event || (c.status !== "paid" && c.status !== "reported")) return null;
+  if (c.scout_id || (c.family_id && c.adult_id)) return null; // a per-person fee a leader added, not the RSVP's
   const key = c.family_id ? `${c.event_id}:${c.family_id}` : `${c.event_id}:a:${c.adult_id}`;
   const r = rsvps.get(key);
   if (!r) return null; // added by a leader, not from an RSVP
@@ -124,6 +125,9 @@ export function rsvpMismatch(c: LeaderCharge, rsvps: Map<string, RsvpTotal>): nu
   const had = c.status === "paid" ? (c.paid_amount_cents ?? c.amount_cents) : c.amount_cents;
   return now !== had ? now : null;
 }
+
+/** Dues moved from the old dues list with no amount ($0): a leader needs to check them. */
+export const MIGRATED_NOTE = "Moved from the old dues list; check the amount.";
 
 export interface ProblemPayment {
   id: string;

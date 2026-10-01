@@ -19,6 +19,7 @@ import {
   getPaymentProblems,
   getRsvpTotals,
   inSeason,
+  MIGRATED_NOTE,
   rsvpMismatch,
   summarize,
   todayEastern,
@@ -59,6 +60,8 @@ export default async function MoneyPage({ searchParams }: PageProps<"/leaders/mo
   const [settings, all, problems] = await Promise.all([getSettings(), getAllCharges(), getPaymentProblems()]);
   const season = all.filter((c) => c.status !== "canceled" && inSeason(c, settings));
   const sum = summarize(season);
+  const needAmount = all.filter((c) => c.amount_cents === 0 && (c.status === "open" || c.status === "reported"));
+  const migrated = needAmount.filter((c) => c.note?.startsWith(MIGRATED_NOTE)).length;
 
   return (
     <>
@@ -86,6 +89,19 @@ export default async function MoneyPage({ searchParams }: PageProps<"/leaders/mo
         <p className="flex items-start gap-2 rounded-xl bg-gold-50 p-3 text-xs text-gold-800">
           <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           PayPal is in test mode (sandbox): no real money moves. Set PAYPAL_ENV to live in Vercel when you&apos;re ready.
+        </p>
+      )}
+
+      {needAmount.length > 0 && (
+        <p className="flex items-start gap-2 rounded-xl bg-gold-50 p-3 text-xs text-gold-800">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <span>
+            {needAmount.length} unpaid item{needAmount.length === 1 ? " has" : "s have"} no amount
+            {migrated ? ` (${migrated} moved from the old dues list)` : ""}. Set each amount before confirming it, or waive it.{" "}
+            <Link href="/leaders/money?scope=all&amount=none" className="font-bold underline">
+              Show them below
+            </Link>
+          </span>
         </p>
       )}
 
@@ -178,8 +194,10 @@ async function ChargesTab({
   const scope = one(sp.scope) === "all" ? "all" : "season";
   const q = one(sp.q).trim().slice(0, 60);
   const ql = q.toLowerCase();
+  const noAmount = one(sp.amount) === "none";
   const rows = all.filter(
     (c) =>
+      (!noAmount || (c.amount_cents === 0 && (c.status === "open" || c.status === "reported"))) &&
       (scope === "all" || inSeason(c, settings)) &&
       (!kind || c.kind === kind) &&
       (status ? c.status === status : c.status !== "canceled") &&
@@ -188,12 +206,13 @@ async function ChargesTab({
   rows.sort((a, b) => ownerName(a).localeCompare(ownerName(b)) || a.title.localeCompare(b.title));
   const shown = rows.slice(0, SHOW_MAX);
   const rsvps = await getRsvpTotals([...new Set(shown.filter((c) => c.kind === "event" && c.event_id).map((c) => c.event_id!))]);
-  const reported = rows.filter((c) => c.status === "reported");
+  const reported = rows.filter((c) => c.status === "reported" && c.amount_cents > 0);
   const qs = new URLSearchParams();
   if (kind) qs.set("kind", kind);
   if (status) qs.set("status", status);
   if (scope === "all") qs.set("scope", "all");
   if (q) qs.set("q", q);
+  if (noAmount) qs.set("amount", "none");
   const query = qs.toString();
   const back = `/leaders/money${query ? `?${query}` : ""}`;
   const total = rows.reduce((s, c) => s + (c.status === "paid" ? (c.paid_amount_cents ?? c.amount_cents) : c.amount_cents), 0);
@@ -278,6 +297,7 @@ async function ChargesTab({
 function ChargeItem({ c, back, mismatch }: { c: LeaderCharge; back: string; mismatch: number | null }) {
   const who = chargeFor(c);
   const online = c.status === "paid" && c.paid_via === "paypal";
+  const unpaid = c.status === "open" || c.status === "reported";
   const details = [
     KIND_LABEL[c.kind],
     c.season,
@@ -317,12 +337,28 @@ function ChargeItem({ c, back, mismatch }: { c: LeaderCharge; back: string; mism
       <form action={chargeAction} className="flex flex-wrap items-center gap-2">
         <input type="hidden" name="id" value={c.id} />
         <input type="hidden" name="back" value={back} />
-        {c.status === "reported" && (
+        {unpaid && c.amount_cents === 0 && (
+          <>
+            <span className="text-xs font-semibold text-gold-800">No amount yet:</span>
+            <input
+              name="amount"
+              inputMode="decimal"
+              required
+              placeholder="$"
+              aria-label="Amount in dollars"
+              className="w-20 rounded-lg border border-line bg-white px-2 py-1.5 text-xs"
+            />
+            <SubmitButton name="do" value="amount" className="btn-primary px-3 py-1.5 text-xs">
+              Set amount
+            </SubmitButton>
+          </>
+        )}
+        {c.status === "reported" && c.amount_cents > 0 && (
           <SubmitButton name="do" value="confirm" className="btn-primary px-3 py-1.5 text-xs">
             Confirm paid
           </SubmitButton>
         )}
-        {c.status === "open" && (
+        {c.status === "open" && c.amount_cents > 0 && (
           <>
             <select name="how" className="rounded-lg border border-line bg-white px-2 py-1.5 text-xs" defaultValue="check" aria-label="How they paid">
               <option value="check">Check</option>
@@ -365,6 +401,26 @@ function ChargeItem({ c, back, mismatch }: { c: LeaderCharge; back: string; mism
           </span>
         )}
       </form>
+      {unpaid && c.amount_cents > 0 && (
+        <details>
+          <summary className="cursor-pointer text-[11px] font-bold text-pine">Change amount</summary>
+          <form action={chargeAction} className="mt-1 flex items-center gap-2">
+            <input type="hidden" name="id" value={c.id} />
+            <input type="hidden" name="back" value={back} />
+            <input
+              name="amount"
+              inputMode="decimal"
+              required
+              defaultValue={centsToInput(c.amount_cents)}
+              aria-label="New amount in dollars"
+              className="w-24 rounded-lg border border-line bg-white px-2 py-1.5 text-xs"
+            />
+            <SubmitButton name="do" value="amount" className="btn-ghost px-3 py-1.5 text-xs">
+              Save amount
+            </SubmitButton>
+          </form>
+        </details>
+      )}
     </li>
   );
 }

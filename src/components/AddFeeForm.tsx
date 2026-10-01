@@ -139,7 +139,15 @@ export default function AddFeeForm({
           <input className="input" name="season" required value={season} onChange={(e) => setSeason(e.target.value)} placeholder={kind === "dues" ? "2026-27" : "2027"} />
         </Field>
       )}
-      <Field label="Who owes it" hint={who === "leaders" ? "Anyone with a leader role or position, and den leaders." : undefined}>
+      <Field
+        label="Who owes it"
+        hint={
+          (who === "leaders" ? "Anyone with a leader role or position, and den leaders. " : "") +
+          (who === "families" || who === "den_families" || who === "family"
+            ? "One per family: a family that already has this fee is skipped."
+            : "One per person: each scout or adult gets their own, so siblings each owe it. Anyone who already has it is skipped.")
+        }
+      >
         <select className="input" name="who" value={who} onChange={(e) => changeWho(e.target.value as Who)}>
           {whoChoices.map((w) => (
             <option key={w} value={w}>

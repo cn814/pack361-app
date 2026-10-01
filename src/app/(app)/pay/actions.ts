@@ -60,11 +60,21 @@ export async function startCheckout(chargeIds: string[]): Promise<CheckoutResult
   }[]).filter((c) => isMine(c, me));
   if (rows.length !== ids.length) return { error: "Some of these items aren't on your family's list anymore. Refresh the page and try again." };
   if (rows.some((c) => c.status !== "open")) return { error: "Something changed since you opened this page. Refresh it and try again." };
-  const charges = ids.map((id) => rows.find((r) => r.id === id)!);
-  if (charges.some((c) => c.amount_cents <= 0)) return { error: "One of these items has no amount yet. Untick it and try again." };
-  const total = charges.reduce((s, c) => s + c.amount_cents, 0);
+  if (rows.some((c) => c.amount_cents <= 0)) return { error: "One of these items has no amount yet. Untick it and try again." };
 
+  // Hold these charges for this checkout, all or nothing. Another phone or tab already paying for
+  // them is refused, and the amounts come back from the database at the moment of the hold.
   const paymentId = crypto.randomUUID();
+  const { data: held, error: holdError } = await supabase.rpc("claim_charges", { p_payment_id: paymentId, p_ids: ids });
+  if (holdError) {
+    if (holdError.code === "55006") return { error: "A payment for these is already in progress. Try again in a few minutes." };
+    return { error: "Something changed since you opened this page. Refresh it and try again." };
+  }
+  const amounts = new Map(((held ?? []) as { charge_id: string; amount_cents: number }[]).map((h) => [h.charge_id, h.amount_cents]));
+  const charges = ids.map((id) => ({ ...rows.find((r) => r.id === id)!, amount_cents: amounts.get(id) ?? 0 }));
+  const total = charges.reduce((s, c) => s + c.amount_cents, 0);
+  const release = () => supabase.rpc("release_claim", { p_payment_id: paymentId });
+
   let order: PayPalOrder;
   try {
     order = await createOrder(
@@ -77,6 +87,7 @@ export async function startCheckout(chargeIds: string[]): Promise<CheckoutResult
     );
   } catch (e) {
     logPayPal("create order", e);
+    await release();
     return { error: "PayPal isn't answering right now. Nothing was charged. Try again in a few minutes." };
   }
   const db = createAdminClient();
@@ -93,6 +104,7 @@ export async function startCheckout(chargeIds: string[]): Promise<CheckoutResult
   });
   if (insertError) {
     console.error(`[pay] couldn't save checkout ${paymentId}: ${insertError.message}`);
+    await release();
     return { error: "Couldn't start the payment. Nothing was charged. Try again." };
   }
   return { orderId: order.id };
@@ -106,7 +118,7 @@ export async function finishCheckout(orderId: string): Promise<FinishResult> {
   const supabase = await createClient();
   const { data: payment } = await supabase
     .from("payments")
-    .select("id, family_id, adult_id, amount_cents, provider_order_id, status, charge_ids")
+    .select("id, family_id, adult_id, amount_cents, provider_order_id, status, charge_ids, charge_cents")
     .eq("provider_order_id", orderId)
     .maybeSingle();
   if (!payment || !isMine(payment, me)) return { error: "That payment wasn't found." };
@@ -114,8 +126,9 @@ export async function finishCheckout(orderId: string): Promise<FinishResult> {
   if (payment.status !== "created") return { error: "This checkout was closed, so nothing was charged. Refresh the page and try again." };
 
   const db = createAdminClient();
-  // A leader may have marked something paid since the checkout started: don't take money twice.
-  if (!(await chargesStillOpen(db, payment.charge_ids as string[]))) {
+  // A leader may have marked something paid, or the amount changed, since the checkout started:
+  // don't take the wrong amount, or money twice. (Closing the checkout lets go of its charges.)
+  if (!(await chargesStillOpen(db, payment as { id: string; charge_ids: string[]; charge_cents: number[] }))) {
     await db
       .from("payments")
       .update({ status: "canceled", error: "Items changed before the payment was taken; nothing was charged." })

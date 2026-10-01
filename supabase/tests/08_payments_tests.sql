@@ -226,6 +226,9 @@ insert into public.payments (id, family_id, adult_id, charge_ids, charge_cents, 
   array['82000000-0000-0000-0000-000000000002'::uuid], array[6000], 6000, 'ORDER-B'),
  ('84000000-0000-0000-0000-000000000003', null, '30000000-0000-0000-0000-00000000000c',
   array['83000000-0000-0000-0000-000000000003'::uuid], array[6500], 6500, 'ORDER-C');
+-- Each checkout holds its charges (as claim_charges does when a checkout starts).
+update public.charges c set pending_payment_id = p.id, pending_since = now()
+  from public.payments p where c.id = any (p.charge_ids) and p.provider_order_id in ('ORDER-A', 'ORDER-B', 'ORDER-C');
 
 \echo '== Payments: who sees checkouts'
 begin;
@@ -256,6 +259,8 @@ select test.check((select status || '/' || paid_via || '/' || paid_amount_cents 
                   'its charges are marked paid with PayPal');
 select test.check((select status from public.payments where id = '84000000-0000-0000-0000-000000000001') = 'captured',
                   'the checkout is captured');
+select test.check((select pending_payment_id from public.charges where id = '83000000-0000-0000-0000-000000000001') is null,
+                  'and its hold on the charge is let go');
 select test.check(public.record_paypal_capture('84000000-0000-0000-0000-000000000001', 'CAPTURE-A', 7500) = 'already',
                   'recording twice does nothing the second time');
 select test.check(public.record_paypal_capture('84000000-0000-0000-0000-000000000002', 'CAPTURE-B', 100) = 'mismatch',
@@ -281,3 +286,143 @@ select test.check((select public.update_charges(array['83000000-0000-0000-0000-0
 rollback;
 
 \echo '== PAYMENTS TESTS PASSED'
+
+-- ---------------------------------------------------------------------------
+-- Review fixes: amounts must match the checkout, one checkout at a time, per-person fees.
+insert into public.events (id, title, category, starts_at, rsvp_enabled, fee_scout_cents) values
+ ('52000000-0000-0000-0000-000000000003', 'Fishing Derby', 'Outing', now() + interval '20 days', true, 1000),
+ ('52000000-0000-0000-0000-000000000004', 'Museum Trip', 'Outing', now() + interval '20 days', true, 1000);
+
+\echo '== Payments: a checkout holds its charges'
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select public.set_rsvp('52000000-0000-0000-0000-000000000003', 'yes', 1, 0, null);
+select test.check((select amount_cents from public.claim_charges('85000000-0000-0000-0000-000000000001',
+                     array(select id from public.charges where event_id = '52000000-0000-0000-0000-000000000003'))) = 1000,
+                  'starting a checkout claims the charge and returns its amount');
+select public.set_rsvp('52000000-0000-0000-0000-000000000003', 'yes', 5, 0, null);
+select test.check((select amount_cents from public.charges where event_id = '52000000-0000-0000-0000-000000000003' and status = 'open') = 1000,
+                  'changing the RSVP mid-checkout does not change the amount being paid');
+select test.check((select public.report_paid(array(select id from public.charges where event_id = '52000000-0000-0000-0000-000000000003'), 'cash', null)) = 0,
+                  'cannot report paying another way while a checkout holds it');
+commit;
+
+\echo '== Payments: a second phone cannot pay for the same things'
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f"}', true);
+select test.expect_error($$select * from public.claim_charges('85000000-0000-0000-0000-000000000002',
+                           array(select id from public.charges where event_id = '52000000-0000-0000-0000-000000000003'))$$, '55006',
+                         'a second checkout for the same charge is refused while the first is in progress');
+select test.expect_error($$select * from public.claim_charges('85000000-0000-0000-0000-000000000002', array['82000000-0000-0000-0000-000000000002'::uuid])$$, '22023',
+                         'cannot start a checkout for another family''s charge');
+rollback;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select test.expect_error($$select * from public.claim_charges('85000000-0000-0000-0000-000000000003',
+                           array(select id from public.charges where event_id = '52000000-0000-0000-0000-000000000003'))$$, '22023',
+                         'other families cannot claim it either');
+rollback;
+
+-- The first checkout was opened and left (its hold lapses after 30 minutes).
+insert into public.payments (id, family_id, adult_id, charge_ids, charge_cents, amount_cents, provider_order_id)
+select '85000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-00000000000a',
+       array[id], array[1000], 1000, 'ORDER-OLD'
+  from public.charges where event_id = '52000000-0000-0000-0000-000000000003' and status = 'open';
+update public.charges set pending_since = now() - interval '1 hour' where pending_payment_id = '85000000-0000-0000-0000-000000000001';
+
+\echo '== Payments: after the hold lapses'
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select public.set_rsvp('52000000-0000-0000-0000-000000000003', 'yes', 5, 0, null);
+select test.check((select amount_cents from public.charges where event_id = '52000000-0000-0000-0000-000000000003' and status = 'open') = 5000,
+                  'the RSVP updates the amount once the old checkout''s hold lapses');
+select test.check((select amount_cents from public.claim_charges('85000000-0000-0000-0000-000000000004',
+                     array(select id from public.charges where event_id = '52000000-0000-0000-0000-000000000003'))) = 5000,
+                  'a new checkout can take over a lapsed hold');
+commit;
+insert into public.payments (id, family_id, adult_id, charge_ids, charge_cents, amount_cents, provider_order_id)
+select '85000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-00000000000a',
+       array[id], array[5000], 5000, 'ORDER-NEW'
+  from public.charges where event_id = '52000000-0000-0000-0000-000000000003' and status = 'open';
+
+\echo '== Payments: an old checkout cannot pay a changed charge'
+begin;
+set local role service_role;
+select test.check(public.record_paypal_capture('85000000-0000-0000-0000-000000000001', 'CAPTURE-OLD', 1000) = 'partial',
+                  'capturing the old $10 checkout for a charge that is now $50 is flagged');
+select test.check((select status || '/' || amount_cents from public.charges where event_id = '52000000-0000-0000-0000-000000000003' and status <> 'canceled')
+                  = 'open/5000', 'and the charge is not marked paid for less than it costs');
+select test.check(public.record_paypal_capture('85000000-0000-0000-0000-000000000004', 'CAPTURE-NEW', 5000) = 'recorded',
+                  'the checkout holding the charge at its current amount is recorded');
+select test.check((select status || '/' || paid_amount_cents || '/' || coalesce(pending_payment_id::text, '-')
+                     from public.charges where event_id = '52000000-0000-0000-0000-000000000003' and status <> 'canceled')
+                  = 'paid/5000/-', 'paid in full, hold let go');
+commit;
+
+\echo '== Payments: wrong amount at checkout time is caught even without a capture race'
+begin;
+set local role service_role;
+update public.charges set status = 'open', paid_via = null, paid_at = null, paid_amount_cents = null, amount_cents = 2000,
+                          pending_payment_id = '85000000-0000-0000-0000-000000000005', pending_since = now()
+ where id = '83000000-0000-0000-0000-000000000004';
+insert into public.payments (id, family_id, charge_ids, charge_cents, amount_cents, provider_order_id) values
+ ('85000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000001',
+  array['83000000-0000-0000-0000-000000000004'::uuid], array[1200], 1200, 'ORDER-T');
+select test.check(public.record_paypal_capture('85000000-0000-0000-0000-000000000005', 'CAPTURE-T', 1200) = 'partial'
+                  , 'a charge whose amount went up since checkout is not marked paid');
+select test.check((select status from public.charges where id = '83000000-0000-0000-0000-000000000004') = 'open', 'it stays open');
+rollback;
+
+\echo '== Payments: a canceled checkout lets go of its charges'
+begin;
+set local role service_role;
+update public.charges set pending_payment_id = '85000000-0000-0000-0000-000000000006', pending_since = now()
+ where id = '83000000-0000-0000-0000-000000000004';
+insert into public.payments (id, family_id, charge_ids, charge_cents, amount_cents, provider_order_id) values
+ ('85000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000001',
+  array['83000000-0000-0000-0000-000000000004'::uuid], array[1200], 1200, 'ORDER-X');
+update public.payments set status = 'canceled' where id = '85000000-0000-0000-0000-000000000006';
+select test.check((select pending_payment_id from public.charges where id = '83000000-0000-0000-0000-000000000004') is null,
+                  'canceling the checkout releases the hold');
+rollback;
+
+\echo '== Payments: a reported charge is not changed by the RSVP'
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select public.set_rsvp('52000000-0000-0000-0000-000000000004', 'yes', 3, 0, null);
+select test.check((select public.report_paid(array(select id from public.charges where event_id = '52000000-0000-0000-0000-000000000004'), 'cash', null)) = 1,
+                  'family reports paying $30 in cash');
+select public.set_rsvp('52000000-0000-0000-0000-000000000004', 'yes', 0, 0, null);
+select test.check((select status || '/' || amount_cents from public.charges where event_id = '52000000-0000-0000-0000-000000000004' and status <> 'canceled')
+                  = 'reported/3000', 'dropping the headcount after reporting leaves the reported amount alone');
+select public.set_rsvp('52000000-0000-0000-0000-000000000004', 'no', 0, 0, null);
+select test.check((select status from public.charges where event_id = '52000000-0000-0000-0000-000000000004' and status <> 'canceled') = 'reported',
+                  'answering no does not cancel a reported charge');
+commit;
+
+\echo '== Payments: per-scout fees'
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select test.check((select added || '/' || skipped from public.add_fee('event', 'Fishing Derby bait', null, '52000000-0000-0000-0000-000000000003', 500, null, 'scouts', null))
+                  = '3/0', 'a per-scout event fee charges each sibling, alongside the family''s RSVP charge');
+select test.check((select added || '/' || skipped from public.add_fee('event', 'Fishing Derby bait', null, '52000000-0000-0000-0000-000000000003', 500, null, 'scouts', null))
+                  = '0/3', 'and is still added only once per scout');
+select test.check((select added || '/' || skipped from public.add_fee('dues', 'Dues per scout', '2026-27', null, 3000, null, 'scouts', null))
+                  = '3/0', 'per-scout dues charge each sibling');
+select test.check((select added || '/' || skipped from public.add_fee('dues', 'Pack dues 2026-27', '2026-27', null, 6000, null, 'families', null))
+                  = '0/2', 'family dues are still once per family');
+select test.check((select added || '/' || skipped from public.add_fee('event', 'Museum Trip', null, '52000000-0000-0000-0000-000000000004', 1000, null, 'family', '20000000-0000-0000-0000-000000000001'))
+                  = '0/1', 'a family-level event fee is still one per family (the RSVP already added it)');
+-- A $0 charge can't be confirmed as paid.
+update public.charges set amount_cents = 0 where id = '82000000-0000-0000-0000-000000000002';
+select test.check((select public.update_charges(array['82000000-0000-0000-0000-000000000002'::uuid], 'paid', 'cash')) = 0,
+                  'a $0 charge cannot be marked paid (set the amount or waive it)');
+rollback;
+
+\echo '== PAYMENTS REVIEW TESTS PASSED'
