@@ -10,6 +10,9 @@ import { setFundraiserFlag } from "./actions";
 
 export const metadata: Metadata = { title: "Pack store" };
 
+/** The pack's own page on the Scout Shop's custom apparel site (Baltimore Area Council, Pack 361). */
+const PACK_APPAREL_URL = "https://www.myscoutshop.org/cub-scouts/maryland/columbia/baltimore-area-council-pack-361";
+
 export default async function StorePage() {
   const me = await requireMember();
   const leader = isLeader(me);
@@ -55,6 +58,19 @@ export default async function StorePage() {
           </ul>
           <p className="mt-2 text-[11px] text-muted">Call ahead for hours.</p>
         </details>
+      </section>
+
+      <section className="card space-y-2 border-l-4 border-l-gold">
+        <h2 className="flex items-center gap-2 font-extrabold text-pine-950">
+          <Shirt className="h-5 w-5 text-gold-700" aria-hidden /> Pack 361 apparel shop
+        </h2>
+        <p className="text-sm text-ink">
+          Shirts, sweatshirts, hoodies, hats, bags and drinkware with the Pack 361 design, for scouts and grown-ups. Order any
+          time; the more you order together, the bigger the discount.
+        </p>
+        <a href={PACK_APPAREL_URL} target="_blank" rel="noopener noreferrer" className="btn-gold w-full py-2">
+          <ExternalLink className="h-4 w-4" aria-hidden /> Shop Pack 361 apparel
+        </a>
       </section>
 
       {shown.map((c) => {
