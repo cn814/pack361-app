@@ -96,7 +96,7 @@ export default function TakeAttendance(p: Props) {
           <h3 className="text-xs font-bold uppercase tracking-wide text-muted">
             {g.name} <span className="font-semibold normal-case tracking-normal">({g.scouts.filter((s) => present.has(s.id)).length} of {g.scouts.length})</span>
           </h3>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2">
             {g.scouts.map((s) => {
               const on = present.has(s.id);
               return (

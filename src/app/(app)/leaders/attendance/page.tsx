@@ -65,11 +65,11 @@ export default async function AttendanceReportPage({ searchParams }: PageProps<"
           <table className="w-full min-w-[22rem] text-sm">
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wider text-muted">
-                <th className="py-1 font-bold">Scout</th>
-                <th className="py-1 text-right font-bold">Den mtgs</th>
-                <th className="py-1 text-right font-bold">Events</th>
-                <th className="py-1 text-right font-bold">Camping nights</th>
-                <th className="py-1 text-right font-bold">Nights ever</th>
+                <th className="py-1 pr-2 font-bold">Scout</th>
+                <th className="py-1 pl-2 text-right font-bold">Den meetings</th>
+                <th className="py-1 pl-3 text-right font-bold">Events</th>
+                <th className="py-1 pl-3 text-right font-bold">Nights</th>
+                <th className="py-1 pl-3 text-right font-bold">Nights ever</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -81,7 +81,7 @@ export default async function AttendanceReportPage({ searchParams }: PageProps<"
                     </Link>
                     {!s.active && <span className="ml-1 text-[11px] text-muted">(left)</span>}
                   </td>
-                  <td className="py-1.5 text-right">
+                  <td className="whitespace-nowrap py-1.5 pl-2 text-right">
                     {s.denMeetings === null ? (
                       <span className="text-muted">n/a</span>
                     ) : (
@@ -91,9 +91,9 @@ export default async function AttendanceReportPage({ searchParams }: PageProps<"
                       </>
                     )}
                   </td>
-                  <td className="py-1.5 text-right">{s.events}</td>
-                  <td className="py-1.5 text-right font-semibold">{s.nights}</td>
-                  <td className="py-1.5 text-right text-muted">{s.nightsAll}</td>
+                  <td className="py-1.5 pl-3 text-right">{s.events}</td>
+                  <td className="py-1.5 pl-3 text-right font-semibold">{s.nights}</td>
+                  <td className="py-1.5 pl-3 text-right text-muted">{s.nightsAll}</td>
                 </tr>
               ))}
             </tbody>

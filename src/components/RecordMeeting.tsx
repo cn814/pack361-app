@@ -149,7 +149,7 @@ export default function RecordMeeting(p: Props) {
           </span>
         </div>
         {p.presentNote && <p className="text-xs text-muted">{p.presentNote}</p>}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2">
           {p.scouts.map((s) => {
             const on = present.has(s.id);
             return (
