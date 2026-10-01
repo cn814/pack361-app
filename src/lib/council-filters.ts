@@ -1,5 +1,5 @@
 // Word lists for the council events picker (/events/council). The council calendar has about
-// 340 events a year; these lists decide which ones the picker hides by default and which get
+// 300 events a year; these lists decide which ones the picker hides by default and which get
 // the "Cub Scouts" badge. Pure: safe on the server and in the browser. Matching ignores case
 // and only matches whole words or phrases ("Bear" does not match "Bearings").
 
@@ -59,11 +59,33 @@ export const MEETING_HOLIDAY_WORDS = [
   "Hanukkah",
   "Chanukah",
   "Purim",
-  // Other religious holidays the council lists
+  // Other religious observances the council lists ("Martyrdom of Guru Tegh Bahadur, Sikh")
   "Ramadan",
   "Eid",
   "Diwali",
+  "Sikh",
+  "Zoroastrian",
+  "Hindu",
+  "Buddhist",
+  "Baha'i",
+  "Jain",
 ];
+
+/**
+ * Feed categories (CATEGORIES) that mark an event as a holiday, office closing or committee
+ * meeting. The council's feed puts "Meetings & Notices" on nearly every event that isn't a
+ * holiday, so that one is not a reason to hide anything.
+ */
+export const HIDDEN_CATEGORIES = ["Holiday & Office Closing", "Committee Meetings"];
+
+/**
+ * Categories that keep an event shown even when it is also tagged "Committee Meetings" (the
+ * council tags some big events, like Scout Day with the Orioles, with every category).
+ * Holidays and office closings are hidden regardless.
+ */
+export const PROGRAM_CATEGORIES = ["Activities", "Special Events", "Roundtables", "Camping", "Cub Scouts"];
+
+const HOLIDAY_CATEGORY = "holiday & office closing";
 
 /** Other Baltimore Area Council districts. An event whose title names one of these is theirs. */
 export const OTHER_DISTRICTS = [
@@ -124,9 +146,24 @@ const OUR_RE = toRegex(OUR_DISTRICT);
 const CUB_RE = toRegex(CUB_WORDS);
 const DISTRICT_RES = OTHER_DISTRICTS.map((d) => ({ name: d, re: toRegex([d]) }));
 
-/** A committee meeting, holiday or office closing. */
+const lower = (list: string[]) => list.map((c) => c.toLowerCase());
+const HIDDEN_CATS = lower(HIDDEN_CATEGORIES);
+const PROGRAM_CATS = lower(PROGRAM_CATEGORIES);
+
+/** The feed's categories as a lowercase list ("Meetings & Notices,Committee Meetings"). */
+export function categoryList(categories?: string | null): string[] {
+  return (categories ?? "")
+    .split(",")
+    .map((c) => c.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/** A committee meeting, holiday or office closing (by title words or the feed's categories). */
 export function isMeetingOrHoliday(title: string, categories?: string | null): boolean {
-  return MEETING_RE.test(title) || Boolean(categories && /\bholiday/i.test(categories));
+  if (MEETING_RE.test(title)) return true;
+  const cats = categoryList(categories);
+  if (cats.includes(HOLIDAY_CATEGORY)) return true;
+  return cats.some((c) => HIDDEN_CATS.includes(c)) && !cats.some((c) => PROGRAM_CATS.includes(c));
 }
 
 /** The other district an event belongs to (by its title), or null for ours and council-wide ones. */
