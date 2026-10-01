@@ -181,3 +181,26 @@ export function checkReceipt(name: string, size: number): string | null {
   if (size > MAX_RECEIPT_BYTES) return "That file is over 10 MB. Take a closer photo of just the receipt, or save a smaller PDF.";
   return null;
 }
+
+/**
+ * The period a report covers: a whole season (July to June), or any from/to dates (up to
+ * five years). Falls back to the current season.
+ */
+export function resolvePeriod(
+  p: { season?: string; from?: string; to?: string },
+  currentSeason: string,
+): { from: string; to: string; season: string | null; label: string } {
+  const date = /^\d{4}-\d{2}-\d{2}$/;
+  if (p.from && p.to && date.test(p.from) && date.test(p.to) && p.from <= p.to) {
+    const years = Number(p.to.slice(0, 4)) - Number(p.from.slice(0, 4));
+    if (years <= 5) {
+      const s = seasonOf(p.from);
+      const r = seasonRange(s)!;
+      const whole = r.from === p.from && r.to === p.to;
+      return { from: p.from, to: p.to, season: whole ? s : null, label: whole ? `Season ${s}` : `${p.from} to ${p.to}` };
+    }
+  }
+  const season = p.season && seasonRange(p.season) ? p.season : currentSeason;
+  const r = seasonRange(season) ?? seasonRange(seasonOf(new Date().toISOString().slice(0, 10)))!;
+  return { from: r.from, to: r.to, season, label: `Season ${season} (July ${r.from.slice(0, 4)} to June ${r.to.slice(0, 4)})` };
+}

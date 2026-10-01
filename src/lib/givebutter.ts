@@ -4,7 +4,7 @@ import { customAnswers, planDuesMatch, type Answer, type RosterScout } from "./g
 
 // Givebutter REST API v1: https://docs.givebutter.com (Bearer API key, paginated { data, links, meta }).
 const BASE = "https://api.givebutter.com/v1";
-const PAID = new Set(["succeeded", "authorized", "captured", "paid", "completed"]);
+export const PAID = new Set(["succeeded", "authorized", "captured", "paid", "completed"]);
 const STORE_HINT = /attire|apparel|shirt|hoodie|merch|store/i;
 
 type Json = Record<string, unknown>;
