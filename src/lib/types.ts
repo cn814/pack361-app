@@ -49,6 +49,10 @@ export interface PackEvent {
   archived_at?: string | null;
   rsvp_enabled?: boolean;
   rsvp_by?: string | null;
+  /** Cost in cents; null = no charge of that kind. */
+  fee_family_cents?: number | null;
+  fee_scout_cents?: number | null;
+  fee_adult_cents?: number | null;
   source?: string | null;
   archived_reason?: "removed_in_twh" | "hidden" | null;
   links?: EventLink[];

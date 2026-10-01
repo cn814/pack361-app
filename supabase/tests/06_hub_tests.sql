@@ -12,6 +12,10 @@ insert into public.polls (id, question, options, den_id, created_by) values
 insert into public.polls (id, question, options, one_per_family, allow_multiple, created_by) values
  ('90000000-0000-0000-0000-000000000003', 'Which snacks? (one answer per family)', array['Fruit', 'Pretzels', 'Cheese'], true, true, '30000000-0000-0000-0000-00000000000d');
 
+insert into public.charges (id, family_id, kind, title, season, amount_cents) values
+ ('82000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'dues', 'Pack dues 2026-27', '2026-27', 6000),
+ ('82000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'dues', 'Pack dues 2026-27', '2026-27', 6000);
+
 \echo '== Hub: parent (Alex)'
 begin;
 set local role authenticated;
@@ -34,11 +38,11 @@ select test.expect_error($$insert into public.health_forms (scout_id, status) va
                          '42501', 'families cannot report another family''s scout');
 select test.expect_error($$insert into public.health_forms (adult_id, status) values ('30000000-0000-0000-0000-00000000000b', 'submitted')$$,
                          '42501', 'families cannot report another family''s adult');
-select test.expect_rows($$insert into public.dues_payments (family_id, season, status) values ('20000000-0000-0000-0000-000000000001', '2026-27', 'submitted')$$, 1,
-                        'family says they paid dues');
-select test.expect_error($$insert into public.dues_payments (family_id, season, status) values ('20000000-0000-0000-0000-000000000002', '2026-27', 'submitted')$$,
-                         '42501', 'families cannot report for another family');
-select test.expect_error($$update public.dues_payments set status = 'paid'$$, '42501', 'families cannot mark dues paid');
+select test.check((select public.report_paid(array(select id from public.charges where kind = 'dues'), 'check', 'Check #101')) = 1,
+                  'family says they paid dues by check');
+select test.check((select public.report_paid(array['82000000-0000-0000-0000-000000000002'::uuid], 'check', null)) = 0,
+                  'families cannot report for another family');
+select test.expect_rows($$update public.charges set status = 'paid'$$, 0, 'families cannot mark dues paid');
 
 select test.check(test.count($$select * from public.announcements where id = '80000000-0000-0000-0000-000000000001'$$) = 1,
                   'a Wolf family sees Wolf den messages');
@@ -81,7 +85,7 @@ begin;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
 select test.check(test.count('select * from public.health_forms') = 0, 'other families'' forms are private');
-select test.check(test.count('select * from public.dues_payments') = 0, 'other families'' dues are private');
+select test.check(test.count('select * from public.charges') = 1, 'other families'' dues are private (Blair sees only their own)');
 select test.check(test.count($$select * from public.announcements where id = '80000000-0000-0000-0000-000000000001'$$) = 0,
                   'Bear families do not see Wolf den messages');
 select test.check(test.count($$select * from public.polls where id = '90000000-0000-0000-0000-000000000001'$$) = 0,
@@ -100,7 +104,7 @@ select test.expect_rows($$update public.guide_pages set title = 'Edited'$$, 0, '
 select test.check(test.count('select * from public.health_forms') = 2, 'leaders see every family''s forms');
 select test.expect_rows($$update public.health_forms set status = 'on_file' where scout_id = '40000000-0000-0000-0000-000000000002'$$, 1,
                         'leaders mark a form received');
-select test.expect_rows($$update public.dues_payments set status = 'paid', paid_on = '2026-09-30'$$, 1, 'leaders mark dues paid');
+select test.expect_rows($$update public.charges set status = 'paid'$$, 0, 'den leaders who are not on the committee cannot mark dues paid');
 select test.expect_rows($$insert into public.announcements (author_id, title, body, den_id)
                           values ('30000000-0000-0000-0000-00000000000c', 'Bring a flashlight', 'Monday', '10000000-0000-0000-0000-000000000002')$$, 1,
                         'den leader messages their den');
@@ -116,11 +120,20 @@ select test.expect_error($$insert into public.polls (question, options, den_id, 
 select test.check(test.count('select * from public.poll_votes') >= 2, 'leaders see who voted');
 commit;
 
+\echo '== Hub: committee confirms dues'
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select test.check((select public.update_charges(array(select id from public.charges where kind = 'dues' and status = 'reported'), 'paid', null, null)) = 1,
+                  'committee confirms reported dues');
+commit;
+
 \echo '== Hub: parent after a leader confirmed'
 begin;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
-select test.expect_rows($$update public.dues_payments set note = 'changed'$$, 0, 'families cannot change dues once confirmed');
+select test.check((select public.report_paid(array(select id from public.charges where kind = 'dues'), 'cash', null)) = 0,
+                  'families cannot change dues once confirmed');
 select test.check(test.count($$select * from public.announcements where title = 'Bring a flashlight'$$) = 1, 'Bear family sees the den message');
 rollback;
 

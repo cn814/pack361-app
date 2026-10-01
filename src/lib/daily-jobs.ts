@@ -7,6 +7,8 @@ import { fmtRange } from "./format";
 import { eventPath } from "./featured";
 import { PHOTO_BUCKET } from "./photos";
 import { daysBetween, easternDate } from "./tz";
+import { chargesStillOpen, settleOrder } from "./payments";
+import { captureOrder, getOrder, PayPalError, type PayPalOrder } from "./paypal";
 
 // Jobs run once a day by the Vercel cron (/api/cron/daily) with the secret-key client.
 // A reminder is only marked as sent once it actually went out (a push reached a phone, or the
@@ -161,4 +163,69 @@ export async function purgeOldPhotos(db: SupabaseClient) {
   const { error } = await db.from("photos").delete().in("id", rows.map((r) => r.id));
   if (error) throw new Error(error.message);
   return { photos_deleted: rows.length };
+}
+
+/**
+ * Finish PayPal checkouts the family's browser didn't (closed the page, lost signal). For each
+ * checkout still "created" after 15 minutes: an APPROVED order is captured, a COMPLETED one is
+ * recorded, and one never approved within 3 days is closed. Recording is idempotent, so racing
+ * the family's own capture can't mark anything paid twice.
+ */
+export async function reconcilePayments(db: SupabaseClient) {
+  const now = Date.now();
+  const { data, error } = await db
+    .from("payments")
+    .select("id, amount_cents, provider_order_id, charge_ids, created_at")
+    .eq("status", "created")
+    .lt("created_at", new Date(now - 15 * 60000).toISOString())
+    .order("created_at")
+    .limit(40);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as { id: string; amount_cents: number; provider_order_id: string; charge_ids: string[]; created_at: string }[];
+  const out = { checked: rows.length, recorded: 0, canceled: 0, waiting: 0, errors: [] as string[] };
+  const close = async (id: string, why: string) => {
+    await db.from("payments").update({ status: "canceled", error: why }).eq("id", id).eq("status", "created");
+    out.canceled++;
+  };
+  for (const p of rows) {
+    const old = Date.parse(p.created_at) < now - 3 * 86400000;
+    try {
+      let order: PayPalOrder;
+      try {
+        order = await getOrder(p.provider_order_id);
+      } catch (e) {
+        // PayPal forgets orders that were never approved.
+        if (e instanceof PayPalError && e.status === 404 && old) {
+          await close(p.id, "Never approved in PayPal.");
+          continue;
+        }
+        throw e;
+      }
+      if (order.status === "APPROVED") {
+        if (!(await chargesStillOpen(db, p.charge_ids))) {
+          await close(p.id, "Items changed before the payment was taken; nothing was charged.");
+          continue;
+        }
+        try {
+          order = await captureOrder(p.provider_order_id);
+        } catch (e) {
+          if (!(e instanceof PayPalError && e.issue === "ORDER_ALREADY_CAPTURED")) throw e;
+          order = await getOrder(p.provider_order_id);
+        }
+      }
+      if (order.status === "COMPLETED") {
+        const r = await settleOrder(db, p, order);
+        if (r === "recorded" || r === "partial" || r === "mismatch") out.recorded++;
+        else if (r === "pending") out.waiting++;
+        else if (r === "wrong_order") out.errors.push(`Payment ${p.id}: PayPal order doesn't match`);
+        continue;
+      }
+      if (old) await close(p.id, "Never approved in PayPal.");
+      else out.waiting++;
+    } catch (e) {
+      // Status codes and PayPal's issue name only; nothing secret.
+      out.errors.push(`Payment ${p.id}: ${e instanceof Error ? e.message : "failed"}`);
+    }
+  }
+  return out;
 }

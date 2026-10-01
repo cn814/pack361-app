@@ -45,6 +45,9 @@ export default async function EditEventPage({ params }: PageProps<"/events/[id]/
             ranks: e.ranks ?? null,
             rsvp_enabled: e.rsvp_enabled,
             rsvp_by: e.rsvp_by,
+            fee_family_cents: e.fee_family_cents,
+            fee_scout_cents: e.fee_scout_cents,
+            fee_adult_cents: e.fee_adult_cents,
             from_twh: e.source === "troopwebhost",
           }}
         />

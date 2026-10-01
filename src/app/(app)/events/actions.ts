@@ -6,6 +6,7 @@ import { isLeader, requireMember } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { easternToIso } from "@/lib/calendar";
 import type { ActionResult } from "@/components/ActionForm";
+import { parseDollars } from "@/lib/money";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -63,6 +64,26 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
   if (signup && !/^https:\/\//i.test(signup)) return { error: "The sign-up link should start with https://" };
   if (rsvpBy && !DATE.test(rsvpBy)) return { error: "Pick the RSVP deadline." };
 
+  // Cost: empty box = no charge of that kind.
+  const hasCost = form.get("has_cost") === "on";
+  const fees: Record<"fee_family_cents" | "fee_scout_cents" | "fee_adult_cents", number | null> = {
+    fee_family_cents: null,
+    fee_scout_cents: null,
+    fee_adult_cents: null,
+  };
+  if (hasCost) {
+    for (const [field, key] of [["fee_family", "fee_family_cents"], ["fee_scout", "fee_scout_cents"], ["fee_adult", "fee_adult_cents"]] as const) {
+      const raw = String(form.get(field) ?? "").trim();
+      if (!raw) continue;
+      const cents = parseDollars(raw);
+      if (cents === null) return { error: "Write the cost in dollars, like 25 or 12.50 (up to $1,000)." };
+      fees[key] = cents;
+    }
+    if (fees.fee_family_cents === null && fees.fee_scout_cents === null && fees.fee_adult_cents === null) {
+      return { error: "Add a price, or untick “This event costs money”." };
+    }
+  }
+
   const starts_at = easternToIso(startDate, allDay ? "00:00" : startTime);
   let ends_at: string | null = null;
   if (allDay) ends_at = endDate !== startDate ? easternToIso(endDate, "00:00") : null;
@@ -84,6 +105,7 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
     ranks: !UUID.test(denId) && ranks.length ? ranks : null,
     rsvp_enabled: form.get("rsvp_enabled") === "on",
     rsvp_by: rsvpBy || null,
+    ...fees,
   };
   const supabase = await createClient();
   let eventId = id;
@@ -99,6 +121,8 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
     if (error || !data) return { error: "Couldn't add the event." };
     eventId = data.id as string;
   }
+  // Bring families' event charges in line with the (new) cost. Paid ones stay as they are.
+  if (UUID.test(id)) await supabase.rpc("refresh_event_charges", { p_event_id: eventId });
   revalidatePath("/", "layout");
   redirect(category === "Campout" ? `/campouts/${eventId}` : `/events/${eventId}`);
 }

@@ -233,11 +233,6 @@ export async function saveSettings(_prev: ActionResult, form: FormData): Promise
   const limit = Number(str(form, "email_daily_limit"));
   if (!Number.isInteger(limit) || limit < 0 || limit > 1000) return { error: "Daily email limit should be 0 to 1000." };
   rows.push({ key: "email_daily_limit", value: String(limit) });
-  const season = str(form, "dues_season");
-  if (season && !/^\d{4}-\d{2}$/.test(season)) return { error: "Write the dues season like 2026-27." };
-  if (season) rows.push({ key: "dues_season", value: season });
-  rows.push({ key: "dues_amount", value: str(form, "dues_amount", 200) });
-  rows.push({ key: "dues_how", value: str(form, "dues_how", 600) });
 
   const supabase = await createClient();
   const { error } = await supabase.from("pack_settings").upsert(rows.map((r) => ({ ...r, updated_at: new Date().toISOString() })));

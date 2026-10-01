@@ -3,6 +3,7 @@
 import { useState } from "react";
 import ActionForm, { Field } from "@/components/ActionForm";
 import { saveEvent } from "@/app/(app)/events/actions";
+import { centsToInput } from "@/lib/money";
 
 export const EVENT_CATEGORIES = [
   "Pack Meeting",
@@ -44,6 +45,9 @@ export interface EventFormValues {
   ranks?: string[] | null;
   rsvp_enabled?: boolean;
   rsvp_by?: string | null;
+  fee_family_cents?: number | null;
+  fee_scout_cents?: number | null;
+  fee_adult_cents?: number | null;
   from_twh?: boolean;
 }
 
@@ -52,6 +56,7 @@ export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens:
   const [allDay, setAllDay] = useState(Boolean(v.all_day));
   const [rsvp, setRsvp] = useState(Boolean(v.rsvp_enabled));
   const [den, setDen] = useState(v.den_id ?? "");
+  const [cost, setCost] = useState(v.fee_family_cents != null || v.fee_scout_cents != null || v.fee_adult_cents != null);
   return (
     <ActionForm action={saveEvent} submit={v.id ? "Save event" : "Add event"}>
       {v.id && <input type="hidden" name="id" value={v.id} />}
@@ -137,6 +142,34 @@ export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens:
           <Field label="RSVP by (optional)" hint="Families can answer through the end of this day.">
             <input className="input" type="date" name="rsvp_by" defaultValue={v.rsvp_by ?? ""} />
           </Field>
+        )}
+      </fieldset>
+
+      <fieldset className="space-y-2 rounded-xl border border-line p-3">
+        <legend className="px-1 text-xs font-bold text-navy">Cost</legend>
+        <label className="flex items-center gap-2 text-sm text-navy">
+          <input type="checkbox" name="has_cost" checked={cost} onChange={(e) => setCost(e.target.checked)} className="h-4 w-4 accent-pine" />
+          This event costs money
+        </label>
+        {cost && (
+          <>
+            <div className="grid grid-cols-3 gap-2">
+              <Field label="Per scout">
+                <input className="input" inputMode="decimal" name="fee_scout" defaultValue={centsToInput(v.fee_scout_cents)} placeholder="$" />
+              </Field>
+              <Field label="Per adult">
+                <input className="input" inputMode="decimal" name="fee_adult" defaultValue={centsToInput(v.fee_adult_cents)} placeholder="$" />
+              </Field>
+              <Field label="Per family">
+                <input className="input" inputMode="decimal" name="fee_family" defaultValue={centsToInput(v.fee_family_cents)} placeholder="$" />
+              </Field>
+            </div>
+            <p className="text-[11px] text-muted">
+              In dollars; leave a box empty if it doesn&apos;t apply (0 means free for them). With RSVPs on, a family that answers yes
+              owes family + scouts × scout price + adults × adult price, and can pay in the app. Changing the cost updates what
+              families owe, unless they&apos;ve already paid.
+            </p>
+          </>
         )}
       </fieldset>
     </ActionForm>

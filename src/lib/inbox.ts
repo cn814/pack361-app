@@ -1,9 +1,11 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "./supabase/server";
-import { getMyScouts, getUpcomingEvents, isLeader, requireMember } from "./data";
+import { getMyScouts, getUpcomingEvents, isCommittee, isLeader, requireMember } from "./data";
 import { isAdmin } from "./advancement-data";
 import { formState, getMyPaperwork, needsForm } from "./paperwork";
+import { getMyCharges, totalDue } from "./payments";
+import { fmtMoney } from "./money";
 import { getPolls, getVotedPollIds, isOpen } from "./polls";
 import { countPendingPhotos } from "./photos";
 import { easternDate } from "./tz";
@@ -26,16 +28,17 @@ export const getSeenAt = cache(async (): Promise<string | null> => {
   return (data?.seen_at as string | undefined) ?? null;
 });
 
-/** Things waiting on this person: polls to answer, forms, dues, photo questions, leader queues. */
+/** Things waiting on this person: polls to answer, forms, money due, photo questions, leader queues. */
 export const getTodos = cache(async (): Promise<Todo[]> => {
   const me = await requireMember();
   const supabase = await createClient();
   const leader = isLeader(me);
-  const [polls, voted, scouts, paperwork, events, pendingPhotos, waitingForms, openNotes] = await Promise.all([
+  const [polls, voted, scouts, paperwork, charges, events, pendingPhotos, waitingForms, openNotes, reportedPayments] = await Promise.all([
     getPolls(20),
     getVotedPollIds(me),
     getMyScouts(),
     getMyPaperwork(me),
+    getMyCharges(me),
     getUpcomingEvents(60, { mine: true }),
     leader ? countPendingPhotos() : Promise.resolve(0),
     leader
@@ -43,6 +46,9 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
       : Promise.resolve(0),
     isAdmin(me)
       ? supabase.from("feedback").select("id", { count: "exact", head: true }).is("resolved_at", null).then((r) => r.count ?? 0)
+      : Promise.resolve(0),
+    isCommittee(me)
+      ? supabase.from("charges").select("id", { count: "exact", head: true }).eq("status", "reported").then((r) => r.count ?? 0)
       : Promise.resolve(0),
   ]);
   const todos: Todo[] = [];
@@ -89,8 +95,16 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
     }
   }
 
-  if (paperwork.dues?.amount && !paperwork.dues.row) {
-    todos.push({ key: "dues", title: `Pack dues for ${paperwork.dues.season}`, detail: paperwork.dues.amount, href: "/family#paperwork", tone: "pine" });
+  const owed = totalDue(charges);
+  if (owed > 0) {
+    const items = charges.filter((c) => c.status === "open" && c.amount_cents > 0);
+    todos.push({
+      key: "dues",
+      title: `You have ${fmtMoney(owed)} due`,
+      detail: items.length === 1 ? items[0].title : `${items.length} items: ${items.slice(0, 2).map((c) => c.title).join(", ")}${items.length > 2 ? "…" : ""}`,
+      href: "/pay",
+      tone: "pine",
+    });
   }
 
   const noPhotoAnswer = scouts.filter((s) => !s.photo_permission);
@@ -119,6 +133,15 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
       title: `${waitingForms} medical form${waitingForms === 1 ? "" : "s"} turned in`,
       detail: "Confirm you have the paper copies.",
       href: "/leaders/paperwork",
+      tone: "pine",
+    });
+  }
+  if (reportedPayments) {
+    todos.push({
+      key: "payments-reported",
+      title: `${reportedPayments} payment${reportedPayments === 1 ? "" : "s"} to confirm`,
+      detail: "Families say they paid by check or cash.",
+      href: "/leaders/money?status=reported",
       tone: "pine",
     });
   }
