@@ -55,7 +55,7 @@ export interface EventFormValues {
 /** Leaders: add or edit an event. */
 export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens: { id: string; name: string }[] }) {
   const [allDay, setAllDay] = useState(Boolean(v.all_day));
-  const [rsvp, setRsvp] = useState(Boolean(v.rsvp_enabled));
+  const [rsvp, setRsvp] = useState(v.rsvp_enabled ?? true); // every event takes RSVPs unless a leader turns it off
   const [den, setDen] = useState(v.den_id ?? "");
   const [cost, setCost] = useState(v.fee_family_cents != null || v.fee_scout_cents != null || v.fee_adult_cents != null);
   return (
