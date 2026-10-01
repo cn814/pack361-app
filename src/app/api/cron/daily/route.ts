@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
   const db = createAdminClient();
   const out: Record<string, unknown> = {};
   const failed: string[] = [];
+  const reasons: Record<string, string> = {}; // a short reason per failed step, for Pack admin
   const budget = emailBudget();
   const steps: [string, () => Promise<unknown>][] = [
     ["volunteers", () => remindVolunteers(db, budget)],
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
   const save = async (running: string | null) => {
     await db.from("pack_settings").upsert({
       key: "daily_last_run",
-      value: JSON.stringify({ at, ok: !failed.length && !running, failed, running }),
+      value: JSON.stringify({ at, ok: !failed.length && !running, failed, reasons, running }),
       updated_at: new Date().toISOString(),
     });
   };
@@ -53,10 +54,14 @@ export async function GET(request: NextRequest) {
     try {
       out[name] = await job();
       const errs = (out[name] as { errors?: string[]; skipped?: string } | undefined) ?? {};
-      if (errs.errors?.length || errs.skipped) failed.push(name);
+      if (errs.errors?.length || errs.skipped) {
+        failed.push(name);
+        reasons[name] = String(errs.errors?.[0] ?? errs.skipped).slice(0, 200);
+      }
     } catch (e) {
       out[name] = { error: e instanceof Error ? e.message : "failed" };
       failed.push(name);
+      reasons[name] = (e instanceof Error ? e.message : "failed").slice(0, 200);
     }
   }
   await save(null);

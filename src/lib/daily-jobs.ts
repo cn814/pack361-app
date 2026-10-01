@@ -112,7 +112,7 @@ export async function remindVolunteers(db: SupabaseClient, budget: EmailBudget =
 export async function remindTraining(db: SupabaseClient, budget: EmailBudget = emailBudget()) {
   const { data, error } = await db
     .from("adult_trainings")
-    .select("adult_id, course, expires_on, reminded_days, adult:adults!inner(first_name, preferred_name, email, is_active)")
+    .select("adult_id, course, expires_on, reminded_days, adult:adults!adult_trainings_adult_id_fkey!inner(first_name, preferred_name, email, is_active)")
     .not("expires_on", "is", null)
     .lte("expires_on", new Date(Date.now() + 61 * 86400000).toISOString().slice(0, 10))
     .gte("expires_on", new Date(Date.now() - 86400000).toISOString().slice(0, 10));

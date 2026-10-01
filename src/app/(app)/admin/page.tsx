@@ -67,10 +67,10 @@ export default async function AdminPage() {
     }
   };
   const lastSync = read<{ at: string; feed: number; skipped?: string; errors?: string[] }>("twh_last_sync");
-  const lastRun = read<{ at: string; ok: boolean; failed: string[]; running?: string | null }>("daily_last_run");
+  const lastRun = read<{ at: string; ok: boolean; failed: string[]; reasons?: Record<string, string>; running?: string | null }>("daily_last_run");
   // A run still "running" well past the 5-minute limit was cut off in that step.
   const cutOff = lastRun?.running && startedOver(lastRun.at, 10) ? lastRun.running : null;
-  const runProblem = lastRun && (cutOff || (!lastRun.running && !lastRun.ok)) ? [...lastRun.failed, ...(cutOff ? [`${cutOff} (didn't finish)`] : [])] : null;
+  const runProblem = lastRun && (cutOff || (!lastRun.running && !lastRun.ok)) ? [...lastRun.failed.map((f) => (lastRun.reasons?.[f] ? `${f} (${lastRun.reasons[f]})` : f)), ...(cutOff ? [`${cutOff} (didn't finish)`] : [])] : null;
   return (
     <>
       <BackLink href="/leaders" label="Leaders" />
