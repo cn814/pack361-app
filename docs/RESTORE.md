@@ -8,9 +8,11 @@ schema (dump, fresh database, migrations, data-only load, row counts match).
 **What a backup does not contain:**
 - **Logins** (Supabase `auth.users`). Nobody needs them: when a parent signs in again, the app
   links them to their roster row by email.
-- **Photos and pack documents.** The files live in Supabase Storage (`pack-photos`, `pack-docs`).
-  Their rows are in the backup, but the files are not. Keep a copy of important pack documents
-  somewhere else too (the committee's shared drive).
+- **Photos, pack documents and receipts.** The files live in Supabase Storage (`pack-photos`,
+  `pack-docs`, `receipts`). Their rows are in the backup, but the files are not. Keep a copy of
+  important pack documents somewhere else too (the committee's shared drive), and the treasurer
+  should keep receipts with the pack's records as well (Money → Reports → Every transaction is a
+  good index).
 - **Files families saved on their phones** ("Saved on this phone"). These never reach the server,
   so there is nothing to back up or restore.
 - **Settings outside the database**: Vercel environment variables, Supabase Auth settings (site

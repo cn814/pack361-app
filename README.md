@@ -33,7 +33,7 @@ npm run dev
 ## Folders
 | Path | What |
 |---|---|
-| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init` (core tables and row-level security), `harden_functions` (locked-down function search paths), `private_helpers` (permission helpers in a private schema), `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback` (problem reports and notes to admins), `den_calendar` (den-aware events and meetings), `twh_sync` (TroopWebHost calendar sync), `twh_rsvp` (TroopWebHost event links), `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages), `twh_replacement` (in-app RSVP, public guide pages), `payments` (charges, PayPal, event fees; replaces dues), `documents` (documents library), `council_events` (council calendar picker), `training_plus` (more courses, member IDs, training import), `guide_updates` (guide text for paying, documents, RSVPs and training), `givebutter_dues` (dues paid on Givebutter), `registration_expiry` (registration expiration tracking), `rsvp_everywhere` (RSVPs on by default), `den_meeting_easy` (one-step den meeting recording, several adventures per meeting, den meeting RSVPs), `review_db_fixes` (database fixes from the code review), `guide_text_fixes` (guide text: dues on Givebutter, registration at my.scouting.org). |
+| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init` (core tables and row-level security), `harden_functions` (locked-down function search paths), `private_helpers` (permission helpers in a private schema), `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback` (problem reports and notes to admins), `den_calendar` (den-aware events and meetings), `twh_sync` (TroopWebHost calendar sync), `twh_rsvp` (TroopWebHost event links), `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages), `twh_replacement` (in-app RSVP, public guide pages), `payments` (charges, PayPal, event fees; replaces dues), `documents` (documents library), `council_events` (council calendar picker), `training_plus` (more courses, member IDs, training import), `guide_updates` (guide text for paying, documents, RSVPs and training), `givebutter_dues` (dues paid on Givebutter), `registration_expiry` (registration expiration tracking), `rsvp_everywhere` (RSVPs on by default), `den_meeting_easy` (one-step den meeting recording, several adventures per meeting, den meeting RSVPs), `review_db_fixes` (database fixes from the code review), `guide_text_fixes` (guide text: dues on Givebutter, registration at my.scouting.org), `den_names` (den names are just the rank), `rsvp_all_day` (all-day events take RSVPs through their last day), `finance` (expenses, reimbursement requests, other income, budget, receipts bucket). |
 | `supabase/data/` | One-off data updates run in the SQL Editor (e.g. the Fall Campout details, Arrow of Light Den 8 bridging). |
 | `supabase/seed.sql` | Starter data: dens (Scoutbook numbering), pack meetings, fall events, default packing list. |
 | `supabase/import/build_roster_import.py` | Merges Scoutbook Plus + TroopWebHost data into `imports/roster_import.sql` and `imports/roster_review.md`. |
@@ -219,6 +219,28 @@ npm run dev
   council fee kinds and the "sent to council" tracking. Env:
   `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV` (sandbox unless `live`).
   Without PayPal keys the PayPal buttons are hidden and families report check or cash payments.
+- **Expenses, reimbursements and financial reports** (Leaders → Money → Expenses and Reports):
+  - Anyone on the roster can ask to be paid back (Leaders → Get paid back, `/reimburse`): what they
+    bought, amount, date, optional category/event/den, how they'd like to be paid, and a photo or
+    PDF of the receipt (required). Receipts go from the browser straight to the private `receipts`
+    bucket (10 MB; PDF, JPEG, PNG, WebP; big phone photos are shrunk to JPEG first) under
+    `r/<adult id>/`. Leadership members whose position mentions "treasurer" get a push and an email
+    (the admins and Cubmaster when there's no treasurer). They can change or withdraw a request until
+    leadership acts on it.
+  - Leadership reviews on Expenses → To review: approve (with a budget category), approve and pay
+    back (how, date, check number), or decline with a reason; the person gets a push and an email
+    when it's paid or declined. The database records who approved and who paid, and nobody approves,
+    pays, changes or deletes their own request once approved (another leadership member does).
+  - Leadership also records what the pack paid for directly (Record an expense), money in the app
+    doesn't see on its own (Other income: sponsors, popcorn commission, bank interest), the budget
+    per season (July to June), and the categories (rename or hide; the ones the app counts itself
+    can't be removed).
+  - Reports (`/leaders/money/reports`), for a season or any dates: money in by category (charges
+    paid by PayPal, check or cash; Givebutter orders, the dues campaign as pack dues and the rest as
+    fundraisers and donations; hand-entered income), money out by category (approved and paid
+    expenses, by receipt date), budget against actual, by month, by event, den spending, and what's
+    still outstanding. Charges paid on Givebutter are counted from the Givebutter orders, never
+    twice. Print or save as PDF, or download the summary or every transaction as CSV.
 - **Pack dues on Givebutter**: dues are per scout ($255 by default; each brother or sister after the
   first gets the sibling discount, $10 by default, both in Money → Settings). Pick the Givebutter dues
   campaign in Money → Settings (a campaign with "dues" in its name is suggested, not saved). Then:
