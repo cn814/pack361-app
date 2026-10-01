@@ -2,8 +2,11 @@
 //  * push notifications (announcements, volunteer and training reminders)
 //  * offline campout pages: campout pages are saved on the phone when opened, so the
 //    schedule, rules and packing list still work at camp with no signal. Cleared on sign-out.
+//  * the "Saved on this phone" page (/family/files), so a family's own saved forms open at
+//    camp. Only the page itself is cached here; the files live in IndexedDB, which sign-out
+//    and this worker never touch.
 const CACHE = "pack361-offline-v1";
-const OFFLINE_PAGES = /^\/campouts\/[0-9a-f-]{36}\/?$/i;
+const OFFLINE_PAGES = /^\/(?:campouts\/[0-9a-f-]{36}|family\/files)\/?$/i;
 const STATIC = /^\/(_next\/static\/|icon-|badge\.png|notification-badge\.png|apple-icon|icon\.png|favicon\.ico)/;
 
 self.addEventListener("install", () => self.skipWaiting());
@@ -41,7 +44,8 @@ function offlinePage() {
     '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline</title>' +
       '<body style="font-family:system-ui,sans-serif;padding:32px;color:#1b1c19;background:#faf9f4">' +
       "<h1 style=\"color:#1b4332\">You're offline</h1><p>This page wasn't saved on this phone yet. " +
-      "Campout pages you've opened before work without signal.</p><p><a href=\"/campouts\" style=\"color:#1b4332\">Campouts</a></p>",
+      "Campout pages and Saved on this phone work without signal once you've opened them.</p><p><a href=\"/campouts\" style=\"color:#1b4332\">Campouts</a> · " +
+      "<a href=\"/family/files\" style=\"color:#1b4332\">Saved on this phone</a></p>",
     { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
 }
