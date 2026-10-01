@@ -53,19 +53,29 @@ site has the fix too: `git checkout beta && git merge main && git push`.
 
 ## One-time setup (done by whoever holds the Vercel, Squarespace and Supabase logins)
 
-1. **The branch:** `beta` exists in GitHub (made from `main`).
-2. **Vercel → Project → Settings → Domains:** add `beta.pack361.org` and connect it to the Git branch
-   `beta` (not production).
-3. **Squarespace → Domains → pack361.org → DNS:** add a CNAME record, host `beta`, value
-   `cname.vercel-dns.com`. Vercel shows a check mark once it sees it.
-4. **Vercel → Settings → Environment Variables:** every variable the live site has must also be
-   available to **Preview** (edit each one and tick Preview, or add a Preview copy). Then add two
-   for **Preview, branch `beta` only**:
+Done on 2026-10-01: the `beta` branch; beta.pack361.org added in Vercel → Domains and connected to the
+`beta` branch (Preview); `https://beta.pack361.org/**` added in Supabase → Authentication → URL
+Configuration → Redirect URLs.
+
+Still to do:
+
+1. **Squarespace → Domains → pack361.org → DNS → Custom records → Add record:** type CNAME, host `beta`,
+   data `989d26bd7722caa5.vercel-dns-017.com` (the same value as the `app` record). Vercel → Domains
+   shows "Valid Configuration" once it sees it.
+2. **Vercel → Settings → Environment Variables:** the beta site needs these for **Preview** too (edit
+   each and tick Preview; secret ones may ask you to paste the value again):
+   - `SUPABASE_SECRET_KEY` (required: without it nobody, admins included, can use the beta site)
+   - `RESEND_API_KEY` and `BREVO_API_KEY` (so testers get the beta's emails)
+   - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` (phone alerts)
+   - Leave `TWH_CALENDAR_URL` and `CRON_SECRET` as Production only.
+
+   Then add two new ones for **Preview, branch `beta` only**:
    - `NEXT_PUBLIC_APP_CHANNEL` = `beta`
    - `NEXT_PUBLIC_APP_URL` = `https://beta.pack361.org` (so links in test emails open the beta site)
-5. **Vercel → Settings → Deployment Protection:** if testers get a Vercel sign-in page on
-   beta.pack361.org, turn Vercel Authentication off for previews. The app's own sign-in and the
-   tester list protect it.
-6. **Supabase → Authentication → URL Configuration → Redirect URLs:** add `https://beta.pack361.org/**`.
-7. **Pack admin → Beta site** (on the live app): tick the testers.
-8. Push something to `beta` and open beta.pack361.org: you should see the Beta stripe.
+3. **Vercel → Settings → Deployment Protection → Deployment Protection Exceptions → Add Domain:**
+   `beta.pack361.org`, so testers don't get a Vercel sign-in page. Other preview links stay protected;
+   the app's own sign-in and the tester list protect the beta site.
+4. **Vercel → Deployments:** redeploy the latest `beta` deployment (⋯ → Redeploy) so it picks up the
+   new variables.
+5. **Pack admin → Beta site** (on the live app): tick the testers.
+6. Open beta.pack361.org: you should see the dark Beta stripe at the top.
