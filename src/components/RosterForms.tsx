@@ -39,8 +39,8 @@ export function AdultFields({ adult, familyId }: { adult?: RosterAdult; familyId
         <Field label="Relationship">
           <input className="input" name="relationship" placeholder="Mother, Guardian…" defaultValue={adult?.relationship ?? ""} />
         </Field>
-        <Field label="BSA member ID">
-          <input className="input" name="bsa_member_id" inputMode="numeric" defaultValue={adult?.bsa_member_id ?? ""} />
+        <Field label="BSA member ID" hint="Links my.scouting training imports">
+          <input className="input" name="bsa_member_id" inputMode="numeric" maxLength={12} defaultValue={adult?.bsa_member_id ?? ""} />
         </Field>
       </div>
       <Field label="App access">

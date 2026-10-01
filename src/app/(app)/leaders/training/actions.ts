@@ -5,7 +5,8 @@ import type { ActionResult } from "@/components/ActionForm";
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
-import { COURSE_BY_KEY, defaultExpiry, type CourseKey } from "@/lib/training";
+import { COURSE_BY_KEY, MEMBER_ID, defaultExpiry, type CourseKey } from "@/lib/training";
+import { IMPORT_MAX } from "@/lib/training-import";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -45,4 +46,65 @@ export async function saveTraining(_prev: ActionResult, form: FormData): Promise
   revalidatePath("/leaders/training");
   revalidatePath("/family");
   return { ok: true };
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export interface ImportPayload {
+  rows: { adult_id: string; course: string; completed_on: string | null; expires_on: string | null }[];
+  memberIds: { adult_id: string; member_id: string }[];
+}
+
+export type ImportResult = ActionResult & { trainings?: number; adults?: number; memberIds?: number };
+
+/**
+ * Apply a my.scouting training report that was read and matched in the browser. Only adult
+ * IDs, course keys, dates and member IDs arrive here. The database applies a row only when
+ * it's newer than what the app has.
+ */
+export async function applyTrainingImport(payload: ImportPayload): Promise<ImportResult> {
+  const me = await requireMember();
+  if (!isAdmin(me)) return { error: "Only pack admins can import training." };
+  const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+  const ids = Array.isArray(payload?.memberIds) ? payload.memberIds : [];
+  if (rows.length > IMPORT_MAX || ids.length > IMPORT_MAX) return { error: `Import at most ${IMPORT_MAX} rows at a time.` };
+  if (!rows.length && !ids.length) return { error: "Nothing to apply." };
+
+  const clean = [];
+  for (const r of rows) {
+    const completed = r.completed_on ?? null;
+    const expires = r.expires_on ?? null;
+    if (!UUID.test(String(r.adult_id)) || !COURSE_BY_KEY[r.course as CourseKey]) return { error: "Some rows didn't look right. Load the file again." };
+    if ((completed && !DATE.test(completed)) || (expires && !DATE.test(expires)) || (!completed && !expires)) {
+      return { error: "Some dates didn't look right. Load the file again." };
+    }
+    clean.push({ adult_id: r.adult_id, course: r.course, completed_on: completed, expires_on: expires });
+  }
+  const cleanIds = ids
+    .filter((x) => UUID.test(String(x.adult_id)) && MEMBER_ID.test(String(x.member_id)))
+    .map((x) => ({ adult_id: x.adult_id, member_id: String(x.member_id) }));
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("import_trainings", { p_rows: clean, p_member_ids: cleanIds });
+  if (error) return { error: "Couldn't apply the updates. Try again." };
+  const res = (data ?? {}) as { trainings?: number; adults?: number; member_ids?: number };
+  revalidatePath("/leaders/training");
+  revalidatePath("/family");
+  return { ok: true, trainings: res.trainings ?? 0, adults: res.adults ?? 0, memberIds: res.member_ids ?? 0 };
+}
+
+/** Set your own BSA member ID (My family). */
+export async function saveMyMemberId(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireMember();
+  const id = String(form.get("member_id") ?? "").replace(/[\s-]/g, "");
+  if (id && !MEMBER_ID.test(id)) return { error: "A member ID is digits only, up to 12." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_my_member_id", { p_member_id: id });
+  if (error) {
+    if (error.code === "23505") return { error: "That member ID is on another adult's record. Ask a pack admin." };
+    return { error: "Couldn't save that." };
+  }
+  revalidatePath("/family");
+  revalidatePath("/leaders/training");
+  return { ok: true, message: id ? "Member ID saved" : "Member ID removed" };
 }

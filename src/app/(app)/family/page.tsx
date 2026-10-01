@@ -8,21 +8,27 @@ import InstallHelp from "@/components/InstallHelp";
 import PaperworkCard from "@/components/PaperworkCard";
 import { getMyPaperwork } from "@/lib/paperwork";
 import TrainingEditor, { stateText } from "@/components/TrainingEditor";
+import TrainingStatus, { MyScoutingLink } from "@/components/TrainingStatus";
+import ActionForm, { Field } from "@/components/ActionForm";
+import { saveMyMemberId } from "@/app/(app)/leaders/training/actions";
 import { displayName, getFamilyAdults, getMyScouts, isLeader, requireMember } from "@/lib/data";
-import { getMyTraining } from "@/lib/training-data";
-import { trainingState } from "@/lib/training";
+import { getMyPositions, getMyTraining } from "@/lib/training-data";
+import { COURSE_BY_KEY, POSITION_BY_KEY, trainedStatus, trainingState } from "@/lib/training";
 
 export const metadata: Metadata = { title: "My family" };
 
 export default async function FamilyPage() {
   const me = await requireMember();
-  const [scouts, adults, training, paperwork] = await Promise.all([
+  const [scouts, adults, training, paperwork, mine] = await Promise.all([
     getMyScouts(),
     getFamilyAdults(),
     getMyTraining(me.id),
     getMyPaperwork(me),
+    getMyPositions(me),
   ]);
-  const leader = isLeader(me) || Boolean(me.position_title);
+  const leader = isLeader(me) || Boolean(me.position_title) || mine.positions.length > 0;
+  const status = trainedStatus(mine.positions, training);
+  const focus = [...new Set([...status.required, ...mine.positions.flatMap((p) => POSITION_BY_KEY[p].recommended)])];
   const ypt = training.find((t) => t.course === "ypt");
   const yptState = trainingState(ypt);
   const yptWarn = leader && yptState !== "current";
@@ -36,7 +42,18 @@ export default async function FamilyPage() {
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>
             Safeguarding Youth training: {yptState === "missing" ? "no date recorded yet" : stateText(ypt).toLowerCase()}. Take or
-            renew it at my.scouting.org, then add the date under My training below.
+            renew it at my.scouting.org, then add the date under My training below. <MyScoutingLink />
+          </span>
+        </p>
+      )}
+      {leader && !yptWarn && !status.trained && (
+        <p className="flex items-start gap-2 rounded-2xl border border-gold-100 bg-gold-50 p-3 text-sm text-gold-800">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <span>
+            Training still needed for your position: {status.missing.map((c) => COURSE_BY_KEY[c].label).join(", ")}.{" "}
+            <a href="#training" className="font-bold underline">
+              See My training
+            </a>
           </span>
         </p>
       )}
@@ -83,11 +100,33 @@ export default async function FamilyPage() {
       )}
 
       {leader && (
-        <section className="card space-y-1">
+        <section id="training" className="card scroll-mt-20 space-y-2">
           <h2 className="section-title">My training</h2>
-          <TrainingEditor adultId={me.id} rows={training} />
+          <TrainingStatus status={status} />
+          <TrainingEditor adultId={me.id} rows={training} focus={focus} />
         </section>
       )}
+
+      <section className="card space-y-2">
+        <h2 className="section-title">BSA member ID</h2>
+        <p className="text-sm text-muted">
+          Your Scouting America member ID links you to your my.scouting.org training records, so a leader can import your
+          training dates. It&apos;s on your membership card and at my.scouting.org under My Profile.
+        </p>
+        <ActionForm action={saveMyMemberId} buttonClass="btn-ghost w-full py-2">
+          <Field label="Member ID" hint="Digits only. Leave blank to remove it.">
+            <input
+              className="input"
+              name="member_id"
+              inputMode="numeric"
+              pattern="[0-9]{1,12}"
+              maxLength={12}
+              autoComplete="off"
+              defaultValue={mine.memberId ?? ""}
+            />
+          </Field>
+        </ActionForm>
+      </section>
 
       <section className="card space-y-3">
         <h2 className="section-title">Notifications</h2>
