@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CircleCheck, Clock, Mail, TriangleAlert } from "lucide-react";
 import ActionForm from "@/components/ActionForm";
 import BackLink from "@/components/BackLink";
+import Link from "next/link";
 import { getAllAdults, getSignIns, requireAdmin, welcomeBudget } from "@/lib/roster-data";
 import { emailConfigured } from "@/lib/email";
 import { fmtDay } from "@/lib/format";
@@ -27,6 +28,13 @@ export default async function WelcomePage() {
         <p className="text-sm text-muted">
           Each adult on the roster gets one email saying the app is ready and how to sign in with a one-time code. No
           passwords, and the email doesn&apos;t sign them in by itself.
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          At pack meetings, put out the{" "}
+          <Link href="/get/qr" className="font-semibold text-pine underline">
+            &ldquo;Get the pack app&rdquo; QR sign
+          </Link>
+          : families scan it to add the app to their phone and sign in.
         </p>
       </div>
 

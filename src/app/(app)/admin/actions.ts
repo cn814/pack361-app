@@ -298,9 +298,8 @@ function welcomeEmail(a: { first_name: string; preferred_name: string | null; em
     paragraphs: [
       `Hi ${a.preferred_name || a.first_name},`,
       "Pack 361 has a private app for families: the pack calendar, campout details and packing lists, your scout's advancement, announcements, volunteer sign-ups and pack photos, all in one place.",
-      `To sign in, open the app and enter this email address (${a.email}). We'll email you a one-time code, so there's no password to remember.`,
-      `${APP_URL}/login`,
-      "Tip: on your phone, add it to your home screen so it opens like an app. On iPhone (Safari or Chrome), tap the Share button (the square with an arrow: at the bottom in Safari, at the right end of the address bar in Chrome), then Add to Home Screen. On Android, tap the menu, then Add to Home screen.",
+      `Open this link on your phone: it shows how to add the app to your home screen (one tap on Android). Then open Pack 361 from the new icon and sign in with this email address (${a.email}). We'll email you a one-time code, so there's no password to remember.`,
+      `${APP_URL}/get`,
       `Only families and leaders on the Pack 361 roster can sign in. You can read how we protect your family's information at ${APP_URL}/safety.`,
       "See you at the next pack meeting!\nPack 361",
     ],

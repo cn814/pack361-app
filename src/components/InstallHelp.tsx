@@ -1,7 +1,50 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Smartphone } from "lucide-react";
+import { Download, Smartphone } from "lucide-react";
+
+// Android Chrome, Edge and desktop Chrome offer their own install box. They announce it once, with
+// "beforeinstallprompt", soon after the page loads; keep it so the Install button can show it.
+type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+let installEvent: InstallEvent | null = null;
+const listeners = new Set<() => void>();
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    installEvent = e as InstallEvent;
+    listeners.forEach((l) => l());
+  });
+  window.addEventListener("appinstalled", () => {
+    installEvent = null;
+    listeners.forEach((l) => l());
+  });
+}
+const subscribe = (l: () => void) => {
+  listeners.add(l);
+  return () => listeners.delete(l);
+};
+
+/** One tap to install, where the browser allows it (not iPhone: Apple only allows Add to Home Screen). */
+function InstallButton() {
+  const ready = useSyncExternalStore(subscribe, () => installEvent !== null, () => false);
+  if (!ready) return null;
+  return (
+    <button
+      type="button"
+      className="btn-primary w-full"
+      onClick={async () => {
+        const e = installEvent;
+        if (!e) return;
+        await e.prompt();
+        await e.userChoice.catch(() => null);
+        installEvent = null;
+        listeners.forEach((l) => l());
+      }}
+    >
+      <Download className="h-4 w-4" aria-hidden /> Install the Pack 361 app
+    </button>
+  );
+}
 
 type Device = "iphone-safari" | "iphone-chrome" | "iphone-other" | "android" | "desktop" | "installed";
 
@@ -71,6 +114,7 @@ export default function InstallHelp({ compact = false }: { compact?: boolean }) 
       <p className="text-xs text-muted">
         It then opens like an app, stays signed in, and can send alerts. On iPhone, alerts only work from the home-screen app.
       </p>
+      {(device === "android" || device === "desktop") && <InstallButton />}
       <div>
         <p className="text-xs font-bold text-navy">{mine.title}</p>
         <ol className="list-decimal space-y-1 pl-5 text-sm text-ink">

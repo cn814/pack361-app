@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Paths anyone can open without signing in
 // (the calendar feed and cron job check their own token/secret)
-const PUBLIC_PATHS = ["/login", "/safety", "/join", "/auth", "/manifest.webmanifest", "/sw.js", "/api/calendar", "/api/cron"];
+const PUBLIC_PATHS = ["/login", "/get", "/safety", "/join", "/auth", "/manifest.webmanifest", "/sw.js", "/api/calendar", "/api/cron"];
 
 // The pack's public website (pack361.org, www.pack361.org) shows only the public join pages.
 // Everything else there goes to the members' app at APP_ORIGIN.
