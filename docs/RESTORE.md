@@ -59,10 +59,15 @@ Don't restore the whole database for this: copy the rows back instead.
      from public.events t where id = '…';
    ```
    Copy the output lines into the Supabase **SQL Editor** and run them. Swap `events` for the
-   table you need (both places). Deleting an event also deletes its `itinerary_items` and
-   `packing_items`, and deleting a family deletes its `adults` and `scouts`, so bring those back
-   the same way (parents first, then children: `families`, `adults`, `scouts`; or `events`, then
-   `itinerary_items`, `packing_items`, `volunteer_slots`).
+   table you need (both places). Deleting a row takes some related rows with it, so bring those
+   back the same way, parents first:
+   - **An event** also deletes its `itinerary_items`, `packing_items`, `volunteer_slots` (and their
+     sign-ups) and `event_rsvps`. Restore `events`, then those.
+   - **A family** also deletes its `scouts` and `event_rsvps`, but not its adults: their `family_id`
+     is cleared (set to null), so set it back after restoring `families` and `scouts`. A family with any
+     charges (paid or not) can't be deleted at all; turn its people off instead.
+   - **A den meeting** also deletes its `den_meeting_attendance` and `den_meeting_rsvps`; advancement
+     reports that pointed at it keep the report but lose the link (`meeting_id`).
 4. Remove the scratch database: `docker rm -f pack361-scratch`.
 
 ## 2. Put the whole database back to a backup (same Supabase project)
@@ -129,8 +134,10 @@ The Supabase project is gone or unusable.
    `delete from public.photos;` in the SQL Editor), and re-upload the documents the pack still
    needs before deleting the old document rows.
 8. Payments recorded in the app (`charges`, `payments`) come back with the rest of the data.
-   Anything paid between the backup and the restore is still in PayPal and Givebutter: compare
-   their activity for those days with Leaders → Money and mark those charges paid.
+   Pack dues paid on Givebutter between the backup and the restore are matched again
+   automatically on the next Givebutter sync (or tap "Sync now" in Leaders → Money → Settings).
+   Only PayPal and check or cash payments from those days need a manual look: compare PayPal's
+   activity and the treasurer's records with Leaders → Money and mark those charges paid.
 
 ## Practice once a year
 Do section 1 with last night's backup (it touches nothing live). It takes about ten minutes and

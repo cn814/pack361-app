@@ -25,19 +25,20 @@ export default async function RecordMeetingPage({ params, searchParams }: PagePr
   let day = typeof sp.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sp.date) && sp.date <= today ? sp.date : today;
 
   const supabase = await createClient();
-  const [{ data: den }, { data: scoutRows }] = await Promise.all([
+  const [{ data: den }, { data: scoutRows }, found] = await Promise.all([
     supabase.from("dens").select("id, rank, name").eq("id", denId).maybeSingle(),
     supabase.from("scouts").select("id, first_name, last_name, family_id").eq("den_id", denId).eq("is_active", true).order("first_name"),
+    want ? getMeeting(want) : getMeetingOn(denId, day),
   ]);
   if (!den) notFound();
 
-  let meeting = want ? await getMeeting(want) : null;
-  if (meeting && meeting.den_id !== denId) notFound();
-  if (meeting) {
+  let meeting = found;
+  if (want && meeting) {
+    if (meeting.den_id !== denId) notFound();
     // Planned for later: nothing to record yet.
     if (meeting.meets_on > today) redirect(`/scouts/den/${denId}/meetings/${meeting.id}`);
     day = meeting.meets_on;
-  } else {
+  } else if (want) {
     meeting = await getMeetingOn(denId, day);
   }
 
@@ -65,8 +66,9 @@ export default async function RecordMeetingPage({ params, searchParams }: PagePr
     <>
       <BackLink href={`/scouts/den/${denId}`} label={den.name} />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">{den.name} meeting</h1>
+      {/* Keyed on the day, not the meeting: the first Save of a new meeting must keep its "Saved" screen. */}
       <RecordMeeting
-        key={`${day}:${meeting?.id ?? "new"}`}
+        key={day}
         denId={denId}
         day={day}
         today={today}

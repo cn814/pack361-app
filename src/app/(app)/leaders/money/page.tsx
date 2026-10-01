@@ -11,7 +11,8 @@ import BackLink from "@/components/BackLink";
 import SubmitButton from "@/components/SubmitButton";
 import { isCommittee, requireMember } from "@/lib/data";
 import { getSettings, settingCents } from "@/lib/settings";
-import { getDens } from "@/lib/roster-data";
+import { getDens, ROLE_LABEL } from "@/lib/roster-data";
+import type { AppRole } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { onlinePaymentsReady } from "@/lib/payments";
 import { paypalEnv } from "@/lib/paypal";
@@ -541,7 +542,7 @@ async function RegistrationTracker({ filter: filterParam }: { filter: string }) 
     rows.push({
       key: `a:${a.id}`,
       name: `${a.preferred_name || a.first_name} ${a.last_name}`,
-      what: a.position_title || leads.get(a.id) || (a.role === "parent" ? "Adult" : a.role.replace("_", " ")),
+      what: a.position_title || leads.get(a.id) || (a.role === "parent" ? "Adult" : ROLE_LABEL[a.role as AppRole]),
       memberId: a.bsa_member_id,
       expires: a.registration_expires_on,
       order: 2000,
@@ -598,9 +599,9 @@ async function RegistrationTracker({ filter: filterParam }: { filter: string }) 
                 <input type="checkbox" name="pick" value={r.key} aria-label={`Tick ${r.name}`} className="h-5 w-5 shrink-0 accent-pine" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-ink">{r.name}</span>
-                  <span className="block text-[11px] capitalize text-muted">
+                  <span className="block text-[11px] text-muted">
                     {r.what}
-                    {r.memberId ? <span className="normal-case"> · Member ID {r.memberId}</span> : null}
+                    {r.memberId ? <span> · Member ID {r.memberId}</span> : null}
                   </span>
                 </span>
                 <span className={`badge shrink-0 normal-case tracking-normal ${REG_STYLE[r.st.state]}`}>{r.st.label}</span>
@@ -832,6 +833,7 @@ async function AddTab({ settings }: { settings: Awaited<ReturnType<typeof getSet
       <section className="card space-y-2">
         <h2 className="section-title">Add a fee</h2>
         <AddFeeForm
+          registrationBilling={settings.registration_billing === "on"}
           defaults={{
             dues_season: settings.dues_season,
             registration_year: year,

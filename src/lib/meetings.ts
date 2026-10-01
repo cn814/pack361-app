@@ -80,8 +80,10 @@ export function meetingAdventures(m: Pick<DenMeeting, "work" | "adventure">): st
   return names.length ? names : m.adventure ? [m.adventure] : [];
 }
 
-/** "Den Meeting" calendar events on this day that include this den (its own, its rank's, or pack-wide). */
-async function denMeetingEventsOn(denId: string, rank: DenRank, day: string): Promise<string[]> {
+type DenMeetingEvent = { id: string; den_id: string | null; ranks: DenRank[] | null };
+
+/** Every "Den Meeting" calendar event on this day. */
+async function denMeetingEventsForDay(day: string): Promise<DenMeetingEvent[]> {
   const supabase = await createClient();
   const next = new Date(Date.parse(day + "T12:00:00Z") + 86400000).toISOString().slice(0, 10);
   const { data } = await supabase
@@ -91,9 +93,17 @@ async function denMeetingEventsOn(denId: string, rank: DenRank, day: string): Pr
     .is("archived_at", null)
     .gte("starts_at", easternToIso(day, "00:00"))
     .lt("starts_at", easternToIso(next, "00:00"));
-  return ((data ?? []) as { id: string; den_id: string | null; ranks: DenRank[] | null }[])
-    .filter((e) => e.den_id === denId || (!e.den_id && (!e.ranks?.length || e.ranks.includes(rank))))
-    .map((e) => e.id);
+  return (data ?? []) as DenMeetingEvent[];
+}
+
+/** Does the event include this den (its own, its rank's, or pack-wide)? */
+function includesDen(e: DenMeetingEvent, denId: string, rank: DenRank): boolean {
+  return e.den_id === denId || (!e.den_id && (!e.ranks?.length || e.ranks.includes(rank)));
+}
+
+/** "Den Meeting" calendar events on this day that include this den. */
+async function denMeetingEventsOn(denId: string, rank: DenRank, day: string): Promise<string[]> {
+  return (await denMeetingEventsForDay(day)).filter((e) => includesDen(e, denId, rank)).map((e) => e.id);
 }
 
 /**
@@ -154,17 +164,16 @@ export async function myDenMeetingButtons(): Promise<{ denId: string; name: stri
   if (!denIds.length) return [];
   const supabase = await createClient();
   const day = todayEastern();
-  const [{ data: dens }, { data: meetings }] = await Promise.all([
+  const [{ data: dens }, { data: meetings }, events] = await Promise.all([
     supabase.from("dens").select("id, name, rank").in("id", denIds).order("name"),
     supabase.from("den_meetings").select("den_id, recorded_at").in("den_id", denIds).eq("meets_on", day),
+    denMeetingEventsForDay(day),
   ]);
-  return Promise.all(
-    ((dens ?? []) as { id: string; name: string; rank: DenRank }[]).map(async (d) => {
-      const m = ((meetings ?? []) as { den_id: string; recorded_at: string | null }[]).filter((x) => x.den_id === d.id);
-      const today = m.length > 0 || (await denMeetingEventsOn(d.id, d.rank, day)).length > 0;
-      return { denId: d.id, name: d.name, today, saved: m.some((x) => x.recorded_at) };
-    }),
-  );
+  return ((dens ?? []) as { id: string; name: string; rank: DenRank }[]).map((d) => {
+    const m = ((meetings ?? []) as { den_id: string; recorded_at: string | null }[]).filter((x) => x.den_id === d.id);
+    const today = m.length > 0 || events.some((e) => includesDen(e, d.id, d.rank));
+    return { denId: d.id, name: d.name, today, saved: m.some((x) => x.recorded_at) };
+  });
 }
 
 /** Upcoming meetings for these dens (families see their scouts' dens). */

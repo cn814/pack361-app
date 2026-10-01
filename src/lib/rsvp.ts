@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "./supabase/server";
 import { easternDate } from "./tz";
+import { eventOver } from "./format";
 import type { PackEvent } from "./types";
 
 export interface MyRsvp {
@@ -22,9 +23,10 @@ export interface RsvpRow extends MyRsvp {
 }
 
 /** Can families still answer? */
-export function rsvpOpen(e: Pick<PackEvent, "rsvp_enabled" | "rsvp_by" | "archived_at" | "starts_at" | "ends_at">): boolean {
+export function rsvpOpen(e: Pick<PackEvent, "rsvp_enabled" | "rsvp_by" | "archived_at" | "starts_at" | "ends_at" | "all_day">): boolean {
   if (!e.rsvp_enabled || e.archived_at) return false;
-  if (Date.parse(e.ends_at ?? e.starts_at) < Date.now()) return false;
+  // All-day events stay open through the end of their (last) day, not midnight that morning.
+  if (eventOver(e)) return false;
   return !e.rsvp_by || e.rsvp_by >= easternDate(Date.now());
 }
 

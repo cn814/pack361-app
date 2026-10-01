@@ -15,8 +15,18 @@ import { captureOrder, getOrder, PayPalError, type PayPalOrder } from "./paypal"
 // A reminder is only marked as sent once it actually went out (a push reached a phone, or the
 // email was accepted); anything that didn't go out is tried again on the next run.
 
-/** At most this many reminder emails per run, leaving room in the daily email quota. */
-const EMAILS_PER_RUN = 60;
+/**
+ * Reminder emails for the whole daily run share this budget. The free email plan allows 100 a day
+ * in total, and sign-in codes and welcome emails need the rest.
+ */
+export const REMINDER_EMAILS_PER_RUN = 40;
+
+/** What's left of the run's reminder email budget; every step takes from the same one. */
+export type EmailBudget = { left: number };
+
+export function emailBudget(): EmailBudget {
+  return { left: REMINDER_EMAILS_PER_RUN };
+}
 
 /** "Tonight", "Today" or "Tomorrow" for an event, in Eastern time. */
 function whenWord(startsAt: string): string {
@@ -25,16 +35,18 @@ function whenWord(startsAt: string): string {
   return days === 1 ? "Tomorrow" : new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "long" }).format(new Date(startsAt));
 }
 
-/** Send the emails that fit this run; returns how many went out (0 on failure). */
-async function sendSome(emails: Email[]): Promise<{ sent: number; error: string | null }> {
-  if (!emails.length || !emailConfigured()) return { sent: 0, error: null };
-  const batch = emails.slice(0, EMAILS_PER_RUN);
+/** Send the emails that fit what's left of the run's budget; returns how many went out (0 on failure). */
+async function sendSome(emails: Email[], budget: EmailBudget): Promise<{ sent: number; error: string | null }> {
+  if (!emails.length || !emailConfigured() || budget.left <= 0) return { sent: 0, error: null };
+  const batch = emails.slice(0, budget.left);
   const error = await sendEmails(batch);
+  // Counted even on failure: some may have gone out, and the quota matters more than a retry tonight.
+  budget.left -= batch.length;
   return { sent: error ? 0 : batch.length, error };
 }
 
 /** Remind volunteers about jobs at events starting in the next ~30 hours. */
-export async function remindVolunteers(db: SupabaseClient) {
+export async function remindVolunteers(db: SupabaseClient, budget: EmailBudget = emailBudget()) {
   const now = Date.now();
   const { data, error } = await db
     .from("volunteer_signups")
@@ -81,18 +93,23 @@ export async function remindVolunteers(db: SupabaseClient) {
       },
     });
   }
-  const mail = await sendSome(waiting.map((w) => w.email));
+  const mail = await sendSome(waiting.map((w) => w.email), budget);
   done.push(...waiting.slice(0, mail.sent).map((w) => w.row));
   const stamp = new Date().toISOString();
-  for (const r of done) {
-    await db.from("volunteer_signups").update({ reminded_at: stamp }).eq("slot_id", r.slot_id).eq("adult_id", r.adult_id);
+  const bySlot = new Map<string, string[]>();
+  for (const r of done) bySlot.set(r.slot_id, [...(bySlot.get(r.slot_id) ?? []), r.adult_id]);
+  for (const [slotId, adultIds] of bySlot) {
+    await db.from("volunteer_signups").update({ reminded_at: stamp }).eq("slot_id", slotId).in("adult_id", adultIds);
   }
   if (mail.error) throw new Error(`Volunteer reminder emails failed: ${mail.error}`);
   return { volunteers: rows.length, pushed: done.length - mail.sent, emailed: mail.sent, later: rows.length - done.length };
 }
 
-/** Remind leaders 60, 30, 7 and 0 days before a training expires (once per threshold). */
-export async function remindTraining(db: SupabaseClient) {
+/**
+ * Remind leaders 60, 30, 7 and 0 days before a training expires (once per threshold), by push, or
+ * by email when no push reached a phone.
+ */
+export async function remindTraining(db: SupabaseClient, budget: EmailBudget = emailBudget()) {
   const { data, error } = await db
     .from("adult_trainings")
     .select("adult_id, course, expires_on, reminded_days, adult:adults!inner(first_name, preferred_name, email, is_active)")
@@ -124,7 +141,11 @@ export async function remindTraining(db: SupabaseClient) {
       url: "/family",
       tag: `training-${r.course}`,
     });
-    // Email too: training matters enough to land in the inbox as well as on the phone.
+    if (res.sent) {
+      done.push(key);
+      continue;
+    }
+    // No phone got it: email instead.
     waiting.push({
       key,
       email: {
@@ -140,15 +161,21 @@ export async function remindTraining(db: SupabaseClient) {
         ],
       },
     });
-    if (res.sent) done.push(key);
   }
-  const mail = await sendSome(waiting.map((w) => w.email));
-  for (const w of waiting.slice(0, mail.sent)) if (!done.includes(w.key)) done.push(w.key);
+  const mail = await sendSome(waiting.map((w) => w.email), budget);
+  done.push(...waiting.slice(0, mail.sent).map((w) => w.key));
+  const groups = new Map<string, { course: string; threshold: number; ids: string[] }>();
   for (const k of done) {
-    await db.from("adult_trainings").update({ reminded_days: k.threshold }).eq("adult_id", k.adult_id).eq("course", k.course);
+    const id = `${k.course}|${k.threshold}`;
+    const g = groups.get(id) ?? { course: k.course, threshold: k.threshold, ids: [] };
+    g.ids.push(k.adult_id);
+    groups.set(id, g);
+  }
+  for (const g of groups.values()) {
+    await db.from("adult_trainings").update({ reminded_days: g.threshold }).eq("course", g.course).in("adult_id", g.ids);
   }
   if (mail.error) throw new Error(`Training reminder emails failed: ${mail.error}`);
-  return { training: done.length, later: waiting.length - done.length };
+  return { training: done.length, pushed: done.length - mail.sent, emailed: mail.sent, later: waiting.length - mail.sent };
 }
 
 /**
@@ -156,25 +183,30 @@ export async function remindTraining(db: SupabaseClient) {
  * expires (and adults about their own), once per threshold. By push to the family's active adults,
  * or by email to each of them when no push reached anyone. Families renew and pay at my.scouting.org.
  */
-export async function remindRegistration(db: SupabaseClient) {
+export async function remindRegistration(db: SupabaseClient, budget: EmailBudget = emailBudget()) {
   const today = easternDate(Date.now());
   const shift = (days: number) => easternDate(Date.now() + days * 86400000);
   const lo = shift(-1);
   const hi = shift(31);
-  const [scoutRes, adultRes] = await Promise.all([
+  const adultCols = "id, family_id, first_name, preferred_name, email, registration_expires_on, registration_reminded_days";
+  const [scoutRes, ownRes] = await Promise.all([
     db
       .from("scouts")
       .select("id, family_id, first_name, registration_expires_on, registration_reminded_days")
       .eq("is_active", true)
       .gte("registration_expires_on", lo)
       .lte("registration_expires_on", hi),
-    db
-      .from("adults")
-      .select("id, family_id, first_name, preferred_name, email, registration_expires_on, registration_reminded_days")
-      .eq("is_active", true),
+    // Adults whose own registration is due soon.
+    db.from("adults").select(adultCols).eq("is_active", true).gte("registration_expires_on", lo).lte("registration_expires_on", hi),
   ]);
   if (scoutRes.error) throw new Error(scoutRes.error.message);
-  if (adultRes.error) throw new Error(adultRes.error.message);
+  if (ownRes.error) throw new Error(ownRes.error.message);
+  // And the adults of families with a scout due soon, who get that scout's reminder.
+  const families = [...new Set((scoutRes.data ?? []).map((s) => s.family_id as string))];
+  const familyRes = families.length
+    ? await db.from("adults").select(adultCols).eq("is_active", true).in("family_id", families)
+    : { data: [], error: null };
+  if (familyRes.error) throw new Error(familyRes.error.message);
   type AdultRow = {
     id: string;
     family_id: string | null;
@@ -184,7 +216,7 @@ export async function remindRegistration(db: SupabaseClient) {
     registration_expires_on: string | null;
     registration_reminded_days: number | null;
   };
-  const adults = (adultRes.data ?? []) as AdultRow[];
+  const adults = [...new Map(([...(ownRes.data ?? []), ...(familyRes.data ?? [])] as AdultRow[]).map((a) => [a.id, a])).values()];
   const scouts = (scoutRes.data ?? []) as {
     id: string;
     family_id: string;
@@ -254,18 +286,25 @@ export async function remindRegistration(db: SupabaseClient) {
       })),
     });
   }
-  // Whole reminders only, up to the per-run email cap; the rest wait for the next run.
+  // Whole reminders only, up to what's left of the run's email budget; the rest wait for the next run.
   const fits: typeof waiting = [];
   let count = 0;
   for (const w of waiting) {
-    if (count + w.emails.length > EMAILS_PER_RUN) break;
+    if (count + w.emails.length > budget.left) break;
     fits.push(w);
     count += w.emails.length;
   }
-  const mail = await sendSome(fits.flatMap((w) => w.emails));
+  const mail = await sendSome(fits.flatMap((w) => w.emails), budget);
   if (mail.sent) done.push(...fits.map((w) => w.item));
+  const groups = new Map<string, { table: Item["table"]; threshold: number; ids: string[] }>();
   for (const it of done) {
-    await db.from(it.table).update({ registration_reminded_days: it.threshold }).eq("id", it.id);
+    const id = `${it.table}|${it.threshold}`;
+    const g = groups.get(id) ?? { table: it.table, threshold: it.threshold, ids: [] };
+    g.ids.push(it.id);
+    groups.set(id, g);
+  }
+  for (const g of groups.values()) {
+    await db.from(g.table).update({ registration_reminded_days: g.threshold }).in("id", g.ids);
   }
   if (mail.error) throw new Error(`Registration reminder emails failed: ${mail.error}`);
   return { registration: done.length, emailed: mail.sent, later: items.length - done.length };

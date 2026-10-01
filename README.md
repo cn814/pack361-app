@@ -7,8 +7,10 @@ Next.js 16 (App Router) on Vercel, Supabase (Postgres + Auth) for data and login
 
 Live at **https://app.pack361.org** (CNAME `app` → Vercel in Squarespace DNS for pack361.org;
 pack361-app.vercel.app still works). Supabase Auth Site URL is https://app.pack361.org and both
-addresses are in the redirect allow list. pack361.org's root records (Squarespace site, Mailgun
-email forwarding) are separate; put any new email-sending records on a subdomain.
+addresses are in the redirect allow list. The root of pack361.org (and www) is the app's public
+join page once its DNS records point to Vercel (see **Public website** below), not a Squarespace
+site. Keep the Mailgun email-forwarding records as they are, and put any new email-sending records
+on a subdomain.
 
 ## Run locally
 ```bash
@@ -31,7 +33,7 @@ npm run dev
 ## Folders
 | Path | What |
 |---|---|
-| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init`, `harden_functions`, `private_helpers`, `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback`, `den_calendar`, `twh_sync`, `twh_rsvp`, `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages), `twh_replacement` (in-app RSVP, public guide pages), `payments` (charges, PayPal, event fees; replaces dues), `documents` (documents library), `council_events` (council calendar picker), `training_plus` (more courses, member IDs, training import), `givebutter_dues` (dues paid on Givebutter), `registration_expiry` (registration expiration tracking), `rsvp_everywhere` (RSVPs on by default), `den_meeting_easy` (one-step den meeting recording, several adventures per meeting, den meeting RSVPs). |
+| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init` (core tables and row-level security), `harden_functions` (locked-down function search paths), `private_helpers` (permission helpers in a private schema), `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback` (problem reports and notes to admins), `den_calendar` (den-aware events and meetings), `twh_sync` (TroopWebHost calendar sync), `twh_rsvp` (TroopWebHost event links), `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages), `twh_replacement` (in-app RSVP, public guide pages), `payments` (charges, PayPal, event fees; replaces dues), `documents` (documents library), `council_events` (council calendar picker), `training_plus` (more courses, member IDs, training import), `guide_updates` (guide text for paying, documents, RSVPs and training), `givebutter_dues` (dues paid on Givebutter), `registration_expiry` (registration expiration tracking), `rsvp_everywhere` (RSVPs on by default), `den_meeting_easy` (one-step den meeting recording, several adventures per meeting, den meeting RSVPs), `review_db_fixes` (database fixes from the code review), `guide_text_fixes` (guide text: dues on Givebutter, registration at my.scouting.org). |
 | `supabase/data/` | One-off data updates run in the SQL Editor (e.g. the Fall Campout details, Arrow of Light Den 8 bridging). |
 | `supabase/seed.sql` | Starter data: dens (Scoutbook numbering), pack meetings, fall events, default packing list. |
 | `supabase/import/build_roster_import.py` | Merges Scoutbook Plus + TroopWebHost data into `imports/roster_import.sql` and `imports/roster_review.md`. |
@@ -159,12 +161,16 @@ npm run dev
   can be undone. Added events follow the council's title, time and place until someone edits them in
   the app. Events that leave the council calendar are flagged, never deleted. The feed link is
   `pack_settings.council_calendar_url`, set on that page.
-- **RSVP**: a leader turns on "Take RSVPs" for an event (optional RSVP-by date). Each family answers
-  Going / Maybe / Can't go with how many scouts and adults (`event_rsvps`, one answer per family,
-  through `set_rsvp()`); everyone sees the headcount (`rsvp_counts()`), leaders see who's coming.
-  Unanswered open RSVPs within 30 days show in Notifications → Needs you. While `TWH_CALENDAR_URL`
-  is set, synced events without in-app RSVP still link to their TroopWebHost page
-  (`src/lib/twh-link.ts`). Givebutter links stay as "Pay / sign up".
+- **RSVP**: every event takes RSVPs in the app by default; a leader can turn "Take RSVPs" off for
+  an event and set an optional RSVP-by date. Each family answers Going / Maybe / Can't go with how
+  many scouts and adults (`event_rsvps`, one answer per family, through `set_rsvp()`); everyone sees
+  the headcount (`rsvp_counts()`), leaders see who's coming. RSVPs stay open until the event ends
+  (an all-day event, the end of its last day). Unanswered RSVPs within 30 days show in
+  Notifications → Needs you, except for regular meetings (Den Meeting, Pack Meeting, Committee),
+  which families can still answer on the event page. There's no TroopWebHost RSVP link. Den
+  meetings planned in the app take an RSVP per scout (`den_meeting_rsvps`), which the den leader's
+  recorder uses to pre-check who's here. An event's outside sign-up link shows as "Sign up / pay"
+  ("Register with the council" for council events).
 - **Public website** (`/join`, served as the home page of `pack361.org` and `www.pack361.org` by
   `src/proxy.ts`): who the pack is, photos (`src/app/join/photos.ts`, files in `public/join/`) and
   the "Joining Pack 361" guide page. Guide pages marked **Public** (and published) can be read by
@@ -198,14 +204,19 @@ npm run dev
   year after the date on the form. Only status and dates are stored. Dues are now
   charges (see Payments).
 - **Payments** (`/pay`, Leaders → Money): everything a family owes the pack is a row in `charges`
-  (dues, Scouting America registration, council fee, event fees, other). Families pay with PayPal
-  buttons (PayPal, Venmo on phones, or card; Orders v2 created and captured on the server,
-  `src/lib/paypal.ts`) or say they paid by check or cash for a leader to confirm. A captured order
+  (dues, event fees, other; plus Scouting America and council registration only when
+  `registration_billing` is on). Pack dues are paid on Givebutter and matched automatically (see
+  **Pack dues on Givebutter**). PayPal is optional, for everything else: when its keys are set,
+  families pay with PayPal buttons (PayPal, Venmo on phones, or card; Orders v2 created and captured
+  on the server, `src/lib/paypal.ts`). Either way they can say they paid by check or cash for a
+  leader to confirm. A captured order
   is recorded by `record_paypal_capture()` (secret key only, safe to run twice); the daily cron
   finishes checkouts a browser didn't. Events can have a cost per family, scout and adult, and an RSVP
   "yes" keeps the family's event charge up to date (paid charges never change). The committee adds
-  fees, confirms payments, tracks national and council fees per person including when they were sent
-  to the council, sets amounts and "other ways to pay", and downloads a CSV. Env:
+  fees, confirms payments, sets amounts and "other ways to pay", and downloads a CSV. Registration is
+  tracked by expiration date (see **Registration**); the pack doesn't bill it unless
+  `registration_billing` is turned on in Money → Settings, which brings back the national and
+  council fee kinds and the "sent to council" tracking. Env:
   `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV` (sandbox unless `live`).
   Without PayPal keys the PayPal buttons are hidden and families report check or cash payments.
 - **Pack dues on Givebutter**: dues are per scout ($255 by default; each brother or sister after the
@@ -244,10 +255,17 @@ npm run dev
   `/auth/open`, which says to type the code in the app and only signs in the browser if asked.
 - **Computers**: at the `lg` breakpoint the bottom bar becomes a left sidebar and busy pages use
   two columns (add `page-wide` to a page element to let it use the full width). Phones are unchanged.
-- A second daily cron (`/api/cron/daily`, 21:00 UTC = 5 PM EDT / 4 PM EST) sends the volunteer,
-  training and registration reminders, deletes expired photos, then syncs TroopWebHost. Each step runs even if
-  another fails; any failure returns HTTP 500 (so Vercel shows it) and a warning on Pack admin.
-  Both cron routes allow 60 seconds, and every outside call has a timeout.
+- A second daily cron (`/api/cron/daily`, 21:00 UTC = 5 PM EDT / 4 PM EST) runs, in order:
+  1. volunteer reminders, 2. training expiry reminders, 3. Scouting America registration reminders
+  (each by push, or email when no push reached a phone; the three share one budget of 40 emails a
+  run, so sign-in codes keep room in the 100-a-day quota), 4. deleting photos past the keep-for
+  setting, 5. finishing PayPal checkouts a browser didn't (only with PayPal keys), 6. the
+  TroopWebHost calendar sync (only with `TWH_CALENDAR_URL`), 7. the council calendar sync (only once
+  a feed link is saved). Each step runs even if another fails; any failure returns HTTP 500 (so
+  Vercel shows it) and a warning on Pack admin. The route allows 300 seconds (`maxDuration`, Fluid
+  compute) and saves its progress to `daily_last_run` before each step, so a run that times out
+  still shows which step it stopped in. The Givebutter cron allows 60 seconds. Every outside call
+  has a timeout.
 - **Security headers** (`next.config.ts`): no framing, no content-type sniffing, strict referrer,
   HSTS.
 

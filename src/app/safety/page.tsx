@@ -43,7 +43,7 @@ export default function SafetyPage() {
           "No one-on-one digital contact: the app has no private messaging. Leaders post announcements to the whole pack or to one den's parents, and nothing is ever sent to scouts.",
           "Scouts don't have accounts. Only parents, guardians and registered leaders on the pack roster can sign in.",
           "Leaders' Safeguarding Youth training (renewed every year) and position training are tracked, with reminders before anything expires.",
-          "Each campout page lists the pack's campout rules, including two-deep leadership and family-only tenting.",
+          "Leaders add the pack's campout rules, such as two-deep leadership and family-only tenting, to campout pages.",
           <>
             The Scouts First Helpline (<a className="font-semibold text-pine underline" href="tel:18447268871">1-844-726-8871</a>) is
             on the Leaders page for anyone with a youth-safety concern.
@@ -55,7 +55,7 @@ export default function SafetyPage() {
         icon={Users}
         title="Who can see what"
         items={[
-          "No family information is public. The only public page is the pack's welcome page at pack361.org, which has general information about joining. Everything else requires signing in, and search engines are told not to list it.",
+          "No family information is public. The only public pages are the pack's welcome pages at pack361.org, with general information about joining, and this safety page. Everything else requires signing in, and search engines are told not to list it.",
           "Families see only their own scouts' information and advancement.",
           "Den leaders see their own den; pack leadership sees the whole pack for approvals and awards.",
           "Parents' phone numbers and emails aren't shown to other parents. The leader directory lists only leaders.",
@@ -63,7 +63,7 @@ export default function SafetyPage() {
           "Volunteer sign-ups show other families only your first name and last initial.",
           "Pack photos are visible only to signed-in pack families. A leader approves every photo a parent uploads, and scouts whose families haven't said yes aren't shown.",
           "Pack documents (forms, minutes, packing lists) are visible only to signed-in pack families, and some only to leaders or one den. Files open through links that expire after a minute.",
-          "Only pack leadership, the Cubmaster and admins see what families owe and pay. Den leaders and other parents don't.",
+          "Only Leadership, the Cubmaster and admins see what families owe and pay for dues; den leaders see event sign-ups and store orders. Other parents don't see any of it.",
         ]}
       />
 
@@ -71,7 +71,7 @@ export default function SafetyPage() {
         icon={Database}
         title="What we keep, and what we don't"
         items={[
-          "We keep: parent and leader names, emails and phone numbers; scout names, dens and BSA member IDs; advancement copied from Scoutbook; den meeting attendance; leader training dates; Scouting America registration expiration dates; volunteer sign-ups; whether each person's medical form is on file and when it expires; what each family owes the pack and what they've paid (amounts, dates, and whether by PayPal, check or cash); poll answers; event sign-ups and pack store orders from Givebutter; and pack photos.",
+          "We keep: parent and leader names, emails and phone numbers; scout names, dens and BSA member IDs; advancement copied from Scoutbook; den meeting attendance; leader training dates; Scouting America registration expiration dates; volunteer sign-ups; whether each person's medical form is on file and when it expires; what each family owes the pack and what they've paid (amounts, dates, and whether by PayPal, check or cash); poll answers; event RSVPs (who's going and how many); event sign-ups and pack store orders from Givebutter; and pack photos.",
           "For pack dues paid on Givebutter we keep the payer's name and email, the amount, and which family and scouts it was for. Other names, phone numbers and addresses typed on the Givebutter form are used only to match the payment and are never stored.",
           "We don't keep: birthdates, home addresses, medical forms or any medical information, payment card or bank details (PayPal and Givebutter handle payments) or passwords.",
           "The documents library is for pack papers only. Leaders are asked never to upload medical forms, insurance cards or anything with personal details about scouts or families.",
@@ -87,7 +87,7 @@ export default function SafetyPage() {
         items={[
           "No passwords to steal: you sign in with a one-time link or code sent to the email the pack has on file.",
           "Every connection is encrypted (HTTPS), and the database host encrypts stored data.",
-          "Access rules are enforced inside the database itself, not just on the screen, and are checked by more than 500 automated tests.",
+          "Access rules are enforced inside the database itself, not just on the screen, and are checked by more than 650 automated tests.",
           "Only designated pack admins can import roster or advancement data or change anyone's role.",
         ]}
       />
