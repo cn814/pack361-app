@@ -7,6 +7,8 @@ export interface ShopItem {
   sku: string;
   title: string;
   url: string;
+  /** A picture on the Scout Shop's site, for items without a thumbnail in public/awards. */
+  image?: string;
 }
 
 export const SHOP_ITEMS: Record<string, ShopItem> = {
@@ -161,6 +163,18 @@ export const SHOP_ITEMS: Record<string, ShopItem> = {
 };
 
 export const SHOP_RANK_PATCHES: Partial<Record<DenRank, ShopItem>> = {
+  wolf: {
+    sku: "371",
+    title: "Cub Scout Wolf Rank Emblem",
+    url: "https://www.scoutshop.org/cub-scout-wolf-rank-emblem-371.html",
+    image: "https://www.scoutshop.org/media/catalog/product/cache/daf6eb307f786cec946b0ba7b9018f63/3/7/371_cub_scout_wolf_rank_emblem.jpg",
+  },
+  aol: {
+    sku: "44",
+    title: "Arrow of Light Rank Emblem",
+    url: "https://www.scoutshop.org/cub-scout-arrow-of-light-rank-emblem-44.html",
+    image: "https://www.scoutshop.org/media/catalog/product/cache/daf6eb307f786cec946b0ba7b9018f63/4/4/44.jpg",
+  },
   lion: { sku: "660298", title: "Lion Rank Emblem", url: "https://www.scoutshop.org/cub-scout-lion-rank-emblem-660298.html" },
   tiger: { sku: "620079", title: "Tiger Rank Emblem", url: "https://www.scoutshop.org/cub-scout-tiger-rank-emblem-620079.html" },
   bear: { sku: "646375", title: "Bear Rank Emblem", url: "https://www.scoutshop.org/cub-scout-bear-rank-emblem-646375.html" },

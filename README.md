@@ -67,7 +67,8 @@ npm run dev
   (`src/lib/scout-shop-data.ts`) and thumbnails (`public/awards/<sku>.jpg`) come from the Scout Shop
   catalog in the pack's earlier label tool, github.com/cn814/advacement-code. When the Scout Shop adds
   or renumbers an item, add it to `SHOP_ITEMS` (key: `rank|adventure name` as in the `adventures`
-  table) with a 240×240 JPEG thumbnail.
+  table) with a 240×240 JPEG thumbnail. The Wolf and Arrow of Light rank patches use the Scout Shop's own
+  small product photo (`image`), since the old catalog didn't have them.
 - The 2024 adventure catalog lives in the `adventures` table (editable in the Supabase table editor).
 
 - **Awards** only count items earned on or after `pack_settings.awards_tracked_from` (2026-07-01);

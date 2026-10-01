@@ -20,7 +20,7 @@ export function shopItem(r: { kind: RecordKind; rank: DenRank | null; adventure:
   return BY_KEY.get(`${r.rank}|${key(r.adventure ?? r.item)}`) ?? null;
 }
 
-export const shopImage = (sku: string) => `/awards/${sku}.jpg`;
+export const shopImage = (item: ShopItem) => item.image ?? `/awards/${item.sku}.jpg`;
 
 /** Lions to Bears earn belt loops; Webelos and Arrow of Light earn pins. */
 export const piece = (rank: DenRank | null) => (rank === "webelos" || rank === "aol" ? "pin" : "loop");

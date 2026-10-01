@@ -34,7 +34,7 @@ function Thumb({ shop, kind }: { shop: ShopItem | null; kind: Row["kind"] }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={shopImage(shop.sku)}
+      src={shopImage(shop)}
       alt=""
       width={56}
       height={56}
@@ -186,7 +186,7 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
                       <li key={r.kind + awardLabel(r)} className="flex items-center gap-2">
                         {shop ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={shopImage(shop.sku)} alt="" width={28} height={28} loading="lazy" className="h-7 w-7 shrink-0 rounded bg-white object-contain ring-1 ring-line" />
+                          <img src={shopImage(shop)} alt="" width={28} height={28} loading="lazy" className="h-7 w-7 shrink-0 rounded bg-white object-contain ring-1 ring-line" />
                         ) : (
                           <Award className="h-7 w-7 shrink-0 p-1 text-muted" aria-hidden />
                         )}
