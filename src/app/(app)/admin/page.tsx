@@ -76,6 +76,12 @@ export default async function AdminPage() {
     <>
       <BackLink href="/leaders" label="Leaders" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack admin</h1>
+      {lastRun && runProblem && (
+        <p className="rounded-xl bg-danger-50 p-3 text-sm text-danger">
+          The nightly jobs (5 PM) had a problem {timeAgo(lastRun.at)}: {runProblem.join(", ")}. Each job tries again the next
+          evening; this goes away after a run with no problems. Details are in the Vercel logs.
+        </p>
+      )}
 
       <div className="space-y-2">
         <Tile
@@ -151,11 +157,6 @@ export default async function AdminPage() {
             </p>
             {(lastSync?.skipped || lastSync?.errors?.length) && (
               <p className="rounded-xl bg-gold-50 p-2 text-xs text-gold-800">{[lastSync.skipped, ...(lastSync.errors ?? [])].filter(Boolean).join(" ")}</p>
-            )}
-            {lastRun && runProblem && (
-              <p className="rounded-xl bg-danger-50 p-2 text-xs text-danger">
-                The nightly jobs had a problem {timeAgo(lastRun.at)}: {runProblem.join(", ")}. Check the Vercel logs.
-              </p>
             )}
             <ActionForm action={syncTroopWebHost} submit="Sync now" busy="Syncing…" buttonClass="btn-ghost w-full" />
           </>
