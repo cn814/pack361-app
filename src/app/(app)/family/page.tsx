@@ -127,7 +127,7 @@ export default async function FamilyPage() {
       {leader && (
         <section id="training" className="card scroll-mt-20 space-y-2">
           <h2 className="section-title">My training</h2>
-          <TrainingStatus status={status} />
+          <TrainingStatus status={status} rows={training} />
           <TrainingEditor adultId={me.id} rows={training} focus={focus} />
         </section>
       )}

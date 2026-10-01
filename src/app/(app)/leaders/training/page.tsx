@@ -133,7 +133,7 @@ export default async function TrainingPage({ searchParams }: PageProps<"/leaders
                 </p>
                 <p className="truncate text-xs text-muted">{[l.position_title, ...l.dens].filter(Boolean).join(" · ") || "Leader"}</p>
               </div>
-              <TrainingStatus status={l.status} compact />
+              <TrainingStatus status={l.status} compact rows={l.trainings} />
               <div className="flex flex-wrap gap-1">
                 {SHOWN.map((k) => {
                   const s = trainingState(l.trainings.find((t) => t.course === k));

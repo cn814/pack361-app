@@ -1,5 +1,30 @@
-import { CircleAlert, ExternalLink, ShieldCheck } from "lucide-react";
-import { COURSE_BY_KEY, MY_SCOUTING_URL, positionLabels, type TrainedStatus } from "@/lib/training";
+import { CircleAlert, Clock, ExternalLink, ShieldCheck } from "lucide-react";
+import { COURSE_BY_KEY, MY_SCOUTING_URL, daysLeft, positionLabels, trainingState, type TrainedStatus, type TrainingRow } from "@/lib/training";
+import { fmtShortDate } from "@/lib/advancement";
+
+/** Courses on record that have expired or expire within 60 days, soonest first. */
+function DueSoon({ rows }: { rows: TrainingRow[] }) {
+  const due = rows
+    .filter((r) => ["expiring", "expired"].includes(trainingState(r)) && COURSE_BY_KEY[r.course])
+    .sort((a, b) => (a.expires_on ?? "").localeCompare(b.expires_on ?? ""));
+  if (!due.length) return null;
+  return (
+    <div className="flex items-start gap-1.5 text-xs text-gold-800">
+      <Clock className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+      <ul className="min-w-0 space-y-0.5">
+        {due.map((r) => {
+          const d = daysLeft(r.expires_on)!;
+          return (
+            <li key={r.course}>
+              <b>{COURSE_BY_KEY[r.course].label}</b>{" "}
+              {d < 0 ? `expired ${fmtShortDate(r.expires_on)}` : d === 0 ? "expires today" : `expires ${fmtShortDate(r.expires_on)} (${d} day${d === 1 ? "" : "s"})`}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
 
 export function MyScoutingLink({ className = "" }: { className?: string }) {
   return (
@@ -15,7 +40,17 @@ export function MyScoutingLink({ className = "" }: { className?: string }) {
 }
 
 /** "Trained for Den Leader" or "Missing: Hazardous Weather", with where to take the courses. */
-export default function TrainingStatus({ status, compact = false }: { status: TrainedStatus; compact?: boolean }) {
+export default function TrainingStatus({ status, compact = false, rows }: { status: TrainedStatus; compact?: boolean; rows?: TrainingRow[] }) {
+  const due = rows ? <DueSoon rows={rows} /> : null;
+  return (
+    <div className="space-y-1.5">
+      {due}
+      <Status status={status} compact={compact} />
+    </div>
+  );
+}
+
+function Status({ status, compact }: { status: TrainedStatus; compact: boolean }) {
   const who = status.positions.length ? positionLabels(status.positions) : "a registered adult";
   if (status.trained) {
     return (
