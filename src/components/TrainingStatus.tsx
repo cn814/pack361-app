@@ -76,7 +76,7 @@ function Status({ status, compact }: { status: TrainedStatus; compact: boolean }
         {!compact && status.positions.length > 0 && <p className="text-muted">Needed to be trained for {who}.</p>}
         {online && (
           <p className="text-muted">
-            Safeguarding Youth and the other courses are taken at my.scouting.org. <MyScoutingLink />
+            {status.missing.length === 1 ? "Take it" : "Take them"} at my.scouting.org, then add the date below. <MyScoutingLink />
           </p>
         )}
       </div>
