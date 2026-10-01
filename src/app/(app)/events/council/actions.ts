@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { isCommittee, requireMember } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
-import { COUNCIL_URL_KEY, councilSummary, normalizeFeedUrl, syncCouncil } from "@/lib/council";
+import { COUNCIL_URL_KEY, FeedError, councilSummary, normalizeFeedUrl, syncCouncil } from "@/lib/council";
 import type { ActionResult } from "@/components/ActionForm";
 
 const UUID = /^[0-9a-f-]{36}$/i;
@@ -24,7 +24,7 @@ async function runCheck(): Promise<ActionResult> {
     return r.ok ? { ok: true, message: councilSummary(r) } : { error: councilSummary(r) };
   } catch (e) {
     refresh();
-    return { error: e instanceof Error ? e.message : "The check failed." };
+    return { error: e instanceof FeedError ? e.message : "The check failed. The details are in the server log." };
   }
 }
 
@@ -33,7 +33,7 @@ export async function saveCouncilLink(_prev: ActionResult, form: FormData): Prom
   const me = await requireMember();
   if (!isCommittee(me)) return { error: "Only the committee can change the council calendar link." };
   const raw = String(form.get("url") ?? "").trim().slice(0, 1000);
-  if (raw && !normalizeFeedUrl(raw)) return { error: "That isn't a web address. Paste the link that starts with webcal:// or https://." };
+  if (raw && !normalizeFeedUrl(raw)) return { error: "That isn't a secure web address. Paste the link that starts with webcal:// or https://." };
   const supabase = await createClient();
   const { error } = await supabase
     .from("pack_settings")
