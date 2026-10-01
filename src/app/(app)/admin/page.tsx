@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, FileUp, Images, Inbox, Mail, ShieldCheck, Tent, UsersRound } from "lucide-react";
+import { ChevronRight, FileUp, Files, Images, Inbox, Mail, ShieldCheck, Tent, UsersRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ActionForm, { Field } from "@/components/ActionForm";
 import BackLink from "@/components/BackLink";
@@ -29,15 +29,21 @@ function Tile({ href, icon: Icon, label, sub }: { href: string; icon: typeof Mai
 export default async function AdminPage() {
   await requireAdmin();
   const supabase = await createClient();
-  const [settings, budget, { count: openMessages }, { data: photoBytes }] = await Promise.all([
+  const [settings, budget, { count: openMessages }, { data: storageRows }] = await Promise.all([
     getSettings(),
     welcomeBudget(),
     supabase.from("feedback").select("id", { count: "exact", head: true }).is("resolved_at", null),
-    supabase.rpc("photo_storage_bytes"),
+    supabase.rpc("storage_usage"),
   ]);
-  // Supabase's free plan includes 1 GB of file storage.
-  const photoMb = Math.round(Number(photoBytes ?? 0) / 1e6);
-  const photoPct = Math.round((Number(photoBytes ?? 0) / 1e9) * 100);
+  // Supabase's free plan includes 1 GB of file storage, shared by every bucket.
+  const usage = (storageRows ?? []) as { bucket_id: string; bytes: number }[];
+  const bytesIn = (bucket: string) => Number(usage.find((u) => u.bucket_id === bucket)?.bytes ?? 0);
+  const photoBytes = bytesIn("pack-photos");
+  const docBytes = bytesIn("pack-docs");
+  const totalBytes = usage.reduce((n, u) => n + Number(u.bytes), 0);
+  const otherBytes = Math.max(0, totalBytes - photoBytes - docBytes);
+  const pct = (n: number) => Math.min(100, (n / 1e9) * 100);
+  const mb = (n: number) => `${Math.round(n / 1e6)} MB`;
   const { data: runRows } = await supabase.from("pack_settings").select("key, value").in("key", ["twh_last_sync", "daily_last_run"]);
   const read = <T,>(key: string): T | null => {
     try {
@@ -74,10 +80,41 @@ export default async function AdminPage() {
           href="/photos/review"
           icon={Images}
           label="Photo review"
-          sub={`Approve uploads, handle removal requests · ${photoMb} MB of 1 GB storage used (${photoPct}%)`}
+          sub={`Approve uploads, handle removal requests · ${mb(photoBytes)} of photos`}
         />
+        <Tile href="/documents" icon={Files} label="Pack documents" sub={`Forms, minutes and pack papers · ${mb(docBytes)} of files`} />
         <Tile href="/scouts/import" icon={FileUp} label="Import Scoutbook" sub="Advancement export from Scoutbook Plus" />
       </div>
+
+      <section className="card space-y-2">
+        <h2 className="section-title">File storage</h2>
+        <p className="text-sm text-muted">
+          {mb(totalBytes)} of the free 1 GB used ({Math.round(pct(totalBytes))}%).
+          {pct(totalBytes) >= 80 && " Getting full: delete old photos or documents, or shorten how long photos are kept."}
+        </p>
+        <div
+          className="flex h-3 overflow-hidden rounded-full bg-surface"
+          role="img"
+          aria-label={`Photos ${mb(photoBytes)}, documents ${mb(docBytes)}, of 1 GB`}
+        >
+          <span className="bg-pine" style={{ width: `${pct(photoBytes)}%` }} />
+          <span className="bg-gold" style={{ width: `${pct(docBytes)}%` }} />
+          <span className="bg-sage" style={{ width: `${pct(otherBytes)}%` }} />
+        </div>
+        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+          <li className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-pine" aria-hidden /> Photos {mb(photoBytes)}
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-gold" aria-hidden /> Documents {mb(docBytes)}
+          </li>
+          {otherBytes > 0 && (
+            <li className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-sage" aria-hidden /> Other files {mb(otherBytes)}
+            </li>
+          )}
+        </ul>
+      </section>
 
       <section className="card space-y-2">
         <h2 className="section-title">TroopWebHost calendar</h2>
