@@ -25,7 +25,7 @@ least **two people** on every account so nobody is ever the only way in.
 | **Squarespace** (domain `pack361.org`) | The domain and its DNS: `app.pack361.org` → Vercel, email forwarding, and the email-sending records for Resend and Brevo. | Paid yearly (domain) | *Check: whose Squarespace account?* | Add the next person as a contributor with domain permissions, or transfer the domain to the pack's account. Note the renewal date: ______ |
 | **Email forwarding** (`info@pack361.org`) | Where replies and questions go. Squarespace's forwarding (the Mailgun MX records). | Included with domain | *Check* | Change who it forwards to in Squarespace → Domains → Email forwarding. |
 | **Resend** | Sends sign-in codes (through Supabase's SMTP settings), reminders, welcome emails and alerts. 100 emails a day. | Free | Chris Nealen | Invite a teammate, or make a new account, verify `pack361.org`, and replace `RESEND_API_KEY` in Vercel **and** the SMTP password in Supabase → Authentication → Emails → SMTP. |
-| **Brevo** | Pack-wide and den emails, and the Sunday newsletter. 300 emails a day. | Free | Chris Nealen | Add a user, or make a new account, authenticate `pack361.org` (adds DNS records), and replace `BREVO_API_KEY` in Vercel. |
+| **Brevo** | Pack-wide and den emails, and the Sunday newsletter. 300 emails a day. **API keys expire after one year.** | Free | Chris Nealen | Add a user, or make a new account, authenticate `pack361.org` (adds DNS records), and replace `BREVO_API_KEY` in Vercel. |
 | **Givebutter** | The pack's fundraising and dues account. The app reads campaigns and orders with an API key. | Pack account | Annie (admin); Chris (being added) | Any Givebutter admin can make a new key (Settings → Developers → API) and replace `GIVEBUTTER_API_KEY` in Vercel. |
 | **PayPal** (optional) | Pay buttons for fees other than dues. | Pack's PayPal Business | Pack treasurer | The treasurer makes the REST app keys; see the "Connect PayPal to the App" guide. |
 | **TroopWebHost** | Calendar sync only, until the pack cancels it. | Paid yearly | Pack | Remove `TWH_CALENDAR_URL` from Vercel when cancelled. |
@@ -44,7 +44,7 @@ what each is for.
 | Database password (backups only) | Supabase → Project Settings → Database | Reset it, update `backup.env`, run the backup once. |
 | `CRON_SECRET` | Any long random string | Change it in Vercel and redeploy. |
 | `RESEND_API_KEY` | Resend → API Keys | New key in Vercel **and** Supabase SMTP; delete the old one. |
-| `BREVO_API_KEY` | Brevo → SMTP & API | New key in Vercel; delete the old one. |
+| `BREVO_API_KEY` | Brevo → SMTP & API | New key in Vercel; delete the old one. **Expires after one year:** the live key (Production) was made about Sept 30, 2026 and the beta key (Preview, branch `beta`) on Oct 1, 2026, so replace both by late September 2027. |
 | `GIVEBUTTER_API_KEY` | Givebutter → Settings → Developers | New key in Vercel; delete the old one. |
 | `VAPID_PRIVATE_KEY` / `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | `npx web-push generate-vapid-keys` | Changing them means everyone turns phone alerts on again; only if it leaked. |
 | `PAYPAL_CLIENT_SECRET` | PayPal developer site (treasurer) | Treasurer makes a new secret. |
@@ -101,6 +101,7 @@ After changing anything in Vercel, **Redeploy** (Deployments → ⋯ → Redeplo
 | Every week | Glance at Pack admin: a warning shows if a nightly job failed, with the reason. |
 | July (new season) | Leaders → Money → Settings for the new dues season; set up dues; registration dates; the budget (Money → Expenses → Budget). |
 | Every few months | Supabase → Usage (database and storage; the free plan has 500 MB of database and 1 GB of files). Pack admin shows file storage. Vercel → Usage. |
+| Every September | **Brevo API keys expire after a year** (both made around Oct 1, 2026). Make new ones in Brevo → SMTP & API, replace `BREVO_API_KEY` in Vercel (Production, and Preview for branch `beta`), redeploy, and delete the old keys. Until then pack-wide email and the Sunday newsletter stop working. |
 | Once a year | Practice a restore (RESTORE.md section 1). Renew the domain. Check every account in section 1 still has two owners. Update packages (`npm outdated`, then test and deploy). |
 | When a leader leaves | Change their role in Pack admin, and if they had access to any service or key, remove them and change the key. |
 

@@ -65,7 +65,8 @@ Still to do:
 2. **Vercel → Settings → Environment Variables:** the beta site needs these for **Preview** too (edit
    each and tick Preview; secret ones may ask you to paste the value again):
    - `SUPABASE_SECRET_KEY` (required: without it nobody, admins included, can use the beta site)
-   - `RESEND_API_KEY` and `BREVO_API_KEY` (so testers get the beta's emails)
+   - `RESEND_API_KEY` and `BREVO_API_KEY` (so testers get the beta's emails; the beta has its own
+     "pack361-beta" keys. Brevo keys expire after one year: see HANDOVER.md section 6)
    - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` (phone alerts)
    - Leave `TWH_CALENDAR_URL` and `CRON_SECRET` as Production only.
 
