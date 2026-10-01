@@ -45,6 +45,7 @@ export interface EventFormValues {
   rsvp_enabled?: boolean;
   rsvp_by?: string | null;
   from_twh?: boolean;
+  from_council?: boolean;
 }
 
 /** Leaders: add or edit an event. */
@@ -58,6 +59,12 @@ export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens:
       {v.from_twh && (
         <p className="rounded-xl bg-gold-50 p-3 text-xs text-gold-800">
           This event came from TroopWebHost. Once you save it here, the app keeps your version and TroopWebHost no longer changes it.
+        </p>
+      )}
+      {v.from_council && (
+        <p className="rounded-xl bg-gold-50 p-3 text-xs text-gold-800">
+          This event came from the council calendar. Once you save it here, the app keeps your version and changes on the council calendar no
+          longer copy over.
         </p>
       )}
       <Field label="Event name">

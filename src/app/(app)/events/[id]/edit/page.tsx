@@ -46,6 +46,7 @@ export default async function EditEventPage({ params }: PageProps<"/events/[id]/
             rsvp_enabled: e.rsvp_enabled,
             rsvp_by: e.rsvp_by,
             from_twh: e.source === "troopwebhost",
+            from_council: e.source === "council",
           }}
         />
       </section>

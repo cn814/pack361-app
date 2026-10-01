@@ -13,7 +13,10 @@ const KINDS: { kind: FeaturedKind; label: string; match: (title: string, categor
   { kind: "campout", label: "Campout", match: (t, c) => c === "Campout" || /camp\s*out|camporee|overnight/i.test(t) },
 ];
 
-export function featuredKind(e: { title: string; category: string }): { kind: FeaturedKind; label: string } | null {
+export function featuredKind(e: { title: string; category: string; source?: string | null }): { kind: FeaturedKind; label: string } | null {
+  // A council or district event on our calendar (a council camporee, a district derby) isn't
+  // one of the pack's own big events.
+  if (e.source === "council") return null;
   const k = KINDS.find((x) => x.match(e.title, e.category));
   return k ? { kind: k.kind, label: k.label } : null;
 }

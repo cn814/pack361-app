@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
 import { purgeOldPhotos, remindTraining, remindVolunteers } from "@/lib/daily-jobs";
 import { syncTwh, twhConfigured } from "@/lib/twh";
+import { syncCouncil } from "@/lib/council";
 
 // Daily Vercel Cron (vercel.json, 21:00 UTC = 5 PM EDT / 4 PM EST): volunteer reminders,
 // training expiry reminders, deleting photos past the keep-for setting, then the TroopWebHost
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
     ["photos", () => purgeOldPhotos(db)],
   ];
   if (twhConfigured()) steps.push(["troopwebhost", () => syncTwh(db)]);
+  steps.push(["council", () => syncCouncil(db)]); // council calendar picker; does nothing until a link is saved
   for (const [name, job] of steps) {
     try {
       out[name] = await job();
