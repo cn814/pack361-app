@@ -97,6 +97,7 @@ export async function chargeAction(form: FormData) {
   }
   const { data, error } = await supabase.rpc("update_charges", { p_ids: list, p_action: action, p_how, p_note: null });
   if (error) {
+    if (error.code === "22023") back(form, `${error.message}.`);
     back(form, /charges_.*_key|duplicate/i.test(error.message) ? "Can't reopen: there's already another charge like it." : "Couldn't save that. Try again.");
   }
   refresh();
@@ -264,9 +265,10 @@ export async function matchDuesOrder(_prev: ActionResult, form: FormData): Promi
   if (!UUID.test(family)) return { error: "Pick the family." };
   if (!scouts.length) return { error: "Tick the scouts this payment was for." };
   const supabase = await createClient();
-  const { error } = await supabase.rpc("match_givebutter_dues", { p_order_id: order, p_family_id: family, p_scout_ids: scouts });
+  const { data, error } = await supabase.rpc("match_givebutter_dues", { p_order_id: order, p_family_id: family, p_scout_ids: scouts });
   if (error) return { error: error.code === "22023" ? `${error.message}.` : "Couldn't save that. Try again." };
   refresh();
+  if (data === "partial") return { ok: true, message: "Matched, and their dues are marked paid. The payment was more than was due, so it's flagged." };
   return { ok: true, message: "Matched, and their dues are marked paid." };
 }
 

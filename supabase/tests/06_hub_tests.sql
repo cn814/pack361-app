@@ -42,7 +42,7 @@ select test.check((select public.report_paid(array(select id from public.charges
                   'family says they paid dues by check');
 select test.check((select public.report_paid(array['82000000-0000-0000-0000-000000000002'::uuid], 'check', null)) = 0,
                   'families cannot report for another family');
-select test.expect_rows($$update public.charges set status = 'paid'$$, 0, 'families cannot mark dues paid');
+select test.expect_error($$update public.charges set status = 'paid'$$, '42501', 'families cannot mark dues paid');
 
 select test.check(test.count($$select * from public.announcements where id = '80000000-0000-0000-0000-000000000001'$$) = 1,
                   'a Wolf family sees Wolf den messages');
@@ -104,7 +104,7 @@ select test.expect_rows($$update public.guide_pages set title = 'Edited'$$, 0, '
 select test.check(test.count('select * from public.health_forms') = 2, 'leaders see every family''s forms');
 select test.expect_rows($$update public.health_forms set status = 'on_file' where scout_id = '40000000-0000-0000-0000-000000000002'$$, 1,
                         'leaders mark a form received');
-select test.expect_rows($$update public.charges set status = 'paid'$$, 0, 'den leaders who are not on the committee cannot mark dues paid');
+select test.expect_error($$update public.charges set status = 'paid'$$, '42501', 'den leaders who are not on the committee cannot mark dues paid');
 select test.expect_rows($$insert into public.announcements (author_id, title, body, den_id)
                           values ('30000000-0000-0000-0000-00000000000c', 'Bring a flashlight', 'Monday', '10000000-0000-0000-0000-000000000002')$$, 1,
                         'den leader messages their den');

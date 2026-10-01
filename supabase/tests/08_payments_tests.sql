@@ -52,9 +52,9 @@ select test.check(test.count('select * from public.charges') = 3
 select test.expect_error($$insert into public.charges (family_id, kind, title, amount_cents)
                            values ('20000000-0000-0000-0000-000000000001', 'other', 'Free stuff', 0)$$, '42501',
                          'families cannot add charges');
-select test.expect_rows($$update public.charges set status = 'paid', paid_via = 'cash'$$, 0, 'families cannot mark their own charges paid');
+select test.expect_error($$update public.charges set status = 'paid', paid_via = 'cash'$$, '42501', 'families cannot mark their own charges paid');
 select test.expect_rows($$update public.charges set amount_cents = 1$$, 0, 'families cannot change amounts');
-select test.expect_rows($$delete from public.charges$$, 0, 'families cannot delete charges');
+select test.expect_error($$delete from public.charges$$, '42501', 'families cannot delete charges');
 select test.check((select public.report_paid(array['83000000-0000-0000-0000-000000000002'::uuid], 'check', null)) = 0,
                   'report_paid ignores another family''s charge');
 select test.expect_error($$select public.report_paid(array['83000000-0000-0000-0000-000000000004'::uuid], 'bitcoin', null)$$, '22023',
@@ -125,7 +125,8 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000
 select test.check(test.count('select * from public.charges') = 1
                   and (select id from public.charges) = '83000000-0000-0000-0000-000000000003',
                   'a den leader sees only their own charge, not families'' money');
-select test.expect_rows($$update public.charges set status = 'waived'$$, 0, 'den leaders cannot change charges');
+select test.expect_error($$update public.charges set status = 'waived'$$, '42501', 'den leaders cannot change charges');
+select test.expect_rows($$update public.charges set amount_cents = 1$$, 0, 'den leaders cannot change amounts');
 select test.expect_error($$select public.update_charges(array['83000000-0000-0000-0000-000000000002'::uuid], 'paid', 'cash')$$, '42501',
                          'den leaders cannot mark charges paid');
 select test.expect_error($$select * from public.add_fee('other', 'x', null, null, 100, null, 'families', null)$$, '42501',
@@ -159,6 +160,14 @@ select test.expect_error($$select * from public.add_fee('national', 'x', '2027',
 select test.expect_error($$select * from public.add_fee('dues', 'x', null, null, 100, null, 'families', null)$$, '22023',
                          'dues need a season');
 select test.expect_error($$insert into public.charges (family_id, kind, title, season, amount_cents)
+                           values ('20000000-0000-0000-0000-000000000002', 'dues', 'Dues again', '2026-27', 6000)$$, '42501',
+                         'the committee adds charges through add_fee, not directly');
+select test.expect_error($$delete from public.charges where status = 'paid'$$, '42501', 'the committee cannot delete charges');
+select test.expect_error($$update public.charges set status = 'open', paid_via = null where status = 'paid'$$, '42501',
+                         'the committee cannot reopen charges directly');
+-- The unique keys themselves (as the table owner: only the money functions write charges).
+reset role;
+select test.expect_error($$insert into public.charges (family_id, kind, title, season, amount_cents)
                            values ('20000000-0000-0000-0000-000000000002', 'dues', 'Dues again', '2026-27', 6000)$$, '23505',
                          'unique index blocks duplicate dues');
 select test.expect_error($$insert into public.charges (family_id, scout_id, kind, title, season, amount_cents)
@@ -166,11 +175,14 @@ select test.expect_error($$insert into public.charges (family_id, scout_id, kind
                          'unique index blocks duplicate registration');
 select test.expect_error($$insert into public.charges (kind, title, amount_cents) values ('other', 'Nobody', 100)$$, '23514',
                          'every charge has an owner');
+set local role authenticated;
 select test.check((select public.update_charges(array['83000000-0000-0000-0000-000000000002'::uuid], 'cancel', null, 'Entered twice')) = 1,
                   'committee cancels a charge');
+reset role;
 select test.expect_rows($$insert into public.charges (family_id, scout_id, kind, title, season, amount_cents)
                           values ('20000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000003', 'national', 'Registration 2027', '2027', 7500)$$, 1,
                         'a canceled charge does not block a new one');
+set local role authenticated;
 select test.check((select public.update_charges(array['83000000-0000-0000-0000-000000000004'::uuid], 'paid', null, null)) = 1,
                   'committee confirms a reported payment');
 select test.check((select paid_via || '/' || paid_amount_cents from public.charges where id = '83000000-0000-0000-0000-000000000004') = 'check/1200',
@@ -418,7 +430,9 @@ select test.check((select added || '/' || skipped from public.add_fee('dues', 'D
 select test.check((select added || '/' || skipped from public.add_fee('dues', 'Pack dues 2026-27', '2026-27', null, 6000, null, 'families', null))
                   = '0/2', 'family dues are still once per family');
 select test.check((select added || '/' || skipped from public.add_fee('event', 'Museum Trip', null, '52000000-0000-0000-0000-000000000004', 1000, null, 'family', '20000000-0000-0000-0000-000000000001'))
-                  = '0/1', 'a family-level event fee is still one per family (the RSVP already added it)');
+                  = '1/0', 'a committee fee for one family stands next to the family''s RSVP charge');
+select test.check((select added || '/' || skipped from public.add_fee('event', 'Museum Trip', null, '52000000-0000-0000-0000-000000000004', 1000, null, 'family', '20000000-0000-0000-0000-000000000001'))
+                  = '0/1', 'and is still added only once per family');
 -- A $0 charge can't be confirmed as paid.
 update public.charges set amount_cents = 0 where id = '82000000-0000-0000-0000-000000000002';
 select test.check((select public.update_charges(array['82000000-0000-0000-0000-000000000002'::uuid], 'paid', 'cash')) = 0,

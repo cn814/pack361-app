@@ -151,24 +151,26 @@ rollback;
 
 set role service_role;
 select test.check(public.apply_givebutter_dues(9006, '20000000-0000-0000-0000-0000000000e3',
-                    array['40000000-0000-0000-0000-0000000000e5', '40000000-0000-0000-0000-0000000000e4']::uuid[], 'matched', '2 of 2 scouts matched') = 'matched',
-                  'sync applies a two-scout order');
-select test.check((select paid_amount_cents from public.charges where scout_id = '40000000-0000-0000-0000-0000000000e4' and season = '2030-31') = 26010
-                  and (select paid_amount_cents from public.charges where scout_id = '40000000-0000-0000-0000-0000000000e5' and season = '2030-31') = 24990,
-                  '$510 is split in proportion to each scout''s dues');
-select test.check((select sum(paid_amount_cents) from public.charges where givebutter_order_id = 9006) = 51000, 'the split adds up to the order');
+                    array['40000000-0000-0000-0000-0000000000e5', '40000000-0000-0000-0000-0000000000e4']::uuid[], 'matched', '2 of 2 scouts matched') = 'partial',
+                  'sync applies a two-scout order ($510 for $500 of dues: flagged)');
+select test.check((select paid_amount_cents from public.charges where scout_id = '40000000-0000-0000-0000-0000000000e4' and season = '2030-31') = 25500
+                  and (select paid_amount_cents from public.charges where scout_id = '40000000-0000-0000-0000-0000000000e5' and season = '2030-31') = 24500,
+                  'each scout''s dues are paid at their own amount');
+select test.check((select sum(paid_amount_cents) from public.charges where givebutter_order_id = 9006) = 50000, 'no charge is credited more than it owed');
 select test.check((select bool_and(status = 'paid' and paid_via = 'givebutter' and paid_at = '2026-09-19 12:00-04')
                      from public.charges where givebutter_order_id = 9006), 'charges are paid on Givebutter on the order date');
-select test.check((select dues_match = 'matched' and dues_note = '2 of 2 scouts matched' and dues_applied_at is not null
-                          and cardinality(matched_scout_ids) = 2 from public.givebutter_orders where id = 9006), 'order records the match');
+select test.check((select dues_match = 'partial' and dues_note = 'Paid $10 more than was due; 2 of 2 scouts matched' and dues_applied_at is not null
+                          and cardinality(matched_scout_ids) = 2 from public.givebutter_orders where id = 9006), 'order records the match and the extra $10');
 
 select test.check(public.apply_givebutter_dues(9001, '20000000-0000-0000-0000-0000000000e1',
-                    array['40000000-0000-0000-0000-0000000000e1', '40000000-0000-0000-0000-0000000000e2']::uuid[], 'matched', '2 of 2 scouts matched') = 'matched',
+                    array['40000000-0000-0000-0000-0000000000e1', '40000000-0000-0000-0000-0000000000e2']::uuid[], 'matched', '2 of 2 scouts matched') = 'partial',
                   'sync applies an order with a waived scout');
 select test.check((select status from public.charges where scout_id = '40000000-0000-0000-0000-0000000000e2' and season = '2030-31') = 'waived',
                   'waived dues are never touched');
-select test.check((select paid_amount_cents from public.charges where scout_id = '40000000-0000-0000-0000-0000000000e1' and season = '2030-31') = 51000,
-                  'the whole payment goes on the charges it paid');
+select test.check((select paid_amount_cents from public.charges where scout_id = '40000000-0000-0000-0000-0000000000e1' and season = '2030-31') = 25500,
+                  'the scout still due is paid at their own amount, not the whole order');
+select test.check((select dues_note from public.givebutter_orders where id = 9001) like 'Paid $255 more than was due%',
+                  'the extra $255 is flagged');
 select test.check(public.apply_givebutter_dues(9001, '20000000-0000-0000-0000-0000000000e1',
                     array['40000000-0000-0000-0000-0000000000e1']::uuid[], 'matched', 'again') = 'already', 'an order is applied once');
 select test.expect_error($$select public.apply_givebutter_dues(9004, '20000000-0000-0000-0000-0000000000e2',

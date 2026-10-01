@@ -35,13 +35,13 @@ export async function saveMeeting(_prev: ActionResult, form: FormData): Promise<
   if (!DATE.test(meetsOn)) return { error: "Pick the meeting date." };
 
   const requirements = [...new Set(reqs)].sort((a, b) => Number(a) - Number(b));
+  // The first adventure is set here; recording the meeting can add more.
+  const first = adv && requirements.length ? { adventure: adv.name, requirements } : null;
   const row = {
     den_id: denId,
     meets_on: meetsOn,
     title,
     rank,
-    // The first adventure is set here; recording the meeting can add more.
-    work: adv && requirements.length ? [{ adventure: adv.name, requirements }] : [],
     location: String(form.get("location") ?? "").trim().slice(0, 120) || null,
     address: String(form.get("address") ?? "").trim().slice(0, 200) || null,
     start_time: /^\d{2}:\d{2}(:\d{2})?$/.test(String(form.get("start_time") ?? "")) ? String(form.get("start_time")) : null,
@@ -49,14 +49,18 @@ export async function saveMeeting(_prev: ActionResult, form: FormData): Promise<
     family_note: String(form.get("family_note") ?? "").trim().slice(0, 500) || null,
   };
   if (id) {
-    const { error } = await supabase.from("den_meetings").update(row).eq("id", id);
+    // Only the first adventure: the database keeps any others the meeting already has in work.
+    const { error } = await supabase
+      .from("den_meetings")
+      .update({ ...row, adventure: first?.adventure ?? null, requirements: first?.requirements ?? [] })
+      .eq("id", id);
     if (error) return { error: "Couldn't save the meeting." };
     revalidatePath(`/scouts/den/${denId}`, "layout");
     return { ok: true };
   }
   const { data, error } = await supabase
     .from("den_meetings")
-    .insert({ ...row, created_by: me.id })
+    .insert({ ...row, work: first ? [first] : [], created_by: me.id })
     .select("id")
     .single();
   if (error || !data) return { error: "Couldn't save the meeting." };
