@@ -7,7 +7,8 @@ import BackLink from "@/components/BackLink";
 import { countWaitingJoins, requireAdmin, welcomeBudget } from "@/lib/roster-data";
 import { getSettings } from "@/lib/settings";
 import { emailConfigured } from "@/lib/email";
-import { emailNewsletterPreview, saveNewsletterMode, saveSettings, syncTroopWebHost } from "./actions";
+import { emailNewsletterPreview, saveBetaTesters, saveNewsletterMode, saveSettings, syncTroopWebHost } from "./actions";
+import { APP_CHANNEL, APP_VERSION } from "@/lib/version";
 import { brevoConfigured } from "@/lib/bulk-email";
 import { NEWSLETTER_MODES, newsletterMode, testAdultIds, type NewsletterMode } from "@/lib/newsletter";
 import { twhConfigured } from "@/lib/twh";
@@ -48,6 +49,17 @@ export default async function AdminPage() {
     .eq("is_active", true)
     .order("first_name");
   const testers = (testerRows ?? []) as { id: string; first_name: string; preferred_name: string | null; last_name: string }[];
+  // Everyone who could test the beta site: active adults, testers first.
+  const { data: adultRows } = await supabase
+    .from("adults")
+    .select("id, first_name, preferred_name, last_name, role")
+    .eq("is_active", true)
+    .order("last_name")
+    .order("first_name");
+  const betaIds = new Set(String(settings.beta_testers ?? "").split(",").filter(Boolean));
+  const betaPeople = ((adultRows ?? []) as { id: string; first_name: string; preferred_name: string | null; last_name: string; role: string }[])
+    .filter((a) => a.role !== "admin" && a.role !== "cubmaster")
+    .sort((a, b) => Number(betaIds.has(b.id)) - Number(betaIds.has(a.id)));
   const testIds = testAdultIds(settings.newsletter_test_adults);
   // Supabase's free plan includes 1 GB of file storage, shared by every bucket.
   const usage = (storageRows ?? []) as { bucket_id: string; bytes: number }[];
@@ -203,6 +215,31 @@ export default async function AdminPage() {
         {!brevoConfigured() && settings.newsletter_mode === "everyone" && (
           <p className="rounded-xl bg-gold-50 p-2 text-xs text-gold-800">Sending to every family needs BREVO_API_KEY in Vercel.</p>
         )}
+      </section>
+
+      <section className="card space-y-3" id="beta">
+        <h2 className="section-title">Beta site</h2>
+        <p className="text-sm text-muted">
+          You&apos;re using version {APP_VERSION}
+          {APP_CHANNEL === "beta" ? " (beta)" : ""}. New features go to <b>beta.pack361.org</b> first: the pack&apos;s real
+          information, but only these testers (and the admins) can sign in, and its emails and alerts reach testers only. When
+          it&apos;s ready, it&apos;s released to everyone on app.pack361.org.
+        </p>
+        <ActionForm action={saveBetaTesters} submit="Save testers" buttonClass="btn-ghost w-full">
+          <details open={betaIds.size > 0}>
+            <summary className="cursor-pointer text-xs font-bold text-navy">
+              Testers ({betaIds.size} picked; admins and the Cubmaster are always included)
+            </summary>
+            <div className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
+              {betaPeople.map((a) => (
+                <label key={a.id} className="flex items-center gap-2 text-sm text-ink">
+                  <input type="checkbox" name="beta_tester" value={a.id} defaultChecked={betaIds.has(a.id)} className="h-4 w-4 accent-pine" />
+                  {a.preferred_name || a.first_name} {a.last_name}
+                </label>
+              ))}
+            </div>
+          </details>
+        </ActionForm>
       </section>
 
       <section className="card space-y-3">

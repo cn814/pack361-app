@@ -289,6 +289,21 @@ export async function emailNewsletterPreview(): Promise<ActionResult> {
 }
 
 // ---------------------------------------------------------------------------
+// Beta site testers
+// ---------------------------------------------------------------------------
+export async function saveBetaTesters(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const testers = [...new Set(form.getAll("beta_tester").map(String).filter((x) => UUID.test(x)))].slice(0, 60);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("pack_settings")
+    .upsert({ key: "beta_testers", value: testers.join(","), updated_at: new Date().toISOString() });
+  if (error) return { error: "Couldn't save that." };
+  revalidatePath("/admin");
+  return { ok: true, message: `${testers.length} tester${testers.length === 1 ? "" : "s"}, plus the admins` };
+}
+
+// ---------------------------------------------------------------------------
 // Welcome emails
 // ---------------------------------------------------------------------------
 function welcomeEmail(a: { first_name: string; preferred_name: string | null; email: string }): Email {

@@ -20,7 +20,7 @@ least **two people** on every account so nobody is ever the only way in.
 | Service | What it does for the app | Plan | Owner today | How to hand it over |
 |---|---|---|---|---|
 | **GitHub** (`cn814/pack361-app`) | The code. Pushing to `main` deploys the app. GitHub also runs the tests on every pull request. | Free | Chris Nealen (personal account) | Move the repo into a free GitHub organization the pack owns (Settings → Transfer), with two owners. Collaborators can be added under Settings → Collaborators. |
-| **Vercel** (team `pack361`, project `pack361-app`) | Hosts the website, runs the two daily jobs (`vercel.json`) and holds the secret keys (Settings → Environment Variables). | Hobby (free) | Chris Nealen | The free plan is for one person: transfer the project to the next person's account (Project → Settings → Transfer), or move to a paid team to have two members. Check vercel.com/pricing for current limits. |
+| **Vercel** (team `pack361`, project `pack361-app`) | Hosts the live site and the beta site (beta.pack361.org, the `beta` branch), runs the two daily jobs (`vercel.json`) and holds the secret keys (Settings → Environment Variables). | Hobby (free) | Chris Nealen | The free plan is for one person: transfer the project to the next person's account (Project → Settings → Transfer), or move to a paid team to have two members. Check vercel.com/pricing for current limits. |
 | **Supabase** (project `bvnywjvqjxbwwfnbtdzk`) | The database, sign-in, and file storage (photos, documents, receipts). | Free | Chris Nealen | Invite the next person to the organization as Owner (Organization → Team), or transfer the project to their organization (Project Settings → General). |
 | **Squarespace** (domain `pack361.org`) | The domain and its DNS: `app.pack361.org` → Vercel, email forwarding, and the email-sending records for Resend and Brevo. | Paid yearly (domain) | *Check: whose Squarespace account?* | Add the next person as a contributor with domain permissions, or transfer the domain to the pack's account. Note the renewal date: ______ |
 | **Email forwarding** (`info@pack361.org`) | Where replies and questions go. Squarespace's forwarding (the Mailgun MX records). | Included with domain | *Check* | Change who it forwards to in Squarespace → Domains → Email forwarding. |
@@ -82,8 +82,9 @@ After changing anything in Vercel, **Redeploy** (Deployments → ⋯ → Redeplo
 
 ## 5. How changes go live
 
-- **Code:** merge to `main` on GitHub. Vercel builds and deploys it in a couple of minutes. A failed
-  build leaves the old version running.
+- **Code:** new work goes to the `beta` branch first (beta.pack361.org, testers only), then is released
+  by merging `beta` into `main` (app.pack361.org). See [RELEASES.md](RELEASES.md). Vercel builds and
+  deploys each in a couple of minutes; a failed build leaves the old version running.
 - **Database changes:** each change is a new file in `supabase/migrations/` (never edit one that's
   already been run). Run it in Supabase → SQL Editor **before** pushing code that needs it, then add
   a test in `supabase/tests/`. Supabase shows a "destructive operation" warning for some changes;

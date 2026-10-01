@@ -6,6 +6,7 @@ import FeedbackForm from "@/components/FeedbackForm";
 import PhotoPermission from "@/components/PhotoPermission";
 import PushToggle from "@/components/PushToggle";
 import InstallHelp from "@/components/InstallHelp";
+import { APP_CHANNEL, APP_VERSION } from "@/lib/version";
 import PaperworkCard from "@/components/PaperworkCard";
 import PaymentsCard from "@/components/PaymentsCard";
 import { getMyPaperwork } from "@/lib/paperwork";
@@ -174,6 +175,10 @@ export default async function FamilyPage() {
           <LogOut className="h-4 w-4" aria-hidden /> Sign out
         </button>
       </form>
+      <p className="text-center text-[11px] text-muted">
+        Pack 361 app version {APP_VERSION}
+        {APP_CHANNEL === "beta" ? " beta" : ""}
+      </p>
     </>
   );
 }

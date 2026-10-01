@@ -6,6 +6,8 @@ import { createClient } from "./supabase/server";
 import type { Adult, Announcement, ItineraryItem, Leader, PackEvent, PackingItem, Scout } from "./types";
 import { LEADER_ROLES } from "./types";
 import { VIEW_AS_COOKIE, viewAsRole } from "./view-as";
+import { isBeta } from "./version";
+import { getTesters } from "./beta";
 import { denScopeFor, loadCalendar, type CalItem } from "./calendar";
 import { startOfEasternDay } from "./tz";
 import { FEATURE_DAYS_AFTER, FEATURE_DAYS_BEFORE, featuredKind, type FeaturedTab } from "./featured";
@@ -37,6 +39,8 @@ export async function requireMember(): Promise<Adult> {
   const me = await getMe();
   if (!me) redirect("/login");
   if (!me.adult) redirect("/not-on-roster");
+  // The beta site is for the testers picked in Pack admin (and admins).
+  if (isBeta() && !(await getTesters()).ids.has(me.adult.id)) redirect("/beta-only");
   return me.adult;
 }
 

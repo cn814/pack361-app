@@ -1,6 +1,7 @@
 import "server-only";
 import webpush from "web-push";
 import { adminConfigured, createAdminClient } from "./supabase/admin";
+import { betaAdultFilter } from "./beta";
 
 const vapidPublic = () => (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "").trim();
 const vapidPrivate = () => (process.env.VAPID_PRIVATE_KEY ?? "").trim();
@@ -37,7 +38,10 @@ async function sendPush(
   payload: PushPayload,
   opts: { exceptAdultId?: string; onlyAdultIds?: string[] },
 ): Promise<PushResult> {
-  const { exceptAdultId, onlyAdultIds } = opts;
+  const { exceptAdultId } = opts;
+  // The beta site only alerts its testers.
+  const onlyAdultIds = (await betaAdultFilter(opts.onlyAdultIds ?? null)) ?? undefined;
+  if (onlyAdultIds && !onlyAdultIds.length) return { sent: 0, removed: 0, errors: [] };
   if (!pushConfigured()) return { sent: 0, removed: 0, errors: ["Push keys are not set on the server."] };
   try {
     webpush.setVapidDetails((process.env.VAPID_SUBJECT ?? "mailto:info@pack361.org").trim(), vapidPublic(), vapidPrivate());

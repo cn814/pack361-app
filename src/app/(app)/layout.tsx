@@ -8,6 +8,7 @@ import { Bell } from "lucide-react";
 import { displayName, getFeaturedTab, requireMember } from "@/lib/data";
 import { getInboxCount } from "@/lib/inbox";
 import ViewAsBanner from "@/components/ViewAsBanner";
+import BetaBanner from "@/components/BetaBanner";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const me = await requireMember();
@@ -20,6 +21,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <Toast />
       </Suspense>
       <ServiceWorkerSetup mode="register" />
+      <BetaBanner />
       {/* Full-width green bar; the content inside lines up with the page column. */}
       <header className="print:hidden sticky top-0 z-40 bg-pine pt-[env(safe-area-inset-top)] text-white shadow-md lg:hidden">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
