@@ -6,6 +6,8 @@ import type { Todo } from "@/lib/inbox";
 
 const TONE: Record<Todo["tone"], string> = { gold: "border-l-gold", pine: "border-l-pine", danger: "border-l-danger" };
 const small = "rounded-lg px-3 py-1.5 text-xs font-bold";
+// All three answers look the same until someone picks one: nothing is chosen for them.
+const answer = `${small} border border-pine/40 bg-white text-pine`;
 
 /** One to-do on Home or in the bell: RSVPs can be answered right here; polls can wait ("Not now"). */
 export default function TodoCard({ t }: { t: Todo }) {
@@ -19,23 +21,24 @@ export default function TodoCard({ t }: { t: Todo }) {
           </span>
           <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
         </Link>
-        <form action={quickRsvp} className="flex flex-wrap gap-2">
+        <form action={quickRsvp} className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold text-muted">{t.rsvp.today ? "You said maybe:" : "Not answered yet:"}</span>
           <input type="hidden" name="event_id" value={t.rsvp.eventId} />
           {t.rsvp.paid ? (
-            <Link href={t.href} className={`${small} bg-pine text-white`}>
+            <Link href={t.href} className={answer}>
               Going…
             </Link>
           ) : (
-            <SubmitButton name="status" value="yes" className={`${small} bg-pine text-white`}>
+            <SubmitButton name="status" value="yes" className={answer}>
               Going
             </SubmitButton>
           )}
           {!t.rsvp.today && (
-            <SubmitButton name="status" value="maybe" className={`${small} border border-line bg-white text-navy`}>
+            <SubmitButton name="status" value="maybe" className={answer}>
               Maybe
             </SubmitButton>
           )}
-          <SubmitButton name="status" value="no" className={`${small} border border-line bg-white text-navy`}>
+          <SubmitButton name="status" value="no" className={answer}>
             Can&apos;t make it
           </SubmitButton>
         </form>
