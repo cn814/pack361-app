@@ -61,7 +61,13 @@ npm run dev
 - Families see their scout's current rank: required adventures, electives, partial requirements,
   ranks earned. They can report finished home requirements; the den leader approves; whoever enters
   it in Scoutbook taps "Entered" (or the next import marks it automatically).
-- Leaders get a shopping list of items approved in Scoutbook but not yet marked awarded.
+- Leaders get a Scout Shop shopping list of items approved in Scoutbook but not yet marked awarded
+  (`/scouts/awards`): by rank, with each item's SKU, product page and photo, and printable bag labels
+  per scout on Avery 5160/5163/5164 sheets (`/scouts/awards/labels`, `src/lib/labels.ts`). The SKUs
+  (`src/lib/scout-shop-data.ts`) and thumbnails (`public/awards/<sku>.jpg`) come from the Scout Shop
+  catalog in the pack's earlier label tool, github.com/cn814/advacement-code. When the Scout Shop adds
+  or renumbers an item, add it to `SHOP_ITEMS` (key: `rank|adventure name` as in the `adventures`
+  table) with a 240×240 JPEG thumbnail.
 - The 2024 adventure catalog lives in the `adventures` table (editable in the Supabase table editor).
 
 - **Awards** only count items earned on or after `pack_settings.awards_tracked_from` (2026-07-01);

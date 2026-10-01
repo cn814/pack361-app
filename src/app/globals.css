@@ -142,3 +142,26 @@ body {
     @apply text-xs font-black uppercase tracking-wider text-muted;
   }
 }
+
+/* Award bag labels: each sheet prints edge to edge on its own Letter page, at actual size. */
+@page labels {
+  size: letter;
+  margin: 0;
+}
+@media print {
+  main:has(.label-sheets) {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+  main:has(.label-sheets) > * {
+    margin-top: 0 !important;
+  }
+  .label-sheet {
+    page: labels;
+    break-after: page;
+  }
+  .label-sheet:last-child {
+    break-after: auto;
+  }
+}
