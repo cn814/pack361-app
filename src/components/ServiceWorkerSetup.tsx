@@ -6,6 +6,8 @@ import { useEffect } from "react";
  * Members' pages: register the service worker (offline campout pages, notifications).
  * Sign-in page: delete anything saved for offline, so the next person on a shared
  * device can't open the previous family's saved pages.
+ * Leaves "Saved on this phone" (IndexedDB "pack361-files", see lib/device-files.ts) alone:
+ * those are the family's own copies, filtered by who's signed in, and removed only by them.
  */
 export default function ServiceWorkerSetup({ mode }: { mode: "register" | "clear" }) {
   useEffect(() => {
