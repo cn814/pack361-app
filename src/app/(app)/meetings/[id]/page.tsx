@@ -3,8 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarDays, ClipboardList, Clock, MapPin, Navigation } from "lucide-react";
 import BackLink from "@/components/BackLink";
-import { requireMember } from "@/lib/data";
-import { fmtMeetingDate, fmtMeetingTime, getMeeting, leadsDen } from "@/lib/meetings";
+import DenMeetingRsvp from "@/components/DenMeetingRsvp";
+import { getMyScouts, requireMember } from "@/lib/data";
+import { fmtMeetingDate, fmtMeetingTime, getMeeting, leadsDen, meetingAdventures, myMeetingRsvps, todayEastern } from "@/lib/meetings";
 import { createClient } from "@/lib/supabase/server";
 import { mapsLink } from "@/lib/format";
 
@@ -21,7 +22,10 @@ export default async function MeetingInfoPage({ params }: PageProps<"/meetings/[
   const { data: den } = await supabase.from("dens").select("name, meeting_info").eq("id", meeting.den_id).maybeSingle();
   const time = fmtMeetingTime(meeting);
   const place = [meeting.location, meeting.address].filter(Boolean).join(", ");
-  const manage = await leadsDen(me, meeting.den_id);
+  const [manage, myScouts] = await Promise.all([leadsDen(me, meeting.den_id), getMyScouts()]);
+  const upcoming = meeting.meets_on >= todayEastern();
+  const rsvps = upcoming ? await myMeetingRsvps(meeting, myScouts) : [];
+  const advs = meetingAdventures(meeting);
 
   return (
     <>
@@ -51,9 +55,9 @@ export default async function MeetingInfoPage({ params }: PageProps<"/meetings/[
             </p>
           )
         )}
-        {meeting.adventure && (
+        {advs.length > 0 && (
           <p className="text-sm text-ink">
-            Working on <b>{meeting.adventure}</b>
+            Working on <b>{advs.join(", ")}</b>
           </p>
         )}
         {meeting.family_note && <p className="whitespace-pre-line rounded-xl bg-gold-50 p-3 text-sm text-gold-800">{meeting.family_note}</p>}
@@ -64,12 +68,20 @@ export default async function MeetingInfoPage({ params }: PageProps<"/meetings/[
             </a>
           )}
           {manage && (
-            <Link href={`/scouts/den/${meeting.den_id}/meetings/${meeting.id}`} className="btn-primary py-2">
-              <ClipboardList className="h-4 w-4" aria-hidden /> Attendance and edit
+            <Link
+              href={
+                meeting.meets_on <= todayEastern()
+                  ? `/scouts/den/${meeting.den_id}/today?meeting=${meeting.id}`
+                  : `/scouts/den/${meeting.den_id}/meetings/${meeting.id}`
+              }
+              className="btn-primary py-2"
+            >
+              <ClipboardList className="h-4 w-4" aria-hidden /> {meeting.meets_on <= todayEastern() ? "Record this meeting" : "Edit plan"}
             </Link>
           )}
         </div>
       </section>
+      <DenMeetingRsvp meetingId={meeting.id} scouts={rsvps} />
     </>
   );
 }

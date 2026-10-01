@@ -1,6 +1,6 @@
 import Link from "next/link";
 import SubmitButton from "@/components/SubmitButton";
-import { BookOpen, ChevronRight, HandHelping, Images, MapPin, Pin, ShoppingBag, Timer, Users, Vote } from "lucide-react";
+import { BookOpen, ChevronRight, CircleCheck, ClipboardCheck, HandHelping, Images, MapPin, Pin, ShoppingBag, Timer, Users, Vote } from "lucide-react";
 import { eventHref, getOpenJobs } from "@/lib/volunteer";
 import EventRow from "@/components/EventRow";
 import RsvpLink from "@/components/RsvpLink";
@@ -9,18 +9,20 @@ import { deleteAnnouncement } from "./actions";
 import { displayName, getAnnouncements, getMyScouts, getUpcomingEvents, isLeader, requireMember } from "@/lib/data";
 import { getMessageableDens } from "@/lib/audience";
 import { getTodos } from "@/lib/inbox";
+import { myDenMeetingButtons } from "@/lib/meetings";
 import { packEmailConfigured } from "@/lib/bulk-email";
 import { daysUntil, fmtRange, timeAgo } from "@/lib/format";
 
 export default async function Home() {
   const me = await requireMember();
-  const [scouts, events, posts, jobs, todos, dens] = await Promise.all([
+  const [scouts, events, posts, jobs, todos, dens, denButtons] = await Promise.all([
     getMyScouts(),
     getUpcomingEvents(8),
     getAnnouncements(15),
     getOpenJobs(),
     getTodos(),
     isLeader(me) ? getMessageableDens(me) : Promise.resolve([]),
+    myDenMeetingButtons(),
   ]);
   const next = events[0];
   const rest = events.slice(1, 5);
@@ -58,6 +60,34 @@ export default async function Home() {
           </section>
         </div>
         <div className="order-2 empty:hidden">
+          {denButtons.length > 0 && (
+            <div className="mb-4 space-y-2">
+              {denButtons.map((d) => (
+                <Link
+                  key={d.denId}
+                  href={`/scouts/den/${d.denId}/today`}
+                  className="flex min-h-16 items-center gap-3 rounded-3xl border-2 border-pine bg-mint px-4 py-4 text-pine-950 active:bg-mint-200"
+                >
+                  <ClipboardCheck className="h-7 w-7 shrink-0 text-pine" aria-hidden />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-lg font-extrabold leading-tight">
+                      {d.today ? `Today's ${d.name} meeting` : `Record a den meeting · ${d.name}`}
+                    </span>
+                    <span className="flex items-center gap-1 text-sm text-pine">
+                      {d.saved ? (
+                        <>
+                          <CircleCheck className="h-4 w-4" aria-hidden /> Saved. Tap to change it.
+                        </>
+                      ) : (
+                        "Tap who's here and what you did."
+                      )}
+                    </span>
+                  </span>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-pine" aria-hidden />
+                </Link>
+              ))}
+            </div>
+          )}
           {next && (
             <section className="relative overflow-hidden rounded-3xl bg-pine-950 p-5 text-white shadow-[var(--shadow-float)]">
               <div className="flex flex-wrap items-center gap-2">

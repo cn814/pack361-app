@@ -2,8 +2,16 @@ import "server-only";
 import { createClient } from "./supabase/server";
 import { getCatalog, getMyDenIds, getRecords, reviewsWholePack } from "./advancement-data";
 import { rankProgress } from "./advancement";
+import { easternToIso } from "./calendar";
 import type { AdventureOption } from "@/components/MeetingForm";
 import type { Adult, DenRank } from "./types";
+
+/** One adventure a meeting covered. skip: requirements a scout didn't finish ({scoutId: ["2"]}). */
+export interface MeetingWork {
+  adventure: string;
+  requirements: string[];
+  skip?: Record<string, string[]>;
+}
 
 export interface DenMeeting {
   id: string;
@@ -13,6 +21,8 @@ export interface DenMeeting {
   rank: DenRank | null;
   adventure: string | null;
   requirements: string[];
+  /** Every adventure covered (adventure / requirements mirror the first one). */
+  work: MeetingWork[];
   location: string | null;
   address: string | null;
   start_time: string | null;
@@ -23,7 +33,7 @@ export interface DenMeeting {
 }
 
 const COLS =
-  "id, den_id, meets_on, title, rank, adventure, requirements, location, address, start_time, end_time, family_note, recorded_at";
+  "id, den_id, meets_on, title, rank, adventure, requirements, work, location, address, start_time, end_time, family_note, recorded_at";
 
 /** Can this adult plan meetings for the den? (Mirrors private.leads_den.) */
 export async function leadsDen(me: Adult, denId: string): Promise<boolean> {
@@ -49,6 +59,112 @@ export async function getMeeting(id: string): Promise<DenMeeting | null> {
     .eq("id", id)
     .maybeSingle();
   return (data as DenMeeting | null) ?? null;
+}
+
+/** The den's meeting on this day, if there is one (the first, if somehow there are two). */
+export async function getMeetingOn(denId: string, day: string): Promise<DenMeeting | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("den_meetings")
+    .select(`${COLS}, attendance:den_meeting_attendance(scout_id)`)
+    .eq("den_id", denId)
+    .eq("meets_on", day)
+    .order("created_at")
+    .limit(1);
+  return ((data ?? [])[0] as DenMeeting | undefined) ?? null;
+}
+
+/** Adventure names a meeting covers, for display. */
+export function meetingAdventures(m: Pick<DenMeeting, "work" | "adventure">): string[] {
+  const names = (m.work ?? []).map((w) => w.adventure).filter(Boolean);
+  return names.length ? names : m.adventure ? [m.adventure] : [];
+}
+
+/** "Den Meeting" calendar events on this day that include this den (its own, its rank's, or pack-wide). */
+async function denMeetingEventsOn(denId: string, rank: DenRank, day: string): Promise<string[]> {
+  const supabase = await createClient();
+  const next = new Date(Date.parse(day + "T12:00:00Z") + 86400000).toISOString().slice(0, 10);
+  const { data } = await supabase
+    .from("events")
+    .select("id, den_id, ranks")
+    .eq("category", "Den Meeting")
+    .is("archived_at", null)
+    .gte("starts_at", easternToIso(day, "00:00"))
+    .lt("starts_at", easternToIso(next, "00:00"));
+  return ((data ?? []) as { id: string; den_id: string | null; ranks: DenRank[] | null }[])
+    .filter((e) => e.den_id === denId || (!e.den_id && (!e.ranks?.length || e.ranks.includes(rank))))
+    .map((e) => e.id);
+}
+
+/**
+ * Who said they're coming: per-scout answers on the den meeting, plus family "Going" answers on a
+ * "Den Meeting" calendar event that day (for that family's scouts in this den). A scout's own
+ * answer wins over the family's.
+ */
+export async function goingScouts(
+  denId: string,
+  rank: DenRank,
+  day: string,
+  meetingId: string | null,
+  scouts: { id: string; family_id: string | null }[],
+): Promise<{ going: string[]; answers: number }> {
+  const supabase = await createClient();
+  const eventIds = await denMeetingEventsOn(denId, rank, day);
+  const [{ data: mine }, { data: fam }] = await Promise.all([
+    meetingId
+      ? supabase.from("den_meeting_rsvps").select("scout_id, going").eq("meeting_id", meetingId)
+      : Promise.resolve({ data: [] as { scout_id: string; going: boolean }[] }),
+    eventIds.length
+      ? supabase.from("event_rsvps").select("family_id, status").in("event_id", eventIds).not("family_id", "is", null)
+      : Promise.resolve({ data: [] as { family_id: string; status: string }[] }),
+  ]);
+  const answer = new Map<string, boolean>();
+  for (const r of (fam ?? []) as { family_id: string; status: string }[]) {
+    for (const s of scouts) if (s.family_id === r.family_id && r.status !== "maybe") answer.set(s.id, r.status === "yes");
+  }
+  for (const r of (mine ?? []) as { scout_id: string; going: boolean }[]) answer.set(r.scout_id, r.going);
+  const inDen = new Set(scouts.map((s) => s.id));
+  const answered = [...answer.keys()].filter((id) => inDen.has(id));
+  return { going: answered.filter((id) => answer.get(id)), answers: answered.length };
+}
+
+/** The family's scouts in this meeting's den, with their answer so far (RLS: only their own). */
+export async function myMeetingRsvps(
+  meeting: { id: string; den_id: string },
+  myScouts: { id: string; first_name: string; den?: { id: string } | null }[],
+): Promise<{ id: string; first_name: string; going: boolean | null }[]> {
+  const inDen = myScouts.filter((s) => s.den?.id === meeting.den_id);
+  if (!inDen.length) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("den_meeting_rsvps")
+    .select("scout_id, going")
+    .eq("meeting_id", meeting.id)
+    .in("scout_id", inDen.map((s) => s.id));
+  const ans = new Map(((data ?? []) as { scout_id: string; going: boolean }[]).map((r) => [r.scout_id, r.going]));
+  return inDen.map((s) => ({ id: s.id, first_name: s.first_name, going: ans.get(s.id) ?? null }));
+}
+
+/**
+ * The dens this adult is listed as a leader of, with whether there's a meeting today (planned in
+ * the app or a "Den Meeting" on the calendar), for the Home page's "Record a den meeting" buttons.
+ */
+export async function myDenMeetingButtons(): Promise<{ denId: string; name: string; today: boolean; saved: boolean }[]> {
+  const denIds = await getMyDenIds();
+  if (!denIds.length) return [];
+  const supabase = await createClient();
+  const day = todayEastern();
+  const [{ data: dens }, { data: meetings }] = await Promise.all([
+    supabase.from("dens").select("id, name, rank").in("id", denIds).order("name"),
+    supabase.from("den_meetings").select("den_id, recorded_at").in("den_id", denIds).eq("meets_on", day),
+  ]);
+  return Promise.all(
+    ((dens ?? []) as { id: string; name: string; rank: DenRank }[]).map(async (d) => {
+      const m = ((meetings ?? []) as { den_id: string; recorded_at: string | null }[]).filter((x) => x.den_id === d.id);
+      const today = m.length > 0 || (await denMeetingEventsOn(d.id, d.rank, day)).length > 0;
+      return { denId: d.id, name: d.name, today, saved: m.some((x) => x.recorded_at) };
+    }),
+  );
 }
 
 /** Upcoming meetings for these dens (families see their scouts' dens). */
@@ -91,6 +207,7 @@ export async function denAdventures(denId: string, rank: DenRank): Promise<Adven
       name: a.name,
       req_count: a.req_count,
       required: a.required,
+      url: a.info_url ?? null,
       missing: progress.filter((p) => ![...p.required, ...p.electives].find((x) => x.name === a.name)?.done).length,
     }));
 }

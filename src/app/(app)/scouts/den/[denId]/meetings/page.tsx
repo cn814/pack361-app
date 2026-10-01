@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CalendarPlus, ChevronRight, CircleCheck, Users } from "lucide-react";
+import { CalendarPlus, ChevronRight, CircleCheck, ClipboardCheck, Users } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import MeetingForm from "@/components/MeetingForm";
 import { requireMember } from "@/lib/data";
-import { denAdventures, fmtMeetingDate, getMeetings, leadsDen, todayEastern } from "@/lib/meetings";
+import { denAdventures, fmtMeetingDate, getMeetings, leadsDen, meetingAdventures, todayEastern } from "@/lib/meetings";
 import { createClient } from "@/lib/supabase/server";
 import type { DenRank } from "@/lib/types";
 import { saveMeeting } from "./actions";
@@ -24,31 +24,36 @@ export default async function MeetingsPage({ params }: PageProps<"/scouts/den/[d
   const today = todayEastern();
   const upcoming = meetings.filter((m) => m.meets_on >= today).reverse();
   const past = meetings.filter((m) => m.meets_on < today);
-  const needsRecording = past.filter((m) => !m.recorded_at && m.adventure && m.requirements.length);
+  const needsRecording = past.filter((m) => !m.recorded_at);
 
   return (
     <>
-      <BackLink href={`/scouts/den/${denId}`} label={`${den.name} progress`} />
+      <BackLink href={`/scouts/den/${denId}`} label={den.name} />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">{den.name} meetings</h1>
+
+      <Link href={`/scouts/den/${denId}/today`} className="btn-primary w-full py-4 text-base">
+        <ClipboardCheck className="h-5 w-5" aria-hidden /> Record a den meeting
+      </Link>
 
       {needsRecording.length > 0 && (
         <p className="rounded-2xl border border-gold-100 bg-gold-50 p-3 text-sm text-gold-800">
-          {needsRecording.length} past meeting{needsRecording.length === 1 ? " needs" : "s need"} attendance and requirements
-          reported. Tap {needsRecording.length === 1 ? "it" : "one"} below.
+          {needsRecording.length} past meeting{needsRecording.length === 1 ? " wasn't" : "s weren't"} saved yet. Tap{" "}
+          {needsRecording.length === 1 ? "it" : "one"} below to mark who was there and what they did.
         </p>
       )}
 
-      <details className="card" open={meetings.length === 0}>
+      <details className="card">
         <summary className="flex cursor-pointer list-none items-center gap-2 font-bold text-pine">
-          <CalendarPlus className="h-5 w-5" aria-hidden /> Plan a meeting
+          <CalendarPlus className="h-5 w-5" aria-hidden /> Plan ahead (optional)
         </summary>
+        <p className="pt-2 text-xs text-muted">Families see planned meetings on their calendar and can say who&apos;s coming.</p>
         <div className="pt-3">
           <MeetingForm action={saveMeeting} denId={denId} adventures={adventures} defaultDate={today} defaultStart="18:30" defaultEnd="19:30" />
         </div>
       </details>
 
-      <MeetingList title="Coming up" meetings={upcoming} denId={denId} empty="Nothing planned yet." />
-      <MeetingList title="Past meetings" meetings={past} denId={denId} />
+      <MeetingList title="Coming up" meetings={upcoming} denId={denId} today={today} empty="Nothing planned. That's fine: you can record a meeting without planning it." />
+      <MeetingList title="Past meetings" meetings={past} denId={denId} today={today} />
     </>
   );
 }
@@ -57,11 +62,13 @@ function MeetingList({
   title,
   meetings,
   denId,
+  today,
   empty,
 }: {
   title: string;
   meetings: Awaited<ReturnType<typeof getMeetings>>;
   denId: string;
+  today: string;
   empty?: string;
 }) {
   if (!meetings.length && !empty) return null;
@@ -70,12 +77,16 @@ function MeetingList({
       <h2 className="section-title">{title}</h2>
       {!meetings.length && <p className="card text-sm text-muted">{empty}</p>}
       {meetings.map((m) => (
-        <Link key={m.id} href={`/scouts/den/${denId}/meetings/${m.id}`} className="card flex items-center gap-3 py-3">
+        <Link
+          key={m.id}
+          href={m.meets_on <= today ? `/scouts/den/${denId}/today?meeting=${m.id}` : `/scouts/den/${denId}/meetings/${m.id}`} className="card flex items-center gap-3 py-3">
           <span className="w-14 shrink-0 text-center text-xs font-extrabold uppercase text-gold-800">{fmtMeetingDate(m.meets_on)}</span>
           <span className="min-w-0 flex-1">
             <span className="block truncate font-bold text-ink">{m.title}</span>
             <span className="flex items-center gap-2 text-xs text-muted">
-              {m.adventure && m.requirements.length > 0 && <span>Req {m.requirements.join(", ")}</span>}
+              {meetingAdventures(m).length > 0 && m.title !== meetingAdventures(m).join(", ") && (
+                <span className="truncate">{meetingAdventures(m).join(", ")}</span>
+              )}
               {(m.attendance?.length ?? 0) > 0 && (
                 <span className="inline-flex items-center gap-0.5">
                   <Users className="h-3 w-3" aria-hidden /> {m.attendance!.length}
@@ -83,7 +94,7 @@ function MeetingList({
               )}
               {m.recorded_at && (
                 <span className="inline-flex items-center gap-0.5 font-semibold text-pine">
-                  <CircleCheck className="h-3 w-3" aria-hidden /> reported
+                  <CircleCheck className="h-3 w-3" aria-hidden /> saved
                 </span>
               )}
             </span>

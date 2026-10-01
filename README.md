@@ -31,7 +31,7 @@ npm run dev
 ## Folders
 | Path | What |
 |---|---|
-| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init`, `harden_functions`, `private_helpers`, `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback`, `den_calendar`, `twh_sync`, `twh_rsvp`, `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages), `twh_replacement` (in-app RSVP, public guide pages), `payments` (charges, PayPal, event fees; replaces dues), `documents` (documents library), `council_events` (council calendar picker), `training_plus` (more courses, member IDs, training import), `givebutter_dues` (dues paid on Givebutter), `registration_expiry` (registration expiration tracking). |
+| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init`, `harden_functions`, `private_helpers`, `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback`, `den_calendar`, `twh_sync`, `twh_rsvp`, `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages), `twh_replacement` (in-app RSVP, public guide pages), `payments` (charges, PayPal, event fees; replaces dues), `documents` (documents library), `council_events` (council calendar picker), `training_plus` (more courses, member IDs, training import), `givebutter_dues` (dues paid on Givebutter), `registration_expiry` (registration expiration tracking), `rsvp_everywhere` (RSVPs on by default), `den_meeting_easy` (one-step den meeting recording, several adventures per meeting, den meeting RSVPs). |
 | `supabase/data/` | One-off data updates run in the SQL Editor (e.g. the Fall Campout details, Arrow of Light Den 8 bridging). |
 | `supabase/seed.sql` | Starter data: dens (Scoutbook numbering), pack meetings, fall events, default packing list. |
 | `supabase/import/build_roster_import.py` | Merges Scoutbook Plus + TroopWebHost data into `imports/roster_import.sql` and `imports/roster_review.md`. |
@@ -81,9 +81,15 @@ npm run dev
   limit (`pack_settings.email_daily_limit`, 40). The free Resend plan allows 100 emails a day in
   total, and each welcomed family then signs in (another email), so keep room for those. Needs
   `RESEND_API_KEY`.
-- **Den meetings** (Scouts → a den → Meetings): plan a meeting around an adventure and its
-  requirements, take attendance, then report the requirements for everyone present in one tap.
-  They arrive already approved on the "Enter in Scoutbook" list. Families see upcoming meetings.
+- **Den meetings**: den leaders tap **Record a den meeting** on Home (or a den's page), any day.
+  One phone screen: tap who's here (pre-checked from "Going" RSVPs), tap the adventure the den
+  worked on (the ones most scouts still need come first; add more than one, or "No adventure
+  today"), then **Save**. Requirements land already approved on the "Enter in Scoutbook" list for
+  every scout who was there, skipping anything already done; saving twice never doubles anything.
+  "Not everyone finished?" untick a scout's requirement; "Different day?" records an earlier
+  meeting. Reopen it to change things: removed items come off the list unless the advancement
+  chair already entered them in Scoutbook. Planning ahead (Scouts → a den → Past meetings and
+  planning ahead) is optional; families see planned meetings and say per scout who's going.
 - **Volunteer jobs**: leaders add jobs on any event or campout page; families sign up. The home
   page lists open spots. Volunteers get a reminder the day before or the same afternoon ("Tomorrow"
   or "Tonight"), by phone alert or else email. A reminder is only marked sent once it actually went

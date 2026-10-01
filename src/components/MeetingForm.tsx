@@ -9,6 +9,8 @@ export interface AdventureOption {
   name: string;
   req_count: number;
   required: boolean;
+  /** The official adventure page (requirements live there). */
+  url: string | null;
   /** How many scouts in the den still need it (for suggestions). */
   missing: number;
 }
@@ -125,7 +127,7 @@ export default function MeetingForm({
 
       {adv && (
         <fieldset className="space-y-1">
-          <legend className="text-xs font-bold text-navy">Requirements this meeting covers</legend>
+          <legend className="text-xs font-bold text-navy">Requirements you plan to do</legend>
           <div className="flex flex-wrap gap-2">
             {Array.from({ length: adv.req_count }, (_, i) => String(i + 1)).map((r) => {
               const on = reqs.includes(r);
@@ -149,6 +151,11 @@ export default function MeetingForm({
               );
             })}
           </div>
+          {adv.url && (
+            <a href={adv.url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-pine underline">
+              See the requirements
+            </a>
+          )}
         </fieldset>
       )}
 

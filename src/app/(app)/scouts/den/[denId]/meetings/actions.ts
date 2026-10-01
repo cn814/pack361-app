@@ -5,13 +5,14 @@ import { redirect } from "next/navigation";
 import type { ActionResult } from "@/components/ActionForm";
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/data";
-import { getCatalog, getRecords } from "@/lib/advancement-data";
-import { getMeeting, leadsDen, todayEastern } from "@/lib/meetings";
+import { getCatalog } from "@/lib/advancement-data";
+import { leadsDen, todayEastern, type MeetingWork } from "@/lib/meetings";
 import type { DenRank } from "@/lib/types";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+/** Plan a meeting ahead of time (optional): date, place, and the adventure it will work on. */
 export async function saveMeeting(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
   const id = String(form.get("id") ?? "");
@@ -33,13 +34,14 @@ export async function saveMeeting(_prev: ActionResult, form: FormData): Promise<
   const title = String(form.get("title") ?? "").trim().slice(0, 100) || adventure || "Den meeting";
   if (!DATE.test(meetsOn)) return { error: "Pick the meeting date." };
 
+  const requirements = [...new Set(reqs)].sort((a, b) => Number(a) - Number(b));
   const row = {
     den_id: denId,
     meets_on: meetsOn,
     title,
     rank,
-    adventure: adv?.name ?? null,
-    requirements: [...new Set(reqs)].sort((a, b) => Number(a) - Number(b)),
+    // The first adventure is set here; recording the meeting can add more.
+    work: adv && requirements.length ? [{ adventure: adv.name, requirements }] : [],
     location: String(form.get("location") ?? "").trim().slice(0, 120) || null,
     address: String(form.get("address") ?? "").trim().slice(0, 200) || null,
     start_time: /^\d{2}:\d{2}(:\d{2})?$/.test(String(form.get("start_time") ?? "")) ? String(form.get("start_time")) : null,
@@ -49,7 +51,7 @@ export async function saveMeeting(_prev: ActionResult, form: FormData): Promise<
   if (id) {
     const { error } = await supabase.from("den_meetings").update(row).eq("id", id);
     if (error) return { error: "Couldn't save the meeting." };
-    revalidatePath(`/scouts/den/${denId}/meetings`, "layout");
+    revalidatePath(`/scouts/den/${denId}`, "layout");
     return { ok: true };
   }
   const { data, error } = await supabase
@@ -58,7 +60,7 @@ export async function saveMeeting(_prev: ActionResult, form: FormData): Promise<
     .select("id")
     .single();
   if (error || !data) return { error: "Couldn't save the meeting." };
-  revalidatePath(`/scouts/den/${denId}/meetings`);
+  revalidatePath(`/scouts/den/${denId}`, "layout");
   redirect(`/scouts/den/${denId}/meetings/${data.id}`);
 }
 
@@ -69,91 +71,67 @@ export async function deleteMeeting(form: FormData) {
   if (!(await leadsDen(me, denId))) return;
   const supabase = await createClient();
   await supabase.from("den_meetings").delete().eq("id", id);
-  revalidatePath(`/scouts/den/${denId}/meetings`);
+  revalidatePath(`/scouts/den/${denId}`, "layout");
   redirect(`/scouts/den/${denId}/meetings`);
 }
 
-export async function saveAttendance(_prev: ActionResult, form: FormData): Promise<ActionResult> {
-  const me = await requireMember();
-  const meetingId = String(form.get("meeting_id") ?? "");
-  const meeting = UUID.test(meetingId) ? await getMeeting(meetingId) : null;
-  if (!meeting || !(await leadsDen(me, meeting.den_id))) return { error: "Meeting not found." };
-  const present = new Set(form.getAll("present").map(String).filter((s) => UUID.test(s)));
-  const before = new Set((meeting.attendance ?? []).map((a) => a.scout_id));
+export type RecordResult = ActionResult & {
+  meetingId?: string;
+  /** Already entered in Scoutbook, so not undone here. */
+  entered?: { scout: string; adventure: string; requirement: string }[];
+};
 
-  const supabase = await createClient();
-  const gone = [...before].filter((s) => !present.has(s));
-  const added = [...present].filter((s) => !before.has(s));
-  if (gone.length) await supabase.from("den_meeting_attendance").delete().eq("meeting_id", meetingId).in("scout_id", gone);
-  if (added.length) {
-    const { error } = await supabase
-      .from("den_meeting_attendance")
-      .insert(added.map((scout_id) => ({ meeting_id: meetingId, scout_id })));
-    if (error) return { error: "Couldn't save attendance." };
-  }
-  revalidatePath(`/scouts/den/${meeting.den_id}/meetings`, "layout");
-  return { ok: true, message: `Attendance saved: ${present.size} here.` };
-}
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 /**
- * Report the meeting's requirements for every scout marked present, already approved
- * (the den leader was there). Skips anything Scoutbook or the app already has.
+ * The one Save on the record page: who was here and what they did. Records the requirements for
+ * every scout here (approved, on the Scoutbook list) and removes what this meeting added earlier
+ * that's no longer checked, unless it's already in Scoutbook. Saving twice changes nothing.
  */
-export async function recordMeeting(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+export async function recordDenMeeting(_prev: RecordResult, form: FormData): Promise<RecordResult> {
   const me = await requireMember();
+  const denId = String(form.get("den_id") ?? "");
   const meetingId = String(form.get("meeting_id") ?? "");
-  const meeting = UUID.test(meetingId) ? await getMeeting(meetingId) : null;
-  if (!meeting || !(await leadsDen(me, meeting.den_id))) return { error: "Meeting not found." };
-  if (!meeting.adventure || !meeting.requirements.length) return { error: "Pick the adventure and requirements covered first." };
-  if (meeting.meets_on > todayEastern()) return { error: "You can report requirements on or after the meeting date." };
-  const scoutIds = (meeting.attendance ?? []).map((a) => a.scout_id);
-  if (!scoutIds.length) return { error: "Mark who was there first." };
+  const meetsOn = String(form.get("meets_on") ?? "");
+  if (!UUID.test(denId) || !(await leadsDen(me, denId))) return { error: "Only this den's leaders can save its meetings." };
+  if (!DATE.test(meetsOn)) return { error: "Pick the meeting day." };
+  if (meetsOn > todayEastern()) return { error: "You can save a meeting on the day or after, not ahead of time." };
+  const present = [...new Set(form.getAll("present").map(String).filter((s) => UUID.test(s)))];
+  let work: MeetingWork[] = [];
+  try {
+    const raw = JSON.parse(String(form.get("work") ?? "[]"));
+    if (Array.isArray(raw)) work = raw;
+  } catch {
+    return { error: "Something went wrong. Reload the page and try again." };
+  }
 
   const supabase = await createClient();
-  const [records, { data: subs }] = await Promise.all([
-    getRecords(scoutIds),
-    supabase
-      .from("advancement_submissions")
-      .select("scout_id, adventure, requirement, status")
-      .in("scout_id", scoutIds)
-      .eq("adventure", meeting.adventure)
-      .neq("status", "returned"),
-  ]);
-  const adv = meeting.adventure.toLowerCase();
-  const done = (scoutId: string, req: string) =>
-    records.some(
-      (r) =>
-        r.scout_id === scoutId &&
-        (r.adventure ?? "").toLowerCase() === adv &&
-        (r.kind === "adventure" || (r.kind === "requirement" && (r.item === req || r.item.replace(/\D.*$/, "") === req))),
-    ) || (subs ?? []).some((s) => s.scout_id === scoutId && s.requirement === req);
-
-  const rows = scoutIds.flatMap((scout_id) =>
-    meeting.requirements
-      .filter((req) => !done(scout_id, req))
-      .map((requirement) => ({
-        scout_id,
-        submitted_by: me.id,
-        rank: meeting.rank,
-        adventure: meeting.adventure!,
-        requirement,
-        completed_on: meeting.meets_on,
-        notes: `Den meeting: ${meeting.title}`,
-        status: "approved",
-        meeting_id: meeting.id,
-      })),
-  );
-  if (rows.length) {
-    const { error } = await supabase.from("advancement_submissions").insert(rows);
-    if (error) return { error: "Couldn't report those requirements." };
-  }
-  await supabase.from("den_meetings").update({ recorded_at: new Date().toISOString(), recorded_by: me.id }).eq("id", meeting.id);
-  revalidatePath("/scouts", "layout");
-  const skipped = scoutIds.length * meeting.requirements.length - rows.length;
-  return {
-    ok: true,
-    message: `Reported ${rows.length} requirement${rows.length === 1 ? "" : "s"} for ${scoutIds.length} scout${scoutIds.length === 1 ? "" : "s"}${
-      skipped ? ` (${skipped} already done, skipped)` : ""
-    }. They're on the advancement chair's list to enter in Scoutbook.`,
+  const { data, error } = await supabase.rpc("record_den_meeting", {
+    p_den_id: denId,
+    p_meeting_id: UUID.test(meetingId) ? meetingId : null,
+    p_meets_on: meetsOn,
+    p_present: present,
+    p_work: work,
+  });
+  if (error || !data) return { error: "Couldn't save. Check your connection and tap Save again; nothing will be doubled." };
+  const r = data as {
+    meeting_id: string;
+    present: number;
+    requirements: number;
+    on_list: number;
+    added: number;
+    removed: number;
+    already_done: number;
+    entered: { scout: string; adventure: string; requirement: string }[];
   };
+  revalidatePath("/", "layout");
+
+  const parts = [`Saved. ${plural(r.present, "scout")} here.`];
+  if (r.requirements > 0) {
+    parts[0] = `Saved. ${plural(r.present, "scout")} × ${plural(r.requirements, "requirement")} recorded.`;
+    parts.push(r.on_list > 0 ? "The advancement chair will enter them in Scoutbook." : "Nothing new for the Scoutbook list.");
+    if (r.already_done > 0) parts.push(`${r.already_done} already done before, so skipped.`);
+  }
+  if (r.removed > 0) parts.push(`Took ${r.removed} off the Scoutbook list.`);
+  return { ok: true, message: parts.join(" "), meetingId: r.meeting_id, entered: r.entered ?? [] };
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CalendarPlus, ChevronLeft, House } from "lucide-react";
+import { CalendarDays, ChevronLeft, ClipboardCheck, House } from "lucide-react";
 import { isLeader, requireMember } from "@/lib/data";
 import PostAnnouncement from "@/components/PostAnnouncement";
 import { getCatalog, getMyDenIds, getRecords, reviewsWholePack } from "@/lib/advancement-data";
@@ -65,8 +65,11 @@ export default async function DenGridPage({ params }: PageProps<"/scouts/den/[de
           {RANK_LABEL[den.rank as keyof typeof RANK_LABEL]} rank · {scouts.length} scouts
         </p>
       </div>
-      <Link href={`/scouts/den/${denId}/meetings`} className="btn-primary w-full">
-        <CalendarPlus className="h-4 w-4" aria-hidden /> Den meetings and attendance
+      <Link href={`/scouts/den/${denId}/today`} className="btn-primary w-full py-4 text-base">
+        <ClipboardCheck className="h-5 w-5" aria-hidden /> Record a den meeting
+      </Link>
+      <Link href={`/scouts/den/${denId}/meetings`} className="btn-ghost w-full py-2">
+        <CalendarDays className="h-4 w-4" aria-hidden /> Past meetings and planning ahead
       </Link>
       <PostAnnouncement dens={[{ id: den.id, name: den.name }]} canPostPack={false} defaultDen={den.id} />
 

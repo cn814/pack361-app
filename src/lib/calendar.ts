@@ -51,7 +51,7 @@ export function ranksLabel(ranks: DenRank[] | null | undefined): string | null {
   return ranks?.length ? ranks.map((r) => RANK_NAME[r]).join(" & ") : null;
 }
 const MEETING_COLS =
-  "id, den_id, meets_on, title, adventure, location, address, family_note, start_time, end_time, den:dens(name, meeting_info)";
+  "id, den_id, meets_on, title, adventure, work, location, address, family_note, start_time, end_time, den:dens(name, meeting_info)";
 
 export async function loadCalendar(
   db: SupabaseClient,
@@ -121,6 +121,7 @@ interface MeetingRow {
   meets_on: string;
   title: string;
   adventure: string | null;
+  work?: { adventure: string }[] | null;
   location: string | null;
   address: string | null;
   family_note: string | null;
@@ -147,9 +148,13 @@ function merge(events: PackEvent[], meetings: MeetingRow[], scope: DenScope, lim
       ends_at: m.end_time ? easternToIso(m.meets_on, m.end_time) : null,
       location_name: m.location,
       address: m.address,
-      details: [m.adventure ? `Adventure: ${m.adventure}` : null, m.family_note].filter(Boolean).join("\n") || null,
+      details: [
+        (m.work?.length ?? 0) > 1 ? `Adventures: ${m.work!.map((w) => w.adventure).join(", ")}` : m.adventure ? `Adventure: ${m.adventure}` : null,
+        m.family_note,
+      ].filter(Boolean).join("\n") || null,
       signup_url: null,
       all_day: false,
+      rsvp_enabled: true, // families answer per scout on the meeting page
       den_id: m.den_id,
       den_name: m.den?.name ?? null,
     })),

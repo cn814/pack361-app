@@ -3,7 +3,8 @@ import SubmitButton from "@/components/SubmitButton";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Award, CalendarDays, CircleCheck, House, Medal, Plus } from "lucide-react";
-import { fmtMeetingDate, fmtMeetingTime, getUpcomingMeetings } from "@/lib/meetings";
+import { fmtMeetingDate, fmtMeetingTime, getUpcomingMeetings, meetingAdventures, myMeetingRsvps } from "@/lib/meetings";
+import DenMeetingRsvp from "@/components/DenMeetingRsvp";
 import { AdventureList, ProgressBar, ProgressSummary } from "@/components/RankProgress";
 import { isLeader, requireMember } from "@/lib/data";
 import { getCatalog, getDataAsOf, getRecords, getScout, getSubmissions } from "@/lib/advancement-data";
@@ -39,6 +40,10 @@ export default async function ScoutPage({ params, searchParams }: PageProps<"/sc
       r.kind !== "requirement" && r.approved && !r.awarded && (r.completed_on ?? "") >= settings.awards_tracked_from,
   ).length;
   const ideas = p && !p.earned ? homeSuggestions(p, catalog) : [];
+  // RSVP right here for the family's own scout.
+  const rsvps = mine
+    ? await Promise.all(meetings.map((m) => myMeetingRsvps(m, [{ id: scout.id, first_name: scout.first_name, den: scout.den }])))
+    : meetings.map(() => []);
 
   return (
     <>
@@ -78,18 +83,19 @@ export default async function ScoutPage({ params, searchParams }: PageProps<"/sc
             <CalendarDays className="h-3.5 w-3.5" aria-hidden /> Next den meeting{meetings.length > 1 ? "s" : ""}
           </h2>
           <ul className="space-y-2">
-            {meetings.map((m) => (
-              <li key={m.id} className="text-sm">
+            {meetings.map((m, i) => (
+              <li key={m.id} className="space-y-1.5 text-sm">
                 <Link href={`/meetings/${m.id}`} className="font-bold text-ink underline-offset-2 hover:underline">
                   {fmtMeetingDate(m.meets_on)}
                   {fmtMeetingTime(m) ? `, ${fmtMeetingTime(m)}` : ""} · {m.title}
                 </Link>
-                {(m.adventure || m.location) && (
+                {(meetingAdventures(m).length > 0 || m.location) && (
                   <p className="text-xs text-muted">
-                    {[m.adventure && m.adventure !== m.title ? m.adventure : null, m.location].filter(Boolean).join(" · ")}
+                    {[meetingAdventures(m).join(", ") !== m.title ? meetingAdventures(m).join(", ") || null : null, m.location].filter(Boolean).join(" · ")}
                   </p>
                 )}
                 {m.family_note && <p className="text-navy">{m.family_note}</p>}
+                <DenMeetingRsvp meetingId={m.id} scouts={rsvps[i]} compact />
               </li>
             ))}
           </ul>
