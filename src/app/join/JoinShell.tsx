@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { LogIn, Mail } from "lucide-react";
+import { HEADER } from "./photos";
 
 /** Header and footer for the public pages (pack361.org). */
 export default function JoinShell({ children }: { children: ReactNode }) {
@@ -18,6 +19,10 @@ export default function JoinShell({ children }: { children: ReactNode }) {
           </Link>
         </div>
       </header>
+      {HEADER && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={HEADER.src} alt={HEADER.alt} width={HEADER.width} height={HEADER.height} className="h-auto w-full" />
+      )}
       <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 py-6 sm:py-10">{children}</main>
       <footer className="border-t border-line">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-2 px-4 py-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">

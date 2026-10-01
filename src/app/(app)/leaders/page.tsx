@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import FeedbackForm from "@/components/FeedbackForm";
-import { BookOpen, FileText, Mail, Phone, Settings, ShieldAlert, ShieldCheck, Vote } from "lucide-react";
-import { getLeaders, isLeader, requireMember } from "@/lib/data";
+import { BookOpen, FileText, FolderOpen, HandCoins, Landmark, Mail, Phone, Settings, ShieldAlert, ShieldCheck, Vote } from "lucide-react";
+import { getLeaders, isCommittee, isLeader, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
 
 export const metadata: Metadata = { title: "Leaders" };
@@ -31,6 +31,17 @@ export default async function LeadersPage() {
           <Link href="/guide" className="btn-ghost py-2">
             <BookOpen className="h-4 w-4" aria-hidden /> Pack guide
           </Link>
+          <Link href="/documents" className="btn-ghost py-2">
+            <FolderOpen className="h-4 w-4" aria-hidden /> Documents
+          </Link>
+          <Link href="/events/council" className="btn-ghost py-2">
+            <Landmark className="h-4 w-4" aria-hidden /> Council events
+          </Link>
+          {isCommittee(me) && (
+            <Link href="/leaders/money" className="btn-ghost py-2">
+              <HandCoins className="h-4 w-4" aria-hidden /> Money
+            </Link>
+          )}
           {isAdmin(me) && (
             <Link href="/admin" className="btn-primary py-2">
               <Settings className="h-4 w-4" aria-hidden /> Pack admin

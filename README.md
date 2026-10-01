@@ -31,7 +31,7 @@ npm run dev
 ## Folders
 | Path | What |
 |---|---|
-| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init`, `harden_functions`, `private_helpers`, `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback`, `den_calendar`, `twh_sync`, `twh_rsvp`, `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages). |
+| `supabase/migrations/` | Database schema, security rules and storage buckets. Run in name order: `init`, `harden_functions`, `private_helpers`, `advancement` (adventure catalog + Scoutbook import), `pack_features` (settings, Givebutter, push, calendar; popcorn_sales is unused for now), `pack_tools` (roster admin, den meetings, volunteers, training, photo vault), `feedback`, `den_calendar`, `twh_sync`, `twh_rsvp`, `review_fixes` (event archive, photo removal requests, indexes), `pack_hub` (guide, medical forms, dues, den messages, polls, notifications), `guide_content` (starter guide pages), `twh_replacement` (in-app RSVP, public guide pages), `payments` (charges, PayPal, event fees; replaces dues), `documents` (documents library), `council_events` (council calendar picker), `training_plus` (more courses, member IDs, training import). |
 | `supabase/data/` | One-off data updates run in the SQL Editor (e.g. the Fall Campout details, Arrow of Light Den 8 bridging). |
 | `supabase/seed.sql` | Starter data: dens (Scoutbook numbering), pack meetings, fall events, default packing list. |
 | `supabase/import/build_roster_import.py` | Merges Scoutbook Plus + TroopWebHost data into `imports/roster_import.sql` and `imports/roster_review.md`. |
@@ -87,10 +87,16 @@ npm run dev
   page lists open spots. Volunteers get a reminder the day before or the same afternoon ("Tomorrow"
   or "Tonight"), by phone alert or else email. A reminder is only marked sent once it actually went
   out; anything that didn't is retried the next day.
-- **Training**: `adult_trainings` tracks Safeguarding Youth, position-specific, Hazardous Weather,
-  BALOO, Safe Swim and Safety Afloat. Leaders update their own dates on My family; admins update
-  anyone's. Changing the finish date recalculates the expiry. Reminders go out 60, 30, 7 and 0 days
-  before expiry (phone alert and email).
+- **Training**: `adult_trainings` tracks Safeguarding Youth (renewed every year), position-specific,
+  Chartered Organization Representative, Hazardous Weather, BALOO, Safe Swim, Safety Afloat, Climb On
+  Safely, Trek Safely, IOLS, Wood Badge and CPR / First Aid. Each adult's positions (from role, pack
+  position title and den assignments) decide what they need to count as trained; Leader training shows
+  who's missing what and a pack checklist (BALOO for overnights, Hazardous Weather, water safety).
+  Leaders update their own dates on My family; admins update anyone's, or import a my.scouting training
+  report (CSV or .xlsx) at Leader training → Import from my.scouting. The file is read in the browser
+  and never uploaded; adults are matched by BSA member ID, then by name, and only newer dates are
+  applied (`import_trainings`). Each adult can add their own member ID on My family
+  (`set_my_member_id`). Reminders go out 60, 30, 7 and 0 days before expiry (phone alert and email).
 - **Photos**: private bucket `pack-photos` (JPEG only, 4 MB max per file). Each family answers a
   photo permission question per scout (unanswered = no). Parents' uploads wait for a leader;
   leaders' go straight in. Photos are resized in the browser (about 0.5 MB each, and the re-encode
@@ -99,8 +105,26 @@ npm run dev
   for the rest. **Only leaders delete photos** (Photo review). Everyone else taps **Request
   removal**: the photo is hidden at once and the admins are alerted (one open request per person
   per photo, 10 a day). Pack admin shows how much of the free plan's 1 GB of storage is used.
+- **Documents** (`/documents`): the pack's non-sensitive papers (minutes, budget, blank forms,
+  packing lists, den leader guide, bylaws). Private bucket `pack-docs`: 10 MB max; PDF, Word,
+  Excel, PowerPoint, text, CSV, JPEG, PNG, WebP. Each document is for everyone, leaders or
+  committee, optionally one den. Leaders upload straight from the browser through a signed upload
+  address; committee or the uploader edits, archives or replaces the file; only committee
+  deletes. Files open only through `/documents/<id>`, which checks access and redirects to a link
+  that lasts 60 seconds; paste `[Title](/documents/<id>)` into a guide page to link one. Never for
+  medical forms, insurance cards or personal details. Pack admin shows storage per bucket
+  (`storage_usage()`) against the free 1 GB.
 - **Offline campouts**: the service worker (`public/sw.js`) keeps opened campout pages and the app's
   static files on the phone; the sign-in page clears them.
+- **Saved on this phone** (`/family/files`, `src/lib/device-files.ts`): families keep their own
+  photos or PDFs of medical forms, insurance cards and other papers in the browser's IndexedDB
+  (`pack361-files`). Nothing is uploaded and the server never sees them. Files are tagged with the
+  signed-in adult's id, so another account on a shared device doesn't see them; "Remove everything"
+  clears them before handing a device over. Signing out does **not** delete them. Big photos are
+  shrunk to about 2000px JPEG in the browser; 15 MB max per file. Files are tied to one browser: on
+  iPhone the home-screen app and Safari keep separate copies, Safari tabs (not the home-screen app)
+  lose them after 7 days unused, and deleting the app deletes them, so families should keep a backup
+  with Share → Save to Files.
 - **Den-aware calendar** (`src/lib/calendar.ts`): families see pack-wide events, events for their
   scouts' dens or ranks (`events.den_id`, `events.ranks`), and their dens' planned meetings; leaders
   see everything (with a "My family's dens" filter). `events.leaders_only` can hide an event from
@@ -121,6 +145,13 @@ npm run dev
 - **Events in the app**: leaders add events (Events → Add an event) and edit any event from its
   page. Editing a TroopWebHost event detaches it from the sync (`source = 'manual'`), so the app is
   the calendar of record and TroopWebHost can be dropped. Removing `TWH_CALENDAR_URL` stops the sync.
+- **Council events** (Events → Council events; committee picks, den leaders can look): the daily
+  job and a "Check now" button copy the Baltimore Area Council calendar (ScoutingEvent feed) into
+  `council_events`. The committee filters out meetings, holidays and other districts' events (word
+  lists in `src/lib/council-filters.ts`), then adds events to the pack calendar or skips them; both
+  can be undone. Added events follow the council's title, time and place until someone edits them in
+  the app. Events that leave the council calendar are flagged, never deleted. The feed link is
+  `pack_settings.council_calendar_url`, set on that page.
 - **RSVP**: a leader turns on "Take RSVPs" for an event (optional RSVP-by date). Each family answers
   Going / Maybe / Can't go with how many scouts and adults (`event_rsvps`, one answer per family,
   through `set_rsvp()`); everyone sees the headcount (`rsvp_counts()`), leaders see who's coming.
@@ -141,7 +172,7 @@ npm run dev
   uploads from families (one alert per batch) and removal requests also alert the admins.
 - **Notifications** (bell in the top bar, `/inbox`): announcements and den messages, plus a
   "Needs you" list (`src/lib/inbox.ts`): polls to answer, medical forms needed before an upcoming
-  campout, dues, the photo permission question, and for leaders photos to review, forms turned in
+  campout, money due, the photo permission question, and for leaders photos to review, forms turned in
   and messages from families. The badge counts new posts and polls since the list was last opened
   (`inbox_reads`) plus open to-dos. Home shows the top three to-dos.
 - **Den messages**: a leader posts to one den (den leaders: their own dens; committee, Cubmaster
@@ -157,8 +188,18 @@ npm run dev
   Drafts are visible to leaders only; `[Leaders: …]` placeholders are highlighted.
 - **Paperwork**: each scout and adult's medical form (Parts A and B) status on My family and on
   Leaders → Paperwork. Families tap "I turned it in"; a leader marks it received; it expires a
-  year after the date on the form. Only status and dates are stored. Dues per family per season
-  (`pack_settings.dues_season`, `dues_amount`, `dues_how` in Pack admin), same two-step flow.
+  year after the date on the form. Only status and dates are stored. Dues are now
+  charges (see Payments).
+- **Payments** (`/pay`, Leaders → Money): everything a family owes the pack is a row in `charges`
+  (dues, Scouting America registration, council fee, event fees, other). Families pay with PayPal
+  buttons (PayPal, Venmo on phones, or card; Orders v2 created and captured on the server,
+  `src/lib/paypal.ts`) or say they paid by check or cash for a leader to confirm. A captured order
+  is recorded by `record_paypal_capture()` (secret key only, safe to run twice); the daily cron
+  finishes checkouts a browser didn't. Events can have a cost per family, scout and adult, and an RSVP
+  "yes" keeps the family's event charge up to date (paid charges never change). The committee adds
+  fees, confirms payments, tracks national and council fees per person including when they were sent
+  to the council, sets amounts and "other ways to pay", and downloads a CSV. Env:
+  `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV` (sandbox unless `live`).
 - **Polls** (`/polls`): leaders ask the pack or one den; single or multiple choice, optional
   one-answer-per-family, closing date, results for voters or leaders only. Votes go through
   `cast_vote()`; `poll_results()` returns counts, never names (leaders see who answered what).
@@ -181,7 +222,7 @@ Postgres custom-format dump of the app's data (`public` and `private` schemas) w
 name, deletes ones older than 60 days, and can GPG-encrypt (`ENCRYPT_TO`). It uses a local
 `pg_dump` 17+ or, if there isn't one, the `postgres:17-alpine` Docker image. The connection string
 (Supabase → Connect → Session pooler) stays in `~/.config/pack361/backup.env` or an environment
-variable, never in the repo. Photos are in Supabase Storage and aren't included.
+variable, never in the repo. Photos and documents are in Supabase Storage and aren't included.
 
 On an Unraid NAS, paste `scripts/unraid-user-script.sh` into the User Scripts plugin and schedule it
 nightly; it runs `pg_dump` in a throwaway `postgres:17-alpine` container.

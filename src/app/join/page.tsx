@@ -4,7 +4,7 @@ import { ChevronRight, Compass, Mail, Tent, Users } from "lucide-react";
 import GuideBody from "@/components/GuideBody";
 import { getPublicPage, getPublicPages } from "@/lib/guide";
 import JoinShell from "./JoinShell";
-import { BANNER, PHOTOS } from "./photos";
+import { BANNER, PHOTOS, STRIP } from "./photos";
 
 // The public face of the pack (pack361.org). Everything else in the app needs a sign-in.
 export const revalidate = 300;
@@ -53,7 +53,7 @@ export default async function JoinPage() {
       <section className="card overflow-hidden p-0">
         {BANNER ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={BANNER.src} alt={BANNER.alt} className="h-48 w-full object-cover sm:h-72" />
+          <img src={BANNER.src} alt={BANNER.alt} width={BANNER.width} height={BANNER.height} className="h-auto w-full" />
         ) : (
           <div className="h-1.5 bg-pine" />
         )}
@@ -88,11 +88,16 @@ export default async function JoinPage() {
         ))}
       </section>
 
+      {STRIP && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={STRIP.src} alt={STRIP.alt} width={STRIP.width} height={STRIP.height} loading="lazy" className="h-auto w-full rounded-2xl" />
+      )}
+
       {PHOTOS.length > 0 && (
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {PHOTOS.map((p) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={p.src} src={p.src} alt={p.alt} loading="lazy" className="aspect-[4/3] w-full rounded-2xl object-cover" />
+            <img key={p.src} src={p.src} alt={p.alt} width={p.width} height={p.height} loading="lazy" className="aspect-[4/3] w-full rounded-2xl object-cover" />
           ))}
         </section>
       )}

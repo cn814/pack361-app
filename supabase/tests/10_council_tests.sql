@@ -78,10 +78,10 @@ select test.expect_rows($$update public.council_events set status = 'new' where 
                         'committee undoes a skip');
 -- Add: make the pack event (committee members are leaders), then link it.
 select test.expect_rows($$insert into public.events (id, title, category, starts_at, source, signup_url)
-                          values ('52000000-0000-0000-0000-000000000001', 'Fall Fun Day', 'District', now() + interval '20 days',
+                          values ('53000000-0000-0000-0000-000000000001', 'Fall Fun Day', 'District', now() + interval '20 days',
                                   'council', 'https://scoutingevent.com/220-NPFallFun')$$, 1,
                         'committee puts a council event on the pack calendar');
-select test.expect_rows($$update public.council_events set status = 'added', event_id = '52000000-0000-0000-0000-000000000001'
+select test.expect_rows($$update public.council_events set status = 'added', event_id = '53000000-0000-0000-0000-000000000001'
                           where uid = 'c-1@scoutingevent.com'$$, 1, 'committee marks it added');
 select test.expect_error($$update public.council_events set title = 'Changed' where uid = 'c-1@scoutingevent.com'$$, '42501',
                          'committee cannot rewrite what the council calendar says');
@@ -112,7 +112,7 @@ select test.check((select decided_by from public.council_events where uid = 'c-2
                   'admin''s decision is stamped with the admin');
 -- Undo an add and take it off the calendar: the pack event moves to the archive.
 select test.expect_rows($$update public.events set archived_at = now(), archived_reason = 'hidden'
-                          where id = '52000000-0000-0000-0000-000000000001'$$, 1, 'the added event can be taken off the calendar');
+                          where id = '53000000-0000-0000-0000-000000000001'$$, 1, 'the added event can be taken off the calendar');
 select test.expect_rows($$update public.council_events set status = 'new' where uid = 'c-1@scoutingevent.com'$$, 1,
                         'the add is undone');
 commit;
@@ -127,7 +127,7 @@ select test.expect_rows($$insert into public.council_events (uid, title, starts_
                                                           last_seen_at = excluded.last_seen_at, removed_at = null$$, 2,
                         'the sync adds and refreshes council events');
 select test.check((select status from public.council_events where uid = 'c-1@scoutingevent.com') = 'new'
-                  and (select event_id from public.council_events where uid = 'c-1@scoutingevent.com') = '52000000-0000-0000-0000-000000000001'
+                  and (select event_id from public.council_events where uid = 'c-1@scoutingevent.com') = '53000000-0000-0000-0000-000000000001'
                   and (select decided_by from public.council_events where uid = 'c-1@scoutingevent.com') = '30000000-0000-0000-0000-00000000000d',
                   'refreshing keeps the decision and the link to the pack event');
 select test.expect_rows($$update public.council_events set removed_at = now() where uid = 'c-2@scoutingevent.com'$$, 1,
@@ -145,6 +145,6 @@ select test.check((select value from public.pack_settings where key = 'council_l
 commit;
 
 -- A pack event is never deleted by the app, but if one were, the link clears instead of blocking it.
-delete from public.events where id = '52000000-0000-0000-0000-000000000001';
+delete from public.events where id = '53000000-0000-0000-0000-000000000001';
 select test.check((select event_id from public.council_events where uid = 'c-1@scoutingevent.com') is null,
                   'deleting a pack event clears the link');

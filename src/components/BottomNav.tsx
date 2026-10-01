@@ -20,6 +20,8 @@ import {
   Images,
   Users,
   type LucideIcon,
+  FolderOpen,
+  HandCoins,
 } from "lucide-react";
 import type { FeaturedKind, FeaturedTab } from "@/lib/featured";
 
@@ -138,6 +140,8 @@ export default function BottomNav({
           [
             { href: "/inbox", label: "Notifications", icon: Bell, count: inbox },
             { href: "/guide", label: "Pack guide", icon: BookOpen, count: 0 },
+            { href: "/documents", label: "Documents", icon: FolderOpen, count: 0 },
+            { href: "/pay", label: "Pay the pack", icon: HandCoins, count: 0 },
             { href: "/polls", label: "Polls", icon: Vote, count: 0 },
           ] as const
         ).map(({ href, label, icon: Icon, count }) => {

@@ -42,7 +42,7 @@ export default function SafetyPage() {
         items={[
           "No one-on-one digital contact: the app has no private messaging. Leaders post announcements to the whole pack or to one den's parents, and nothing is ever sent to scouts.",
           "Scouts don't have accounts. Only parents, guardians and registered leaders on the pack roster can sign in.",
-          "Leaders' Safeguarding Youth training dates are tracked, with reminders before it expires.",
+          "Leaders' Safeguarding Youth training (renewed every year) and position training are tracked, with reminders before anything expires.",
           "Each campout page lists the pack's campout rules, including two-deep leadership and family-only tenting.",
           <>
             The Scouts First Helpline (<a className="font-semibold text-pine underline" href="tel:18447268871">1-844-726-8871</a>) is
@@ -55,13 +55,15 @@ export default function SafetyPage() {
         icon={Users}
         title="Who can see what"
         items={[
-          "No pack or family information is public. Everything past the sign-in page requires signing in, and search engines are told not to list the app.",
+          "No family information is public. The only public page is the pack's welcome page at pack361.org, which has general information about joining. Everything else requires signing in, and search engines are told not to list it.",
           "Families see only their own scouts' information and advancement.",
           "Den leaders see their own den; committee leaders see the pack for approvals and awards.",
           "Parents' phone numbers and emails aren't shown to other parents. The leader directory lists only leaders.",
           "Your calendar subscription link is private to you and contains pack events plus your scouts' den meetings.",
           "Volunteer sign-ups show other families only your first name and last initial.",
           "Pack photos are visible only to signed-in pack families. A leader approves every photo a parent uploads, and scouts whose families haven't said yes aren't shown.",
+          "Pack documents (forms, minutes, packing lists) are visible only to signed-in pack families, and some only to leaders or one den. Files open through links that expire after a minute.",
+          "Only the committee, Cubmaster and admins see what families owe and pay. Den leaders and other parents don't.",
         ]}
       />
 
@@ -69,8 +71,10 @@ export default function SafetyPage() {
         icon={Database}
         title="What we keep, and what we don't"
         items={[
-          "We keep: parent and leader names, emails and phone numbers; scout names, dens and BSA member IDs; advancement copied from Scoutbook; den meeting attendance; leader training dates; volunteer sign-ups; whether each person's medical form is on file and when it expires; dues status; poll answers; event sign-ups and pack store orders from Givebutter; and pack photos.",
-          "We don't keep: birthdates, home addresses, medical forms or any medical information, payment card numbers (Givebutter handles payments) or passwords.",
+          "We keep: parent and leader names, emails and phone numbers; scout names, dens and BSA member IDs; advancement copied from Scoutbook; den meeting attendance; leader training dates; volunteer sign-ups; whether each person's medical form is on file and when it expires; what each family owes the pack and what they've paid (amounts, dates, and whether by PayPal, check or cash); poll answers; event sign-ups and pack store orders from Givebutter; and pack photos.",
+          "We don't keep: birthdates, home addresses, medical forms or any medical information, payment card or bank details (PayPal and Givebutter handle payments) or passwords.",
+          "The documents library is for pack papers only. Leaders are asked never to upload medical forms, insurance cards or anything with personal details about scouts or families.",
+          "Adults can add their own BSA member ID so leaders can match training records from my.scouting.org. Training reports are read on the leader's device: only course dates and member IDs for adults on the roster are saved, and the file itself is never uploaded or stored.",
           "Photos are resized and their location (GPS) data removed before they're stored, and they're deleted automatically after a set time.",
           "When a family leaves the pack, their access is turned off.",
         ]}
@@ -82,7 +86,7 @@ export default function SafetyPage() {
         items={[
           "No passwords to steal: you sign in with a one-time link or code sent to the email the pack has on file.",
           "Every connection is encrypted (HTTPS), and the database host encrypts stored data.",
-          "Access rules are enforced inside the database itself, not just on the screen, and are checked by more than 200 automated tests.",
+          "Access rules are enforced inside the database itself, not just on the screen, and are checked by more than 500 automated tests.",
           "Only designated pack admins can import roster or advancement data or change anyone's role.",
         ]}
       />
@@ -94,6 +98,7 @@ export default function SafetyPage() {
           "Phone alerts are off unless you turn them on, and you can turn them off at any time.",
           "You decide whether your scout may appear in pack photos, and anyone can request that a photo be removed. It's hidden right away, and a leader removes it.",
           "Campout pages saved for use without signal stay on your phone only, and are deleted when you sign out.",
+          "Files you save on your phone (Saved on this phone, on My family) stay on your phone. They're never uploaded and the pack can't see them. Signing out doesn't delete them, so remove them on that page before handing your phone to someone else.",
           "You can update your phone number and the name you go by on the My family page.",
           <>
             To correct or remove your family&apos;s information, email{" "}
