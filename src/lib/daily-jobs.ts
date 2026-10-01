@@ -175,14 +175,22 @@ export async function reconcilePayments(db: SupabaseClient) {
   const now = Date.now();
   const { data, error } = await db
     .from("payments")
-    .select("id, amount_cents, provider_order_id, charge_ids, created_at")
+    .select("id, amount_cents, provider_order_id, charge_ids, charge_cents, created_at")
     .eq("status", "created")
     .lt("created_at", new Date(now - 15 * 60000).toISOString())
     .order("created_at")
     .limit(40);
   if (error) throw new Error(error.message);
-  const rows = (data ?? []) as { id: string; amount_cents: number; provider_order_id: string; charge_ids: string[]; created_at: string }[];
+  const rows = (data ?? []) as {
+    id: string;
+    amount_cents: number;
+    provider_order_id: string;
+    charge_ids: string[];
+    charge_cents: number[];
+    created_at: string;
+  }[];
   const out = { checked: rows.length, recorded: 0, canceled: 0, waiting: 0, errors: [] as string[] };
+  // Closing a checkout lets go of its hold on the charges (database trigger).
   const close = async (id: string, why: string) => {
     await db.from("payments").update({ status: "canceled", error: why }).eq("id", id).eq("status", "created");
     out.canceled++;
@@ -202,7 +210,7 @@ export async function reconcilePayments(db: SupabaseClient) {
         throw e;
       }
       if (order.status === "APPROVED") {
-        if (!(await chargesStillOpen(db, p.charge_ids))) {
+        if (!(await chargesStillOpen(db, p))) {
           await close(p.id, "Items changed before the payment was taken; nothing was charged.");
           continue;
         }

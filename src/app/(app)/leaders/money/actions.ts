@@ -41,7 +41,7 @@ const ids = (form: FormData) =>
     .flatMap((v) => String(v).split(","))
     .filter((v) => UUID.test(v));
 
-/** One charge's buttons: mark paid (cash/check/other), confirm, waive, cancel, reopen. */
+/** One charge's buttons: set the amount, mark paid (cash/check/other), confirm, waive, cancel, reopen. */
 export async function chargeAction(form: FormData) {
   await requireCommittee();
   const list = ids(form);
@@ -49,6 +49,24 @@ export async function chargeAction(form: FormData) {
   const how = String(form.get("how") ?? "");
   if (!list.length) back(form, "Nothing picked.");
   const supabase = await createClient();
+  if (act === "amount") {
+    const cents = parseDollars(String(form.get("amount") ?? ""));
+    if (cents === null) back(form, "Write the amount in dollars, like 60 or 12.50 (up to $1,000).");
+    const { data, error } = await supabase
+      .from("charges")
+      .update({ amount_cents: cents })
+      .in("id", list)
+      .in("status", ["open", "reported"])
+      .select("id");
+    if (error) back(form, "Couldn't save that. Try again.");
+    refresh();
+    back(form, data?.length ? "Amount saved." : "Nothing changed (only unpaid items can change).");
+  }
+  if (act === "paid" || act === "confirm") {
+    // A $0 charge (like dues moved from the old list) needs its amount first: don't record $0.
+    const { data: zero } = await supabase.from("charges").select("id").in("id", list).eq("amount_cents", 0).limit(1);
+    if (zero?.length) back(form, "Set the amount first (or waive it if there's nothing to pay).");
+  }
   let action: string;
   let p_how: string | null = null;
   let done: string;

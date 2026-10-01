@@ -8,6 +8,9 @@
 --                 numeric settings (0 until leaders fill them in).
 --   4. events     optional cost per family / scout / adult. Answering "yes" to an RSVP keeps the
 --                 family's event charge up to date; "no" cancels it. Paid charges never change.
+-- While a family is in a PayPal checkout, its charges are "claimed" by that checkout
+-- (pending_payment_id), so a second phone can't pay for the same things and the RSVP can't change
+-- the amount mid-checkout. A claim lapses after 30 minutes.
 -- No card or bank details are ever stored: PayPal handles those. We keep amounts, status and
 -- PayPal's order and capture ids (to match the pack's PayPal records).
 
@@ -35,6 +38,8 @@ create table public.charges (
     paypal_order_id    text,
     paypal_capture_id  text,
     remitted_on        date,                                      -- national/council money sent on to the council
+    pending_payment_id uuid,                                      -- PayPal checkout in progress (payments.id)
+    pending_since      timestamptz,
     created_by         uuid references public.adults(id) on delete set null,
     created_at         timestamptz not null default now(),
     updated_at         timestamptz not null default now(),
@@ -48,13 +53,18 @@ create table public.charges (
 create trigger charges_stamp before insert or update on public.charges
     for each row execute function private.stamp_updated();
 
--- Bulk adds can't charge anyone twice (canceled charges don't count).
-create unique index charges_dues_key on public.charges (season, coalesce(family_id, adult_id))
+-- Bulk adds can't charge anyone twice (canceled charges don't count). Dues and event fees can be
+-- per family (no person: one per family) or per person (one per scout or adult), so siblings each
+-- get their own per-scout fee. The RSVP's event charge is the per-family one.
+create unique index charges_dues_key on public.charges
+    (season, coalesce(family_id, adult_id), coalesce(scout_id, adult_id, '00000000-0000-0000-0000-000000000000'::uuid))
     where kind = 'dues' and status <> 'canceled';
 create unique index charges_registration_key on public.charges (kind, season, coalesce(scout_id, adult_id))
     where kind in ('national', 'council') and status <> 'canceled';
-create unique index charges_event_key on public.charges (event_id, coalesce(family_id, adult_id))
+create unique index charges_event_key on public.charges
+    (event_id, coalesce(family_id, adult_id), coalesce(scout_id, adult_id, '00000000-0000-0000-0000-000000000000'::uuid))
     where kind = 'event' and status <> 'canceled';
+create index charges_pending_idx on public.charges (pending_payment_id) where pending_payment_id is not null;
 
 create index charges_family_idx on public.charges (family_id);
 create index charges_adult_idx on public.charges (adult_id);
@@ -70,6 +80,14 @@ returns boolean language sql stable security definer set search_path = '' as $$
 $$;
 revoke execute on function private.owns_charge(uuid, uuid) from public, anon;
 grant execute on function private.owns_charge(uuid, uuid) to authenticated;
+
+-- Is a checkout still holding this charge? (Claims lapse after 30 minutes.)
+create or replace function private.claim_live(p_pending_payment_id uuid, p_pending_since timestamptz)
+returns boolean language sql stable set search_path = '' as $$
+    select p_pending_payment_id is not null and p_pending_since > now() - interval '30 minutes'
+$$;
+revoke execute on function private.claim_live(uuid, timestamptz) from public, anon;
+grant execute on function private.claim_live(uuid, timestamptz) to authenticated;
 
 -- -----------------------------------------------------------------------------
 -- 2. PayPal checkouts
@@ -94,11 +112,89 @@ create index payments_family_idx on public.payments (family_id);
 create index payments_adult_idx on public.payments (adult_id);
 create index payments_open_idx on public.payments (created_at) where status = 'created';
 
+create or replace function private.payment_closed()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+    perform private.release_claims(new.id);
+    return new;
+end;
+$$;
+revoke execute on function private.payment_closed() from public, anon, authenticated;
+create trigger payments_closed after update of status on public.payments
+    for each row when (new.status in ('canceled', 'failed') and old.status is distinct from new.status)
+    execute function private.payment_closed();
+
+-- Let go of a checkout's claim on its charges, and bring RSVP event charges back in line (the RSVP
+-- may have changed while the checkout held them).
+create or replace function private.release_claims(p_payment_id uuid)
+returns void language plpgsql security definer set search_path = '' as $$
+declare r record;
+begin
+    for r in
+        update public.charges set pending_payment_id = null, pending_since = null
+         where pending_payment_id = p_payment_id
+        returning id, kind, event_id, family_id, adult_id, scout_id, status
+    loop
+        if r.kind = 'event' and r.event_id is not null and r.status = 'open' and r.scout_id is null
+           and (r.family_id is null or r.adult_id is null) then
+            perform private.sync_event_charge(r.event_id, r.family_id, case when r.family_id is null then r.adult_id end);
+        end if;
+    end loop;
+end;
+$$;
+revoke execute on function private.release_claims(uuid) from public, anon, authenticated;
+
+-- Start a checkout: claim these open charges for payment p_payment_id, all or nothing, and return
+-- their amounts (the server charges exactly these). Refused if another checkout is holding any of
+-- them (another phone or tab), so the same things can't be paid twice.
+create or replace function public.claim_charges(p_payment_id uuid, p_ids uuid[])
+returns table (charge_id uuid, amount_cents int)
+language plpgsql security definer set search_path = '' as $$
+declare
+    wanted int;
+    ok int;
+begin
+    if private.current_adult_id() is null then raise exception 'Not on the pack roster' using errcode = '42501'; end if;
+    select count(distinct x) into wanted from unnest(p_ids) x;
+    if p_payment_id is null or wanted = 0 or wanted > 50 then raise exception 'Pick what to pay for' using errcode = '22023'; end if;
+    perform 1 from public.charges c where c.id = any (p_ids) order by c.id for update;
+    if exists (select 1 from public.charges c
+                where c.id = any (p_ids) and c.pending_payment_id <> p_payment_id
+                  and private.claim_live(c.pending_payment_id, c.pending_since)) then
+        raise exception 'A payment for these is already in progress' using errcode = '55006';
+    end if;
+    select count(*) into ok from public.charges c
+     where c.id = any (p_ids) and c.status = 'open' and c.amount_cents > 0 and private.owns_charge(c.family_id, c.adult_id);
+    if ok <> wanted then raise exception 'These items changed; refresh and try again' using errcode = '22023'; end if;
+    update public.charges c set pending_payment_id = p_payment_id, pending_since = now() where c.id = any (p_ids);
+    return query select c.id, c.amount_cents from public.charges c where c.id = any (p_ids);
+end;
+$$;
+revoke execute on function public.claim_charges(uuid, uuid[]) from public, anon;
+grant execute on function public.claim_charges(uuid, uuid[]) to authenticated;
+
+-- The checkout never started (PayPal didn't answer): let go of the family's claim.
+create or replace function public.release_claim(p_payment_id uuid)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+    if exists (select 1 from public.payments where id = p_payment_id and status in ('created', 'captured')) then return; end if;
+    if exists (select 1 from public.charges c
+                where c.pending_payment_id = p_payment_id and not private.owns_charge(c.family_id, c.adult_id)) then
+        return;
+    end if;
+    perform private.release_claims(p_payment_id);
+end;
+$$;
+revoke execute on function public.release_claim(uuid) from public, anon;
+grant execute on function public.release_claim(uuid) to authenticated;
+
 -- Record a PayPal capture: the payment becomes "captured" and its charges "paid", in one step.
 -- Only the server calls this (secret key), after PayPal said the capture is COMPLETED.
 -- Safe to call twice: the status change from "created" happens once, so a second call (or the
 -- daily check racing the family's own capture) changes nothing. A payment the family gave up on
--- ("canceled") is still recorded if the money did move.
+-- ("canceled") is still recorded if the money did move. A charge is marked paid only if this
+-- checkout still holds it and its amount is what the family saw at checkout; anything else is
+-- flagged for a leader instead.
 create or replace function public.record_paypal_capture(p_payment_id uuid, p_capture_id text, p_captured_cents int)
 returns text language plpgsql security definer set search_path = '' as $$
 declare
@@ -118,20 +214,24 @@ begin
            set error = format('PayPal captured %s cents but the checkout was for %s cents. Nothing was marked paid; check it in PayPal.',
                               coalesce(p_captured_cents::text, 'no'), p.amount_cents)
          where id = p.id;
+        perform private.release_claims(p.id);
         return 'mismatch';
     end if;
 
     for i in 1 .. cardinality(p.charge_ids) loop
         update public.charges
            set status = 'paid', paid_via = 'paypal', paid_at = now(), paid_amount_cents = p.charge_cents[i],
-               paypal_order_id = p.provider_order_id, paypal_capture_id = left(p_capture_id, 64)
-         where id = p.charge_ids[i] and status in ('open', 'reported');
+               paypal_order_id = p.provider_order_id, paypal_capture_id = left(p_capture_id, 64),
+               pending_payment_id = null, pending_since = null
+         where id = p.charge_ids[i] and status in ('open', 'reported')
+           and amount_cents = p.charge_cents[i] and pending_payment_id = p.id;
         get diagnostics n = row_count;
         if n = 0 then missed := missed + 1; end if;
     end loop;
+    perform private.release_claims(p.id);
     if missed > 0 then
         update public.payments
-           set error = format('%s of the items in this payment were already paid, waived or canceled. The family may need a refund.', missed)
+           set error = format('%s of the items in this payment were already paid, changed in amount, or taken by another checkout, so they were not marked paid. Check them; the family may need a refund.', missed)
          where id = p.id;
         return 'partial';
     end if;
@@ -152,7 +252,8 @@ begin
     if p_how not in ('cash', 'check', 'other') then raise exception 'Pick check, cash or other' using errcode = '22023'; end if;
     update public.charges c
        set status = 'reported', paid_via = p_how, report_note = left(nullif(trim(p_note), ''), 300)
-     where c.id = any (p_ids) and c.status = 'open' and private.owns_charge(c.family_id, c.adult_id);
+     where c.id = any (p_ids) and c.status = 'open' and private.owns_charge(c.family_id, c.adult_id)
+       and not private.claim_live(c.pending_payment_id, c.pending_since);
     get diagnostics n = row_count;
     return n;
 end;
@@ -164,7 +265,9 @@ grant execute on function public.report_paid(uuid[], text, text) to authenticate
 -- 4. Leaders (committee, Cubmaster, admins)
 -- -----------------------------------------------------------------------------
 -- Mark paid (cash, check or other), waive, cancel or reopen. Returns how many changed.
--- Online (PayPal) payments can't be reopened here: refund them in PayPal first.
+-- Online (PayPal) payments can't be reopened here: refund them in PayPal first. A $0 charge can't
+-- be marked paid (set its amount, or waive it). A leader's change ends any checkout's claim, so a
+-- PayPal capture racing it is flagged rather than recorded.
 create or replace function public.update_charges(p_ids uuid[], p_action text, p_how text default null, p_note text default null)
 returns int language plpgsql security definer set search_path = '' as $$
 declare n int;
@@ -177,17 +280,21 @@ begin
         update public.charges
            set status = 'paid', paid_via = coalesce(p_how, case when paid_via = 'paypal' then null else paid_via end, 'other'),
                paid_at = now(), paid_amount_cents = amount_cents,
-               note = coalesce(left(nullif(trim(p_note), ''), 300), note)
-         where id = any (p_ids) and status in ('open', 'reported');
+               note = coalesce(left(nullif(trim(p_note), ''), 300), note),
+               pending_payment_id = null, pending_since = null
+         where id = any (p_ids) and status in ('open', 'reported') and amount_cents > 0;
     elsif p_action = 'waive' then
-        update public.charges set status = 'waived', note = coalesce(left(nullif(trim(p_note), ''), 300), note)
+        update public.charges set status = 'waived', note = coalesce(left(nullif(trim(p_note), ''), 300), note),
+                                  pending_payment_id = null, pending_since = null
          where id = any (p_ids) and status in ('open', 'reported');
     elsif p_action = 'cancel' then
-        update public.charges set status = 'canceled', note = coalesce(left(nullif(trim(p_note), ''), 300), note)
+        update public.charges set status = 'canceled', note = coalesce(left(nullif(trim(p_note), ''), 300), note),
+                                  pending_payment_id = null, pending_since = null
          where id = any (p_ids) and status in ('open', 'reported', 'waived');
     elsif p_action = 'reopen' then
         update public.charges
-           set status = 'open', paid_via = null, paid_at = null, paid_amount_cents = null, report_note = null
+           set status = 'open', paid_via = null, paid_at = null, paid_amount_cents = null, report_note = null,
+               pending_payment_id = null, pending_since = null
          where id = any (p_ids) and status in ('reported', 'paid', 'waived', 'canceled')
            and not (status = 'paid' and paid_via = 'paypal');
     else
@@ -359,7 +466,10 @@ select d.family_id, 'dues', 'Pack dues ' || d.season, d.season,
        case d.status when 'paid' then 'paid' else 'reported' end,
        case when d.status = 'paid' then coalesce((d.paid_on + time '12:00') at time zone 'America/New_York', d.updated_at) end,
        case when d.status = 'paid' then (select value::int from public.pack_settings where key = 'dues_amount_cents') end,
-       left(d.note, 300), d.updated_by, d.updated_at
+       case when (select value::int from public.pack_settings where key = 'dues_amount_cents') = 0
+            then left(concat_ws(' ', 'Moved from the old dues list; check the amount.', d.note), 300)
+            else left(d.note, 300) end,
+       d.updated_by, d.updated_at
   from public.dues_payments d
 on conflict do nothing;
 
@@ -379,7 +489,9 @@ alter table public.events
 --            while it's still open or reported);
 --   no    -> an open charge is canceled;
 --   maybe -> nothing changes.
--- Paid and waived charges are never touched.
+-- Only the family's own RSVP charge (no scout or adult on it) is touched, and only while it's open:
+-- paid, waived and reported ones (the family says they paid) never change, and neither does one a
+-- checkout is holding (it catches up when the checkout ends).
 create or replace function private.sync_event_charge(p_event_id uuid, p_family_id uuid, p_adult_id uuid)
 returns void language plpgsql security definer set search_path = '' as $$
 declare
@@ -395,16 +507,19 @@ begin
     if p_family_id is not null then
         select * into r from public.event_rsvps where event_id = p_event_id and family_id = p_family_id;
         select * into c from public.charges
-         where kind = 'event' and event_id = p_event_id and status <> 'canceled' and family_id = p_family_id;
+         where kind = 'event' and event_id = p_event_id and status <> 'canceled' and family_id = p_family_id
+           and scout_id is null and adult_id is null;
     else
         select * into r from public.event_rsvps where event_id = p_event_id and family_id is null and adult_id = p_adult_id;
         select * into c from public.charges
-         where kind = 'event' and event_id = p_event_id and status <> 'canceled' and family_id is null and adult_id = p_adult_id;
+         where kind = 'event' and event_id = p_event_id and status <> 'canceled' and family_id is null and adult_id = p_adult_id
+           and scout_id is null;
     end if;
-    if c.id is not null and c.status not in ('open', 'reported') then return; end if;   -- paid or waived
+    if c.id is not null and c.status <> 'open' then return; end if;                       -- reported, paid or waived
+    if c.id is not null and private.claim_live(c.pending_payment_id, c.pending_since) then return; end if;   -- in checkout
 
     if not has_fee or r.id is null or r.status = 'no' then
-        if c.id is not null and c.status = 'open' then
+        if c.id is not null then
             update public.charges set status = 'canceled' where id = c.id;
         end if;
         return;
@@ -420,7 +535,7 @@ begin
                     coalesce(e.rsvp_by, (e.starts_at at time zone 'America/New_York')::date), private.current_adult_id())
             on conflict do nothing;
         end if;
-    elsif amt = 0 and c.status = 'open' then
+    elsif amt = 0 then
         update public.charges set status = 'canceled' where id = c.id;
     elsif c.amount_cents <> amt then
         update public.charges set amount_cents = amt where id = c.id;
@@ -469,7 +584,8 @@ $$;
 revoke execute on function public.set_rsvp(uuid, text, int, int, text) from public, anon;
 grant execute on function public.set_rsvp(uuid, text, int, int, text) to authenticated;
 
--- Leaders changed an event's cost: bring every RSVP's charge up to date (paid ones stay as they are).
+-- Leaders changed an event's cost: bring every RSVP's open charge up to date (paid, reported and
+-- in-checkout ones stay as they are).
 create or replace function public.refresh_event_charges(p_event_id uuid)
 returns void language plpgsql security definer set search_path = '' as $$
 declare r record;

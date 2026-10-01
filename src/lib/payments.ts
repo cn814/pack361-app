@@ -76,9 +76,20 @@ export async function settleOrder(db: SupabaseClient, payment: PaymentRef, order
   return data as SettleResult;
 }
 
-/** Are all these charges still open? (A leader may have marked one paid since checkout began.) */
-export async function chargesStillOpen(db: SupabaseClient, ids: string[]): Promise<boolean> {
-  const { data, error } = await db.from("charges").select("id, status").in("id", ids);
+/**
+ * Is this checkout still good to capture? Every charge must still be open, still held by this
+ * checkout, and still cost what the family saw when they started (a leader may have marked one
+ * paid, or the amount changed since).
+ */
+export async function chargesStillOpen(db: SupabaseClient, payment: { id: string; charge_ids: string[]; charge_cents: number[] }): Promise<boolean> {
+  const { data, error } = await db.from("charges").select("id, status, amount_cents, pending_payment_id").in("id", payment.charge_ids);
   if (error) throw new Error(error.message);
-  return (data ?? []).length === ids.length && (data ?? []).every((c) => c.status === "open");
+  const rows = data ?? [];
+  return (
+    rows.length === payment.charge_ids.length &&
+    payment.charge_ids.every((id, i) => {
+      const c = rows.find((r) => r.id === id);
+      return c && c.status === "open" && c.amount_cents === payment.charge_cents[i] && c.pending_payment_id === payment.id;
+    })
+  );
 }
