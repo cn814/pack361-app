@@ -12,7 +12,7 @@ Drop the files in `pack361-app/imports/` (that folder is git-ignored; roster fil
 |---|---|---|---|
 | 1 | **Roster CSV** | Scoutbook Plus (advancements.scouting.org) → **Reports** → **+ New Report** → **New Custom Roster Report** → select Pack 361 → tick all Scout *and* Adult/Parent fields (names, relationship, email, phone, den, position, member ID) → **Export CSV** | `families`, `adults`, `scouts`, `dens`, `den_leaders` |
 | 2 | **Roster Excel** (cross-check) | TroopWebHostCS → **Membership** → **Export Membership Data** → **Export Roster to Excel** | Fills gaps. Since July 2026, Scoutbook Plus parent data comes from Akela and can be incomplete. |
-| 3 | **YPT report CSV** | my.scouting.org → Menu → Pack 361 → **YPT Reports** (Safeguarding Youth Training Aging report) → **Export** *(Key 3 only: CC, COR or Cubmaster may need to run it)* | `adults.ypt_expires_on` |
+| 3 | **Training report** (CSV or .xlsx) | my.scouting.org → Menu → My Dashboard → **Training Manager** (unit training report), or Pack 361 → **YPT Reports** (Safeguarding Youth Training Aging report) → **Export** *(Key 3 only: CC, COR or Cubmaster may need to run it)* | `adult_trainings`, through Leader training → **Import from my.scouting** (read in the browser; the file isn't uploaded) |
 
 ## Nice to have
 

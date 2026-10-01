@@ -50,3 +50,4 @@ __pycache__/
 *.dump
 *.dump.gpg
 pack361-backups/
+.claude/

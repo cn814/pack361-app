@@ -9,6 +9,7 @@ import { APP_URL, emailConfigured, sendEmails, type Email } from "@/lib/email";
 import type { SettingKey } from "@/lib/settings";
 import { syncSummary, syncTwh, twhConfigured } from "@/lib/twh";
 import { RANKS } from "@/lib/advancement";
+import { MEMBER_ID } from "@/lib/training";
 import type { AppRole, DenRank } from "@/lib/types";
 
 const ROLES: AppRole[] = ["parent", "den_leader", "committee", "cubmaster", "admin"];
@@ -114,8 +115,16 @@ export async function saveAdult(_prev: ActionResult, form: FormData): Promise<Ac
   };
   if (!row.first_name || !row.last_name) return { error: "Add a first and last name." };
   if (!EMAIL.test(email)) return { error: "That email doesn't look right." };
+  if (row.bsa_member_id && !MEMBER_ID.test(row.bsa_member_id)) return { error: "A BSA member ID is digits only, up to 12." };
 
   const supabase = await createClient();
+  if (row.bsa_member_id) {
+    // Training imports match adults by member ID, so keep it to one person.
+    let dup = supabase.from("adults").select("id", { count: "exact", head: true }).eq("bsa_member_id", row.bsa_member_id);
+    if (id) dup = dup.neq("id", id);
+    const { count } = await dup;
+    if (count) return { error: "Another adult already has that BSA member ID." };
+  }
   if (id) {
     if (!UUID.test(id)) return { error: "Unknown person." };
     const active = bool(form, "is_active");

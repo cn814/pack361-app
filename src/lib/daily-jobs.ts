@@ -114,11 +114,12 @@ export async function remindTraining(db: SupabaseClient) {
     const threshold = [...REMINDER_DAYS].sort((a, b) => a - b).find((d) => left <= d);
     if (threshold === undefined || (r.reminded_days !== null && threshold >= r.reminded_days)) continue;
     const course = COURSE_BY_KEY[r.course]?.label ?? r.course;
+    const outside = COURSE_BY_KEY[r.course]?.where === "elsewhere"; // CPR / First Aid isn't on my.scouting
     const when = left <= 0 ? "today" : `in ${left} day${left === 1 ? "" : "s"}`;
     const key = { adult_id: r.adult_id, course: r.course, threshold };
     const res = await sendPushTo([r.adult_id], {
       title: `${course} expires ${when}`,
-      body: "Renew it at my.scouting.org, then update the date in the app.",
+      body: outside ? "Renew it, then update the date in the app." : "Renew it at my.scouting.org, then update the date in the app.",
       url: "/family",
       tag: `training-${r.course}`,
     });
@@ -131,7 +132,9 @@ export async function remindTraining(db: SupabaseClient) {
         paragraphs: [
           `Hi ${r.adult.preferred_name || r.adult.first_name},`,
           `Your ${course} training expires ${when} (${new Date(r.expires_on + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}). Leaders need current training to stay registered and to lead outings.`,
-          "Take it at my.scouting.org (My Dashboard → My Training). When you finish, add the new date under My training in the app.",
+          outside
+            ? "When you renew it, add the new date under My training in the app."
+            : "Take it at my.scouting.org (My Dashboard → My Training). When you finish, add the new date under My training in the app.",
           `${APP_URL}/family`,
         ],
       },

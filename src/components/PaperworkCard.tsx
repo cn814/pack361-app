@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { FileText } from "lucide-react";
 import ActionForm from "@/components/ActionForm";
+import SavedFileChip from "@/components/SavedFileChip";
 import { reportHealthForm } from "@/app/(app)/paperwork-actions";
 import { AHMR_URL, FORM_STATE_LABEL, FORM_STATE_STYLE, formState, type Person } from "@/lib/paperwork";
 import { fmtShortDate } from "@/lib/advancement";
 
 /** My family: medical forms for each person. (Dues and fees are on the Payments card.) */
-export default function PaperworkCard({ people }: { people: Person[] }) {
+export default function PaperworkCard({ people, ownerUserKey }: { people: Person[]; ownerUserKey: string }) {
   return (
     <section id="paperwork" className="card scroll-mt-20 space-y-3">
       <h2 className="section-title flex items-center gap-1.5">
@@ -20,7 +21,9 @@ export default function PaperworkCard({ people }: { people: Person[] }) {
             Download the form
           </a>
           , fill it out, and give the paper copy to a leader. Don&apos;t upload it here: the app never stores medical
-          information. <Link href="/guide/medical-forms" className="font-semibold text-pine underline">More about medical forms</Link>
+          information. You can keep your own copy{" "}
+          <Link href="/family/files" className="font-semibold text-pine underline">on this phone</Link>.{" "}
+          <Link href="/guide/medical-forms" className="font-semibold text-pine underline">More about medical forms</Link>
         </p>
       </div>
       <ul className="divide-y divide-line">
@@ -39,6 +42,7 @@ export default function PaperworkCard({ people }: { people: Person[] }) {
                 </span>
                 <span className={`badge shrink-0 normal-case tracking-normal ${FORM_STATE_STYLE[state]}`}>{FORM_STATE_LABEL[state]}</span>
               </div>
+              <SavedFileChip person={p.name} ownerUserKey={ownerUserKey} />
               {!done && (
                 <details className="mt-1">
                   <summary className="cursor-pointer text-xs font-bold text-pine">I turned it in</summary>
