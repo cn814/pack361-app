@@ -187,6 +187,9 @@ export default async function AdminPage() {
           <Field label="Keep photos for (months)" hint="Photos older than this are deleted automatically.">
             <input className="input" type="number" min={1} max={120} name="photo_keep_months" defaultValue={settings.photo_keep_months} />
           </Field>
+          <Field label="The pack's public page" hint="The link Invite a family shares. Change it to https://pack361.org once that address points to the app.">
+            <input className="input" type="url" name="public_site_url" defaultValue={settings.public_site_url} />
+          </Field>
           <Field
             label="Welcome emails per day"
             hint="The free email plan allows 100 emails a day in total, shared by welcome emails, sign-in codes and up to 40 nightly reminder emails (most reminders go to phones instead). Each family you welcome then signs in, which is another email, so 40 welcomes a day can crowd out sign-in codes on a heavy reminder day. 30 is safer."

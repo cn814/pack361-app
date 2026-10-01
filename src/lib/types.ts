@@ -61,6 +61,8 @@ export interface PackEvent {
   sections?: EventSection[];
   /** Camping nights a leader set; null = worked out from the dates (see lib/attendance). */
   camping_nights?: number | null;
+  public_on_join?: boolean;
+  public_blurb?: string | null;
   /** When a leader last saved who was there. */
   attendance_taken_at?: string | null;
 }

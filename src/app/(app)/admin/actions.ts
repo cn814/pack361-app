@@ -244,6 +244,11 @@ export async function saveSettings(_prev: ActionResult, form: FormData): Promise
   const limit = Number(str(form, "email_daily_limit"));
   if (!Number.isInteger(limit) || limit < 0 || limit > 1000) return { error: "Daily email limit should be 0 to 1000." };
   rows.push({ key: "email_daily_limit", value: String(limit) });
+  const site = str(form, "public_site_url", 200);
+  if (site) {
+    if (!/^https:\/\/[^\s/]+\.[^\s]+$/i.test(site)) return { error: "The public page link should start with https://" };
+    rows.push({ key: "public_site_url", value: site });
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.from("pack_settings").upsert(rows.map((r) => ({ ...r, updated_at: new Date().toISOString() })));

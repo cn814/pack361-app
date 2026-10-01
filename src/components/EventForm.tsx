@@ -50,6 +50,8 @@ export interface EventFormValues {
   fee_scout_cents?: number | null;
   fee_adult_cents?: number | null;
   camping_nights?: number | null;
+  public_on_join?: boolean;
+  public_blurb?: string | null;
   from_twh?: boolean;
   from_council?: boolean;
 }
@@ -61,6 +63,7 @@ export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens:
   const [den, setDen] = useState(v.den_id ?? "");
   const [cost, setCost] = useState(v.fee_family_cents != null || v.fee_scout_cents != null || v.fee_adult_cents != null);
   const [category, setCategory] = useState(v.category ?? "Pack");
+  const [onJoin, setOnJoin] = useState(Boolean(v.public_on_join));
   const [startDate, setStartDate] = useState(v.start_date ?? "");
   const [endDate, setEndDate] = useState(v.end_date ?? "");
   const autoNights = nightsBetween(startDate, endDate || startDate);
@@ -172,6 +175,19 @@ export default function EventForm({ v = {}, dens }: { v?: EventFormValues; dens:
         {rsvp && (
           <Field label="RSVP by (optional)" hint="Families can answer through the end of this day.">
             <input className="input" type="date" name="rsvp_by" defaultValue={v.rsvp_by ?? ""} />
+          </Field>
+        )}
+      </fieldset>
+
+      <fieldset className="space-y-2 rounded-xl border border-line p-3">
+        <legend className="px-1 text-xs font-bold text-navy">Families thinking about joining</legend>
+        <label className="flex items-center gap-2 text-sm text-navy">
+          <input type="checkbox" name="public_on_join" checked={onJoin} onChange={(e) => setOnJoin(e.target.checked)} className="h-4 w-4 accent-pine" />
+          Show on the public join page as an event to come and see
+        </label>
+        {onJoin && (
+          <Field label="A line for visiting families (optional)" hint="Anyone can see this. The join page shows the name, date, place name and this line; never the address or details.">
+            <textarea className="input min-h-16" name="public_blurb" maxLength={300} defaultValue={v.public_blurb ?? ""} placeholder="Come watch the race and meet the pack. Kids can try the track afterward." />
           </Field>
         )}
       </fieldset>

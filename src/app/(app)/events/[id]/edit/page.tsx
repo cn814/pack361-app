@@ -49,6 +49,8 @@ export default async function EditEventPage({ params }: PageProps<"/events/[id]/
             fee_scout_cents: e.fee_scout_cents,
             fee_adult_cents: e.fee_adult_cents,
             camping_nights: e.camping_nights ?? null,
+            public_on_join: Boolean(e.public_on_join),
+            public_blurb: e.public_blurb ?? null,
             from_twh: e.source === "troopwebhost",
             from_council: e.source === "council",
           }}

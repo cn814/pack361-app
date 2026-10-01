@@ -111,6 +111,8 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
     rsvp_enabled: form.get("rsvp_enabled") === "on",
     rsvp_by: rsvpBy || null,
     camping_nights: campingNights,
+    public_on_join: form.get("public_on_join") === "on",
+    public_blurb: form.get("public_on_join") === "on" ? text("public_blurb", 300) : null,
     ...fees,
   };
   const supabase = await createClient();

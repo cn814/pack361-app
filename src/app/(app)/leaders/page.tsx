@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import FeedbackForm from "@/components/FeedbackForm";
-import { BookOpen, ClipboardCheck, FileText, FolderOpen, HandCoins, Landmark, Mail, Phone, Receipt, Settings, ShieldAlert, ShieldCheck, Vote } from "lucide-react";
+import { BookOpen, ClipboardCheck, FileText, FolderOpen, HandCoins, Landmark, Mail, Phone, Receipt, Settings, ShieldAlert, ShieldCheck, UserPlus, Vote } from "lucide-react";
 import { countWaitingRequests } from "@/lib/finance-data";
 import { getLeaders, isCommittee, isLeader, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
@@ -57,9 +57,14 @@ export default async function LeadersPage() {
           )}
         </div>
       )}
-      <Link href="/reimburse" className="btn-ghost py-2">
-        <Receipt className="h-4 w-4" aria-hidden /> Get paid back for pack purchases
-      </Link>
+      <div className="grid grid-cols-2 gap-2">
+        <Link href="/recruit" className="btn-ghost py-2">
+          <UserPlus className="h-4 w-4" aria-hidden /> Invite a family
+        </Link>
+        <Link href="/reimburse" className="btn-ghost py-2">
+          <Receipt className="h-4 w-4" aria-hidden /> Get paid back
+        </Link>
+      </div>
       <ul className="space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0">
         {leaders.map((l) => (
           <li key={l.adult_id} className="card flex items-center justify-between gap-3 py-3">

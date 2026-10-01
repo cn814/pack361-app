@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, Compass, Mail, Tent, Users } from "lucide-react";
+import { CalendarDays, ChevronRight, Compass, Mail, MapPin, Tent, Users } from "lucide-react";
+import { getJoinEvents, joinEventWhen } from "@/lib/recruiting";
 import GuideBody from "@/components/GuideBody";
 import { getPublicPage, getPublicPages } from "@/lib/guide";
 import JoinShell from "./JoinShell";
@@ -46,7 +47,7 @@ const PILLARS = [
 ];
 
 export default async function JoinPage() {
-  const [page, others] = await Promise.all([getPublicPage("join"), getPublicPages()]);
+  const [page, others, events] = await Promise.all([getPublicPage("join"), getPublicPages(), getJoinEvents()]);
   const more = others.filter((p) => p.slug !== "join");
   return (
     <JoinShell>
@@ -87,6 +88,34 @@ export default async function JoinPage() {
           </div>
         ))}
       </section>
+
+      {events.length > 0 && (
+        <section className="card space-y-3 sm:p-8">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-sage">Come see us</p>
+          <h2 className="text-2xl font-extrabold tracking-tight text-pine-950">Big events coming up</h2>
+          <p className="text-sm text-ink">
+            Families thinking about joining are welcome at these. Email{" "}
+            <a href="mailto:info@pack361.org" className="font-semibold text-pine underline">info@pack361.org</a> and we&apos;ll
+            send you the details.
+          </p>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {events.map((e) => (
+              <li key={`${e.title}-${e.starts_at}`} className="rounded-2xl border border-line bg-surface-low p-4">
+                <p className="font-extrabold text-pine-950">{e.title}</p>
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-ink">
+                  <CalendarDays className="h-4 w-4 shrink-0 text-pine" aria-hidden /> {joinEventWhen(e)}
+                </p>
+                {e.location_name && (
+                  <p className="flex items-center gap-1.5 text-sm text-ink">
+                    <MapPin className="h-4 w-4 shrink-0 text-pine" aria-hidden /> {e.location_name}
+                  </p>
+                )}
+                {e.public_blurb && <p className="mt-2 text-sm text-muted">{e.public_blurb}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {STRIP && (
         // eslint-disable-next-line @next/next/no-img-element

@@ -18,6 +18,7 @@ import {
   Sailboat,
   Tent,
   Images,
+  UserPlus,
   Users,
   type LucideIcon,
   FolderOpen,
@@ -143,6 +144,7 @@ export default function BottomNav({
             { href: "/documents", label: "Documents", icon: FolderOpen, count: 0 },
             { href: "/pay", label: "Pay the pack", icon: HandCoins, count: 0 },
             { href: "/polls", label: "Polls", icon: Vote, count: 0 },
+            { href: "/recruit", label: "Invite a family", icon: UserPlus, count: 0 },
           ] as const
         ).map(({ href, label, icon: Icon, count }) => {
           const on = pending ? pending === href : path.startsWith(href);
