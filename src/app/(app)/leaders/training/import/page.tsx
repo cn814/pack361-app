@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import BackLink from "@/components/BackLink";
 import { MyScoutingLink } from "@/components/TrainingStatus";
-import { requireMember } from "@/lib/data";
-import { isAdmin } from "@/lib/advancement-data";
+import { isCommittee, requireMember } from "@/lib/data";
 import { getImportRoster } from "@/lib/training-data";
 import { today } from "@/lib/training";
 import ImportTraining from "./ImportTraining";
@@ -12,8 +11,8 @@ export const metadata: Metadata = { title: "Import training" };
 
 export default async function ImportTrainingPage() {
   const me = await requireMember();
-  // Same people who can edit other leaders' training dates.
-  if (!isAdmin(me)) redirect("/leaders/training");
+  // Pack leadership (the Committee Chair usually does it), the Cubmaster and admins.
+  if (!isCommittee(me)) redirect("/leaders/training");
   const roster = await getImportRoster();
 
   return (

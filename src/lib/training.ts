@@ -299,3 +299,26 @@ export function trainedStatus(positions: PositionKey[], rows: TrainingRow[]): Tr
 export function positionLabels(positions: PositionKey[]): string {
   return positions.map((p) => POSITION_BY_KEY[p].label).join(", ");
 }
+
+// ---------------------------------------------------------------------------
+// Keeping everyone's training current: a monthly my.scouting import
+// ---------------------------------------------------------------------------
+
+/** How often the pack's training should be refreshed from my.scouting. */
+export const TRAINING_IMPORT_DAYS = 30;
+
+/** Is the training import due? (Never run, or more than TRAINING_IMPORT_DAYS ago.) */
+export function trainingImportDue(lastImport: string | null | undefined, now = Date.now()): boolean {
+  const at = lastImport ? Date.parse(lastImport) : NaN;
+  return Number.isNaN(at) || now - at > TRAINING_IMPORT_DAYS * 86400000;
+}
+
+/**
+ * Who gets the "update everyone's training" reminder: pack leadership whose position is the
+ * Committee Chair or a training role; if nobody holds one, the admins and Cubmaster.
+ */
+export function trainingKeeperIds(people: { id: string; role: string; position_title: string | null }[]): string[] {
+  const leadership = people.filter((p) => p.role === "committee" || p.role === "cubmaster" || p.role === "admin");
+  const titled = leadership.filter((p) => /committee chair|training/i.test(p.position_title ?? ""));
+  return (titled.length ? titled : leadership.filter((p) => p.role !== "committee")).map((p) => p.id);
+}

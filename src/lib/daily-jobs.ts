@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendPushTo } from "./push";
 import { APP_URL, emailConfigured, sendEmails, type Email } from "./email";
-import { COURSE_BY_KEY, REMINDER_DAYS, daysLeft, type CourseKey } from "./training";
+import { COURSE_BY_KEY, REMINDER_DAYS, TRAINING_IMPORT_DAYS, daysLeft, trainingImportDue, trainingKeeperIds, type CourseKey } from "./training";
 import { fmtRange } from "./format";
 import { eventPath } from "./featured";
 import { PHOTO_BUCKET } from "./photos";
@@ -399,4 +399,60 @@ export async function reconcilePayments(db: SupabaseClient) {
     }
   }
   return out;
+}
+
+/**
+ * Once a month, when the pack's training hasn't been imported from my.scouting for a month, email
+ * the Committee Chair (or whoever keeps training; see trainingKeeperIds) a reminder to do it.
+ * A phone alert and an email (it's monthly, so both); at most one reminder every 30 days.
+ */
+export async function remindTrainingImport(db: SupabaseClient, budget: EmailBudget = emailBudget()) {
+  const { data: rows } = await db.from("pack_settings").select("key, value").in("key", ["training_last_import", "training_import_reminded"]);
+  const get = (k: string) => (rows ?? []).find((r) => r.key === k)?.value as string | undefined;
+  const last = get("training_last_import");
+  if (!trainingImportDue(last)) return { due: false };
+  if (!trainingImportDue(get("training_import_reminded"))) return { due: true, reminded: "recently" };
+
+  const { data, error } = await db
+    .from("adults")
+    .select("id, first_name, preferred_name, email, role, position_title")
+    .eq("is_active", true)
+    .in("role", ["committee", "cubmaster", "admin"]);
+  if (error) throw new Error(error.message);
+  const people = (data ?? []) as { id: string; first_name: string; preferred_name: string | null; email: string; role: string; position_title: string | null }[];
+  const keepers = new Set(trainingKeeperIds(people));
+  const to = people.filter((p) => keepers.has(p.id));
+  if (!to.length) return { due: true, sent: 0 };
+
+  const ago = last ? `It was last updated ${Math.floor((Date.now() - Date.parse(last)) / 86400000)} days ago.` : "It hasn't been imported yet.";
+  const push = await sendPushTo(to.map((p) => p.id), {
+    title: "Update everyone's training",
+    body: "Upload this month's my.scouting training report (about 5 minutes).",
+    url: "/leaders/training/import",
+    tag: "training-import",
+  });
+  let emailed = 0;
+  {
+    const mail = await sendSome(
+      to.map((p) => ({
+        to: p.email,
+        subject: "Time to update everyone's training in the Pack 361 app",
+        paragraphs: [
+          `Hi ${p.preferred_name || p.first_name},`,
+          `${ago} Once a month, upload the training report from my.scouting so every leader's training (Safeguarding Youth, position training, Hazardous Weather) stays current in the app and the right people get renewal reminders.`,
+          "On a computer: sign in at my.scouting.org, open Training Manager, run the leader training report for Pack 361, export it as CSV or Excel, then upload it in the app (Leaders → Training → Import from my.scouting). About 5 minutes.",
+          `${APP_URL}/leaders/training/import`,
+        ],
+      })),
+      budget,
+    );
+    emailed = mail.sent;
+    if (mail.error) return { due: true, errors: [mail.error] };
+  }
+  if (push.sent || emailed) {
+    await db
+      .from("pack_settings")
+      .upsert({ key: "training_import_reminded", value: new Date().toISOString(), updated_at: new Date().toISOString() });
+  }
+  return { due: true, pushed: push.sent, emailed, every: TRAINING_IMPORT_DAYS };
 }

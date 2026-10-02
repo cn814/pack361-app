@@ -5,7 +5,9 @@ import { CircleAlert, CircleCheck, FileUp, ShieldCheck } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import TrainingEditor, { STATE_STYLE } from "@/components/TrainingEditor";
 import TrainingStatus, { MyScoutingLink } from "@/components/TrainingStatus";
-import { isLeader, requireMember } from "@/lib/data";
+import { isCommittee, isLeader, requireMember } from "@/lib/data";
+import { getSettings } from "@/lib/settings";
+import { TRAINING_IMPORT_DAYS, trainingImportDue } from "@/lib/training";
 import { isAdmin } from "@/lib/advancement-data";
 import { getLeaderTraining } from "@/lib/training-data";
 import { COURSE_BY_KEY, POSITION_BY_KEY, isCurrent, trainedStatus, trainingState, type CourseKey } from "@/lib/training";
@@ -18,6 +20,8 @@ export default async function TrainingPage({ searchParams }: PageProps<"/leaders
   const me = await requireMember();
   if (!isLeader(me)) redirect("/family");
   const admin = isAdmin(me);
+  const canImport = isCommittee(me);
+  const lastImport = (await getSettings()).training_last_import;
   const { show } = await searchParams;
   const gapsOnly = show === "gaps";
   const leaders = (await getLeaderTraining()).map((l) => ({ ...l, status: trainedStatus(l.positions, l.trainings) }));
@@ -76,7 +80,13 @@ export default async function TrainingPage({ searchParams }: PageProps<"/leaders
           position. Cubmasters and den leaders also need Hazardous Weather. Reminders go out 60, 30 and 7 days before
           anything expires, and on the day.
         </p>
-        {admin && (
+        <p className={`text-xs ${trainingImportDue(lastImport) ? "font-semibold text-gold-800" : "text-muted"}`}>
+          {lastImport
+            ? `Last updated from my.scouting on ${new Date(lastImport).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" })}.`
+            : "Not updated from my.scouting yet."}{" "}
+          {trainingImportDue(lastImport) && `Import the training report every ${TRAINING_IMPORT_DAYS} days or so to keep this current.`}
+        </p>
+        {canImport && (
           <Link href="/leaders/training/import" className="btn-ghost py-2">
             <FileUp className="h-4 w-4" aria-hidden /> Import from my.scouting
           </Link>

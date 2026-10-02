@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/ActionForm";
 import { createClient } from "@/lib/supabase/server";
-import { requireMember } from "@/lib/data";
+import { isCommittee, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
 import { COURSE_BY_KEY, MEMBER_ID, defaultExpiry, type CourseKey } from "@/lib/training";
 import { IMPORT_MAX } from "@/lib/training-import";
@@ -64,7 +64,7 @@ export type ImportResult = ActionResult & { trainings?: number; adults?: number;
  */
 export async function applyTrainingImport(payload: ImportPayload): Promise<ImportResult> {
   const me = await requireMember();
-  if (!isAdmin(me)) return { error: "Only pack admins can import training." };
+  if (!isCommittee(me)) return { error: "Only pack leadership can import training." };
   const rows = Array.isArray(payload?.rows) ? payload.rows : [];
   const ids = Array.isArray(payload?.memberIds) ? payload.memberIds : [];
   if (rows.length > IMPORT_MAX || ids.length > IMPORT_MAX) return { error: `Import at most ${IMPORT_MAX} rows at a time.` };
@@ -90,6 +90,7 @@ export async function applyTrainingImport(payload: ImportPayload): Promise<Impor
   const res = (data ?? {}) as { trainings?: number; adults?: number; member_ids?: number };
   revalidatePath("/leaders/training");
   revalidatePath("/family");
+  revalidatePath("/", "layout");
   return { ok: true, trainings: res.trainings ?? 0, adults: res.adults ?? 0, memberIds: res.member_ids ?? 0 };
 }
 

@@ -13,6 +13,8 @@ import { daysBetween, easternDate } from "./tz";
 import { fmtDay } from "./format";
 import { rsvpOpen } from "./rsvp";
 import { fmtRegDate, needsRenewal, regStatus } from "./registration";
+import { getSettings } from "./settings";
+import { TRAINING_IMPORT_DAYS, trainingImportDue, trainingKeeperIds } from "./training";
 
 export interface Todo {
   key: string;
@@ -57,7 +59,7 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
   const leader = isLeader(me);
   // Today's events too, so a "maybe" can come back on the day.
   const rsvpQ = supabase.from("event_rsvps").select("event_id, status, scouts, event:events!inner(starts_at)").gte("event.starts_at", new Date(Date.now() - 86400000).toISOString());
-  const [polls, voted, scouts, paperwork, charges, events, pendingPhotos, waitingForms, openNotes, reportedPayments, myRsvps, hidden, waitingJoins] = await Promise.all([
+  const [polls, voted, scouts, paperwork, charges, events, pendingPhotos, waitingForms, openNotes, reportedPayments, myRsvps, hidden, waitingJoins, trainingImport] = await Promise.all([
     getPolls(20),
     getVotedPollIds(me),
     getMyScouts(),
@@ -80,6 +82,8 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
     isAdmin(me)
       ? supabase.from("join_requests").select("id", { count: "exact", head: true }).eq("status", "pending").then((r) => r.count ?? 0)
       : Promise.resolve(0),
+    // The monthly my.scouting training import, for the Committee Chair (or the admins).
+    isCommittee(me) ? trainingImportTodo(me.id) : Promise.resolve(null),
   ]);
   const todos: Todo[] = [];
 
@@ -248,6 +252,7 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
       tone: "pine",
     });
   }
+  if (trainingImport && !hidden.has("training-import")) todos.push(trainingImport);
   if (openNotes) {
     todos.push({
       key: "notes",
@@ -259,6 +264,29 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
   }
   return todos;
 });
+
+/** "Update everyone's training", when this person keeps it and the last import is over a month old. */
+async function trainingImportTodo(myId: string): Promise<Todo | null> {
+  const last = (await getSettings()).training_last_import;
+  if (!trainingImportDue(last)) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("adults")
+    .select("id, role, position_title")
+    .eq("is_active", true)
+    .in("role", ["committee", "cubmaster", "admin"]);
+  if (!trainingKeeperIds(data ?? []).includes(myId)) return null;
+  return {
+    key: "training-import",
+    title: "Update everyone's training",
+    detail: last
+      ? `Last imported from my.scouting ${Math.floor((Date.now() - Date.parse(last)) / 86400000)} days ago. Run the training report there and upload it (about 5 minutes).`
+      : `Run the training report on my.scouting and upload it, then again every ${TRAINING_IMPORT_DAYS} days or so (about 5 minutes).`,
+    href: "/leaders/training/import",
+    tone: "gold",
+    hide: { key: "training-import", until: new Date(Date.now() + 7 * 86400000).toISOString() },
+  };
+}
 
 /** The bell's number: new announcements, den messages and polls since Notifications was opened, plus to-dos. */
 export const getInboxCount = cache(async (): Promise<number> => {

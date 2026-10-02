@@ -1,14 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isCronRequest } from "@/lib/cron-auth";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
-import { emailBudget, purgeOldPhotos, reconcilePayments, remindRegistration, remindTraining, remindVolunteers } from "@/lib/daily-jobs";
+import { emailBudget, purgeOldPhotos, reconcilePayments, remindRegistration, remindTraining, remindTrainingImport, remindVolunteers } from "@/lib/daily-jobs";
 import { paypalConfigured } from "@/lib/paypal";
 import { syncTwh, twhConfigured } from "@/lib/twh";
 import { syncCouncil } from "@/lib/council";
 
 // Daily Vercel Cron (vercel.json, 21:00 UTC = 5 PM EDT / 4 PM EST). Steps, in order:
 //   1. volunteer reminders   2. training expiry reminders   3. Scouting America registration reminders
-//      (all three share one reminder email budget, so sign-in codes keep room in the daily email quota)
+//   3b. the monthly "update everyone's training" reminder to the Committee Chair
+//      (all of these share one reminder email budget, so sign-in codes keep room in the daily email quota)
 //   4. deleting photos past the keep-for setting
 //   5. finishing PayPal checkouts a family's browser didn't (only when PayPal is set up)
 //   6. the TroopWebHost calendar sync (only when its link is set)
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
     ["volunteers", () => remindVolunteers(db, budget)],
     ["training", () => remindTraining(db, budget)],
     ["registration", () => remindRegistration(db, budget)],
+    ["training-import", () => remindTrainingImport(db, budget)],
     ["photos", () => purgeOldPhotos(db)],
   ];
   if (paypalConfigured()) steps.push(["payments", () => reconcilePayments(db)]);
