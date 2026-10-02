@@ -69,20 +69,30 @@ export function TwoStepSetup({ next, startLabel = "Set up two-step sign-in" }: {
       <ol className="space-y-4 text-sm text-ink">
         <li className="space-y-2">
           <p>
-            <b>1. Add Pack 361 to your authenticator app.</b> On a computer, scan this with your phone&apos;s authenticator app (tap
-            <b> +</b> or <b>Add</b>, then <b>Scan a QR code</b>).
+            <b>1. Add Pack 361 to your authenticator app.</b>
+          </p>
+          {/* On a phone: one tap opens Google Authenticator (or whichever authenticator app is installed) with Pack 361 filled in. */}
+          <a href={setup.uri} className="btn-primary w-full lg:hidden">
+            <Smartphone className="h-4 w-4" aria-hidden /> Add to my authenticator app
+          </a>
+          <p className="text-xs text-muted lg:hidden">
+            It opens Google Authenticator (or your authenticator app) with Pack 361 filled in: tap <b>Save</b> or <b>Add</b>, then come
+            back here. Nothing happens? Use one of the other ways below.
+          </p>
+          <p className="hidden text-sm lg:block">
+            Scan this with your phone&apos;s authenticator app (tap <b>+</b> or <b>Add</b>, then <b>Scan a QR code</b>).
           </p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={setup.qr} alt="QR code to add Pack 361 to an authenticator app" className="mx-auto h-48 w-48 rounded-xl bg-white p-2 ring-1 ring-line" />
-          <p className="text-xs text-muted">
-            <Smartphone className="mr-1 inline h-3.5 w-3.5" aria-hidden />
-            Using the app on this phone?{" "}
-            <a href={setup.uri} className="font-bold text-pine underline">
-              Open it in your authenticator app
-            </a>
-            , or choose &ldquo;Enter a setup key&rdquo; in the app and type this key (time-based):
-          </p>
-          <p className="select-all break-all rounded-lg bg-surface-low px-3 py-2 text-center font-mono text-sm tracking-wider text-navy">{grouped}</p>
+          <img src={setup.qr} alt="QR code to add Pack 361 to an authenticator app" className="mx-auto hidden h-48 w-48 rounded-xl bg-white p-2 ring-1 ring-line lg:block" />
+          <details className="text-xs text-muted">
+            <summary className="cursor-pointer font-bold text-pine">Other ways to add it</summary>
+            <div className="mt-2 space-y-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={setup.qr} alt="QR code to add Pack 361 to an authenticator app" className="mx-auto h-40 w-40 rounded-xl bg-white p-2 ring-1 ring-line lg:hidden" />
+              <p>In the authenticator app, choose &ldquo;Enter a setup key&rdquo; and type this key (time-based):</p>
+              <p className="select-all break-all rounded-lg bg-surface-low px-3 py-2 text-center font-mono text-sm tracking-wider text-navy">{grouped}</p>
+            </div>
+          </details>
         </li>
         <li>
           <p className="mb-2">
