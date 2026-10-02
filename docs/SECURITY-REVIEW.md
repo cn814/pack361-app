@@ -82,8 +82,8 @@ morning.
    authenticator app there, or losing the phone locks the account for good.
 2. ~~Two-step sign-in in the app~~ Built in release 1.5: pack leadership, the Cubmaster and admins
    sign in with an authenticator app code as well as the email code (Supabase MFA, TOTP). The app
-   treats them as a parent until the code is entered, and the database does the same once
-   `20261007000000_two_step_database.sql` is run (after 1.5 is live). Tests:
+   treats them as a parent until the code is entered, and so does the database
+   (`20261007000000_two_step_database.sql`, run 2026-10-02 after 1.5 went live). Tests:
    `supabase/tests/25_two_step_tests.sql`. Guide section 2.8.
 
 ## Repeating this review
