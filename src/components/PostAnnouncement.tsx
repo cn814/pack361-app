@@ -3,6 +3,7 @@
 import { useSubmitKeepingValues } from "@/components/ActionForm";
 import { useActionState, useState } from "react";
 import { Megaphone } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { postAnnouncement, type PostState } from "@/app/(app)/actions";
 
 const CATEGORIES = ["General", "Campout", "Pack Meeting", "Den", "Derby", "Service", "Fundraiser"];
@@ -16,18 +17,28 @@ export default function PostAnnouncement({
   canPostPack = true,
   defaultDen = "",
   packEmail = false,
+  startOpen = false,
+  doneHref,
 }: {
   dens: { id: string; name: string }[];
   canPostPack?: boolean;
   defaultDen?: string;
   /** Pack-wide email is set up (Brevo). */
   packEmail?: boolean;
+  /** Show the form right away (the Announce page). */
+  startOpen?: boolean;
+  /** Where to go once it's posted (the Announce page goes to Notifications). */
+  doneHref?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const [open, setOpen] = useState(startOpen);
   const [den, setDen] = useState(defaultDen || (canPostPack ? "" : (dens[0]?.id ?? "")));
   const [state, action, pending] = useActionState<PostState, FormData>(async (prev, form) => {
     const result = await postAnnouncement(prev, form);
-    if (result.ok) setOpen(false);
+    if (result.ok) {
+      setOpen(false);
+      if (doneHref) router.push(doneHref);
+    }
     return result;
   }, {});
   const keep = useSubmitKeepingValues(action);

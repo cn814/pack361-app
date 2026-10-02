@@ -196,6 +196,15 @@ export async function getCalendarToken(): Promise<string | null> {
  * bottom bar. Null when nothing big is coming up.
  */
 export const getFeaturedTab = cache(async (): Promise<FeaturedTab | null> => {
+  const big = await getBigEvent();
+  return big ? { href: big.event.href, label: big.label, kind: big.kind } : null;
+});
+
+/**
+ * The pack's next big event (campout, derby, Blue & Gold, crossover…), pinned at the top of
+ * Home and Calendar from 45 days before until 3 days after it.
+ */
+export const getBigEvent = cache(async (): Promise<{ event: CalItem; label: string; kind: FeaturedTab["kind"] } | null> => {
   const now = Date.now();
   // Pack-wide events plus this family's own dens and ranks (leaders included).
   const items = await calendarWindow("family");
@@ -205,7 +214,7 @@ export const getFeaturedTab = cache(async (): Promise<FeaturedTab | null> => {
     if (!k) continue;
     const over = new Date(e.ends_at ?? e.starts_at).getTime() + FEATURE_DAYS_AFTER * 86400000;
     if (over < now) continue;
-    return { href: e.href, label: k.label, kind: k.kind };
+    return { event: e, label: k.label, kind: k.kind };
   }
   return null;
 });
