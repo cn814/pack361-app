@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import SubmitButton from "@/components/SubmitButton";
-import { ExternalLink, MapPin, Shirt, ShoppingBag } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, ExternalLink, MapPin, Popcorn, Shirt, ShoppingBag } from "lucide-react";
+import { POPCORN } from "@/lib/popcorn";
 import { SyncGivebutterButton } from "@/components/AdminForms";
 import { isLeader, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
@@ -25,7 +27,20 @@ export default async function StorePage() {
   return (
     <>
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack store</h1>
-      <p className="-mt-2 text-sm text-muted">Pack 361 shirts, hoodies and gear, ordered through Givebutter.</p>
+      <p className="-mt-2 text-sm text-muted">Fundraisers, Pack 361 shirts and gear, and where to buy uniforms and badges.</p>
+
+      <Link href="/store/popcorn" className="card flex items-center gap-3 border-l-4 border-l-gold">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold-50">
+          <Popcorn className="h-6 w-6 text-gold-700" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-extrabold text-pine-950">Popcorn fundraiser</span>
+          <span className="block text-xs text-muted">
+            Trail&apos;s End, our main fundraiser: unit code {POPCORN.unitCode}, how to start, where the money goes
+          </span>
+        </span>
+        <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
+      </Link>
 
       <section className="card space-y-2 border-l-4 border-l-navy">
         <h2 className="flex items-center gap-2 font-extrabold text-pine-950">
