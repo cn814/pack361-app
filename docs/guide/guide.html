@@ -113,7 +113,7 @@
   <div class="eyebrow">Cub Scout Pack 361 · Ellicott City, MD</div>
   <h1>The Pack 361 App<br />Guide</h1>
   <p class="sub">Part 1 is for every family: getting started, everyday use, privacy and help. Part 2 is for den leaders and pack leadership: running events and den meetings, advancement, money, expenses, reports and pack admin.</p>
-  <div class="new"><b>New in version 1.4</b>Security improvements from the October review, including a new-calendar-link button. Version 1.3 added the &ldquo;Get the pack app&rdquo; QR code; 1.2 Scout Shop photos and bag labels; 1.1 permission slips, ask to join, roster check and see the app as. Version history is on the last page.</div>
+  <div class="new"><b>New in version 1.4</b>Security improvements from the October review and a new section, 2.7 Keeping the app secure. Version 1.3 added the &ldquo;Get the pack app&rdquo; QR code; 1.2 Scout Shop photos and bag labels; 1.1 permission slips, ask to join, roster check and see the app as. Version history is on the last page.</div>
   <div class="stripe"></div>
   <div class="url"><span>Open it at</span>app.pack361.org</div>
   <div class="foot"><span>Questions: info@pack361.org</span><span>Version 1.4 · October 2, 2026</span></div>
@@ -139,6 +139,7 @@
     <li><span class="n">2.4</span><span class="t">Pack leadership: expenses and reports</span><span class="d">Reimbursements, pack spending, budget, financial reports</span></li>
     <li><span class="n">2.5</span><span class="t">Pack leadership: the rest</span><span class="d">Pack guide, council events, documents, the year at a glance</span></li>
     <li><span class="n">2.6</span><span class="t">Pack admin only</span><span class="d">Roster, roles, imports, welcome emails, settings</span></li>
+    <li><span class="n">2.7</span><span class="t">Keeping the app secure</span><span class="d">How it&rsquo;s protected, what leaders and admins do, if something goes wrong</span></li>
     <li><span class="n"></span><span class="t">Version history</span><span class="d">What changed in each version of this guide</span></li>
   </ol>
   <div class="tip" style="margin-top:14pt"><b>Tags in Part 2:</b> <span class="tag t-lead">Leaders</span> den leaders, pack leadership, Cubmaster, admins &nbsp;·&nbsp; <span class="tag t-lead">Leadership+</span> pack leadership (the committee), Cubmaster, admins &nbsp;·&nbsp; <span class="tag t-admin">Admins</span> pack admins and the Cubmaster</div>
@@ -371,6 +372,7 @@
     <li><span>2.4 Leadership: expenses and reports</span>Reimbursements, budget, financial reports</li>
     <li><span>2.5 Leadership: the rest</span>Guide, council events, the year at a glance</li>
     <li><span>2.6 Pack admin only</span>Roster, roles, imports, settings</li>
+    <li><span>2.7 Keeping the app secure</span>For every leader, and admins</li>
   </ul>
 </div>
 
@@ -552,6 +554,44 @@
   </table>
 </div>
 
+<!-- 2.7 Security -->
+<div class="section">
+  <div class="kicker">Part 2 · Section 2.7 · <span class="tag t-lead">Leaders</span></div>
+  <h2>Keeping the app secure</h2>
+  <div class="rule"></div>
+  <p class="lead">The app holds families&rsquo; contact details and scouts&rsquo; records, so it&rsquo;s built in layers, and leaders keep it that way. It was last security-reviewed in October 2026 (version 1.4); the review is repeated every year.</p>
+
+  <h3>How it&rsquo;s protected</h3>
+  <ul>
+    <li><b>No passwords.</b> Everyone signs in with a one-time code sent to their email, so there&rsquo;s no password to steal or reuse. That makes <b>your email account the key</b> to your app account.</li>
+    <li><b>Two locks on everything.</b> The app checks who you are before showing a page or saving anything, and the database checks again on its own. Even someone who got around the app couldn&rsquo;t read or change what their role doesn&rsquo;t allow.</li>
+    <li><b>Only what you need.</b> Parents see only their own family. Den leaders see the scouts they work with. Money is for pack leadership; the roster is for admins. Nobody signed out sees anything but the public join page.</li>
+    <li><b>Private files.</b> Photos, documents and receipts are never public: each opens through a link that works for a few minutes. Medical forms are never uploaded.</li>
+    <li><b>Limits.</b> Sign-in codes, messages to the admins and uploads have daily limits per person, so no one account can flood the admins, use up the pack&rsquo;s email allowance or fill its file storage.</li>
+    <li><b>Safe testing and backups.</b> New features are tried first on a testers-only beta site that can&rsquo;t email anyone else, and the database is backed up nightly.</li>
+  </ul>
+
+  <h3>What every leader should do</h3>
+  <ul>
+    <li><b>Turn on two-step sign-in for the email account you use for the app</b> (Gmail, Outlook and others all offer it). Anyone who can read your email can sign in as you.</li>
+    <li><b>Never share a sign-in code or link.</b> The pack will never ask for one. If someone does, it&rsquo;s a scam.</li>
+    <li><b>Spot fake emails.</b> Real app emails come from <b>noreply@pack361.org</b>, and their only buttons say <b>Open the Pack 361 app</b> (or my.scouting.org) and go to <b>app.pack361.org</b>. A button pointing anywhere else isn&rsquo;t from the pack.</li>
+    <li><b>Sign out on shared computers</b> (My family → Sign out).</li>
+    <li><b>Keep your calendar link private.</b> Shared it by mistake? <b>Events → Add the pack calendar → Get a new link</b>.</li>
+    <li><b>Upload only what belongs.</b> No medical forms, Social Security numbers, bank details or anything else sensitive in documents, messages or receipts.</li>
+    <li><b>Say something</b> about anything odd: <b>Report a problem</b> or info@pack361.org.</li>
+  </ul>
+
+  <h3>For admins <span class="tag t-admin">Admins</span></h3>
+  <ul>
+    <li><b>When a leader steps down:</b> change their role in Families and scouts. Taking someone off a den sets them back to parent automatically if they lead no other den; turning off a family names any leaders still on.</li>
+    <li><b>The accounts behind the app</b> (GitHub, Vercel, Supabase, Squarespace, Resend, Brevo, Givebutter) each need two-step sign-in and two owners. Someone in one of them could change the app itself.</li>
+    <li><b>Keys:</b> change any key a departing person could see (handover guide, section 2). Brevo&rsquo;s keys expire every year in September.</li>
+    <li><b>Every year:</b> repeat the security review (docs/SECURITY-REVIEW.md in the code) and run Supabase&rsquo;s Security Advisor.</li>
+  </ul>
+  <div class="tip"><b>If you think something&rsquo;s wrong:</b> 1. turn off the person&rsquo;s access (Families and scouts); 2. change the secret keys (handover guide, section 2); 3. look at Supabase&rsquo;s sign-in logs to see what happened; 4. restore from a backup if information was damaged (docs/RESTORE.md); 5. tell the Committee Chair and Cubmaster, and the families affected if their information may have been seen.</div>
+</div>
+
 <!-- Version history -->
 <div class="section">
   <div class="kicker">Version history</div>
@@ -560,7 +600,7 @@
   <p class="lead">Each time the app gains a feature people will notice, this guide gets a new version. Check the version on the cover against this list to see if your copy is current.</p>
   <table class="versions">
     <tr><th style="width:18%">Version</th><th style="width:22%">Date</th><th>What&rsquo;s new</th></tr>
-    <tr><td>1.4</td><td>October 2, 2026</td><td><b>Security review</b> (docs/SECURITY-REVIEW.md): links in members&rsquo; messages no longer appear as app buttons in emails; limits on messages and uploads per person; former den leaders lose leader access; polls can&rsquo;t be reworded after voting; <b>Get a new link</b> for the private calendar feed (1.3).</td></tr>
+    <tr><td>1.4</td><td>October 2, 2026</td><td><b>Security review</b> (docs/SECURITY-REVIEW.md): links in members&rsquo; messages no longer appear as app buttons in emails; limits on messages and uploads per person; former den leaders lose leader access; polls can&rsquo;t be reworded after voting; <b>Get a new link</b> for the private calendar feed (1.3). New section <b>2.7 Keeping the app secure</b>.</td></tr>
     <tr><td>1.3</td><td>October 1, 2026</td><td><b>Get the pack app</b>: a QR code to print for pack meetings and a page (app.pack361.org/get) that walks families through adding the app to their phone, with a one-tap <b>Install</b> button on Android; welcome emails link there (1.1, 2.6). A <b>beta site</b> for testing new features with chosen testers before each release (2.6).</td></tr>
     <tr><td>1.2</td><td>October 1, 2026</td><td><b>Awards to hand out</b> is now a Scout Shop shopping list with photos and SKU numbers by rank, plus printable <b>bag labels</b> per scout (2.2). From the pack&rsquo;s earlier awards label tool.</td></tr>
     <tr><td>1.1</td><td>October 1, 2026</td><td><b>Permission slips</b> for events, signed in the app (1.3, 2.2). <b>Ask to join the app</b> from the &ldquo;not on the roster&rdquo; page, and <b>Join requests</b> for admins (1.5, 2.6). <b>Roster check</b> against the Scoutbook roster export (2.6). <b>See the app as&hellip;</b> a parent, den leader or pack leadership (2.2). My training lists what&rsquo;s expiring soon and the exact modules for your position training (2.2).</td></tr>
