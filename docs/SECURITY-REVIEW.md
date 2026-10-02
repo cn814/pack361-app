@@ -44,17 +44,42 @@ accepted, with reasons.
 | 12 | Accepted | Opening a sign-in link on a computer signs in right away. Someone could send you a sign-in link for *their* account; you'd end up signed in as them. | Standard for sign-in links, and they'd need to be on the roster. Phones already ask first. |
 | 13 | Accepted | The `popcorn_sales` table (from an early version) is readable by members but unused, and holds only scout IDs and amounts, which parents can't match to names. | Leave it; remove it when popcorn sales are built or dropped. |
 
+## Released (2026-10-02)
+
+The database change was run in Supabase on 2026-10-02 and checked afterwards: the feedback limit
+is on, poll questions and options can't be changed, the evidence bucket takes no uploads, and
+signed-out visitors can't run the helper functions. Release 1.4 went to beta, then live, the same
+morning.
+
+**Live checks, signed out** (app.pack361.org and beta.pack361.org):
+
+| Check | Result |
+|---|---|
+| `/.env`, `/family`, `/admin` | Sent to the sign-in page; no file is served |
+| `/api/cron/daily`, `/api/cron/givebutter`, with no key or a wrong key | 401 unauthorized |
+| `/get`, `/safety` | Open, as intended |
+| Response headers | HTTPS only for a year (with subdomains), no framing (`X-Frame-Options: DENY` and `frame-ancestors 'none'`), `nosniff`, strict referrer, camera/microphone/location limited |
+| Live site | No beta stripe |
+
+**Supabase Security Advisor** (rerun after the change): 0 errors, 34 warnings, none needing a fix:
+
+- 32 × "Signed-in users can execute SECURITY DEFINER function": these are the app's own actions
+  (RSVPs, votes, payments, attendance, join requests and so on). The app calls them on purpose, and
+  each one checks who is asking before doing anything (see "Functions callable from outside" above).
+  Check any new one the same way.
+- 1 × "Public can execute" `join_page_events()`: the public join page. It returns only the title,
+  time, place and blurb of upcoming events a leader ticked "show on the join page", and never
+  leaders-only or archived events.
+- 1 × "Leaked password protection disabled": doesn't apply, because the app has no passwords
+  (everyone signs in with an emailed code).
+
 ## Still to do (outside the app)
 
 1. **Turn on two-step sign-in** for every account behind the app: GitHub, Vercel, Supabase,
    Squarespace (it was showing a "Secure your account" banner), Resend, Brevo, Givebutter and the
    Google account used to sign in to them. Someone in one of those can change the app itself, which
    matters more than any single user account.
-2. **Supabase → Advisors → Security Advisor:** run it and fix anything it lists.
-3. **Live checks** (blocked during the review because the browser connection was down): open
-   `https://app.pack361.org/.env` and `/api/cron/daily` signed out and confirm they show "not found"
-   or "unauthorized"; check the response headers with securityheaders.com.
-4. **Two-step sign-in in the app** for admins, the Cubmaster and leadership (proposed, not built).
+2. **Two-step sign-in in the app** for admins, the Cubmaster and leadership (proposed, not built).
 
 ## Repeating this review
 
@@ -62,5 +87,7 @@ accepted, with reasons.
 - The database tests: `supabase/tests/run.sh` (README → Run the permission tests).
 - The attacker-style table pass: for each table in `public`, as `anon` and as an ordinary parent,
   try `select`, `update` and `delete`, and confirm only their own rows are affected.
+- Supabase → Advisors → Security Advisor → Rerun linter; compare with the list above.
+- The live checks above, signed out (open each address, or use the browser's developer tools).
 - Read every new server action and route: does it check who's asking, and does the database check
   again? Any use of the secret key (`createAdminClient`) needs a reason and a check before it.
