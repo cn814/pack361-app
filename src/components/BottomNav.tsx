@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { Award, Bell, CalendarDays, House, LayoutGrid, UserRound, type LucideIcon } from "lucide-react";
+import { Award, Bell, CalendarDays, House, LayoutGrid, Search, UserRound, type LucideIcon } from "lucide-react";
 
 interface Tab {
   href: string;
@@ -81,6 +81,16 @@ export default function BottomNav({
           <span className="block text-xs text-mint-200/80">Ellicott City, MD</span>
         </span>
       </Link>
+      <form action="/search" role="search" className="mx-3 mb-4 hidden items-center gap-2 rounded-xl bg-white/10 px-3 lg:flex">
+        <Search className="h-4 w-4 shrink-0 text-mint-200" aria-hidden />
+        <input
+          name="q"
+          type="search"
+          placeholder="Search the pack"
+          aria-label="Search the pack"
+          className="h-10 min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-mint-200/70 outline-none"
+        />
+      </form>
       <ul className="mx-auto grid max-w-md grid-cols-5 px-1 lg:mx-0 lg:flex lg:max-w-none lg:flex-col lg:gap-1 lg:px-3">
         {tabs.map(({ href, label, icon: Icon, match }) => {
           const active = pending ? pending === href : match(path);

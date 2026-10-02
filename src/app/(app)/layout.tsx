@@ -4,7 +4,7 @@ import NavProgress from "@/components/NavProgress";
 import Toast from "@/components/Toast";
 import { Suspense } from "react";
 import ServiceWorkerSetup from "@/components/ServiceWorkerSetup";
-import { Bell } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import { displayName, requireMember } from "@/lib/data";
 import { canLead, getMode } from "@/lib/mode";
 import ModeSwitch from "@/components/ModeSwitch";
@@ -36,6 +36,13 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             </span>
           </Link>
           <div className="flex items-center gap-2">
+            <Link
+              href="/search"
+              aria-label="Search the pack"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-white active:bg-white/15"
+            >
+              <Search className="h-6 w-6" aria-hidden />
+            </Link>
             <Link
               href="/inbox"
               prefetch={false}
