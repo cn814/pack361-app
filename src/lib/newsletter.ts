@@ -232,7 +232,7 @@ async function familyNews(db: SupabaseClient, r: Recipient): Promise<FamilyNews>
     if (missing.length) {
       needs.push({
         text: `Medical forms for ${campout.title}: ${missing.map((s) => s.first_name).join(" and ")} ${missing.length === 1 ? "needs" : "need"} a current form (Parts A and B). Adults who camp need one too.`,
-        href: "/family#paperwork",
+        href: "/family/forms",
         button: "Paperwork",
       });
     }
@@ -245,7 +245,7 @@ async function familyNews(db: SupabaseClient, r: Recipient): Promise<FamilyNews>
     const soonest = renew.map((x) => x.on!).sort()[0];
     needs.push({
       text: `Scouting America registration for ${renew.map((x) => x.name).join(" and ")} ${regStatus(soonest).state === "expired" ? "expired" : "expires"} ${fmtRegDate(soonest)}. Renew at my.scouting.org.`,
-      href: "/family",
+      href: "/family/household",
       button: "Details",
     });
   }

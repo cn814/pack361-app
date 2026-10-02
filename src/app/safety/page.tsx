@@ -99,8 +99,8 @@ export default function SafetyPage() {
           "Phone alerts are off unless you turn them on, and you can turn them off at any time.",
           "You decide whether your scout may appear in pack photos, and anyone can request that a photo be removed. It's hidden right away, and a leader removes it.",
           "Campout pages saved for use without signal stay on your phone only, and are deleted when you sign out.",
-          "Files you save on your phone (Saved on this phone, on My family) stay on your phone. They're never uploaded and the pack can't see them. Signing out doesn't delete them, so remove them on that page before handing your phone to someone else.",
-          "You can update your phone number and the name you go by on the My family page.",
+          "Files you save on your phone (Me → Saved on this phone) stay on your phone. They're never uploaded and the pack can't see them. Signing out doesn't delete them, so remove them on that page before handing your phone to someone else.",
+          "You can update your phone number and the name you go by under Me → My contact info.",
           <>
             To correct or remove your family&apos;s information, email{" "}
             <a className="font-semibold text-pine underline" href="mailto:info@pack361.org">

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import FeedbackForm from "@/components/FeedbackForm";
-import ViewAsPicker from "@/components/ViewAsPicker";
 import { Mail, Phone, ShieldAlert } from "lucide-react";
 import { getLeaders, isLeader, requireMember } from "@/lib/data";
 import { ROLE_LABEL } from "@/lib/roster-data";
@@ -55,7 +54,6 @@ export default async function LeadersPage() {
           call 911.
         </p>
       </div>
-      <ViewAsPicker me={me} />
       <FeedbackForm page="Leaders" />
     </>
   );

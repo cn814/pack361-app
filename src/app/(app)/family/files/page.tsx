@@ -18,7 +18,7 @@ export default async function DeviceFilesPage({ searchParams }: PageProps<"/fami
 
   return (
     <>
-      <BackLink href="/family" label="My family" />
+      <BackLink href="/family" label="Me" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Saved on this phone</h1>
       <DeviceFiles ownerUserKey={me.id} familyKey={me.family_id ?? me.id} people={family} initialPerson={wanted} />
     </>

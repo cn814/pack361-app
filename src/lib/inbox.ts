@@ -170,7 +170,7 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
         key: "forms",
         title: `Medical forms for ${campout.title}`,
         detail: `${missing.map((p) => p.name).join(" and ")} ${missing.length === 1 ? "needs" : "need"} a current form (Parts A and B) by ${fmtDay(campout.starts_at)}. Adults who camp need one too.`,
-        href: "/family#paperwork",
+        href: "/family/forms",
         tone: "gold",
       });
     }
@@ -199,8 +199,8 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
     todos.push({
       key: "registration",
       title: "Renew Scouting America registration",
-      detail: `For ${renew.map((r) => r.name).join(" and ")}: ${past ? "expired" : "expires"} ${fmtRegDate(soonest)}. Renew and pay at my.scouting.org (link on My family).`,
-      href: "/family",
+      detail: `For ${renew.map((r) => r.name).join(" and ")}: ${past ? "expired" : "expires"} ${fmtRegDate(soonest)}. Renew and pay at my.scouting.org (link under Me → Family and registration).`,
+      href: "/family/household",
       tone: past ? "danger" : "gold",
     });
   }
@@ -211,7 +211,7 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
       key: "photo-permission",
       title: "One quick question",
       detail: `May ${noPhotoAnswer.map((s) => s.first_name).join(" and ")} appear in the pack's private photo album?`,
-      href: "/family#photos",
+      href: "/family/household#photos",
       tone: "gold",
     });
   }

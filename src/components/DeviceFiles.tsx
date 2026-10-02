@@ -563,7 +563,7 @@ export default function DeviceFiles({
             <b>Save to Files</b>.
           </li>
           <li>
-            You still need to give the paper medical form to the campout leader, then tap <b>I turned it in</b> on My family.
+            You still need to give the paper medical form to the campout leader, then tap <b>I turned it in</b> under Me → Medical forms.
           </li>
         </ul>
       </section>

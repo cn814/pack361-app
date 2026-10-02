@@ -17,5 +17,6 @@ export async function setViewAs(form: FormData) {
     redirect("/");
   }
   jar.delete(VIEW_AS_COOKIE);
-  redirect(String(form.get("back") ?? "") === "leaders" ? "/leaders" : "/");
+  // "Switch back" returns to Me → See the app as.
+  redirect(form.get("back") ? "/family/view-as" : "/");
 }

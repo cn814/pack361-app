@@ -243,7 +243,7 @@ export default function ImportTraining({ roster, today, liveSync = false }: { ro
             <section className="card space-y-1">
               <h2 className="section-title">Not matched ({plan.unmatched.reduce((n, u) => n + u.rows, 0)} rows)</h2>
               <p className="text-[11px] text-muted">
-                Add their BSA member ID in Pack admin (or ask them to add it on My family), then import again.
+                Add their BSA member ID in Pack admin (or ask them to add it under Me → My training), then import again.
               </p>
               <ul className="divide-y divide-line text-xs">
                 {plan.unmatched.map((u) => (

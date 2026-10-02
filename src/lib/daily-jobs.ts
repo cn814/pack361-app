@@ -138,7 +138,7 @@ export async function remindTraining(db: SupabaseClient, budget: EmailBudget = e
     const res = await sendPushTo([r.adult_id], {
       title: `${course} expires ${when}`,
       body: outside ? "Renew it, then update the date in the app." : "Renew it at my.scouting.org, then update the date in the app.",
-      url: "/family",
+      url: "/family/training",
       tag: `training-${r.course}`,
     });
     if (res.sent) {
@@ -155,9 +155,9 @@ export async function remindTraining(db: SupabaseClient, budget: EmailBudget = e
           `Hi ${r.adult.preferred_name || r.adult.first_name},`,
           `Your ${course} training expires ${when} (${new Date(r.expires_on + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}). Leaders need current training to stay registered and to lead outings.`,
           outside
-            ? "When you renew it, add the new date under My training in the app."
-            : "Take it at my.scouting.org (My Dashboard → My Training). When you finish, add the new date under My training in the app.",
-          `${APP_URL}/family`,
+            ? "When you renew it, add the new date in the app (Me → My training)."
+            : "Take it at my.scouting.org (My Dashboard → My Training). When you finish, add the new date in the app (Me → My training).",
+          `${APP_URL}/family/training`,
         ],
       },
     });
@@ -266,7 +266,7 @@ export async function remindRegistration(db: SupabaseClient, budget: EmailBudget
   for (const it of items) {
     const res = await sendPushTo(
       it.to.map((a) => a.id),
-      { title: "Time to renew registration", body: it.line, url: "/family", tag: `registration-${it.id}` },
+      { title: "Time to renew registration", body: it.line, url: "/family/household", tag: `registration-${it.id}` },
     );
     if (res.sent) {
       done.push(it);

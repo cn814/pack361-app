@@ -36,7 +36,7 @@ export default async function GuideArticle({ params }: PageProps<"/guide/[slug]"
         </Link>
       )}
       <p className="text-center text-xs text-muted">
-        Something out of date or missing? Tell us with <Link href="/family#feedback" className="font-semibold text-pine underline">Report a problem or send a note</Link>.
+        Something out of date or missing? Tell us with <Link href="/family/help" className="font-semibold text-pine underline">Report a problem or send a note</Link>.
       </p>
     </>
   );
