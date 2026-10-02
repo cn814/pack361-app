@@ -6,6 +6,7 @@ import type { ActionResult } from "@/components/ActionForm";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, getSignIns, welcomeBudget } from "@/lib/roster-data";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
+import { resetTwoStepFor } from "@/lib/two-step";
 import { sendPreview } from "@/lib/newsletter";
 import { APP_URL, emailConfigured, sendEmails, type Email } from "@/lib/email";
 import type { SettingKey } from "@/lib/settings";
@@ -323,6 +324,24 @@ export async function saveBetaTesters(_prev: ActionResult, form: FormData): Prom
   if (error) return { error: "Couldn't save that." };
   revalidatePath("/admin");
   return { ok: true, message: `${testers.length} tester${testers.length === 1 ? "" : "s"}, plus the admins` };
+}
+
+/** Two-step sign-in: a leader lost their phone. They set it up again at their next sign-in. */
+export async function resetTwoStep(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  const me = await requireAdmin();
+  const id = String(form.get("adult_id") ?? "");
+  if (!UUID.test(id)) return { error: "Pick someone." };
+  if (!adminConfigured()) return { error: "The server key isn't set up." };
+  const problem = await resetTwoStepFor(id);
+  if (problem) return { error: problem };
+  revalidatePath("/admin");
+  return {
+    ok: true,
+    message:
+      id === me.id
+        ? "Reset. You'll be signed out: sign in again and set up your app."
+        : "Reset. They're signed out everywhere, and will set up their app again when they next sign in.",
+  };
 }
 
 // ---------------------------------------------------------------------------

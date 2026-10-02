@@ -15,7 +15,7 @@ where not exists (select 1 from public.volunteer_signups where slot_id = '600000
 \echo '== Tools: parent (Alex)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.expect_error($$insert into public.adults (first_name, last_name, email) values ('Fake', 'Person', 'fake@example.com')$$,
                          '42501', 'parent cannot add adults');
 select test.expect_error($$update public.adults set welcomed_at = now() where first_name = 'Alex'$$,
@@ -64,7 +64,7 @@ commit;
 \echo '== Tools: other parent (Blair)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.adult_trainings') = 0, 'training records are private to leaders');
 select test.check(test.count('select * from public.photo_flags') = 0, 'other parents cannot see removal requests');
 select test.check(test.count($$select * from public.photos where id = '70000000-0000-0000-0000-000000000009'$$) = 0,
@@ -76,7 +76,7 @@ rollback;
 \echo '== Tools: den leader (Lee, Bear 1)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.expect_rows($$insert into public.den_meetings (id, den_id, meets_on, title, rank, adventure, requirements)
                           values ('80000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', '2026-10-08',
                                   'Bear Claws', 'bear', 'Bear Claws', '{1,2}')$$, 1, 'den leader plans a meeting for own den');
@@ -111,18 +111,18 @@ commit;
 \echo '== Tools: families see their den''s meetings'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.den_meetings') = 1, 'family sees their den''s meeting');
 select test.check(test.count('select * from public.den_meeting_attendance') = 1, 'family sees only their own scout''s attendance');
 select test.expect_rows($$delete from public.den_meetings$$, 0, 'family cannot delete meetings');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);
 select test.check(test.count('select * from public.den_meetings') = 0, 'stranger sees no meetings');
 rollback;
 
 \echo '== Tools: admin'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.expect_rows($$insert into public.adults (first_name, last_name, email, family_id)
                           values ('Pat', 'Jones', 'PAT.JONES@example.com', '20000000-0000-0000-0000-000000000002')$$, 1, 'admin adds an adult');
 select test.check((select email from public.adults where first_name = 'Pat') = 'pat.jones@example.com', 'new email is lowercased');
@@ -148,15 +148,15 @@ rollback;
 \echo '== Feedback'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.expect_rows($$insert into public.feedback (adult_id, message) values ('30000000-0000-0000-0000-00000000000b', 'Calendar link is broken')$$, 1, 'member sends a note');
 select test.expect_error($$insert into public.feedback (adult_id, message) values ('30000000-0000-0000-0000-00000000000a', 'pretending')$$, '42501', 'cannot send as someone else');
 select test.expect_rows($$update public.feedback set resolved_at = now()$$, 0, 'sender cannot mark it handled');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(test.count('select * from public.feedback') = 0, 'other parents cannot read notes');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.feedback') = 0, 'den leaders cannot read notes');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check(test.count('select * from public.feedback') = 1, 'admins read notes');
 select test.expect_rows($$update public.feedback set resolved_at = now()$$, 1, 'admin marks a note handled');
 select test.expect_error($$update public.feedback set message = 'edited'$$, '42501', 'nobody edits the message');
@@ -167,9 +167,9 @@ insert into public.events (id, title, category, starts_at, leaders_only)
 values ('50000000-0000-0000-0000-000000000009', 'Committee Meeting', 'Committee', '2026-10-01 21:00-04', true);
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(test.count($$select * from public.events where id = '50000000-0000-0000-0000-000000000009'$$) = 0, 'parents do not see leader-only events');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count($$select * from public.events where id = '50000000-0000-0000-0000-000000000009'$$) = 1, 'leaders see leader-only events');
 rollback;
 

@@ -57,16 +57,16 @@ rollback;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);   -- stranger
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);   -- stranger
 select test.expect_error($$select public.record_event_attendance('5a770000-0000-0000-0000-000000000001', '{4a770000-0000-0000-0000-000000000001}')$$,
                          '42501', 'a stranger cannot take attendance');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);   -- Alex, parent
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);   -- Alex, parent
 select test.expect_error($$select public.record_event_attendance('5a770000-0000-0000-0000-000000000001', '{4a770000-0000-0000-0000-000000000001}')$$,
                          '42501', 'a parent cannot take attendance');
 select test.expect_error($$insert into public.event_attendance (event_id, scout_id)
                            values ('5a770000-0000-0000-0000-000000000001', '4a770000-0000-0000-0000-000000000001')$$,
                          '42501', 'a parent cannot write attendance directly');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);   -- Lee, den leader
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);   -- Lee, den leader
 select test.expect_error($$insert into public.event_attendance (event_id, scout_id)
                            values ('5a770000-0000-0000-0000-000000000001', '4a770000-0000-0000-0000-000000000001')$$,
                          '42501', 'leaders cannot write attendance directly either');
@@ -81,7 +81,7 @@ rollback;
 \echo '== Event attendance: record and replace'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);   -- Lee, den leader
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);   -- Lee, den leader
 select test.check(public.record_event_attendance('5a770000-0000-0000-0000-000000000002',
                     '{4a770000-0000-0000-0000-000000000001,4a770000-0000-0000-0000-000000000002,4a770000-0000-0000-0000-000000000003}') = 2,
                   'a den leader can record a campout; a scout who left the pack is skipped');
@@ -108,7 +108,7 @@ rollback;
 -- Saved for the rest of the file, by Morgan (admin)
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select public.record_event_attendance('5a770000-0000-0000-0000-000000000001',
        '{4a770000-0000-0000-0000-000000000001,4a770000-0000-0000-0000-000000000002}');
 select public.record_event_attendance('5a770000-0000-0000-0000-000000000002',
@@ -131,19 +131,19 @@ insert into public.den_meeting_attendance (meeting_id, scout_id) values
 \echo '== Event attendance: who sees what'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);   -- stranger
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);   -- stranger
 select test.check(test.count('select * from public.event_attendance') = 0, 'a stranger sees no attendance');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);   -- Alex (Pat's family)
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);   -- Alex (Pat's family)
 select test.check(test.count($$select * from public.event_attendance where scout_id::text like '4a77%'$$) = 2
                   and test.count($$select * from public.event_attendance where scout_id <> '4a770000-0000-0000-0000-000000000001'
                                     and scout_id::text like '4a77%'$$) = 0,
                   'a parent sees only their own scouts'' attendance');
 select test.check(test.count($$select * from public.attendance_summary('2025-07-01', '2026-06-30') where scout_id::text like '4a77%'$$) = 1,
                   'a parent''s totals cover only their own scouts');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);   -- Blair (Kit and Ash)
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);   -- Blair (Kit and Ash)
 select test.check(test.count($$select * from public.event_attendance where scout_id::text like '4a77%'$$) = 5,
                   'the other family sees their two scouts'' attendance');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);   -- Lee, den leader
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);   -- Lee, den leader
 select test.check(test.count($$select * from public.event_attendance where scout_id::text like '4a77%'$$) = 7,
                   'leaders see everyone''s attendance');
 rollback;
@@ -151,7 +151,7 @@ rollback;
 \echo '== Event attendance: totals per scout'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);   -- Blair
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);   -- Blair
 create temporary table t on commit drop as
 select * from public.attendance_summary('2025-07-01', '2026-06-30', '4a770000-0000-0000-0000-000000000002');
 select test.check((select den_meetings from t) = 2 and (select den_meetings_held from t) = 3,
@@ -169,7 +169,7 @@ rollback;
 -- A leader fixes the camping nights: the day camp was not overnight
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);   -- Lee, den leader
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);   -- Lee, den leader
 select test.expect_rows($$update public.events set camping_nights = 0 where id = '5a770000-0000-0000-0000-000000000005'$$, 1,
                         'a leader can set the camping nights');
 select test.check((select nights_all from public.attendance_summary('2025-07-01', '2026-06-30', '4a770000-0000-0000-0000-000000000002')) = 3,
@@ -178,7 +178,7 @@ select test.expect_rows($$update public.events set camping_nights = 3 where id =
                         'a campout with no end gets its nights from a leader');
 select test.check((select private.event_nights(e) from public.events e where id = '5a770000-0000-0000-0000-000000000006') = 3,
                   'override counts even with no end date');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);   -- Alex, parent
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);   -- Alex, parent
 select test.expect_rows($$update public.events set camping_nights = 9 where id = '5a770000-0000-0000-0000-000000000002'$$, 0,
                         'a parent cannot change camping nights');
 rollback;

@@ -11,7 +11,7 @@ begin;
 update public.adults set bsa_member_id = null where email like '%@example.com';
 delete from public.adult_trainings where adult_id = '30000000-0000-0000-0000-00000000000c';
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.expect_rows($$insert into public.adult_trainings (adult_id, course, completed_on, expires_on) values
                           ('30000000-0000-0000-0000-00000000000c', 'cor', '2026-01-05', null),
                           ('30000000-0000-0000-0000-00000000000c', 'iols', '2025-04-12', null),
@@ -50,7 +50,7 @@ rollback;
 begin;
 update public.adults set bsa_member_id = null where email like '%@example.com';
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(public.set_my_member_id(' 123456789 ') = '123456789', 'an adult sets their own member ID (trimmed)');
 select test.check((select bsa_member_id from public.adults where id = '30000000-0000-0000-0000-00000000000a') = '123456789',
                   'the member ID is saved on their own row');
@@ -84,7 +84,7 @@ select test.check((select bsa_member_id from public.adults where id = '30000000-
                   'an empty value clears your member ID');
 select public.set_my_member_id('123456789');
 -- Sam (Alex's co-parent) tries the same ID
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f","aal":"aal2"}', true);
 select test.expect_error($$select public.set_my_member_id('123456789')$$, '23505',
                          'a member ID already on another adult is refused');
 select test.check(public.set_my_member_id('22334455') = '22334455'
@@ -95,7 +95,7 @@ rollback;
 \echo '== Member IDs: not on the roster, anonymous'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);
 select test.expect_error($$select public.set_my_member_id('123')$$, '42501', 'someone not on the roster cannot set a member ID');
 select test.expect_error($$select public.import_trainings('[]'::jsonb, '[]'::jsonb)$$, '42501', 'someone not on the roster cannot import');
 rollback;
@@ -115,7 +115,7 @@ insert into public.adult_trainings (adult_id, course, completed_on, expires_on)
 values ('30000000-0000-0000-0000-00000000000a', 'ypt', '2026-01-10', '2027-01-10');
 update public.adults set bsa_member_id = '700000001' where id = '30000000-0000-0000-0000-00000000000a';
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check(public.import_trainings($$[
     {"adult_id":"30000000-0000-0000-0000-00000000000a","course":"ypt","completed_on":"2025-06-01","expires_on":"2026-06-01"},
     {"adult_id":"30000000-0000-0000-0000-00000000000a","course":"hazardous_weather","completed_on":"2026-08-15","expires_on":"2028-08-15"},

@@ -56,7 +56,7 @@ rollback;
 \echo '== Documents: signed in but not on the roster'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);
 select test.check(test.count('select * from public.documents') = 0, 'stranger sees no documents');
 select test.check(test.count($$select * from storage.objects where bucket_id = 'pack-docs'$$) = 0, 'stranger sees no document files');
 select test.expect_error($$insert into public.documents (title, storage_path, file_name, mime_type, size_bytes, uploaded_by)
@@ -69,7 +69,7 @@ rollback;
 \echo '== Documents: parent (Alex, Wolf and Bear families)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(test.count('select * from public.documents') = 3
                   and test.count($$select * from public.documents where id in ('d0000000-0000-0000-0000-000000000001',
                                    'd0000000-0000-0000-0000-000000000004', 'd0000000-0000-0000-0000-000000000005')$$) = 3,
@@ -93,9 +93,9 @@ rollback;
 \echo '== Documents: co-parent (Sam) and Bear-only parent (Blair)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f","aal":"aal2"}', true);
 select test.check(test.count('select * from public.documents') = 3, 'co-parent sees the same documents as Alex');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.documents') = 2
                   and test.count($$select * from public.documents where id = 'd0000000-0000-0000-0000-000000000004'$$) = 0,
                   'Bear-only parent does not see a Wolf den document');
@@ -107,7 +107,7 @@ rollback;
 \echo '== Documents: Bear den leader (Lee)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.documents') = 5
                   and test.count($$select * from public.documents where audience = 'committee'$$) = 0,
                   'den leader sees everyone and leader documents, every den and the archive, but not committee ones');
@@ -207,7 +207,7 @@ rollback;
 \echo '== Documents: Wolf den leader (Robin)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000091"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000091","aal":"aal2"}', true);
 select test.expect_rows($$update public.documents set title = 'Robin was here' where id = 'd0000000-0000-0000-0000-000000000005'$$,
                         0, 'one den leader cannot edit another den leader''s document');
 select test.check(test.count($$select * from storage.objects where name like '%/orphan.pdf'$$) = 0,
@@ -227,7 +227,7 @@ rollback;
 \echo '== Documents: committee member (Quinn)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000092"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000092","aal":"aal2"}', true);
 select test.check(test.count('select * from public.documents') = 7, 'committee sees every document');
 select test.check(test.count($$select * from storage.objects where bucket_id = 'pack-docs'$$) = 8,
                   'committee reads every document file and unused uploads');
@@ -259,7 +259,7 @@ rollback;
 \echo '== Documents: admin (Morgan)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check(test.count('select * from public.documents') = 7, 'admin sees every document');
 select test.expect_rows($$delete from public.documents where id = 'd0000000-0000-0000-0000-000000000006'$$, 1, 'admin deletes a document');
 select test.check((select bytes from public.storage_usage() where bucket_id = 'pack-docs') = 9100,
@@ -272,7 +272,7 @@ rollback;
 update public.adults set role = 'parent' where id = '30000000-0000-0000-0000-00000000000c';
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.expect_rows($$update public.documents set title = 'Still mine?' where id = 'd0000000-0000-0000-0000-000000000005'$$,
                         0, 'someone who is no longer a leader cannot edit what they added');
 select test.expect_error($$insert into storage.objects (bucket_id, name) values ('pack-docs', 'docs/30000000-0000-0000-0000-00000000000c/late.pdf')$$,

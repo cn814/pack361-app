@@ -7,7 +7,8 @@ import BackLink from "@/components/BackLink";
 import { countWaitingJoins, requireAdmin, welcomeBudget } from "@/lib/roster-data";
 import { getSettings } from "@/lib/settings";
 import { emailConfigured } from "@/lib/email";
-import { emailNewsletterPreview, saveBetaTesters, saveNewsletterMode, saveSettings, syncTroopWebHost } from "./actions";
+import { emailNewsletterPreview, resetTwoStep, saveBetaTesters, saveNewsletterMode, saveSettings, syncTroopWebHost } from "./actions";
+import { getTwoStepPeople } from "@/lib/two-step";
 import { APP_CHANNEL, APP_VERSION } from "@/lib/version";
 import { brevoConfigured } from "@/lib/bulk-email";
 import { NEWSLETTER_MODES, newsletterMode, testAdultIds, type NewsletterMode } from "@/lib/newsletter";
@@ -34,12 +35,13 @@ function Tile({ href, icon: Icon, label, sub }: { href: string; icon: typeof Mai
 export default async function AdminPage() {
   await requireAdmin();
   const supabase = await createClient();
-  const [settings, budget, { count: openMessages }, { data: storageRows }, waitingJoins] = await Promise.all([
+  const [settings, budget, { count: openMessages }, { data: storageRows }, waitingJoins, twoStep] = await Promise.all([
     getSettings(),
     welcomeBudget(),
     supabase.from("feedback").select("id", { count: "exact", head: true }).is("resolved_at", null),
     supabase.rpc("storage_usage"),
     countWaitingJoins(),
+    getTwoStepPeople(),
   ]);
   // People who can get the newsletter's test copy: pack leadership, the Cubmaster and admins.
   const { data: testerRows } = await supabase
@@ -214,6 +216,51 @@ export default async function AdminPage() {
         </div>
         {!brevoConfigured() && settings.newsletter_mode === "everyone" && (
           <p className="rounded-xl bg-gold-50 p-2 text-xs text-gold-800">Sending to every family needs BREVO_API_KEY in Vercel.</p>
+        )}
+      </section>
+
+      <section className="card space-y-3" id="two-step">
+        <h2 className="section-title">Two-step sign-in</h2>
+        <p className="text-sm text-muted">
+          Pack leadership, the Cubmaster and admins sign in with their email code <b>and</b> a code from an authenticator app.
+          Anyone who hasn&apos;t set it up is walked through it the next time they open the app; until then they get only a
+          parent&apos;s access. Someone lost their phone? Reset them: they&apos;re signed out and set up their app again.
+        </p>
+        {twoStep === null ? (
+          <p className="text-sm text-gold-800">Needs the server key (SUPABASE_SECRET_KEY) to show who&apos;s set up.</p>
+        ) : (
+          <ul className="divide-y divide-line rounded-xl ring-1 ring-line">
+            {twoStep.map((p) => (
+              <li key={p.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                <span>
+                  <span className="font-semibold text-ink">{p.name}</span>
+                  <span className="block text-xs text-muted">
+                    {!p.signedUp
+                      ? "Hasn't signed in yet"
+                      : p.apps === 0
+                        ? "Not set up yet"
+                        : `Set up · ${p.apps} app${p.apps === 1 ? "" : "s"}${p.lastUsed ? ` · last code ${timeAgo(p.lastUsed)}` : ""}`}
+                  </span>
+                </span>
+                {p.apps > 0 ? (
+                  <ActionForm
+                    action={resetTwoStep}
+                    submit="Reset"
+                    busy="Resetting…"
+                    className="flex flex-col items-end text-right"
+                    buttonClass="text-xs font-bold text-danger underline"
+                    confirm={`Reset ${p.name}'s two-step sign-in? They'll be signed out everywhere and set up their authenticator app again.`}
+                  >
+                    <input type="hidden" name="adult_id" value={p.id} />
+                  </ActionForm>
+                ) : (
+                  <span className={`badge ${p.signedUp ? "bg-gold-50 text-gold-800" : "bg-surface-low text-muted"}`}>
+                    {p.signedUp ? "To do" : "—"}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 

@@ -16,13 +16,13 @@ insert into public.events (id, title, category, starts_at, rsvp_enabled, fee_fam
 \echo '== Review fixes 1: RSVP answers leave committee fees alone'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);   -- Morgan
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);   -- Morgan
 select test.check((select added from public.add_fee('event', 'Skate rental', null, '5f000000-0000-0000-0000-000000000001', 500, null,
                                                     'family', '20000000-0000-0000-0000-000000000001')) = 1,
                   'committee adds a per-family fee for the event');
 select test.check((select source from public.charges where event_id = '5f000000-0000-0000-0000-000000000001') = 'manual',
                   'a committee fee is marked manual');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);   -- Alex
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);   -- Alex
 select public.set_rsvp('5f000000-0000-0000-0000-000000000001', 'yes', 1, 1, null);
 select test.check(test.count($$select * from public.charges where event_id = '5f000000-0000-0000-0000-000000000001' and status = 'open'$$) = 2,
                   'answering yes adds the RSVP charge next to the committee fee');
@@ -91,7 +91,7 @@ select test.check((select dues_match = 'partial' and dues_note = 'Paid $255; $50
 reset role;
 
 set role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', false);   -- Morgan
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', false);   -- Morgan
 select test.expect_error($$select public.match_givebutter_dues(9101, '20000000-0000-0000-0000-0000000000f1',
                            array['40000000-0000-0000-0000-0000000000f1', '40000000-0000-0000-0000-0000000000f2']::uuid[])$$, '22023',
                          'matching a short order by hand to both scouts is refused');
@@ -124,7 +124,7 @@ select test.check(public.apply_givebutter_dues(9103, '20000000-0000-0000-0000-00
 reset role;
 
 set role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', false);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', false);
 select test.expect_error($$select public.match_givebutter_dues(9101, '20000000-0000-0000-0000-0000000000f1',
                            array['40000000-0000-0000-0000-0000000000f1', '40000000-0000-0000-0000-0000000000f2']::uuid[])$$, '22023',
                          'matching by hand to scouts with nothing left to pay is refused');
@@ -142,7 +142,7 @@ select set_config('request.jwt.claims', '', false);
 \echo '== Review fixes 3: only the committee sets event prices'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);   -- Lee, den leader
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);   -- Lee, den leader
 select test.expect_error($$update public.events set fee_family_cents = 1 where id = '5f000000-0000-0000-0000-000000000002'$$, '42501',
                          'a den leader cannot change an event''s price');
 select test.expect_error($$update public.events set fee_scout_cents = null, fee_family_cents = null where id = '5f000000-0000-0000-0000-000000000002'$$, '42501',
@@ -155,7 +155,7 @@ select test.expect_rows($$update public.events set title = 'Pinewood Derby!', fe
                         'a den leader still edits an event when the price stays the same');
 select test.expect_error($$select public.refresh_event_charges('5f000000-0000-0000-0000-000000000002')$$, '42501',
                          'a den leader cannot reprice the RSVP charges');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);   -- Morgan
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);   -- Morgan
 select test.expect_rows($$update public.events set fee_family_cents = 900 where id = '5f000000-0000-0000-0000-000000000002'$$, 1,
                         'the committee changes the price');
 select public.refresh_event_charges('5f000000-0000-0000-0000-000000000002');
@@ -170,11 +170,11 @@ rollback;
 \echo '== Review fixes 4: a deleted RSVP cancels its open charge'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);   -- Alex
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);   -- Alex
 select public.set_rsvp('5f000000-0000-0000-0000-000000000002', 'yes', 1, 1, null);
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);   -- Blair
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);   -- Blair
 select public.set_rsvp('5f000000-0000-0000-0000-000000000002', 'yes', 1, 1, null);
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);   -- Morgan
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);   -- Morgan
 select test.check(public.update_charges(array(select id from public.charges where event_id = '5f000000-0000-0000-0000-000000000002'
                                                 and family_id = '20000000-0000-0000-0000-000000000002'), 'paid', 'cash', null) = 1,
                   'Blair''s family pays in cash');
@@ -194,7 +194,7 @@ insert into public.charges (id, family_id, kind, title, amount_cents, status, pa
  ('8f000000-0000-0000-0000-000000000051', '20000000-0000-0000-0000-000000000001', 'other', 'Paid online', 1000, 'paid', 'paypal', now(), 1000),
  ('8f000000-0000-0000-0000-000000000052', '20000000-0000-0000-0000-000000000001', 'other', 'Still due', 1000, 'open', null, null, null);
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);   -- Morgan
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);   -- Morgan
 select test.expect_error($$update public.charges set status = 'open', paid_via = null where id = '8f000000-0000-0000-0000-000000000051'$$, '42501',
                          'the committee cannot reopen a PayPal payment directly');
 select test.expect_error($$delete from public.charges where id = '8f000000-0000-0000-0000-000000000051'$$, '42501',
@@ -213,11 +213,11 @@ rollback;
 \echo '== Review fixes 6: reopening next to an open twin'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);   -- Alex
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);   -- Alex
 select public.set_rsvp('5f000000-0000-0000-0000-000000000003', 'yes', 1, 1, null);
 select public.set_rsvp('5f000000-0000-0000-0000-000000000003', 'no', 0, 0, null);
 select public.set_rsvp('5f000000-0000-0000-0000-000000000003', 'yes', 1, 1, null);
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);   -- Morgan
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);   -- Morgan
 create temporary table twin on commit drop as
 select id from public.charges where event_id = '5f000000-0000-0000-0000-000000000003' and status = 'canceled';
 select test.check((select count(*) from twin) = 1, 'yes, no, yes leaves a canceled charge next to the open one');
@@ -232,7 +232,7 @@ rollback;
 \echo '== Review fixes 7 + 8: den meetings'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);   -- Lee
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);   -- Lee
 select test.check((public.record_den_meeting('10000000-0000-0000-0000-000000000002', null, (now() at time zone 'America/New_York')::date - 20,
                     '{40000000-0000-0000-0000-000000000003}',
                     '[{"adventure":"Balancing Bears","requirements":["1"],"skip":{"40000000-0000-0000-0000-000000000003":"1"}},
@@ -253,10 +253,10 @@ select test.check((select status::text from public.advancement_submissions where
                   'the returned requirement, still checked, is approved again');
 -- Returned again; the family sends it in again, then the meeting is saved again.
 update public.advancement_submissions set status = 'returned' where meeting_id = (select id from m8);
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);   -- Blair, Jo's parent
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);   -- Blair, Jo's parent
 select test.expect_rows($$update public.advancement_submissions set status = 'submitted' where meeting_id = (select id from m8)$$, 1,
                         'the family sends the returned requirement in again');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select public.record_den_meeting('10000000-0000-0000-0000-000000000002', (select id from m8), (now() at time zone 'America/New_York')::date - 21,
        '{40000000-0000-0000-0000-000000000003}', '[{"adventure":"Balancing Bears","requirements":["2"]}]');
 select test.check(test.count($$select * from public.advancement_submissions where meeting_id = (select id from m8)$$) = 1

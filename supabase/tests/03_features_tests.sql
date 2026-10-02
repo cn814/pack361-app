@@ -24,7 +24,7 @@ rollback;
 \echo '== Features: stranger'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);
 select test.check(test.count('select * from public.givebutter_campaigns') = 0, 'stranger sees no campaigns');
 select test.check(test.count('select * from public.popcorn_sales') = 0, 'stranger sees no popcorn sales');
 rollback;
@@ -32,7 +32,7 @@ rollback;
 \echo '== Features: parent (Alex Smith)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check((select value from public.pack_settings where key = 'awards_tracked_from') = '2026-07-01', 'members read settings');
 select test.expect_rows($$update public.pack_settings set value = '2020-01-01'$$, 0, 'parent cannot change settings');
 select test.check(test.count('select * from public.givebutter_campaigns') = 2, 'members see campaigns');
@@ -56,7 +56,7 @@ commit;
 \echo '== Features: other parent (Blair)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.push_subscriptions') = 0, 'push subscriptions are private');
 select test.check(test.count('select * from public.givebutter_orders') = 1, 'Blair sees only the Jones order');
 rollback;
@@ -64,10 +64,10 @@ rollback;
 \echo '== Features: leader and admin'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.givebutter_orders') = 3, 'leaders see all orders');
 select test.expect_rows($$update public.pack_settings set value = '2020-01-01'$$, 0, 'den leader cannot change settings');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.expect_rows($$update public.pack_settings set value = '150' where key = 'popcorn_scout_goal'$$, 1, 'admin changes a setting');
 select test.expect_rows($$insert into public.popcorn_sales (scout_id, amount) values ('40000000-0000-0000-0000-000000000002', 120)$$, 1, 'admin enters popcorn sales');
 select test.expect_rows($$update public.givebutter_campaigns set show_as_fundraiser = true where id = 745658$$, 1, 'admin relabels a campaign');

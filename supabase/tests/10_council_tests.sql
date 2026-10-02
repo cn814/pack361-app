@@ -37,7 +37,7 @@ commit;
 \echo '== Council events: signed in, not on the roster (E)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);
 select test.check(test.count('select * from public.council_events') = 0, 'strangers see no council events');
 select test.expect_rows($$update public.council_events set status = 'skipped'$$, 0, 'strangers cannot change council events');
 commit;
@@ -45,7 +45,7 @@ commit;
 \echo '== Council events: parent (A)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(test.count('select * from public.council_events') = 0, 'parents cannot read council events');
 select test.expect_rows($$update public.council_events set status = 'skipped'$$, 0, 'parents cannot change council events');
 select test.expect_rows($$update public.pack_settings set value = 'https://example.com/x.ics' where key = 'council_calendar_url'$$, 0,
@@ -55,7 +55,7 @@ commit;
 \echo '== Council events: den leader (C)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.council_events') = 2, 'den leaders read council events');
 select test.expect_rows($$update public.council_events set status = 'skipped'$$, 0, 'den leaders cannot change council events');
 select test.expect_error($$insert into public.council_events (uid, title, starts_at) values ('c-9', 'x', now())$$, '42501',
@@ -67,7 +67,7 @@ commit;
 \echo '== Council events: committee member (K)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000c1"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000c1","aal":"aal2"}', true);
 select test.check(test.count('select * from public.council_events') = 2, 'committee reads council events');
 select test.expect_rows($$update public.council_events set status = 'skipped' where uid = 'c-2@scoutingevent.com'$$, 1,
                         'committee skips a council event');
@@ -104,7 +104,7 @@ commit;
 \echo '== Council events: admin (D)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check(test.count('select * from public.council_events') = 2, 'admins read council events');
 select test.expect_rows($$update public.council_events set status = 'skipped' where uid = 'c-2@scoutingevent.com'$$, 1,
                         'admins decide too');
@@ -139,7 +139,7 @@ commit;
 \echo '== Council events: status is visible to leaders'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check((select value from public.pack_settings where key = 'council_last_sync') = '{"ok":true}',
                   'leaders see the last check''s status');
 commit;

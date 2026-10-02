@@ -38,7 +38,7 @@ rollback;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);
 select test.check(test.count('select * from public.finance_categories') = 0, 'stranger sees no categories');
 select test.check(test.count('select * from public.expenses') = 0, 'stranger sees no expenses');
 select test.expect_error($$insert into public.expenses (spent_on, amount_cents, description, adult_id) values (current_date, 100, 'x', null)$$,
@@ -50,7 +50,7 @@ rollback;
 \echo '== Finance: parent asks to be paid back'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(test.count('select * from public.finance_categories') > 0, 'members see the categories');
 insert into public.expenses (id, spent_on, amount_cents, description, vendor, adult_id, category_id, pay_me_by,
                              receipt_path, receipt_name, receipt_mime, receipt_bytes)
@@ -105,14 +105,14 @@ commit;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.expenses') = 0, 'another parent cannot see Alex''s request');
 select test.check(test.count($$select * from storage.objects where bucket_id = 'receipts'$$) = 0, 'another parent cannot see Alex''s receipts');
 rollback;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.expenses') = 0, 'a den leader sees only their own requests');
 select test.check(test.count('select * from public.finance_income') = 0, 'a den leader sees no pack income');
 rollback;
@@ -120,7 +120,7 @@ rollback;
 \echo '== Finance: leadership'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check(test.count('select * from public.expenses') = 1, 'leadership sees every request');
 select test.check(test.count($$select * from storage.objects where bucket_id = 'receipts'$$) >= 3, 'leadership sees every receipt');
 update public.expenses set status = 'approved' where id = 'e1000000-0000-0000-0000-000000000001';
@@ -172,7 +172,7 @@ commit;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a7"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a7","aal":"aal2"}', true);
 update public.expenses set status = 'approved' where id = 'e1000000-0000-0000-0000-000000000003';
 select test.check((select approved_by from public.expenses where id = 'e1000000-0000-0000-0000-000000000003') = '30000000-0000-0000-0000-0000000000a7',
                   'another leadership member approves it');
@@ -181,7 +181,7 @@ rollback;
 \echo '== Finance: after leadership acts'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check((select status from public.expenses where id = 'e1000000-0000-0000-0000-000000000001') = 'paid', 'parent sees their request was paid');
 select test.check(test.count('select * from public.expenses') = 1, 'parent still sees only their own');
 select test.expect_rows($$update public.expenses set amount_cents = 9999 where id = 'e1000000-0000-0000-0000-000000000001'$$, 0,
@@ -203,7 +203,7 @@ rollback;
 \echo '== Finance: review fixes'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.expect_error($$insert into public.expenses (spent_on, amount_cents, description, paid_by, adult_id, status, category_id, paid_on)
                           values (current_date, 100, 'x', 'pack', '30000000-0000-0000-0000-00000000000d', 'paid', test.cat('Den meetings'), current_date)$$,
                          '23514', 'pack spending has nobody to pay back');
@@ -221,7 +221,7 @@ commit;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a7"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a7","aal":"aal2"}', true);
 update public.expenses set status = 'approved' where id = 'e1000000-0000-0000-0000-000000000011';
 insert into public.expenses (id, spent_on, amount_cents, description, adult_id, status, category_id,
                              receipt_path, receipt_name, receipt_mime, receipt_bytes)
@@ -233,7 +233,7 @@ values ('receipts', 'r/30000000-0000-0000-0000-0000000000a7/e0000000-0000-0000-0
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.expect_error($$update public.expenses set amount_cents = 99999 where id = 'e1000000-0000-0000-0000-000000000011'$$,
                          '42501', 'leadership cannot change their own request once someone approved it');
 select test.expect_error($$delete from public.expenses where id = 'e1000000-0000-0000-0000-000000000011'$$,
@@ -242,7 +242,7 @@ rollback;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(test.count($$select * from storage.objects where name = 'r/30000000-0000-0000-0000-0000000000a7/e0000000-0000-0000-0000-000000000012.jpg'$$) = 1,
                   'a member can open the receipt leadership attached to their request');
 select test.check(test.count($$select * from storage.objects where bucket_id = 'receipts' and name like 'r/30000000-0000-0000-0000-0000000000a7/%'$$) = 1,

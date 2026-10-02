@@ -15,7 +15,8 @@ import TrainingEditor, { stateText } from "@/components/TrainingEditor";
 import TrainingStatus, { MyScoutingLink } from "@/components/TrainingStatus";
 import ActionForm, { Field } from "@/components/ActionForm";
 import { saveMyMemberId } from "@/app/(app)/leaders/training/actions";
-import { displayName, getFamilyAdults, getMyScouts, isLeader, requireMember } from "@/lib/data";
+import { displayName, getFamilyAdults, getMyScouts, isLeader, needsTwoStep, requireMember } from "@/lib/data";
+import TwoStepCard from "@/components/TwoStepCard";
 import { getMyPositions, getMyTraining } from "@/lib/training-data";
 import { COURSE_BY_KEY, POSITION_BY_KEY, positionLabels, trainedStatus, trainingState } from "@/lib/training";
 import { fmtRegDate, needsRenewal, regStatus, RENEW_URL, REG_STYLE } from "@/lib/registration";
@@ -167,6 +168,8 @@ export default async function FamilyPage() {
         <h2 className="section-title">My contact info</h2>
         <ContactForm phone={me.phone} preferred={me.preferred_name} />
       </section>
+
+      {needsTwoStep(me.real_role ?? me.role) && <TwoStepCard />}
 
       <FeedbackForm page="My family" />
 

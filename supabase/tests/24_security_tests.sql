@@ -8,7 +8,7 @@ insert into public.polls (id, question, options, created_by) values
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.expect_error($$update public.polls set options = array['Tacos', 'Pizza'] where id = '90000000-0000-0000-0000-0000000000a1'$$,
                          '42501', 'a poll''s options can''t be changed after it''s posted');
 select test.expect_error($$update public.polls set question = 'Something else' where id = '90000000-0000-0000-0000-0000000000a1'$$,
@@ -21,7 +21,7 @@ rollback;
 update public.adults set role = 'parent' where id = '30000000-0000-0000-0000-00000000000c';
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.expect_rows($$update public.polls set closed_at = now() where id = '90000000-0000-0000-0000-0000000000a1'$$, 0,
                         'someone who is no longer a leader can''t close their old poll');
 select test.expect_rows($$delete from public.polls where id = '90000000-0000-0000-0000-0000000000a1'$$, 0, 'or delete it');
@@ -31,7 +31,7 @@ update public.adults set role = 'den_leader' where id = '30000000-0000-0000-0000
 -- Feedback: ten a day.
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 insert into public.feedback (adult_id, message)
 select '30000000-0000-0000-0000-00000000000a', 'note ' || g from generate_series(1, 10) g;
 select test.expect_error($$insert into public.feedback (adult_id, message) values ('30000000-0000-0000-0000-00000000000a', 'one more')$$,
@@ -41,7 +41,7 @@ rollback;
 -- Calendar link: a new one on request, only for yourself.
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 create temp table before_token as select calendar_token from public.adults where id = '30000000-0000-0000-0000-00000000000a';
 select public.reset_calendar_token();
 select test.check((select calendar_token from public.adults where id = '30000000-0000-0000-0000-00000000000a') <> (select calendar_token from before_token),
@@ -55,7 +55,7 @@ rollback;
 -- Uploads.
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.expect_error($$insert into storage.objects (bucket_id, name) values ('advancement-evidence', '30000000-0000-0000-0000-00000000000a/x.html')$$,
                          '42501', 'the unused evidence bucket takes no uploads');
 insert into storage.objects (bucket_id, name)

@@ -10,7 +10,7 @@ insert into public.events (id, title, category, starts_at, slip_required, slip_t
 -- Alex (Smith parent) signs for Sky.
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 insert into public.permission_slips (event_id, scout_id, kind, signed_name, contact, signed_text, signed_by)
 values ('5a000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000001', 'signed', ' Alex Smith ', '410-555-0101',
         'Something else', '30000000-0000-0000-0000-00000000000b');
@@ -34,7 +34,7 @@ commit;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.permission_slips') = 0, 'other families cannot see a family''s slips');
 select test.expect_rows($$delete from public.permission_slips$$, 0, 'other families cannot remove a slip');
 rollback;
@@ -47,7 +47,7 @@ rollback;
 -- Lee (den leader) sees the slip and records a paper one for Jo.
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.permission_slips') = 1, 'leaders see the slips');
 insert into public.permission_slips (event_id, scout_id, kind, signed_name) values ('5a000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000003', 'paper', 'Forged');
 select test.check((select recorded_by from public.permission_slips where kind = 'paper') = '30000000-0000-0000-0000-00000000000c', 'a paper slip records the leader');
@@ -57,13 +57,13 @@ commit;
 -- Alex takes back the signature; can't remove the leader's paper slip for Jo.
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.expect_rows($$delete from public.permission_slips where scout_id = '40000000-0000-0000-0000-000000000001'$$, 1, 'a parent can take back their signature');
 select test.expect_rows($$delete from public.permission_slips where scout_id = '40000000-0000-0000-0000-000000000003'$$, 0, 'and nothing else');
 rollback;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.expect_rows($$delete from public.permission_slips where kind = 'paper'$$, 1, 'leaders can remove a slip');
 rollback;

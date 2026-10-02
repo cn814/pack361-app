@@ -112,7 +112,7 @@ rollback;
 \echo '== Signed in but NOT on the roster'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);
 select test.check(test.count('select * from public.adults') = 0, 'stranger sees no adults');
 select test.check(test.count('select * from public.scouts') = 0, 'stranger sees no scouts');
 select test.check(test.count('select * from public.events') = 0, 'stranger sees no events');
@@ -125,7 +125,7 @@ rollback;
 \echo '== Parent (Alex Smith)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(test.count('select * from public.adults') = 2, 'parent reads adults without recursion error; sees self + spouse only');
 select test.check(test.count('select * from public.scouts') = 2, 'parent sees only their own two scouts');
 select test.check(test.count('select * from public.events') = 1, 'parent sees events');
@@ -170,7 +170,7 @@ commit;
 \echo '== Parent (Blair Jones) looks at Smith data'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.photos') = 0, 'other parents cannot see a pending photo');
 select test.check(test.count('select * from public.advancement_submissions') = 0, 'other parents cannot see Smith advancement');
 select test.expect_error($$insert into public.volunteer_signups (slot_id, adult_id) values ('60000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-00000000000b')$$,
@@ -184,7 +184,7 @@ rollback;
 \echo '== Bear den leader (Lee)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.scouts') = 3, 'leader sees all scouts');
 select test.check(test.count('select * from public.advancement_submissions') = 1, 'den leader sees submission for a scout in their den');
 select test.expect_rows($$update public.advancement_submissions set status = 'approved', review_note = 'Great job' where id = '80000000-0000-0000-0000-000000000001'$$,
@@ -200,7 +200,7 @@ commit;
 \echo '== Parent sees approved photo; Wolf-only leader case'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.photos') = 1, 'approved photo is visible to other members');
 select test.check(test.count('select * from public.announcements') = 1, 'members read announcements');
 rollback;
@@ -210,7 +210,7 @@ insert into public.advancement_submissions (id, scout_id, submitted_by, adventur
 values ('80000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-00000000000a', 'Paws on the Path', '1', '2026-09-21');
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.expect_rows($$update public.advancement_submissions set status = 'approved' where id = '80000000-0000-0000-0000-000000000002'$$, 0,
                         'Bear den leader cannot approve a Wolf scout''s submission');
 rollback;
@@ -219,7 +219,7 @@ rollback;
 \echo '== Admin (Morgan)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.expect_rows($$update public.advancement_submissions set status = 'recorded' where id = '80000000-0000-0000-0000-000000000001'$$,
                         1, 'admin marks submission recorded in Scoutbook');
 select test.expect_rows($$insert into public.scouts (family_id, first_name, last_name) values ('20000000-0000-0000-0000-000000000002', 'New', 'Jones')$$,
@@ -230,7 +230,7 @@ rollback;
 \echo '== Storage policies'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.expect_rows($$insert into storage.objects (bucket_id, name) values ('pack-photos', '30000000-0000-0000-0000-00000000000a/p1.jpg')$$,
                         1, 'parent uploads a file into own folder');
 select test.expect_error($$insert into storage.objects (bucket_id, name) values ('pack-photos', '30000000-0000-0000-0000-00000000000b/evil.jpg')$$,
@@ -238,12 +238,12 @@ select test.expect_error($$insert into storage.objects (bucket_id, name) values 
 commit;
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);
 select test.check(test.count($$select * from storage.objects where bucket_id = 'pack-photos'$$) = 0, 'stranger cannot read photo files');
 rollback;
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count($$select * from storage.objects where bucket_id = 'pack-photos'$$) = 1, 'member can read an approved photo file');
 rollback;
 

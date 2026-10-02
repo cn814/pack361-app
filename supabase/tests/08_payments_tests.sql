@@ -34,7 +34,7 @@ rollback;
 \echo '== Payments: signed in but not on the roster'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);
 select test.check(test.count('select * from public.charges') = 0, 'strangers see no charges');
 select test.check(test.count('select * from public.payments') = 0, 'strangers see no payments');
 select test.expect_error($$select public.report_paid(array['83000000-0000-0000-0000-000000000004'::uuid], 'check', null)$$, '42501',
@@ -45,7 +45,7 @@ rollback;
 \echo '== Payments: parent (Alex)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(test.count('select * from public.charges') = 3
                   and test.count($$select * from public.charges where family_id <> '20000000-0000-0000-0000-000000000001'$$) = 0,
                   'a family sees only its own charges');
@@ -104,14 +104,14 @@ commit;
 \echo '== Payments: co-parent (Sam)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f","aal":"aal2"}', true);
 select test.check(test.count($$select * from public.charges where status <> 'canceled'$$) = 4, 'both parents see the family''s charges');
 rollback;
 
 \echo '== Payments: other parent (Blair)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.charges') = 2, 'Blair sees only the Jones family''s dues and registration');
 select test.check((select public.report_paid(array(select id from public.charges where family_id = '20000000-0000-0000-0000-000000000001'), 'cash', null)) = 0,
                   'cannot report another family''s charges');
@@ -121,7 +121,7 @@ rollback;
 \echo '== Payments: den leader, not on the committee (Lee)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.charges') = 1
                   and (select id from public.charges) = '83000000-0000-0000-0000-000000000003',
                   'a den leader sees only their own charge, not families'' money');
@@ -144,7 +144,7 @@ commit;
 \echo '== Payments: committee (Morgan)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check(test.count('select * from public.charges') = 9,
                   'committee sees every charge');
 select test.check((select added || '/' || skipped from public.add_fee('dues', 'Pack dues 2026-27', '2026-27', null, 6000, null, 'families', null))
@@ -216,7 +216,7 @@ commit;
 \echo '== Payments: a paid event fee is never changed by the RSVP'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select public.set_rsvp('52000000-0000-0000-0000-000000000001', 'yes', 2, 3, null);
 select test.check((select status || '/' || amount_cents from public.charges
                      where event_id = '52000000-0000-0000-0000-000000000001' and family_id = '20000000-0000-0000-0000-000000000001'
@@ -245,16 +245,16 @@ update public.charges c set pending_payment_id = p.id, pending_since = now()
 \echo '== Payments: who sees checkouts'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f","aal":"aal2"}', true);
 select test.check(test.count('select * from public.payments') = 1, 'a family sees its own checkouts (co-parent too)');
 select test.expect_error($$update public.payments set status = 'captured'$$, '42501', 'families cannot change a checkout');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.payments') = 1
                   and (select provider_order_id from public.payments) = 'ORDER-B', 'other families see only theirs');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.payments') = 1
                   and (select provider_order_id from public.payments) = 'ORDER-C', 'an adult with no family sees their own checkout');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check(test.count('select * from public.payments') = 3, 'committee sees every checkout');
 select test.expect_error($$insert into public.payments (charge_ids, charge_cents, amount_cents, provider_order_id)
                            values (array['83000000-0000-0000-0000-000000000001'::uuid], array[1], 1, 'X')$$, '42501',
@@ -290,7 +290,7 @@ commit;
 \echo '== Payments: online payments cannot be reopened'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check((select public.update_charges(array['83000000-0000-0000-0000-000000000001'::uuid], 'reopen')) = 0,
                   'a PayPal payment stays paid (refund it in PayPal first)');
 select test.check((select public.update_charges(array['83000000-0000-0000-0000-000000000001'::uuid], 'cancel')) = 0,
@@ -308,7 +308,7 @@ insert into public.events (id, title, category, starts_at, rsvp_enabled, fee_sco
 \echo '== Payments: a checkout holds its charges'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select public.set_rsvp('52000000-0000-0000-0000-000000000003', 'yes', 1, 0, null);
 select test.check((select amount_cents from public.claim_charges('85000000-0000-0000-0000-000000000001',
                      array(select id from public.charges where event_id = '52000000-0000-0000-0000-000000000003'))) = 1000,
@@ -323,7 +323,7 @@ commit;
 \echo '== Payments: a second phone cannot pay for the same things'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f","aal":"aal2"}', true);
 select test.expect_error($$select * from public.claim_charges('85000000-0000-0000-0000-000000000002',
                            array(select id from public.charges where event_id = '52000000-0000-0000-0000-000000000003'))$$, '55006',
                          'a second checkout for the same charge is refused while the first is in progress');
@@ -332,7 +332,7 @@ select test.expect_error($$select * from public.claim_charges('85000000-0000-000
 rollback;
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.expect_error($$select * from public.claim_charges('85000000-0000-0000-0000-000000000003',
                            array(select id from public.charges where event_id = '52000000-0000-0000-0000-000000000003'))$$, '22023',
                          'other families cannot claim it either');
@@ -348,7 +348,7 @@ update public.charges set pending_since = now() - interval '1 hour' where pendin
 \echo '== Payments: after the hold lapses'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select public.set_rsvp('52000000-0000-0000-0000-000000000003', 'yes', 5, 0, null);
 select test.check((select amount_cents from public.charges where event_id = '52000000-0000-0000-0000-000000000003' and status = 'open') = 5000,
                   'the RSVP updates the amount once the old checkout''s hold lapses');
@@ -405,7 +405,7 @@ rollback;
 \echo '== Payments: a reported charge is not changed by the RSVP'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select public.set_rsvp('52000000-0000-0000-0000-000000000004', 'yes', 3, 0, null);
 select test.check((select public.report_paid(array(select id from public.charges where event_id = '52000000-0000-0000-0000-000000000004'), 'cash', null)) = 1,
                   'family reports paying $30 in cash');
@@ -420,7 +420,7 @@ commit;
 \echo '== Payments: per-scout fees'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check((select added || '/' || skipped from public.add_fee('event', 'Fishing Derby bait', null, '52000000-0000-0000-0000-000000000003', 500, null, 'scouts', null))
                   = '3/0', 'a per-scout event fee charges each sibling, alongside the family''s RSVP charge');
 select test.check((select added || '/' || skipped from public.add_fee('event', 'Fishing Derby bait', null, '52000000-0000-0000-0000-000000000003', 500, null, 'scouts', null))

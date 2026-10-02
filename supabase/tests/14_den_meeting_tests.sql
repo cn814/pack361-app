@@ -6,11 +6,11 @@
 \echo '== Den meetings: who can record'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);   -- Blair, a parent
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);   -- Blair, a parent
 select test.expect_error($$select public.record_den_meeting('10000000-0000-0000-0000-000000000002', null,
                            (now() at time zone 'America/New_York')::date, '{40000000-0000-0000-0000-000000000003}', '[]')$$,
                          '42501', 'a parent cannot record a den meeting');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);   -- Lee, Bear den leader
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);   -- Lee, Bear den leader
 select test.expect_error($$select public.record_den_meeting('10000000-0000-0000-0000-000000000001', null,
                            (now() at time zone 'America/New_York')::date, '{40000000-0000-0000-0000-000000000001}', '[]')$$,
                          '42501', 'a den leader cannot record another den''s meeting');
@@ -20,7 +20,7 @@ select test.expect_error($$select public.record_den_meeting('10000000-0000-0000-
 select test.expect_error($$select public.record_den_meeting('10000000-0000-0000-0000-000000000002', null,
                            (now() at time zone 'America/New_York')::date, '{}', '[{"adventure":"Not Real","requirements":["1"]}]')$$,
                          '22023', 'unknown adventures are refused');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);   -- Morgan, admin
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);   -- Morgan, admin
 select test.check((public.record_den_meeting('10000000-0000-0000-0000-000000000001', null,
                     (now() at time zone 'America/New_York')::date - 2, '{40000000-0000-0000-0000-000000000001}', '[]') ->> 'present')::int = 1,
                   'committee and up can record any den (attendance only, no adventure)');
@@ -31,7 +31,7 @@ rollback;
 \echo '== Den meetings: record, record again, edit'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 create temporary table r on commit drop as
 select public.record_den_meeting('10000000-0000-0000-0000-000000000002', null, (now() at time zone 'America/New_York')::date - 1,
        '{40000000-0000-0000-0000-000000000002,40000000-0000-0000-0000-000000000003,40000000-0000-0000-0000-000000000001}',
@@ -61,13 +61,13 @@ select test.expect_error($$insert into public.advancement_submissions (scout_id,
                          '23505', 'the database refuses a second copy from the same meeting');
 
 -- The advancement chair enters River's requirement 1 in Scoutbook
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.expect_rows($$update public.advancement_submissions set status = 'recorded'
                           where scout_id = '40000000-0000-0000-0000-000000000002' and requirement = '1'
                             and meeting_id = (select (res ->> 'meeting_id')::uuid from r)$$, 1, 'chair marks one entered in Scoutbook');
 
 -- The leader fixes it: River left early, and they never got to requirement 3; Jo skipped requirement 2
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 create temporary table r2 on commit drop as
 select public.record_den_meeting('10000000-0000-0000-0000-000000000002', (select (res ->> 'meeting_id')::uuid from r),
        (now() at time zone 'America/New_York')::date - 1, '{40000000-0000-0000-0000-000000000003}',
@@ -88,7 +88,7 @@ select test.check(test.count($$select * from public.den_meeting_attendance where
                   'attendance updated');
 select test.check((select jsonb_array_length(work) from public.den_meetings where id = (select (res ->> 'meeting_id')::uuid from r)) = 3,
                   'one meeting can cover several adventures');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.expect_rows($$update public.den_meetings set work = '[]'$$, 0, 'families cannot change a meeting');
 rollback;
 
@@ -98,7 +98,7 @@ insert into public.den_meetings (id, den_id, meets_on, title) values
  ('80000000-0000-0000-0000-000000000014', '10000000-0000-0000-0000-000000000002', (now() at time zone 'America/New_York')::date + 7, 'Next week'),
  ('80000000-0000-0000-0000-000000000015', '10000000-0000-0000-0000-000000000002', (now() at time zone 'America/New_York')::date - 7, 'Last week');
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);   -- Alex Smith
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);   -- Alex Smith
 select public.set_den_meeting_rsvp('80000000-0000-0000-0000-000000000014', '40000000-0000-0000-0000-000000000002', true);
 select test.check(test.count('select * from public.den_meeting_rsvps where going') = 1, 'a family says their scout is going');
 select public.set_den_meeting_rsvp('80000000-0000-0000-0000-000000000014', '40000000-0000-0000-0000-000000000002', false);
@@ -114,13 +114,13 @@ select test.expect_error($$select public.set_den_meeting_rsvp('80000000-0000-000
 select test.expect_error($$insert into public.den_meeting_rsvps (meeting_id, scout_id, going)
                            values ('80000000-0000-0000-0000-000000000014', '40000000-0000-0000-0000-000000000003', true)$$,
                          '42501', 'answers only go through set_den_meeting_rsvp');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);   -- Blair Jones
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);   -- Blair Jones
 select test.check(test.count('select * from public.den_meeting_rsvps') = 0, 'other families cannot see the answer');
 select public.set_den_meeting_rsvp('80000000-0000-0000-0000-000000000014', '40000000-0000-0000-0000-000000000003', false);
 select test.check(test.count('select * from public.den_meeting_rsvps') = 1, 'a family sees only their own scouts');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);   -- Lee
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);   -- Lee
 select test.check(test.count('select * from public.den_meeting_rsvps') = 2, 'den leaders see their den''s answers');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);   -- stranger
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);   -- stranger
 select test.check(test.count('select * from public.den_meeting_rsvps') = 0, 'strangers see nothing');
 select test.expect_error($$select public.set_den_meeting_rsvp('80000000-0000-0000-0000-000000000014', '40000000-0000-0000-0000-000000000003', true)$$,
                          '42501', 'strangers cannot answer');

@@ -42,6 +42,13 @@ npm run dev
 - Sign-in emails are limited to 20 an hour for the whole pack (Supabase → Authentication → Rate
   Limits), which protects the 100-a-day email quota. When someone hits a limit, the sign-in page
   tells them to wait or email info@pack361.org.
+- **Two-step sign-in** for pack leadership, the Cubmaster and admins (`TWO_STEP_ROLES`): after the
+  email code they enter a code from an authenticator app (Supabase MFA, TOTP; enabled under
+  Authentication → Multi-Factor). `getMe` (`src/lib/data.ts`) treats them as a parent until the
+  session is `aal2` and `requireMember` sends them to `/two-step` (enter the code, or set up the app
+  the first time). `20261007000000_two_step_database.sql` makes the database's permission helpers
+  check `aal2` too. Backup apps: My family; resets for a lost phone: Pack admin → Two-step sign-in
+  (uses the secret key). Lockout of every admin: HANDOVER.md section 7.
 
 ## Folders
 | Path | What |

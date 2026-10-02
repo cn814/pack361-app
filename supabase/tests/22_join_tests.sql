@@ -10,7 +10,7 @@ insert into auth.users (id, email) values
 -- Jordan asks, with two scouts.
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a221"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a221","aal":"aal2"}', true);
 insert into public.join_requests (first_name, last_name, phone, relationship, scouts, note, status, email, user_id)
 values (' Jordan ', 'New', '555-0100', 'Mother',
         '[{"first_name":"Ava","last_name":"New","grade":"2"},{"first_name":"Max","last_name":"New","grade":"K"}]',
@@ -24,7 +24,7 @@ commit;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a222"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a222","aal":"aal2"}', true);
 select test.check(test.count('select * from public.join_requests') = 0, 'people cannot see others'' requests');
 select test.expect_error($$insert into public.join_requests (first_name, last_name, scouts) values ('Riley', 'New', '[{"first_name":"A","last_name":"B","grade":"7"}]')$$,
                          '23514', 'grades are K to 5');
@@ -38,7 +38,7 @@ rollback;
 -- Someone already on the roster can't ask.
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.expect_error($$insert into public.join_requests (first_name, last_name) values ('Alex', 'Smith')$$, '23505', 'people on the roster cannot ask to join');
 select test.check(test.count('select * from public.join_requests') = 0, 'parents cannot see join requests');
 select test.expect_error($$select public.approve_join_request((select id from public.join_requests limit 1), null, 'X', '[]')$$, '42501', 'parents cannot approve');
@@ -53,7 +53,7 @@ rollback;
 -- The admin approves: a new family, Jordan, and the one scout kept, in the Wolf den.
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check(test.count('select * from public.join_requests where status = ''pending''') = 1, 'admins see waiting requests');
 select test.expect_error($$update public.join_requests set status = 'approved'$$, '42501', 'requests change only through approve or decline');
 select public.approve_join_request(
@@ -70,7 +70,7 @@ commit;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a221"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a221","aal":"aal2"}', true);
 select test.check(private.is_member(), 'once approved, the parent is a member');
 select test.expect_error($$insert into public.join_requests (first_name, last_name) values ('Jordan', 'New')$$, '23505', 'and cannot ask again');
 rollback;
@@ -78,12 +78,12 @@ rollback;
 -- Riley asks; the admin declines with a reason. Riley sees the reason; the scouts are gone.
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a222"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a222","aal":"aal2"}', true);
 insert into public.join_requests (first_name, last_name, scouts) values ('Riley', 'New', '[{"first_name":"Kim","last_name":"New","grade":"3"}]');
 commit;
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.expect_error($$select public.approve_join_request((select id from public.join_requests where email = 'riley.new@example.com'), gen_random_uuid(), null, '[]')$$,
                          '23503', 'approving into a family that does not exist fails');
 select test.expect_error($$select public.approve_join_request((select id from public.join_requests where email = 'riley.new@example.com'), null, null, '[{"first_name":"Kim","last_name":"New","den_id":"10000000-0000-0000-0000-0000000000ff"}]')$$,
@@ -92,7 +92,7 @@ select public.decline_join_request((select id from public.join_requests where em
 commit;
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a222"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a222","aal":"aal2"}', true);
 select test.check((select decline_reason from public.join_requests) = 'We could not reach you', 'the person sees why');
 select test.check((select scouts from public.join_requests) = '[]', 'a declined request keeps no scout names');
 select test.expect_rows($$delete from public.join_requests$$, 0, 'people cannot delete requests (so the limit holds)');
@@ -111,12 +111,12 @@ rollback;
 -- Pat asks to join an existing family; the email already on the roster blocks a second login.
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a223"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a223","aal":"aal2"}', true);
 insert into public.join_requests (first_name, last_name) values ('Pat', 'Smith');
 commit;
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select public.approve_join_request((select id from public.join_requests where email = 'pat.new@example.com'), '20000000-0000-0000-0000-000000000001', null, '[]');
 select test.check((select family_id from public.adults where email = 'pat.new@example.com') = '20000000-0000-0000-0000-000000000001', 'a parent can join an existing family');
 rollback;

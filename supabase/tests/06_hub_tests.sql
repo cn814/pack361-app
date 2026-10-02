@@ -19,7 +19,7 @@ insert into public.charges (id, family_id, kind, title, season, amount_cents) va
 \echo '== Hub: parent (Alex)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(test.count('select * from public.guide_pages') > 0, 'families read the pack guide');
 select test.check(test.count('select * from public.guide_pages where not is_published') = 0, 'families do not see draft pages');
 select test.expect_error($$insert into public.guide_pages (slug, title) values ('mine', 'Mine')$$, '42501', 'families cannot add guide pages');
@@ -71,7 +71,7 @@ commit;
 \echo '== Hub: co-parent (Sam)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f","aal":"aal2"}', true);
 select test.check(test.count('select * from public.health_forms') = 2, 'both parents see the family''s forms');
 select test.check(test.count($$select * from public.poll_results('90000000-0000-0000-0000-000000000003')$$) = 3,
                   'a one-per-family poll counts as voted for the whole family');
@@ -83,7 +83,7 @@ commit;
 \echo '== Hub: other parent (Blair, Bear only)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.health_forms') = 0, 'other families'' forms are private');
 select test.check(test.count('select * from public.charges') = 1, 'other families'' dues are private (Blair sees only their own)');
 select test.check(test.count($$select * from public.announcements where id = '80000000-0000-0000-0000-000000000001'$$) = 0,
@@ -98,7 +98,7 @@ rollback;
 \echo '== Hub: den leader (Lee, Bear 1)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.guide_pages where not is_published') > 0, 'leaders see draft guide pages');
 select test.expect_rows($$update public.guide_pages set title = 'Edited'$$, 0, 'den leaders do not edit the guide');
 select test.check(test.count('select * from public.health_forms') = 2, 'leaders see every family''s forms');
@@ -123,7 +123,7 @@ commit;
 \echo '== Hub: committee confirms dues'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check((select public.update_charges(array(select id from public.charges where kind = 'dues' and status = 'reported'), 'paid', null, null)) = 1,
                   'committee confirms reported dues');
 commit;
@@ -131,7 +131,7 @@ commit;
 \echo '== Hub: parent after a leader confirmed'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check((select public.report_paid(array(select id from public.charges where kind = 'dues'), 'cash', null)) = 0,
                   'families cannot change dues once confirmed');
 select test.check(test.count($$select * from public.announcements where title = 'Bring a flashlight'$$) = 1, 'Bear family sees the den message');
@@ -140,7 +140,7 @@ rollback;
 \echo '== Hub: admin (Morgan)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.expect_rows($$update public.guide_pages set is_published = true where slug = 'uniforms'$$, 1, 'committee edits and publishes guide pages');
 select test.expect_rows($$update public.polls set closed_at = now() where id = '90000000-0000-0000-0000-000000000002'$$, 1, 'admin closes a poll');
 rollback;
@@ -156,7 +156,7 @@ rollback;
 \echo '== Hub: notification reads'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.expect_rows($$insert into public.inbox_reads (adult_id) values ('30000000-0000-0000-0000-00000000000a')$$, 1, 'you record when you read notifications');
 select test.expect_error($$insert into public.inbox_reads (adult_id) values ('30000000-0000-0000-0000-00000000000b')$$, '42501', 'not for someone else');
 rollback;

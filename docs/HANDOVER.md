@@ -116,6 +116,15 @@ After changing anything in Vercel, **Redeploy** (Deployments → ⋯ → Redeplo
 4. **Data is wrong or missing:** RESTORE.md.
 5. **Emails stopped:** Resend and Brevo dashboards (daily limits, domain still verified), and that
    the DNS records in Squarespace are still there.
+6. **A leader lost their authenticator app** (two-step sign-in, guide section 2.8): any admin uses
+   Pack admin → Two-step sign-in → Reset. **If every admin is locked out**, reset one from Supabase
+   → SQL Editor (this removes their authenticator apps; they sign in with the email code and set
+   one up again):
+
+   ```sql
+   delete from auth.mfa_factors
+    where user_id = (select user_id from public.adults where lower(email) = lower('admin@example.com'));
+   ```
 
 ## 8. To do now, while it's still easy
 

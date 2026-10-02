@@ -66,16 +66,16 @@ rollback;
 \echo '== Givebutter dues: settings'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e2"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e2","aal":"aal2"}', true);
 select test.expect_error($$select public.save_pay_settings('{"dues_givebutter_campaign_id": "900001"}')$$, '42501',
                          'parents cannot pick the dues campaign');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.expect_error($$select public.save_pay_settings('{"dues_sibling_discount_cents": "0"}')$$, '42501',
                          'den leaders off the committee cannot change the sibling discount');
 rollback;
 
 set role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1"}', false);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","aal":"aal2"}', false);
 select public.save_pay_settings('{"dues_givebutter_campaign_id": "900001", "dues_sibling_discount_cents": "1000"}');
 select test.check((select value from public.pack_settings where key = 'dues_givebutter_campaign_id') = '900001',
                   'committee picks the dues campaign');
@@ -96,18 +96,18 @@ select set_config('request.jwt.claims', '', false);
 \echo '== Givebutter dues: who reads dues orders'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e2"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e2","aal":"aal2"}', true);
 select test.check(test.count('select * from public.givebutter_orders where id >= 9001') = 1, 'a family reads only its own orders');
 select test.expect_error($$update public.givebutter_orders set dues_match = 'matched'$$, '42501', 'families cannot change orders');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e3"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e3","aal":"aal2"}', true);
 select test.check(test.count('select * from public.givebutter_orders where id >= 9001') = 1
                   and test.count('select * from public.givebutter_orders where id = 9004') = 1, 'other family reads only its own order');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.givebutter_orders where campaign_id = 900001') = 0,
                   'den leaders off the committee don''t see who paid dues');
 select test.check(test.count('select * from public.givebutter_orders where campaign_id = 900002') = 1,
                   'den leaders still see event sign-ups');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","aal":"aal2"}', true);
 select test.check(test.count('select * from public.givebutter_orders where id >= 9001') = 5, 'committee reads every order');
 rollback;
 
@@ -115,14 +115,14 @@ rollback;
 \echo '== Givebutter dues: dues setup shortcut'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e2"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e2","aal":"aal2"}', true);
 select test.expect_error('select * from public.add_dues_charges(null)', '42501', 'parents cannot set up dues');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.expect_error('select * from public.add_dues_charges(null)', '42501', 'den leaders off the committee cannot set up dues');
 rollback;
 
 set role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1"}', false);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","aal":"aal2"}', false);
 select test.check((select added from public.add_dues_charges('2030-10-31')) >= 4, 'committee sets up dues');
 select test.check((select amount_cents from public.charges where scout_id = '40000000-0000-0000-0000-0000000000e1' and season = '2030-31') = 25500,
                   'first scout in a family pays full dues');
@@ -144,7 +144,7 @@ select set_config('request.jwt.claims', '', false);
 update public.charges set status = 'waived' where scout_id = '40000000-0000-0000-0000-0000000000e2' and season = '2030-31';
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","aal":"aal2"}', true);
 select test.expect_error($$select public.apply_givebutter_dues(9001, '20000000-0000-0000-0000-0000000000e1', '{}', 'matched', 'x')$$, '42501',
                          'only the server applies orders');
 rollback;
@@ -188,7 +188,7 @@ reset role;
 -- ---------------------------------------------------------------------------
 \echo '== Givebutter dues: reopen'
 set role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1"}', false);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","aal":"aal2"}', false);
 select test.check(public.update_charges(array(select id from public.charges where scout_id = '40000000-0000-0000-0000-0000000000e1' and season = '2030-31'),
                                         'reopen', null, null) = 1, 'committee reopens a Givebutter payment');
 select test.check((select status = 'open' and paid_via is null and givebutter_order_id is null from public.charges
@@ -204,7 +204,7 @@ reset role;
 insert into public.charges (id, family_id, kind, title, amount_cents, status, paid_via, paid_at, paid_amount_cents)
 values ('8c000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-0000000000e1', 'other', 'Paid by PayPal', 1000, 'paid', 'paypal', now(), 1000);
 set role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1"}', false);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","aal":"aal2"}', false);
 select test.check(public.update_charges(array['8c000000-0000-0000-0000-000000000002']::uuid[], 'reopen', null, null) = 0,
                   'PayPal payments still can''t be reopened');
 reset role;
@@ -214,17 +214,17 @@ select set_config('request.jwt.claims', '', false);
 \echo '== Givebutter dues: committee matches by hand'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e3"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e3","aal":"aal2"}', true);
 select test.expect_error($$select public.match_givebutter_dues(9002, '20000000-0000-0000-0000-0000000000e2',
                            array['40000000-0000-0000-0000-0000000000e3']::uuid[])$$, '42501', 'parents cannot match orders');
 select test.expect_error($$select public.set_givebutter_not_dues(9003, true)$$, '42501', 'parents cannot mark orders not dues');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.expect_error($$select public.match_givebutter_dues(9002, '20000000-0000-0000-0000-0000000000e2',
                            array['40000000-0000-0000-0000-0000000000e3']::uuid[])$$, '42501', 'den leaders off the committee cannot match orders');
 rollback;
 
 set role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1"}', false);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","aal":"aal2"}', false);
 select test.expect_error($$select public.match_givebutter_dues(9002, '20000000-0000-0000-0000-0000000000e2',
                            array['40000000-0000-0000-0000-0000000000e1']::uuid[])$$, '22023', 'scouts must be in the picked family');
 select test.expect_error($$select public.match_givebutter_dues(9004, '20000000-0000-0000-0000-0000000000e2',
@@ -251,7 +251,7 @@ set role service_role;
 select test.check(public.apply_givebutter_dues(9003, null, '{}', 'needs_review', 'x') = 'already', 'the sync leaves not-dues orders alone');
 reset role;
 set role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1"}', false);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","aal":"aal2"}', false);
 select test.check(public.set_givebutter_not_dues(9003, false) = 1, 'committee can undo not dues');
 select test.check((select dues_applied_at is null and dues_match is null from public.givebutter_orders where id = 9003),
                   'undone, the next sync looks at it again');
@@ -261,7 +261,7 @@ select set_config('request.jwt.claims', '', false);
 -- Families see their own dues order once it's placed with them.
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e3"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e3","aal":"aal2"}', true);
 select test.check(test.count('select * from public.givebutter_orders where id = 9002') = 1, 'a family sees the dues order matched to it');
 rollback;
 

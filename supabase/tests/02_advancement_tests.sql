@@ -30,14 +30,14 @@ rollback;
 \echo '== Advancement: stranger'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);
 select test.check(test.count('select * from public.adventures') = 0, 'stranger sees no catalog');
 rollback;
 
 \echo '== Advancement: parent (Alex)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(test.count('select * from public.adventures') = 148, 'members read the 148-adventure catalog');
 select test.check(test.count($$select * from public.adventures where rank = 'bear' and required$$) = 6, 'Bear has 6 required adventures');
 select test.expect_error($$select public.import_scout_advancement('x.csv', (select j from test.rows))$$, '42501', 'parent cannot import');
@@ -53,14 +53,14 @@ rollback;
 \echo '== Advancement: den leader (Lee) cannot import'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.expect_error($$select public.import_scout_advancement('x.csv', (select j from test.rows))$$, '42501', 'den leader cannot import');
 rollback;
 
 \echo '== Advancement: admin (Morgan) imports'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 create temp table res on commit drop as select * from public.import_scout_advancement('Pack0361_Advancement.csv', (select j from test.rows));
 select test.check((select row_count from res) = 5, 'import saves rows for roster scouts only');
 select test.check((select scout_count from res) = 3, 'import touches 3 roster scouts');
@@ -82,14 +82,14 @@ commit;
 \echo '== Advancement: who sees what'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(test.count('select * from public.scout_advancement') = 3, 'parent sees both own scouts'' records only');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.scout_advancement') = 1, 'other parent sees only their own scout');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.scout_advancement') = 3, 'Bear den leader sees Bear den scouts only');
 select test.check(test.count('select * from public.advancement_imports') = 2, 'leaders see the import log');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(test.count('select * from public.advancement_imports') = 0, 'parents do not see the import log');
 rollback;
 

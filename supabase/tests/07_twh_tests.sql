@@ -15,7 +15,7 @@ insert into public.events (id, title, category, starts_at, rsvp_enabled, rsvp_by
 \echo '== RSVP: parent (Alex)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select public.set_rsvp('51000000-0000-0000-0000-000000000001', 'yes', 2, 1, '  Bringing a sibling  ');
 select test.check((select scouts from public.event_rsvps where event_id = '51000000-0000-0000-0000-000000000001') = 2
                   and (select note from public.event_rsvps where event_id = '51000000-0000-0000-0000-000000000001') = 'Bringing a sibling',
@@ -46,7 +46,7 @@ commit;
 \echo '== RSVP: co-parent (Sam)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f","aal":"aal2"}', true);
 select test.check(test.count('select * from public.event_rsvps') = 1, 'both parents see the family''s answer');
 select public.set_rsvp('51000000-0000-0000-0000-000000000001', 'yes', 2, 2, null);
 select test.check(test.count('select * from public.event_rsvps') = 1
@@ -57,7 +57,7 @@ commit;
 \echo '== RSVP: other parent (Blair)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.check(test.count('select * from public.event_rsvps') = 0, 'families do not see other families'' answers');
 select test.check((select families_yes from public.rsvp_counts('51000000-0000-0000-0000-000000000001')) = 1
                   and (select scouts from public.rsvp_counts('51000000-0000-0000-0000-000000000001')) = 2,
@@ -70,7 +70,7 @@ commit;
 \echo '== RSVP: leader with no family (Lee)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select public.set_rsvp('51000000-0000-0000-0000-000000000001', 'yes', 5, null, null);
 select test.check((select scouts from public.event_rsvps where adult_id = '30000000-0000-0000-0000-00000000000c') = 0
                   and (select adults from public.event_rsvps where adult_id = '30000000-0000-0000-0000-00000000000c') = 1,
@@ -88,7 +88,7 @@ commit;
 \echo '== RSVP: not on the roster'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","aal":"aal2"}', true);
 select test.expect_error($$select public.set_rsvp('51000000-0000-0000-0000-000000000001', 'yes', 1, 1, null)$$, '42501',
                          'strangers cannot RSVP');
 select test.check(test.count('select * from public.event_rsvps') = 0, 'strangers see no answers');

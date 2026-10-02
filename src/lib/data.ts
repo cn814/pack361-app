@@ -3,8 +3,8 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "./supabase/server";
-import type { Adult, Announcement, ItineraryItem, Leader, PackEvent, PackingItem, Scout } from "./types";
-import { LEADER_ROLES } from "./types";
+import type { Adult, Announcement, AppRole, ItineraryItem, Leader, PackEvent, PackingItem, Scout } from "./types";
+import { LEADER_ROLES, TWO_STEP_ROLES } from "./types";
 import { VIEW_AS_COOKIE, viewAsRole } from "./view-as";
 import { isBeta } from "./version";
 import { getTesters } from "./beta";
@@ -12,8 +12,23 @@ import { denScopeFor, loadCalendar, type CalItem } from "./calendar";
 import { startOfEasternDay } from "./tz";
 import { FEATURE_DAYS_AFTER, FEATURE_DAYS_BEFORE, featuredKind, type FeaturedTab } from "./featured";
 
+/**
+ * Two-step sign-in for pack leadership and admins:
+ * "ok" = not needed, or the code was entered this session; "verify" = enter the code from the
+ * authenticator app; "setup" = no authenticator app added yet.
+ */
+export type TwoStep = "ok" | "verify" | "setup";
+
+export interface Me {
+  email: string;
+  adult: Adult | null;
+  twoStep: TwoStep;
+  /** The roster role, whatever "View as" or a missing two-step code shows. */
+  role: AppRole | null;
+}
+
 /** The signed-in adult's roster row, or null if they're signed in but not on the roster. */
-export const getMe = cache(async (): Promise<{ email: string; adult: Adult | null } | null> => {
+export const getMe = cache(async (): Promise<Me | null> => {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   const sub = claims?.claims?.sub;
@@ -25,20 +40,34 @@ export const getMe = cache(async (): Promise<{ email: string; adult: Adult | nul
     .eq("is_active", true)
     .maybeSingle();
   let adult = (data as Adult | null) ?? null;
-  if (adult) {
+  const role = adult?.role ?? null;
+  let twoStep: TwoStep = "ok";
+  if (adult && needsTwoStep(adult.role) && claims?.claims?.aal !== "aal2") {
+    // Until the code is entered, a leader gets a parent's access everywhere (the database
+    // checks the same thing).
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    twoStep = factors?.totp?.length ? "verify" : "setup";
+    adult = { ...adult, role: "parent" };
+  } else if (adult) {
     // "View as": show a leader the app as a lower role. Display only; the database still checks
     // their real permissions.
     const view = viewAsRole(adult.role, (await cookies()).get(VIEW_AS_COOKIE)?.value);
     if (view) adult = { ...adult, role: view, real_role: adult.role };
   }
-  return { email: String(claims?.claims?.email ?? ""), adult };
+  return { email: String(claims?.claims?.email ?? ""), adult, twoStep, role };
 });
+
+/** Pack leadership, the Cubmaster and admins sign in with an authenticator app as well as email. */
+export function needsTwoStep(role: AppRole | null | undefined) {
+  return !!role && TWO_STEP_ROLES.includes(role);
+}
 
 /** Use at the top of every member page: sends visitors to login and non-roster users to the help page. */
 export async function requireMember(): Promise<Adult> {
   const me = await getMe();
   if (!me) redirect("/login");
   if (!me.adult) redirect("/not-on-roster");
+  if (me.twoStep !== "ok") redirect("/two-step");
   // The beta site is for the testers picked in Pack admin (and admins).
   if (isBeta() && !(await getTesters()).ids.has(me.adult.id)) redirect("/beta-only");
   return me.adult;

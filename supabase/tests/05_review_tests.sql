@@ -15,7 +15,7 @@ select test.check((select file_size_limit from storage.buckets where id = 'pack-
 \echo '== Review fixes: parent (Alex)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.expect_rows($$delete from public.photos where uploader_id = '30000000-0000-0000-0000-00000000000a'$$, 0,
                         'parents cannot delete even their own pending photos');
 select test.expect_rows($$delete from storage.objects where name like '30000000-0000-0000-0000-00000000000a/%'$$, 0,
@@ -36,7 +36,7 @@ insert into public.photo_flags (photo_id, adult_id, resolved_at)
 select '70000000-0000-0000-0000-000000000009', '30000000-0000-0000-0000-00000000000b', now() from generate_series(1, 10);
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
 select test.expect_error($$select public.flag_photo('70000000-0000-0000-0000-000000000022', 'x')$$, '54000',
                          'removal requests are capped per day');
 rollback;
@@ -45,7 +45,7 @@ delete from public.photo_flags where adult_id = '30000000-0000-0000-0000-0000000
 \echo '== Review fixes: den leader (Lee)'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(public.flag_photo('70000000-0000-0000-0000-000000000023', null), 'leaders can send a pending photo back with a request');
 select test.expect_rows($$delete from public.photos where id = '70000000-0000-0000-0000-000000000022'$$, 1, 'leaders delete photos');
 select test.expect_rows($$delete from storage.objects where name = '30000000-0000-0000-0000-00000000000d/a1.jpg'$$, 1,
@@ -59,7 +59,7 @@ rollback;
 \echo '== Review fixes: parent cannot archive events'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.expect_rows($$update public.events set archived_at = now()$$, 0, 'parents cannot archive events');
 rollback;
 
@@ -67,9 +67,9 @@ rollback;
 update storage.objects set metadata = '{"size": 500000}' where bucket_id = 'pack-photos';
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check(public.photo_storage_bytes() > 0, 'admins see how much photo storage is used');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check(public.photo_storage_bytes() is null, 'parents do not');
 rollback;
 

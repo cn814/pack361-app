@@ -15,16 +15,16 @@ rollback;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.expect_error($$select public.set_registration_expiry(array['40000000-0000-0000-0000-000000000001']::uuid[], null, '2030-10-31')$$,
                          '42501', 'parents cannot set registration dates');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.expect_error($$select public.set_registration_expiry(null, array['30000000-0000-0000-0000-00000000000c']::uuid[], '2030-10-31')$$,
                          '42501', 'den leaders off the committee cannot set registration dates');
 rollback;
 
 set role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1"}', false);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","aal":"aal2"}', false);
 select test.check(public.set_registration_expiry(
                     array['40000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000003']::uuid[],
                     array['30000000-0000-0000-0000-00000000000a', '30000000-0000-0000-0000-00000000000c']::uuid[], '2030-10-31') = 5,
@@ -49,7 +49,7 @@ reset role;
 select test.check((select registration_reminded_days from public.scouts where id = '40000000-0000-0000-0000-000000000001') = 7,
                   'the daily job records a reminder');
 set role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1"}', false);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","aal":"aal2"}', false);
 select public.set_registration_expiry(array['40000000-0000-0000-0000-000000000001']::uuid[],
                                       array['30000000-0000-0000-0000-00000000000a']::uuid[], '2031-10-31');
 reset role;
@@ -63,7 +63,7 @@ update public.scouts set last_name = last_name where id = '40000000-0000-0000-00
 select test.check((select registration_reminded_days from public.scouts where id = '40000000-0000-0000-0000-000000000002') = 30,
                   'other changes keep the reminders');
 set role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1"}', false);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","aal":"aal2"}', false);
 select public.set_registration_expiry(array['40000000-0000-0000-0000-000000000002']::uuid[], null, null);
 reset role;
 select set_config('request.jwt.claims', '', false);
@@ -73,7 +73,7 @@ select test.check((select registration_expires_on is null and registration_remin
 \echo '== Registration: families read their own, and cannot change them'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.check((select registration_expires_on from public.scouts where id = '40000000-0000-0000-0000-000000000001') = '2031-10-31',
                   'a family reads its scout''s date');
 select test.check((select registration_expires_on from public.adults where id = '30000000-0000-0000-0000-00000000000a') = '2031-10-31',
@@ -92,7 +92,7 @@ rollback;
 
 \echo '== Registration: registration_billing setting'
 set role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1"}', false);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","aal":"aal2"}', false);
 select test.check((select value from public.pack_settings where key = 'registration_billing') = 'off', 'registration billing starts off');
 select public.save_pay_settings('{"registration_billing": "on"}');
 select test.check((select value from public.pack_settings where key = 'registration_billing') = 'on', 'committee turns registration billing on');
@@ -102,7 +102,7 @@ reset role;
 select set_config('request.jwt.claims', '', false);
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
 select test.expect_error($$select public.save_pay_settings('{"registration_billing": "on"}')$$, '42501', 'parents cannot change registration billing');
 rollback;
 
