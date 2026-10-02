@@ -49,6 +49,7 @@ what each is for.
 | `VAPID_PRIVATE_KEY` / `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | `npx web-push generate-vapid-keys` | Changing them means everyone turns phone alerts on again; only if it leaked. |
 | `PAYPAL_CLIENT_SECRET` | PayPal developer site (treasurer) | Treasurer makes a new secret. |
 | `TWH_CALENDAR_URL` | TroopWebHost → My Stuff → Subscribe | Signs in as that person: replace it when they leave, or remove it. |
+| `MYSCOUTING_USERNAME` / `MYSCOUTING_PASSWORD` (optional, experimental) | A Key 3 delegate's my.scouting login | Turns on "Get training from my.scouting" (Leaders → Training → Import). It's a real person's password: when they leave or change it, remove both (or replace them), and change the password if it may have leaked. Optional `MYSCOUTING_ORG_GUID` pins the unit if it can't be found. |
 
 After changing anything in Vercel, **Redeploy** (Deployments → ⋯ → Redeploy) so the app picks it up.
 

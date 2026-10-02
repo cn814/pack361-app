@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import BackLink from "@/components/BackLink";
 import { MyScoutingLink } from "@/components/TrainingStatus";
 import { isCommittee, requireMember } from "@/lib/data";
+import { myScoutingConfigured } from "@/lib/myscouting";
 import { getImportRoster } from "@/lib/training-data";
 import { today } from "@/lib/training";
 import ImportTraining from "./ImportTraining";
@@ -47,7 +48,7 @@ export default async function ImportTrainingPage() {
         </p>
       </section>
 
-      <ImportTraining roster={roster} today={today()} />
+      <ImportTraining roster={roster} today={today()} liveSync={myScoutingConfigured()} />
     </>
   );
 }
