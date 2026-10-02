@@ -5,14 +5,16 @@ import Toast from "@/components/Toast";
 import { Suspense } from "react";
 import ServiceWorkerSetup from "@/components/ServiceWorkerSetup";
 import { Bell } from "lucide-react";
-import { displayName, getFeaturedTab, requireMember } from "@/lib/data";
+import { displayName, requireMember } from "@/lib/data";
+import { canLead, getMode } from "@/lib/mode";
+import ModeSwitch from "@/components/ModeSwitch";
 import { getInboxCount } from "@/lib/inbox";
 import ViewAsBanner from "@/components/ViewAsBanner";
 import BetaBanner from "@/components/BetaBanner";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const me = await requireMember();
-  const [featured, inbox] = await Promise.all([getFeaturedTab(), getInboxCount()]);
+  const [inbox, mode] = await Promise.all([getInboxCount(), getMode(me)]);
   const initials = (displayName(me)[0] + me.last_name[0]).toUpperCase();
   return (
     <div className="min-h-dvh w-full lg:pl-64 print:pl-0">
@@ -47,13 +49,6 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                 </span>
               )}
             </Link>
-            <Link
-              href="/family"
-              aria-label="My family"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-gold text-xs font-extrabold text-pine-950 ring-2 ring-white/20"
-            >
-              {initials}
-            </Link>
           </div>
         </div>
       </header>
@@ -61,7 +56,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <main className="mx-auto w-full max-w-md space-y-4 px-4 pb-28 pt-4 lg:max-w-3xl lg:px-8 lg:pb-12 lg:pt-8 lg:has-[.page-wide]:max-w-6xl print:max-w-none print:pb-0">
         {children}
       </main>
-      <BottomNav featured={featured} me={{ initials, name: `${displayName(me)} ${me.last_name}` }} inbox={inbox} />
+      <BottomNav
+        me={{ initials, name: `${displayName(me)} ${me.last_name}` }}
+        inbox={inbox}
+        leaderMode={mode === "leader"}
+        modeSwitch={canLead(me) ? <ModeSwitch mode={mode} dark /> : undefined}
+      />
     </div>
   );
 }
