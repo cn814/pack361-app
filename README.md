@@ -15,6 +15,9 @@ on a subdomain.
 **Handing the app to the next person:** [docs/HANDOVER.md](docs/HANDOVER.md) lists every account and
 key, who owns each, and the steps for the outgoing and incoming maintainer.
 
+**Security review:** [docs/SECURITY-REVIEW.md](docs/SECURITY-REVIEW.md): what was checked in October
+2026, what was fixed, what's left, and how to repeat it.
+
 **Beta and releases:** [docs/RELEASES.md](docs/RELEASES.md): new work goes to beta.pack361.org (the
 `beta` branch, testers only, same database) and is released to app.pack361.org by merging into `main`.
 

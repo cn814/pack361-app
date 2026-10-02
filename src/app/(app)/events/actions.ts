@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { isLeader, requireMember } from "@/lib/data";
+import { isCommittee, isLeader, requireMember } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { easternToIso } from "@/lib/calendar";
 import type { ActionResult } from "@/components/ActionForm";
@@ -141,7 +141,8 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
     eventId = data.id as string;
   }
   // Bring families' event charges in line with the (new) cost. Paid ones stay as they are.
-  if (UUID.test(id)) await supabase.rpc("refresh_event_charges", { p_event_id: eventId });
+  // (Leadership only: den leaders can't change prices, and the database refuses them this.)
+  if (UUID.test(id) && isCommittee(me)) await supabase.rpc("refresh_event_charges", { p_event_id: eventId });
   revalidatePath("/", "layout");
   redirect(category === "Campout" ? `/campouts/${eventId}` : `/events/${eventId}`);
 }

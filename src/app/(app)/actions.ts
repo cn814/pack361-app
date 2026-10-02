@@ -130,7 +130,7 @@ export async function sendFeedback(_prev: PostState & { message?: string }, form
   if (!message) return { error: "Write a message first." };
   const supabase = await createClient();
   const { error } = await supabase.from("feedback").insert({ adult_id: me.id, kind, message, page });
-  if (error) return { error: "Couldn't send that. Try again, or email info@pack361.org." };
+  if (error) return { error: /lot of messages/i.test(error.message) ? error.message : "Couldn't send that. Try again, or email info@pack361.org." };
   const who = `${me.preferred_name || me.first_name} ${me.last_name}`;
   after(async () => {
     await notifyAdmins(
@@ -147,4 +147,12 @@ export async function sendFeedback(_prev: PostState & { message?: string }, form
     );
   });
   return { ok: true, message: "Sent to the pack admins. Thanks!" };
+}
+
+/** A new private calendar link (the old one stops working). */
+export async function resetCalendarLink() {
+  await requireMember();
+  const supabase = await createClient();
+  await supabase.rpc("reset_calendar_token");
+  revalidatePath("/events");
 }

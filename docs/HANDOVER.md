@@ -102,7 +102,7 @@ After changing anything in Vercel, **Redeploy** (Deployments → ⋯ → Redeplo
 | July (new season) | Leaders → Money → Settings for the new dues season; set up dues; registration dates; the budget (Money → Expenses → Budget). |
 | Every few months | Supabase → Usage (database and storage; the free plan has 500 MB of database and 1 GB of files). Pack admin shows file storage. Vercel → Usage. |
 | Every September | **Brevo API keys expire after a year** (both made around Oct 1, 2026). Make new ones in Brevo → SMTP & API, replace `BREVO_API_KEY` in Vercel (Production, and Preview for branch `beta`), redeploy, and delete the old keys. Until then pack-wide email and the Sunday newsletter stop working. |
-| Once a year | Practice a restore (RESTORE.md section 1). Renew the domain. Check every account in section 1 still has two owners. Update packages (`npm outdated`, then test and deploy). |
+| Once a year | Repeat the security review (SECURITY-REVIEW.md, "Repeating this review"). Practice a restore (RESTORE.md section 1). Renew the domain. Check every account in section 1 still has two owners. Update packages (`npm outdated`, then test and deploy). |
 | When a leader leaves | Change their role in Pack admin, and if they had access to any service or key, remove them and change the key. |
 
 ## 7. If something breaks

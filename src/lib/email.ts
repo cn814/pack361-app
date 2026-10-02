@@ -26,13 +26,26 @@ export interface Email {
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+/**
+ * The button label for a paragraph that is just a link, or null. Only links into the app (and
+ * my.scouting.org) become buttons, so text a member typed (a message, an announcement) can never
+ * dress up some other site as a pack button.
+ */
+function buttonLabel(p: string): string | null {
+  if (!/^https:\/\/\S+$/.test(p)) return null;
+  if (p === APP_URL || p.startsWith(`${APP_URL}/`)) return "Open the Pack 361 app";
+  if (p === "https://my.scouting.org" || p.startsWith("https://my.scouting.org/")) return "Open my.scouting.org";
+  return null;
+}
+
 export function renderEmailHtml(e: Email): string {
   const body = e.paragraphs
-    .map((p) =>
-      /^https?:\/\/\S+$/.test(p)
-        ? `<p style="margin:24px 0"><a href="${esc(p)}" style="background:#1b4332;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700;display:inline-block">Open the Pack 361 app</a></p>`
-        : `<p style="margin:0 0 14px;line-height:1.5">${esc(p).replace(/\n/g, "<br>")}</p>`,
-    )
+    .map((p) => {
+      const label = buttonLabel(p);
+      return label
+        ? `<p style="margin:24px 0"><a href="${esc(p)}" style="background:#1b4332;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700;display:inline-block">${label}</a></p>`
+        : `<p style="margin:0 0 14px;line-height:1.5">${esc(p).replace(/\n/g, "<br>")}</p>`;
+    })
     .join("");
   return `<!doctype html><html><body style="margin:0;background:#faf9f4;font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1b1c19">
 <div style="max-width:520px;margin:0 auto;padding:24px">

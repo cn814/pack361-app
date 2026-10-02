@@ -36,6 +36,10 @@ export async function GET(request: NextRequest) {
 
 /** "Sign in here" from /auth/open. */
 export async function POST(request: NextRequest) {
+  // Only from our own /auth/open page: another site can't post a link token here to sign a
+  // visitor into someone else's account.
+  const origin = request.headers.get("origin");
+  if (origin && origin !== request.nextUrl.origin) return NextResponse.redirect(new URL("/login?error=link", request.nextUrl.origin), 303);
   const form = await request.formData();
   const token_hash = String(form.get("token_hash") ?? "") || null;
   const type = (String(form.get("type") ?? "email") || "email") as EmailOtpType;

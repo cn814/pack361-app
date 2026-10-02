@@ -56,6 +56,21 @@ export async function saveFamily(_prev: ActionResult, form: FormData): Promise<A
       // Leaving the pack: turn off the family's scouts and parent logins too.
       await supabase.from("scouts").update({ is_active: false }).eq("family_id", id);
       await supabase.from("adults").update({ is_active: false }).eq("family_id", id).eq("role", "parent");
+      // Leaders in the family keep their access (they may stay on as leaders); say so, so an
+      // admin turns them off too if they're leaving.
+      const { data: still } = await supabase
+        .from("adults")
+        .select("first_name, last_name")
+        .eq("family_id", id)
+        .eq("is_active", true)
+        .neq("role", "parent");
+      if (still?.length) {
+        revalidateRoster(id);
+        return {
+          ok: true,
+          message: `Saved. Scouts and parent sign-ins are off. Still on as leaders: ${still.map((a) => `${a.first_name} ${a.last_name}`).join(", ")}. Turn them off on their own page if they're leaving too.`,
+        };
+      }
     }
     revalidateRoster(id);
     return { ok: true, message: active ? "Saved" : "Saved. The family's scouts and parent sign-ins are turned off." };
@@ -222,8 +237,15 @@ export async function addDenLeader(_prev: ActionResult, form: FormData): Promise
 
 export async function removeDenLeader(form: FormData) {
   await requireAdmin();
+  const adultId = str(form, "adult_id");
   const supabase = await createClient();
-  await supabase.from("den_leaders").delete().eq("den_id", str(form, "den_id")).eq("adult_id", str(form, "adult_id"));
+  await supabase.from("den_leaders").delete().eq("den_id", str(form, "den_id")).eq("adult_id", adultId);
+  // No longer leading any den: back to parent access (a den-leader role would still let them see
+  // every family and edit events). Leadership, Cubmaster and admin roles are left alone.
+  if (UUID.test(adultId)) {
+    const { count } = await supabase.from("den_leaders").select("den_id", { count: "exact", head: true }).eq("adult_id", adultId);
+    if (!count) await supabase.from("adults").update({ role: "parent" }).eq("id", adultId).eq("role", "den_leader");
+  }
   revalidateRoster();
 }
 

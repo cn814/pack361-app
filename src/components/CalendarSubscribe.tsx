@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CalendarPlus, Check, Copy } from "lucide-react";
+import { resetCalendarLink } from "@/app/(app)/actions";
 
 /** Subscribe buttons for the private pack calendar feed. */
 export default function CalendarSubscribe({ feedUrl }: { feedUrl: string }) {
@@ -39,6 +40,16 @@ export default function CalendarSubscribe({ feedUrl }: { feedUrl: string }) {
           {copied ? "Link copied" : "Copy the calendar link"}
         </button>
         <p className="text-[11px] text-muted">This link is just for your family. Don&apos;t post it publicly.</p>
+        <form action={resetCalendarLink}>
+          <button
+            className="text-[11px] font-semibold text-muted underline"
+            onClick={(e) => {
+              if (!window.confirm("Make a new calendar link? The old one stops working, so you'll need to add the calendar to your phone again.")) e.preventDefault();
+            }}
+          >
+            Shared it by mistake? Get a new link
+          </button>
+        </form>
       </div>
     </details>
   );
