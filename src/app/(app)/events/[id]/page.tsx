@@ -4,6 +4,7 @@ import { CalendarDays, MapPin, Navigation, Ticket } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import VolunteerJobs from "@/components/VolunteerJobs";
 import RsvpLink from "@/components/RsvpLink";
+import JumpLinks from "@/components/JumpLinks";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
 import EventAttendance from "@/components/EventAttendance";
@@ -76,6 +77,13 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         </div>
       </section>
       {event.archived_at && <ArchiveControl e={event} leader={false} back={`/events/${id}`} part="note" />}
+      <JumpLinks
+        links={[
+          ...(event.rsvp_enabled ? [{ href: "#rsvp", label: "RSVP" }] : []),
+          ...(event.slip_required ? [{ href: "#slip", label: "Permission slip" }] : []),
+          ...(slots.length ? [{ href: "#volunteer", label: "Volunteer" }] : []),
+        ]}
+      />
       <EventAttendance e={event} me={me} />
       {elsewhere.length > 0 && (
         <section className="card space-y-2 border-l-4 border-l-gold">

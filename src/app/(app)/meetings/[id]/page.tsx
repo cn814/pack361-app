@@ -29,7 +29,7 @@ export default async function MeetingInfoPage({ params }: PageProps<"/meetings/[
 
   return (
     <>
-      <BackLink href="/events" label="Events" />
+      <BackLink href="/events" label="Calendar" />
       <section className="card space-y-2 border-t-4 border-t-navy">
         <div className="flex flex-wrap gap-2">
           <span className="badge bg-navy text-white">Den meeting</span>

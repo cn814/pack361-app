@@ -6,6 +6,7 @@ import BackLink from "@/components/BackLink";
 import EventSignup from "@/components/EventSignup";
 import VolunteerJobs from "@/components/VolunteerJobs";
 import RsvpLink from "@/components/RsvpLink";
+import JumpLinks from "@/components/JumpLinks";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
 import EventAttendance from "@/components/EventAttendance";
@@ -41,7 +42,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
 
   return (
     <>
-      <BackLink href={event.archived_at ? "/events/archive" : "/events"} label={event.archived_at ? "Archive" : "Events"} />
+      <BackLink href={event.archived_at ? "/events/archive" : "/events"} label={event.archived_at ? "Archive" : "Calendar"} />
       {event.archived_at && <ArchiveControl e={event} leader={false} back={`/campouts/${id}`} part="note" />}
       <div className="page-wide flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
         <div className="contents lg:block lg:space-y-4">
@@ -72,9 +73,18 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
               )}
             </div>
           </section>
+          <JumpLinks
+            links={[
+              ...(event.rsvp_enabled ? [{ href: "#rsvp", label: "RSVP" }] : []),
+              ...(event.slip_required ? [{ href: "#slip", label: "Permission slip" }] : []),
+              { href: "#packing", label: "Packing list" },
+              { href: "#schedule", label: "Schedule" },
+              ...(slots.length ? [{ href: "#volunteer", label: "Volunteer" }] : []),
+            ]}
+          />
           <EventAttendance e={event} me={me} />
         </div>
-        <div className="order-2 empty:hidden">
+        <div className="order-3 empty:hidden">
           {campaign && (
             <EventSignup
               campaign={campaign}
@@ -86,7 +96,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
           )}
         </div>
         <div className="order-5 empty:hidden">
-          <section className="space-y-3">
+          <section id="schedule" className="scroll-mt-20 space-y-3">
             <h2 className="section-title">Schedule</h2>
             {itinerary.length === 0 ? (
               <p className="card text-sm text-muted">The camping chair hasn&apos;t posted the schedule yet.</p>
@@ -112,31 +122,31 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
             )}
           </section>
         </div>
-        <div className="order-6 empty:hidden">
+        <div className="order-9 empty:hidden">
           <EventSections sections={event.sections ?? []} />
         </div>
         </div>
         <div className="contents lg:block lg:space-y-4">
-        <div className="order-3 empty:hidden">
-          <SaveOffline />
-        </div>
-        <div className="order-4 empty:hidden">
-          <EventLinks links={event.links ?? []} />
-        </div>
-        <div className="order-6 empty:hidden">
+        <div className="order-2 space-y-4 empty:hidden">
           <EventRsvp e={event} me={me} />
           <PermissionSlips e={event} me={me} />
         </div>
-        <div className="order-7 empty:hidden">
-          <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={isLeader(me)} />
-        </div>
-        <div className="order-8 empty:hidden">
-          <section className="space-y-3">
+        <div className="order-4 empty:hidden">
+          <section id="packing" className="scroll-mt-20 space-y-3">
             <h2 className="section-title">Packing checklist</h2>
             <PackingChecklist eventId={event.id} items={packing} />
           </section>
         </div>
-        <div className="order-9 empty:hidden">
+        <div className="order-6 empty:hidden">
+          <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={isLeader(me)} />
+        </div>
+        <div className="order-7 empty:hidden">
+          <SaveOffline />
+        </div>
+        <div className="order-8 empty:hidden">
+          <EventLinks links={event.links ?? []} />
+        </div>
+        <div className="order-10 empty:hidden">
           <EventPhotosLink eventId={id} startsAt={event.starts_at} />
         </div>
         </div>

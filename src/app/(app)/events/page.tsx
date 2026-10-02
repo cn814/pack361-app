@@ -5,10 +5,12 @@ import { featuredKind, type FeaturedKind } from "@/lib/featured";
 import { headers } from "next/headers";
 import EventRow from "@/components/EventRow";
 import CalendarSubscribe from "@/components/CalendarSubscribe";
-import { getCalendarToken } from "@/lib/data";
-import { getUpcomingEvents, isCommittee, isLeader, requireMember } from "@/lib/data";
+import { getBigEvent, getCalendarToken, getUpcomingEvents, isCommittee, isLeader, requireMember } from "@/lib/data";
 import { getSignupSummaries } from "@/lib/signups";
+import { getMode } from "@/lib/mode";
 import { daysUntil, fmtMonth, fmtRange } from "@/lib/format";
+import { daysBetween, easternDate, startOfEasternDay } from "@/lib/tz";
+import type { CalItem } from "@/lib/calendar";
 
 const ICON: Record<FeaturedKind, typeof Tent> = {
   campout: Tent,
@@ -20,43 +22,86 @@ const ICON: Record<FeaturedKind, typeof Tent> = {
   crossover: Footprints,
 };
 
-export const metadata: Metadata = { title: "Events" };
+export const metadata: Metadata = { title: "Calendar" };
+
+const SHOWS = [
+  { key: "all", label: "All" },
+  { key: "mine", label: "My dens", leaderOnly: true },
+  { key: "campouts", label: "Campouts" },
+  { key: "big", label: "Big events" },
+  { key: "meetings", label: "Den meetings" },
+] as const;
+type Show = (typeof SHOWS)[number]["key"];
+
+/** "This week", "Next week", then the month. */
+function bucket(e: CalItem, today: string): string {
+  const days = daysBetween(today, easternDate(e.starts_at));
+  const dow = new Date(`${today}T12:00:00`).getDay(); // 0 = Sunday
+  const toSunday = 7 - dow;
+  if (days < toSunday) return "This week";
+  if (days < toSunday + 7) return "Next week";
+  return fmtMonth(e.starts_at);
+}
 
 export default async function EventsPage({ searchParams }: PageProps<"/events">) {
   const me = await requireMember();
-  const { view } = await searchParams;
+  const sp = await searchParams;
   const leader = isLeader(me);
-  const mine = leader && view === "mine";
-  const [signups, token, h] = await Promise.all([getSignupSummaries(me.family_id), getCalendarToken(), headers()]);
+  // Older links used ?view=mine for a leader's own family's dens.
+  const wanted = (sp.show ?? (sp.view === "mine" ? "mine" : "all")) as Show;
+  const show: Show = SHOWS.some((s) => s.key === wanted && (!("leaderOnly" in s) || leader)) ? wanted : "all";
+  const [signups, token, h, big, mode] = await Promise.all([
+    getSignupSummaries(me.family_id),
+    getCalendarToken(),
+    headers(),
+    getBigEvent(),
+    getMode(me),
+  ]);
   const host = h.get("x-forwarded-host") ?? h.get("host");
   const proto = h.get("x-forwarded-proto") ?? "https";
-  const events = await getUpcomingEvents(150, { mine });
-  const big = events
-    .filter((e) => e.kind === "event")
-    .map((e) => ({ e, k: featuredKind(e) }))
-    .filter((x) => x.k)
-    .slice(0, 4);
-  const byMonth = new Map<string, typeof events>();
+  const all = await getUpcomingEvents(150, { mine: show === "mine" });
+  const events = all.filter((e) =>
+    show === "campouts"
+      ? e.kind === "event" && featuredKind(e)?.kind === "campout"
+      : show === "big"
+        ? e.kind === "event" && featuredKind(e) !== null
+        : show === "meetings"
+          ? e.kind === "meeting" || /den meeting/i.test(e.title)
+          : true,
+  );
+  const today = easternDate(startOfEasternDay());
+  const groups = new Map<string, CalItem[]>();
   for (const e of events) {
-    const m = fmtMonth(e.starts_at);
-    byMonth.set(m, [...(byMonth.get(m) ?? []), e]);
+    const g = bucket(e, today);
+    groups.set(g, [...(groups.get(g) ?? []), e]);
   }
+  const pinned = show === "all" || show === "mine" ? big : null;
+  const BigIcon = pinned ? ICON[pinned.kind] : Tent;
+
   return (
     <>
-      <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack calendar</h1>
-      <p className="-mt-2 text-sm text-muted">Den meetings are most Mondays, 6:30–7:30 PM, and pack meetings 6:30–8:00 PM, at First Presbyterian Church of Howard County unless noted.</p>
-      {leader && (
-        <div className="flex gap-2 text-sm font-semibold" role="tablist" aria-label="Which events">
-          <Link href="/events" role="tab" aria-selected={!mine} className={`rounded-full px-3 py-1.5 ${!mine ? "bg-pine text-white" : "border border-line bg-white text-navy"}`}>
-            Every den
+      <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Calendar</h1>
+      <p className="-mt-2 text-sm text-muted">
+        {leader && show !== "mine" ? "Every den and pack event." : "Pack events and your scouts' dens."} Den meetings are most Mondays,
+        6:30–7:30 PM, and pack meetings 6:30–8:00 PM, at First Presbyterian Church of Howard County unless noted.
+      </p>
+
+      <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:px-0" aria-label="Show">
+        {SHOWS.filter((s) => !("leaderOnly" in s) || leader).map((s) => (
+          <Link
+            key={s.key}
+            href={s.key === "all" ? "/events" : `/events?show=${s.key}`}
+            aria-current={show === s.key ? "page" : undefined}
+            className={`flex h-9 shrink-0 items-center rounded-full px-4 text-sm font-bold ${
+              show === s.key ? "bg-pine text-white" : "border border-line bg-white text-ink"
+            }`}
+          >
+            {s.label}
           </Link>
-          <Link href="/events?view=mine" role="tab" aria-selected={mine} className={`rounded-full px-3 py-1.5 ${mine ? "bg-pine text-white" : "border border-line bg-white text-navy"}`}>
-            My family&apos;s dens
-          </Link>
-        </div>
-      )}
-      {!leader && <p className="-mt-2 text-xs text-muted">Showing pack events and your scouts&apos; dens.</p>}
-      {leader && (
+        ))}
+      </nav>
+
+      {leader && mode === "leader" && (
         <div className="flex gap-2">
           <Link href="/events/new" className="btn-primary flex-1 py-2">
             <Plus className="h-4 w-4" aria-hidden /> Add an event
@@ -68,40 +113,38 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
           )}
         </div>
       )}
-      {big.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="section-title">Big events</h2>
-          {big.map(({ e, k }) => {
-            const Icon = ICON[k!.kind];
-            return (
-              <Link key={e.id} href={e.href} className="flex items-center gap-3 rounded-2xl bg-pine-950 p-4 text-white shadow-[var(--shadow-float)]">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold text-pine-950">
-                  <Icon className="h-5 w-5" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-extrabold">{e.title}</span>
-                  <span className="block text-xs text-mint-200">
-                    {fmtRange(e.starts_at, e.ends_at, e.all_day)} · {daysUntil(e.starts_at, e.ends_at).toLowerCase()}
-                  </span>
-                </span>
-                <ChevronRight className="h-5 w-5 shrink-0 text-mint-200" aria-hidden />
-              </Link>
-            );
-          })}
-        </section>
+
+      {pinned && (
+        <Link href={pinned.event.href} className="flex items-center gap-3 rounded-2xl bg-pine-950 p-4 text-white shadow-[var(--shadow-float)]">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gold text-pine-950">
+            <BigIcon className="h-6 w-6" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] font-extrabold uppercase tracking-[0.12em] text-gold">
+              Big event · {daysUntil(pinned.event.starts_at, pinned.event.ends_at).toLowerCase()}
+            </span>
+            <span className="block truncate text-lg font-extrabold">{pinned.event.title}</span>
+            <span className="block truncate text-xs text-mint-200">{fmtRange(pinned.event.starts_at, pinned.event.ends_at, pinned.event.all_day)}</span>
+          </span>
+          <ChevronRight className="h-5 w-5 shrink-0 text-mint-200" aria-hidden />
+        </Link>
       )}
-      {token && host && <CalendarSubscribe feedUrl={`${proto}://${host}/api/calendar/${token}.ics`} />}
-      {events.length === 0 && <p className="card text-sm text-muted">No upcoming events yet.</p>}
-      {[...byMonth.entries()].map(([month, list]) => (
-        <section key={month} className="space-y-3">
-          <h2 className="section-title">{month}</h2>
+
+      {events.length === 0 && (
+        <p className="card text-sm text-muted">{show === "all" ? "No upcoming events yet." : "Nothing like that coming up."}</p>
+      )}
+      {[...groups.entries()].map(([label, list]) => (
+        <section key={label} className="space-y-2">
+          <h2 className="px-0.5 text-xs font-extrabold uppercase tracking-[0.1em] text-muted">{label}</h2>
           {list.map((e) => (
             <EventRow key={e.id} e={e} signup={signups.get(e.id)} />
           ))}
         </section>
       ))}
+
+      {token && host && <CalendarSubscribe feedUrl={`${proto}://${host}/api/calendar/${token}.ics`} />}
       <Link href="/events/archive" className="card flex items-center justify-between text-sm font-bold text-pine">
-        Past events and archive
+        Past events
         <ChevronRight className="h-4 w-4" aria-hidden />
       </Link>
     </>
