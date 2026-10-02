@@ -75,10 +75,11 @@ morning.
 
 ## Still to do (outside the app)
 
-1. **Turn on two-step sign-in** for every account behind the app: GitHub, Vercel, Supabase,
-   Squarespace (it was showing a "Secure your account" banner), Resend, Brevo, Givebutter and the
-   Google account used to sign in to them. Someone in one of those can change the app itself, which
-   matters more than any single user account.
+1. ~~Turn on two-step sign-in for every account behind the app~~ Done 2026-10-02: GitHub, Vercel,
+   Supabase, Squarespace, Resend, Brevo, Givebutter and the Google account all have it on.
+   Someone in one of those can change the app itself, so anyone who takes over an account (see
+   HANDOVER.md) turns it on for themselves too. Supabase has no backup codes: add a second
+   authenticator app there, or losing the phone locks the account for good.
 2. **Two-step sign-in in the app** for admins, the Cubmaster and leadership (proposed, not built).
 
 ## Repeating this review
