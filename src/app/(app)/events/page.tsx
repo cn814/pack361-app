@@ -24,9 +24,11 @@ const ICON: Record<FeaturedKind, typeof Tent> = {
 
 export const metadata: Metadata = { title: "Calendar" };
 
+// Leaders start on their own family's dens; "All" is every den. (Families only ever see their
+// own dens, so they start on "All".)
 const SHOWS = [
-  { key: "all", label: "All" },
   { key: "mine", label: "My dens", leaderOnly: true },
+  { key: "all", label: "All" },
   { key: "campouts", label: "Campouts" },
   { key: "big", label: "Big events" },
   { key: "meetings", label: "Den meetings" },
@@ -48,8 +50,9 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
   const sp = await searchParams;
   const leader = isLeader(me);
   // Older links used ?view=mine for a leader's own family's dens.
-  const wanted = (sp.show ?? (sp.view === "mine" ? "mine" : "all")) as Show;
-  const show: Show = SHOWS.some((s) => s.key === wanted && (!("leaderOnly" in s) || leader)) ? wanted : "all";
+  const start: Show = leader ? "mine" : "all";
+  const wanted = (sp.show ?? (sp.view === "mine" ? "mine" : start)) as Show;
+  const show: Show = SHOWS.some((s) => s.key === wanted && (!("leaderOnly" in s) || leader)) ? wanted : start;
   const [signups, token, h, big, mode] = await Promise.all([
     getSignupSummaries(me.family_id),
     getCalendarToken(),
@@ -92,7 +95,7 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
         {SHOWS.filter((s) => !("leaderOnly" in s) || leader).map((s) => (
           <Link
             key={s.key}
-            href={s.key === "all" ? "/events" : `/events?show=${s.key}`}
+            href={s.key === start ? "/events" : `/events?show=${s.key}`}
             aria-current={show === s.key ? "page" : undefined}
             className={`flex h-9 shrink-0 items-center rounded-full px-4 text-sm font-bold ${
               show === s.key ? "bg-brand text-white" : "border border-line bg-card text-ink"
@@ -133,7 +136,7 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
       )}
 
       {events.length === 0 && (
-        <p className="card text-sm text-muted">{show === "all" ? "No upcoming events yet." : "Nothing like that coming up."}</p>
+        <p className="card text-sm text-muted">{show === "all" || show === "mine" ? "No upcoming events yet." : "Nothing like that coming up."}</p>
       )}
       {[...groups.entries()].map(([label, list]) => (
         <section key={label} className="space-y-2">
