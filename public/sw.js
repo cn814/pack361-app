@@ -5,7 +5,7 @@
 //  * the "Saved on this phone" page (/family/files), so a family's own saved forms open at
 //    camp. Only the page itself is cached here; the files live in IndexedDB, which sign-out
 //    and this worker never touch.
-const CACHE = "pack361-offline-v1";
+const CACHE = "pack361-offline-v2"; // v2: new pack logo icons (2026-10-03)
 const OFFLINE_PAGES = /^\/(?:campouts\/[0-9a-f-]{36}|family\/files)\/?$/i;
 const STATIC = /^\/(_next\/static\/|icon-|badge\.png|notification-badge\.png|apple-icon|icon\.png|favicon\.ico)/;
 
