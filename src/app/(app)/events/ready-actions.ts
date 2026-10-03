@@ -4,7 +4,7 @@ import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/ActionForm";
 import { getEvent, isLeader, requireMember } from "@/lib/data";
-import { READY_KINDS, REMIND_EVERY_HOURS, defaultReminder, reminderAudience, reminderUrl, type ReadyKind } from "@/lib/ready";
+import { READY_KINDS, REMIND_EVERY_HOURS, canSeeMoney, defaultReminder, reminderAudience, reminderUrl, type ReadyKind } from "@/lib/ready";
 import { sendPushTo } from "@/lib/push";
 import { sendBulk } from "@/lib/bulk-email";
 import { APP_URL } from "@/lib/email";
@@ -23,6 +23,7 @@ export async function remindFamilies(_prev: ActionResult, form: FormData): Promi
   const eventId = String(form.get("event_id") ?? "");
   const kind = String(form.get("kind") ?? "") as ReadyKind;
   if (!UUID.test(eventId) || !READY_KINDS.includes(kind)) return { error: "That reminder wasn't found." };
+  if (kind === "pay" && !canSeeMoney(me)) return { error: "Only pack leadership can send payment reminders." };
   const e = await getEvent(eventId);
   if (!e) return { error: "That event wasn't found." };
   const email = form.getAll("email").includes("on");

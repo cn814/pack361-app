@@ -10,9 +10,24 @@ export interface IcsEvent {
   description: string | null;
   url: string | null;
   allDay?: boolean;
+  /** Leaders-only event: the title is marked "[Leaders] " and the description left out. */
+  leadersOnly?: boolean;
 }
 
-const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+// Control characters other than tab and line breaks (line breaks are escaped first).
+const CONTROL = /[\u0000-\u0008\u000B-\u001F\u007F]/g;
+
+/**
+ * TEXT value escaping (RFC 5545 3.3.11). Every line break (CRLF, a lone CR or a lone LF) becomes
+ * "\n", so a value can never start a new property line (e.g. "Title\rBEGIN:VALARM").
+ */
+export const esc = (s: string) =>
+  s
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r\n|\r|\n/g, "\\n")
+    .replace(CONTROL, "");
 const stamp = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 
 /** Eastern-time calendar date as YYYYMMDD (all-day events). */
@@ -57,11 +72,11 @@ export function buildIcs(name: string, events: IcsEvent[], now = new Date()): st
       ...(e.allDay
         ? [`DTSTART;VALUE=DATE:${ymd(e.starts_at)}`, `DTEND;VALUE=DATE:${nextYmd(e.ends_at ?? e.starts_at)}`]
         : [`DTSTART:${stamp(e.starts_at)}`, `DTEND:${stamp(end)}`]),
-      `SUMMARY:${esc(e.title)}`,
+      `SUMMARY:${esc(e.leadersOnly ? `[Leaders] ${e.title}` : e.title)}`,
     );
     if (e.location) lines.push(`LOCATION:${esc(e.location)}`);
-    if (e.description) lines.push(`DESCRIPTION:${esc(e.description)}`);
-    if (e.url) lines.push(`URL:${e.url}`);
+    if (e.description && !e.leadersOnly) lines.push(`DESCRIPTION:${esc(e.description)}`);
+    if (e.url) lines.push(`URL:${e.url.replace(/[\r\n]/g, "").replace(CONTROL, "")}`);
     lines.push("END:VEVENT");
   }
   lines.push("END:VCALENDAR");

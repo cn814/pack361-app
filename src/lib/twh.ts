@@ -38,7 +38,12 @@ function twhLink(s: string | null | undefined): string | null {
   return m ? m[0] : null;
 }
 
-const unescape = (v: string) => v.replace(/\\n/gi, "\n").replace(/\\([,;\\])/g, "$1").trim();
+const unescape = (v: string) =>
+  v
+    .replace(/\r(?!\n)/g, "")
+    .replace(/\\n/gi, "\n")
+    .replace(/\\([,;\\])/g, "$1")
+    .trim();
 
 interface IcsDate {
   iso: string;

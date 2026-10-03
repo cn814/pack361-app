@@ -13,6 +13,19 @@ export function givebutterConfigured(): boolean {
   return Boolean(process.env.GIVEBUTTER_API_KEY);
 }
 
+/** Only follow a "next" link back to the Givebutter API itself (the API key goes with it). */
+function nextPage(next: string | null | undefined): string | null {
+  if (!next) return null;
+  try {
+    const u = new URL(next);
+    return u.protocol === "https:" && u.hostname === "api.givebutter.com" && !u.username && !u.password && (u.port === "" || u.port === "443")
+      ? u.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchAll(path: string): Promise<Json[]> {
   const key = process.env.GIVEBUTTER_API_KEY;
   if (!key) throw new Error("GIVEBUTTER_API_KEY is not set");
@@ -27,7 +40,7 @@ async function fetchAll(path: string): Promise<Json[]> {
     if (!res.ok) throw new Error(`Givebutter ${path} returned ${res.status}`);
     const body = (await res.json()) as { data?: Json[]; links?: { next?: string | null } };
     out.push(...(body.data ?? []));
-    url = body.links?.next ?? null;
+    url = nextPage(body.links?.next);
   }
   return out;
 }

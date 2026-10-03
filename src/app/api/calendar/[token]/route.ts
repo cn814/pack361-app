@@ -38,6 +38,7 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/api/calendar
       description: [e.details, e.signup_url ? `Sign up: ${e.signup_url}` : null, `${origin}${e.href}`].filter(Boolean).join("\n\n"),
       url: `${origin}${e.href}`,
       allDay: e.all_day,
+      leadersOnly: Boolean(e.leaders_only),
     })),
   );
   return new Response(ics, {

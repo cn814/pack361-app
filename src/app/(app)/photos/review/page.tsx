@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { CameraOff, Check, Flag, Trash2 } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import SubmitButton from "@/components/SubmitButton";
+import PhotoOptOutList from "@/components/PhotoOptOutList";
 import { isLeader, requireMember } from "@/lib/data";
-import { getPendingPhotos } from "@/lib/photos";
-import { createClient } from "@/lib/supabase/server";
+import { getPendingPhotos, getPhotoOptOuts } from "@/lib/photos";
 import { fmtDay } from "@/lib/format";
 import { reviewPhotos } from "../actions";
 
@@ -14,25 +14,10 @@ export const metadata: Metadata = { title: "Photo review" };
 export default async function PhotoReviewPage() {
   const me = await requireMember();
   if (!isLeader(me)) redirect("/photos");
-  const supabase = await createClient();
-  const [pending, { data: scoutRows }] = await Promise.all([
-    getPendingPhotos(),
-    supabase
-      .from("scouts")
-      .select("first_name, last_name, photo_permission, den:dens(name, rank, number)")
-      .eq("is_active", true)
-      // OK unless the family opts out: only explicit "no" answers are listed.
-      .eq("photo_permission", "no")
-      .order("last_name"),
-  ]);
-  const noPhotos = (scoutRows ?? []) as unknown as {
-    first_name: string;
-    last_name: string;
-    photo_permission: "no";
-    den: { name: string } | null;
-  }[];
-  const byDen = new Map<string, typeof noPhotos>();
-  for (const s of noPhotos) byDen.set(s.den?.name ?? "No den", [...(byDen.get(s.den?.name ?? "No den") ?? []), s]);
+  // OK unless the family opts out: only explicit "no" answers are listed, including scouts who
+  // have left the pack (their opt-out still covers photos already taken).
+  const [pending, noPhotos] = await Promise.all([getPendingPhotos(), getPhotoOptOuts()]);
+
 
   return (
     <>
@@ -48,20 +33,8 @@ export default async function PhotoReviewPage() {
             ? "These families said no to pack photos. Every other scout is OK to include. Leaders only; don't share this list."
             : "No family has opted out of pack photos, so every scout is OK to include."}
         </p>
-        <div className="space-y-2 pt-2">
-          {[...byDen.entries()].map(([den, list]) => (
-            <div key={den}>
-              <p className="text-xs font-bold text-navy">{den}</p>
-              <p className="text-sm text-ink">
-                {list.map((s, i) => (
-                  <span key={i}>
-                    {i > 0 && ", "}
-                    {s.first_name} {s.last_name[0]}.
-                  </span>
-                ))}
-              </p>
-            </div>
-          ))}
+        <div className="pt-2">
+          <PhotoOptOutList scouts={noPhotos} />
         </div>
       </details>
 

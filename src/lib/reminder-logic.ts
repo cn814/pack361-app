@@ -75,10 +75,13 @@ export function startWords(e: { starts_at: string; ends_at: string | null; all_d
   return multi ? `${timeFmt.format(new Date(e.starts_at))} until ${shortDay(endDay)}` : timeFmt.format(new Date(e.starts_at));
 }
 
-/** "9:00 AM · Camp Ilchester" (time and place, for a push). */
-export function whenWhere(e: { starts_at: string; ends_at: string | null; all_day?: boolean | null; location_name?: string | null; address?: string | null }): string {
-  const place = e.location_name || e.address;
-  return `${startWords(e)}${place ? ` · ${place}` : ""}`;
+/**
+ * "9:00 AM · Camp Ilchester" (time and place, for a push). Lock screens show this, so it never
+ * falls back to the street address: the place name, else "see the event".
+ */
+export function whenWhere(e: { starts_at: string; ends_at: string | null; all_day?: boolean | null; location_name?: string | null }): string {
+  const place = e.location_name?.trim() || "see the event";
+  return `${startWords(e)} · ${place}`;
 }
 
 /** "Wolves", "Arrow of Light"... for "Today the Wolves worked on ...". */

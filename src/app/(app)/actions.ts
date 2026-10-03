@@ -6,7 +6,7 @@ import { sendPushTo, sendPushToAll } from "@/lib/push";
 import { packEmailConfigured, sendBulk } from "@/lib/bulk-email";
 import { EVENT_AUDIENCES, denAudience, eventAudience, type EventAudience } from "@/lib/audience";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { notifyAdmins } from "@/lib/notify";
+import { notifyAdmins, notifyPhotoOptOut } from "@/lib/notify";
 import { APP_URL } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
 import { isLeader, requireMember } from "@/lib/data";
@@ -188,8 +188,20 @@ export async function setPhotoPermission(form: FormData) {
   const scoutId = String(form.get("scout_id") ?? "");
   const answer = String(form.get("answer") ?? "");
   if (answer !== "yes" && answer !== "no") return;
+  if (!/^[0-9a-f-]{36}$/i.test(scoutId)) return;
   const supabase = await createClient();
-  await supabase.from("scouts").update({ photo_permission: answer }).eq("id", scoutId);
+  const { data: before } = await supabase.from("scouts").select("photo_permission").eq("id", scoutId).maybeSingle();
+  const { data: updated } = await supabase
+    .from("scouts")
+    .update({ photo_permission: answer })
+    .eq("id", scoutId)
+    .select("first_name")
+    .maybeSingle();
+  // A new opt-out: photo reviewers check what's already in the album.
+  if (answer === "no" && updated && before?.photo_permission !== "no") {
+    const name = String((updated as { first_name: string }).first_name);
+    after(() => notifyPhotoOptOut(name));
+  }
   revalidatePath("/family", "layout");
   revalidatePath("/");
 }

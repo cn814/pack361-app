@@ -184,7 +184,7 @@ select test.expect_error($$select public.register_push_subscription('http://evil
 select test.expect_error($$select public.register_push_subscription('https://fcm.googleapis.com/fcm/send/x', '', 'a', null)$$, '22023',
                          'keys are required');
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","aal":"aal2"}', true);
-select public.register_push_subscription('https://fcm.googleapis.com/fcm/send/shared-tablet', 'key-b', 'auth-b', 'Tablet');
+select public.register_push_subscription('https://fcm.googleapis.com/fcm/send/shared-tablet', 'key-a2', 'auth-a2', 'Tablet');
 select test.check(test.count($$select * from public.push_subscriptions where endpoint like '%/shared-tablet'$$) = 1, 'signing in as someone else moves the device to them');
 select test.check((select adult_id from public.push_subscriptions where endpoint like '%/shared-tablet') = '30000000-0000-0000-0000-00000000000b', 'now saved for the new person');
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);

@@ -28,8 +28,14 @@ export async function offerHelp(_prev: ActionResult, form: FormData): Promise<Ac
     if (error.code === "23505") return { ok: true, message: "You already offered. Thank you!" };
     return { error: error.code === "42501" ? "This job was just filled or closed." : "Couldn't send that. Try again." };
   }
-  const who = `${displayName(me)} ${me.last_name}`;
-  after(() => notifyRoleInterest({ roleId, who, adultId: me.id }));
+  // At most one alert a day per person per role (offer, withdraw, offer again doesn't re-alert).
+  // Before that database function exists, alert as before.
+  const { data: claimed, error: claimErr } = await supabase.rpc("claim_role_interest_alert", { p_role_id: roleId });
+  const missing = claimErr && (claimErr.code === "PGRST202" || claimErr.code === "42883");
+  if (claimed === true || missing) {
+    const who = `${displayName(me)} ${me.last_name}`;
+    after(() => notifyRoleInterest({ roleId, who, adultId: me.id }));
+  }
   refresh();
   return { ok: true, message: "Thank you! Someone from pack leadership will reach out." };
 }

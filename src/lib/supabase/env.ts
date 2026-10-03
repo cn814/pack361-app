@@ -18,3 +18,14 @@ export function supabaseConfigured(): boolean {
       (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
   );
 }
+
+/**
+ * Sign-in cookie settings: nothing in the browser reads the Supabase session (all database and
+ * storage calls go through the server; uploads use one-time signed URLs), so the cookie is
+ * HttpOnly. Secure in production (local dev runs on plain http://localhost).
+ */
+export const AUTH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+} as const;

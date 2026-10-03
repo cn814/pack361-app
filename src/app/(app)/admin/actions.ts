@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import type { ActionResult } from "@/components/ActionForm";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, getSignIns, welcomeBudget } from "@/lib/roster-data";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
 import { resetTwoStepFor } from "@/lib/two-step";
+import { notifyPhotoOptOut } from "@/lib/notify";
 import { sendPreview } from "@/lib/newsletter";
 import { APP_URL, emailConfigured, sendEmails, type Email } from "@/lib/email";
 import type { SettingKey } from "@/lib/settings";
@@ -213,6 +215,11 @@ export async function saveScout(_prev: ActionResult, form: FormData): Promise<Ac
     if (!UUID.test(familyId)) return { error: "Unknown family." };
     const { error } = await supabase.from("scouts").insert({ ...row, family_id: familyId });
     if (error) return { error: dbError(error.message) };
+  }
+  // A new opt-out: photo reviewers check what's already in the album.
+  if (photoChange === "no" && str(form, "photo_permission_was") !== "no") {
+    const name = row.first_name;
+    after(() => notifyPhotoOptOut(name));
   }
   revalidateRoster(familyId || null);
   return { ok: true, message: id ? "Saved" : `${row.first_name} added.` };

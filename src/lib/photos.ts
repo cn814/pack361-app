@@ -155,3 +155,24 @@ export async function getEventBrief(id: string): Promise<{ id: string; title: st
   const { data } = await supabase.from("events").select("id, title, starts_at, category").eq("id", id).maybeSingle();
   return (data as { id: string; title: string; starts_at: string; category: string } | null) ?? null;
 }
+
+export interface PhotoOptOut {
+  first_name: string;
+  last_name: string;
+  is_active: boolean;
+  den: { name: string } | null;
+}
+
+/**
+ * Leaders only (RLS): scouts whose families said no to pack photos, including scouts who have
+ * left the pack (their opt-out still covers photos already taken). Only explicit "no" answers.
+ */
+export async function getPhotoOptOuts(): Promise<PhotoOptOut[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("scouts")
+    .select("first_name, last_name, is_active, den:dens(name)")
+    .eq("photo_permission", "no")
+    .order("last_name");
+  return (data ?? []) as unknown as PhotoOptOut[];
+}

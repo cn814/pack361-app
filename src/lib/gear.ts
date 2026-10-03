@@ -203,7 +203,8 @@ export async function notifyGearDecision(loanId: string) {
     const body =
       l.status === "approved"
         ? `${what} is ready for you. The quartermaster will get it to you${l.needed_on ? ` by ${shortDay(l.needed_on)}` : ""}.`
-        : `Sorry, ${what} isn't available.${l.leader_note ? ` ${l.leader_note}` : ""}`;
+        : // The leader's note stays in the app, not on the lock screen.
+          `Sorry, ${what} isn't available.${l.leader_note ? " A leader left a note." : ""}`;
     await sendPushTo(await familyAdultIds(db, l.family_id), {
       title: l.status === "approved" ? "Gear request approved" : "Gear request declined",
       body: body.slice(0, 180),

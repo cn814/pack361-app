@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isCronRequest } from "@/lib/cron-auth";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
-import { emailBudget, purgeOldPhotos, reconcilePayments, remindRegistration, remindTraining, remindTrainingImport, remindVolunteers } from "@/lib/daily-jobs";
+import { emailBudget, purgeJoinRequests, purgeOldPhotos, reconcilePayments, remindRegistration, remindTraining, remindTrainingImport, remindVolunteers } from "@/lib/daily-jobs";
 import { paypalConfigured } from "@/lib/paypal";
 import { syncTwh, twhConfigured } from "@/lib/twh";
 import { syncCouncil } from "@/lib/council";
@@ -17,7 +17,7 @@ import { gearJob } from "@/lib/gear";
 //      (all of these share one reminder email budget, so sign-in codes keep room in the daily email quota)
 //   3c. weather alerts for upcoming events (to their leaders)   3d. overdue gear-loan reminders
 //      (both by push only)
-//   4. deleting photos past the keep-for setting
+//   4. deleting photos past the keep-for setting   4b. deleting join requests decided 90+ days ago
 //   5. finishing PayPal checkouts a family's browser didn't (only when PayPal is set up)
 //   6. the TroopWebHost calendar sync (only when its link is set)
 //   7. the council calendar sync (does nothing until a link is saved)
@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
     ["weather", () => weatherJob(db)],
     ["gear", () => gearJob(db)],
     ["photos", () => purgeOldPhotos(db)],
+    ["join-requests", () => purgeJoinRequests(db)],
   ];
   if (paypalConfigured()) steps.push(["payments", () => reconcilePayments(db)]);
   if (twhConfigured()) steps.push(["troopwebhost", () => syncTwh(db)]);

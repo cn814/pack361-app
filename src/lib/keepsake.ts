@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "./supabase/server";
+import { adminConfigured, createAdminClient } from "./supabase/admin";
 import { getRecords } from "./advancement-data";
 import { RANK_LABEL, awardLabel } from "./advancement";
 import { getAttendanceTotals } from "./attendance-data";
@@ -105,15 +106,31 @@ export async function getKeepsake(scoutId: string, season: string, current: stri
     .filter((e): e is KeepsakeEvent => !!e)
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
 
-  // Photos: approved ones from events the scout went to, unless the family opted out.
+  // Photos: approved ones from events the scout went to, unless the family opted out. Photos
+  // aren't tagged per scout, so an event is skipped entirely when ANY scout recorded there opted
+  // out. Families can't read other families' scouts, so that check uses the secret key, and only
+  // after the viewer has been shown able to read this scout (RLS); without the key, no photos.
   let photos: KeepsakePhoto[] = [];
   const permission = (scoutRow?.photo_permission as "yes" | "no" | null | undefined) ?? null;
-  if (photosOk(permission) && events.length) {
+  const eventIds = events.map((e) => e.id);
+  let safeIds: string[] = [];
+  if (scoutRow && photosOk(permission) && eventIds.length && adminConfigured()) {
+    const { data: optedOut, error: optErr } = await createAdminClient()
+      .from("event_attendance")
+      .select("event_id, scout:scouts!inner(photo_permission)")
+      .in("event_id", eventIds)
+      .eq("scout.photo_permission", "no");
+    if (!optErr) {
+      const blocked = new Set(((optedOut ?? []) as { event_id: string }[]).map((r) => r.event_id));
+      safeIds = eventIds.filter((id) => !blocked.has(id));
+    }
+  }
+  if (safeIds.length) {
     const { data: rows } = await supabase
       .from("photos")
       .select("id, storage_path, thumb_path, caption, event_id")
       .eq("status", "approved")
-      .in("event_id", events.map((e) => e.id))
+      .in("event_id", safeIds)
       .order("created_at")
       .limit(120);
     const picked = spreadPhotos((rows ?? []) as { id: string; storage_path: string; thumb_path: string | null; caption: string | null; event_id: string | null }[], MAX_KEEPSAKE_PHOTOS);

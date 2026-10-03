@@ -23,7 +23,7 @@ export default function PhotoPermission({ scouts }: { scouts: Scout[] }) {
               <span className="block font-semibold text-ink">
                 {ok ? `OK to include ${s.first_name} in pack photos` : `${s.first_name} is opted out of pack photos`}
               </span>
-              {!ok && <span className="block text-xs text-muted">Leaders won&apos;t approve photos showing {s.first_name}.</span>}
+              {!ok && <span className="block text-xs text-muted">Leaders won&apos;t approve new photos showing {s.first_name}, and we&apos;ll check photos already in the album.</span>}
             </span>
             <form action={setPhotoPermission} className="shrink-0">
               <input type="hidden" name="scout_id" value={s.id} />

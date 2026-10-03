@@ -166,12 +166,17 @@ async function familyNews(db: SupabaseClient, r: Recipient, shared: Shared = { h
       .then((x) => (x.data ?? []) as HealthForm[]),
     db
       .from("announcements")
-      .select("title, body, den_id, created_at")
+      .select("title, body, den_id, created_at, event:events(leaders_only)")
       .gte("created_at", since7)
       .or(dens.length ? `den_id.is.null,den_id.in.(${dens.join(",")})` : "den_id.is.null")
       .order("created_at", { ascending: false })
-      .limit(8)
-      .then((x) => (x.data ?? []) as { title: string; body: string; den_id: string | null }[]),
+      .limit(16)
+      // Leave out posts about leaders-only events (the newsletter goes to every family).
+      .then((x) =>
+        ((x.data ?? []) as unknown as { title: string; body: string; den_id: string | null; event: { leaders_only: boolean | null } | null }[])
+          .filter((p) => !p.event?.leaders_only)
+          .slice(0, 8),
+      ),
     db
       .from("polls")
       .select("id, question, den_id, closes_at, closed_at, created_at")

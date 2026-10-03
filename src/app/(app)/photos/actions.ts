@@ -19,11 +19,45 @@ async function isJpeg(b: Blob) {
   return head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff;
 }
 
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Captions use first names only: true when the caption has a scout's full name (first name, or
+ * the first letter of it, followed by their last name: "Sam Smith", "S. Smith"), case-insensitive.
+ * A last name on its own isn't blocked, because many are everyday words ("a hike up the hill").
+ * Call only after the user is known to be a member: it reads the roster with the secret key.
+ */
+async function captionHasLastName(caption: string): Promise<boolean> {
+  const db = adminConfigured() ? createAdminClient() : await createClient();
+  const { data } = await db.from("scouts").select("first_name, last_name");
+  const clean = (v: string | null) => (v ?? "").normalize("NFC").trim().replace(/\s+/g, " ");
+  const text = caption.normalize("NFC").replace(/\s+/g, " ");
+  for (const s of (data ?? []) as { first_name: string | null; last_name: string | null }[]) {
+    const first = clean(s.first_name);
+    const last = clean(s.last_name);
+    if (!first || (last.match(/\p{L}/gu) ?? []).length < 2) continue;
+    const firstPart = `(?:${escapeRe(first)}|${escapeRe(first[0])}\\.?)`;
+    const re = new RegExp(`(?<![\\p{L}\\p{N}])${firstPart}\\s+${escapeRe(last)}(?![\\p{L}\\p{N}])`, "iu");
+    if (re.test(text)) return true;
+  }
+  return false;
+}
+
+/** Leaders only (RLS): how many scouts' families opted out of photos, active or not. */
+async function optOutCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase.from("scouts").select("id", { count: "exact", head: true }).eq("photo_permission", "no");
+  // If it can't be checked, assume someone opted out (the photo then goes to review).
+  return error ? 1 : (count ?? 0);
+}
+
 /**
  * One photo, already resized and re-encoded in the browser (which also strips location
- * and camera data). Leaders' photos go straight to the album; others wait for review.
+ * and camera data). Leaders' photos go straight to the album when nobody has opted out of
+ * photos, or when they tick "None of these scouts are in my photos"; otherwise, and for
+ * everyone else, they wait for review. `fatal` errors are the same for every photo in a batch.
  */
-export async function uploadPhoto(form: FormData): Promise<{ error?: string; approved?: boolean }> {
+export async function uploadPhoto(form: FormData): Promise<{ error?: string; approved?: boolean; fatal?: boolean }> {
   const me = await requireMember();
   const full = form.get("full");
   const thumb = form.get("thumb");
@@ -32,6 +66,7 @@ export async function uploadPhoto(form: FormData): Promise<{ error?: string; app
   if (!(full instanceof Blob) || !(thumb instanceof Blob)) return { error: "No photo received." };
   if (full.size > MAX_FULL || thumb.size > MAX_THUMB) return { error: "That photo is too large." };
   if (!(await isJpeg(full)) || !(await isJpeg(thumb))) return { error: "Only photos can be uploaded." };
+  if (caption && (await captionHasLastName(caption))) return { error: "Use first names only in captions.", fatal: true };
 
   const supabase = await createClient();
   const name = crypto.randomUUID();
@@ -40,7 +75,7 @@ export async function uploadPhoto(form: FormData): Promise<{ error?: string; app
   const up1 = await supabase.storage.from(PHOTO_BUCKET).upload(path, full, { contentType: "image/jpeg", upsert: false });
   if (up1.error) return { error: "Upload failed. Try again." };
   const up2 = await supabase.storage.from(PHOTO_BUCKET).upload(thumbPath, thumb, { contentType: "image/jpeg", upsert: false });
-  const leader = isLeader(me);
+  const leader = isLeader(me) && (form.get("no_opt_outs") === "on" || (await optOutCount()) === 0);
   const { error } = up2.error
     ? { error: up2.error }
     : await supabase.from("photos").insert({
@@ -59,11 +94,10 @@ export async function uploadPhoto(form: FormData): Promise<{ error?: string; app
   return { approved: leader };
 }
 
-/** After a batch of uploads: refresh the album once and, for family uploads, alert admins once. */
+/** After a batch of uploads: refresh the album once and, if any went to review, alert admins once. */
 export async function finishUpload() {
   const me = await requireMember();
   revalidatePath("/photos", "layout");
-  if (isLeader(me)) return;
   // Count what this person actually uploaded in the last few minutes, rather than trusting the
   // number sent from the browser, and only alert when there is something new to review.
   const supabase = await createClient();
@@ -77,7 +111,7 @@ export async function finishUpload() {
     after(() =>
       notifyAdmins({
         title: "New pack photos to review",
-        body: `A family uploaded ${count} photo${count === 1 ? "" : "s"} for the album.`,
+        body: `${isLeader(me) ? "A leader" : "A family"} uploaded ${count} photo${count === 1 ? "" : "s"} for the album.`,
         url: "/photos/review",
         tag: "photo-review",
       }),

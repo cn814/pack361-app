@@ -70,6 +70,10 @@ export function EventSignalView({
             to the families going will point them to it.
           </p>
         )}
+        <p className="rounded-xl bg-gold-50 p-3 text-xs text-gold-800">
+          <b>Youth protection:</b> Adults only: don&rsquo;t add scouts&rsquo; phone numbers. Remove families who change to not going, and
+          reset the group link after the event.
+        </p>
         {url ? (
           <details>
             <summary className="cursor-pointer text-sm font-bold text-pine">Change or remove the link</summary>

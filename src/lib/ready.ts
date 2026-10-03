@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./supabase/server";
 import { adminConfigured, createAdminClient } from "./supabase/admin";
-import { isLeader } from "./data";
+import { isCommittee, isLeader } from "./data";
 import { formState, type HealthForm } from "./paperwork";
 import { eventIsFor } from "./slips";
 import { campingNights } from "./attendance";
@@ -56,6 +56,8 @@ export interface TrainingCheck {
 export interface ReadyReport {
   eventId: string;
   going: number;
+  /** Whether payments were checked (pack leadership only). */
+  money: boolean;
   rows: ReadyRow[];
   /** Training checks, for overnight events only. */
   training: TrainingCheck[] | null;
@@ -108,6 +110,14 @@ export function reminderUrl(kind: ReadyKind, e: { id: string; category: string }
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const first = (p: { first_name: string; preferred_name?: string | null }) => p.preferred_name || p.first_name;
 
+/**
+ * Who may see (and remind about) the "Not paid yet" row: pack leadership only, checked on the
+ * real role as well as the shown one, so "View as" can only take it away, never grant it.
+ */
+export function canSeeMoney(me: Adult): boolean {
+  return isCommittee(me) && isCommittee({ ...me, role: me.real_role ?? me.role });
+}
+
 /** The database client for a leader's readiness check: the secret key when set up, else theirs. */
 async function leaderDb(): Promise<SupabaseClient> {
   return adminConfigured() ? createAdminClient() : await createClient();
@@ -117,7 +127,7 @@ async function leaderDb(): Promise<SupabaseClient> {
  * Everything the card needs, plus which families each reminder goes to. Callers must check
  * the viewer is a leader first (this reads other families' paperwork and charges).
  */
-async function load(e: PackEvent) {
+async function load(e: PackEvent, money: boolean) {
   const db = await leaderDb();
   const { data: rsvps } = await db
     .from("event_rsvps")
@@ -141,7 +151,7 @@ async function load(e: PackEvent) {
       : none,
     soloIds.length ? db.from("adults").select("id, first_name, preferred_name, last_name, family_id").in("id", soloIds) : none,
     e.slip_required ? db.from("permission_slips").select("scout_id").eq("event_id", e.id) : none,
-    db.from("charges").select("family_id, adult_id, amount_cents").eq("event_id", e.id).eq("kind", "event").eq("status", "open"),
+    money ? db.from("charges").select("family_id, adult_id, amount_cents").eq("event_id", e.id).eq("kind", "event").eq("status", "open") : none,
     db.from("volunteer_slots").select("id, role_title, capacity, signups:volunteer_signups(adult_id)").eq("event_id", e.id),
     db.from("event_reminders").select("kind, sent_at").eq("event_id", e.id),
   ]);
@@ -168,6 +178,7 @@ async function load(e: PackEvent) {
     slots: (slots.data ?? []) as { id: string; role_title: string; capacity: number; signups: { adult_id: string }[] }[],
     reminders: new Map(((reminders.data ?? []) as { kind: ReadyKind; sent_at: string }[]).map((r) => [r.kind, r.sent_at])),
     trainings: (trainings.data ?? []) as TrainingRow[],
+    money,
   };
 }
 
@@ -226,7 +237,8 @@ function build(e: PackEvent, d: Loaded, now = Date.now()): ReadyReport {
     }
   }
 
-  // Unpaid: open event charges (the RSVP's and any a leader added) of families going.
+  // Unpaid: open event charges (the RSVP's and any a leader added) of families going. Only
+  // loaded for pack leadership (see canSeeMoney); den leaders get no money row at all.
   const pay: ReadyFamily[] = [];
   let unpaid = 0;
   for (const g of d.going) {
@@ -269,7 +281,7 @@ function build(e: PackEvent, d: Loaded, now = Date.now()): ReadyReport {
       ...sentInfo("slips"),
     });
   }
-  if (pay.length) {
+  if (d.money && pay.length) {
     rows.push({
       kind: "pay",
       title: "Not paid yet",
@@ -311,13 +323,13 @@ function build(e: PackEvent, d: Loaded, now = Date.now()): ReadyReport {
     }));
   }
 
-  return { eventId: e.id, going: d.going.length, rows, training };
+  return { eventId: e.id, going: d.going.length, money: d.money, rows, training };
 }
 
 /** The "Ready to go?" report for an event (leaders only; null for anyone else, or once it's over). */
 export async function getReadiness(e: PackEvent, me: Adult): Promise<ReadyReport | null> {
   if (!isLeader(me) || !e.rsvp_enabled || e.archived_at || eventOver(e)) return null;
-  return build(e, await load(e));
+  return build(e, await load(e, canSeeMoney(me)));
 }
 
 /**
@@ -331,7 +343,8 @@ export async function reminderAudience(
 ): Promise<{ families: number; openJobs: number; people: { id: string; email: string; first_name: string; preferred_name: string | null }[] }> {
   const empty = { families: 0, openJobs: 0, people: [] };
   if (!isLeader(me)) return empty;
-  const d = await load(e);
+  if (kind === "pay" && !canSeeMoney(me)) return empty;
+  const d = await load(e, kind === "pay");
   const row = build(e, d).rows.find((r) => r.kind === kind);
   if (!row || (kind === "medical" && !row.families.length)) return empty;
   const keys = row.families.map((f) => f.key);

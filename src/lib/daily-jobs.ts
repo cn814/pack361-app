@@ -329,6 +329,17 @@ export async function purgeOldPhotos(db: SupabaseClient) {
 }
 
 /**
+ * Delete join requests decided (approved or declined) more than 90 days ago; pending ones stay.
+ * The rule lives in public.purge_join_requests() (secret key only). An error is reported in the
+ * run's result rather than thrown.
+ */
+export async function purgeJoinRequests(db: SupabaseClient) {
+  const { data, error } = await db.rpc("purge_join_requests");
+  if (error) return { join_requests_deleted: 0, errors: [`Couldn't delete old join requests: ${error.message}`] };
+  return { join_requests_deleted: Number(data ?? 0) };
+}
+
+/**
  * Finish PayPal checkouts the family's browser didn't (closed the page, lost signal). For each
  * checkout still "created" after 15 minutes: an APPROVED order is captured, a COMPLETED one is
  * recorded, and one never approved within 3 days is closed. Recording is idempotent, so racing

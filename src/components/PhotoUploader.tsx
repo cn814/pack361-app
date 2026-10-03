@@ -35,11 +35,14 @@ export default function PhotoUploader({
   events,
   defaultEventId,
   leader,
+  optOutCount = 0,
   returnTo,
 }: {
   events: { id: string; title: string; when: string }[];
   defaultEventId?: string;
   leader: boolean;
+  /** Leaders: how many scouts' families opted out of photos (listed above the uploader). */
+  optOutCount?: number;
   /** Page to go back to after a successful upload (the event the upload started from). */
   returnTo?: string;
 }) {
@@ -49,8 +52,12 @@ export default function PhotoUploader({
   const [eventId, setEventId] = useState(defaultEventId ?? "");
   const [caption, setCaption] = useState("");
   const [ok, setOk] = useState(false);
+  // Leaders: "None of these scouts are in my photos". Without it, their photos go to review too.
+  const [clear, setClear] = useState(false);
+  const needsClear = leader && optOutCount > 0;
   const [progress, setProgress] = useState<{ done: number; failed: number } | null>(null);
-  const [finished, setFinished] = useState<{ sent: number; failed: number; heic: number } | null>(null);
+  const [finished, setFinished] = useState<{ sent: number; failed: number; heic: number; approved: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const busy = progress !== null;
 
   /** After the picker closes: let iPhone Safari re-settle the page, then show the next step. */
@@ -65,9 +72,11 @@ export default function PhotoUploader({
 
   async function upload() {
     setFinished(null);
+    setError(null);
     let done = 0;
     let failed = 0;
     let heic = 0;
+    let approved = 0;
     const failedFiles: File[] = [];
     setProgress({ done, failed });
     for (const f of files) {
@@ -78,9 +87,19 @@ export default function PhotoUploader({
         form.set("thumb", thumb, "thumb.jpg");
         form.set("event_id", eventId);
         form.set("caption", caption);
+        if (clear) form.set("no_opt_outs", "on");
         const res = await uploadPhoto(form);
-        if (res.error) throw new Error(res.error);
+        if (res.error) {
+          // Same answer for every photo (e.g. a last name in the caption): stop and say so.
+          if (res.fatal) {
+            setProgress(null);
+            setError(res.error);
+            return;
+          }
+          throw new Error(res.error);
+        }
         done++;
+        if (res.approved) approved++;
       } catch {
         failed++;
         failedFiles.push(f);
@@ -92,12 +111,12 @@ export default function PhotoUploader({
     if (done > 0 && failed === 0) {
       // All sent: go back and say so in a pop-up (see components/Toast).
       const back = returnTo ?? `/photos?album=${eventId || "other"}`;
-      router.push(`${back}${back.includes("?") ? "&" : "?"}done=${leader ? "photos-added" : "photos-sent"}&n=${done}`);
+      router.push(`${back}${back.includes("?") ? "&" : "?"}done=${approved === done ? "photos-added" : "photos-sent"}&n=${done}`);
       return;
     }
     // Keep just the ones that didn't go, so "Upload" tries those again.
     setProgress(null);
-    setFinished({ sent: done, failed, heic });
+    setFinished({ sent: done, failed, heic, approved });
     setFiles(failedFiles);
     if (input.current) input.current.value = "";
     router.refresh();
@@ -180,6 +199,22 @@ export default function PhotoUploader({
         </span>
       </label>
 
+      {needsClear && (
+        <label className="flex items-start gap-2 rounded-xl bg-danger-50 p-3 text-sm text-danger">
+          <input type="checkbox" checked={clear} onChange={(e) => setClear(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-pine" disabled={busy} />
+          <span>
+            <b>None of these scouts are in my photos.</b> Leave this unticked and your photos wait for review like a family&apos;s.
+          </span>
+        </label>
+      )}
+
+      {error && (
+        <p role="alert" className="flex items-start gap-1.5 text-sm font-semibold text-danger">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          {error}
+        </p>
+      )}
+
       <button type="button" className={`btn-primary w-full ${busy ? "is-busy" : ""}`} disabled={!files.length || !ok || busy} onClick={upload}>
         {progress ? `Uploading ${progress.done + progress.failed + 1} of ${files.length}…` : `Upload ${files.length || ""} photo${files.length === 1 ? "" : "s"}`}
       </button>
@@ -187,7 +222,7 @@ export default function PhotoUploader({
       {finished && finished.sent > 0 && (
         <p className="flex items-start gap-1.5 text-sm font-semibold text-pine">
           <CircleCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          {leader
+          {finished.approved === finished.sent
             ? `${finished.sent} photo${finished.sent > 1 ? "s" : ""} added to the album.`
             : `Thanks! ${finished.sent} photo${finished.sent > 1 ? "s" : ""} sent. A leader checks each one before it appears in the album.`}
         </p>

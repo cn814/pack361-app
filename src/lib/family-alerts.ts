@@ -160,7 +160,10 @@ export async function alertReviewed(reports: ReviewedReport[], status: "approved
       body:
         status === "approved"
           ? "Nice work! The advancement chair will enter it in Scoutbook."
-          : clip(note ? `Returned: ${note}` : "A leader sent it back. See the note on your scout's page."),
+          : // The leader's note stays in the app, not on the lock screen.
+            note
+            ? "A leader sent it back with a note. Open the app to see it."
+            : "A leader sent it back. See your scout's page.",
       url: `/scouts/${s.id}`,
       tag: `review-${s.id}`,
     });

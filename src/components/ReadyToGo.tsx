@@ -10,7 +10,8 @@ import type { Adult, PackEvent } from "@/lib/types";
 /**
  * Leaders: "Ready to go?" for an event that takes RSVPs. What the families going still need
  * (medical forms, permission slips, payment, volunteer jobs, trained adults for overnights),
- * with a button to remind just those families. Renders nothing for families.
+ * with a button to remind just those families. Renders nothing for families. The payment row
+ * is built only for pack leadership (see canSeeMoney in lib/ready).
  */
 export default async function ReadyToGo({ e, me }: { e: PackEvent; me: Adult }) {
   const report = await getReadiness(e, me);
@@ -44,7 +45,7 @@ export function ReadyCard({ report, canEmail }: { report: ReadyReport; canEmail:
 
       {going > 0 && problems === 0 && trainingGaps === 0 && (
         <p className="flex items-center gap-1.5 rounded-xl bg-mint p-3 text-sm font-semibold text-pine">
-          <CircleCheck className="h-4 w-4 shrink-0" aria-hidden /> All set so far: forms, slips and payments are in.
+          <CircleCheck className="h-4 w-4 shrink-0" aria-hidden /> All set so far: forms{report.money ? ", slips and payments are" : " and slips are"} in.
         </p>
       )}
 

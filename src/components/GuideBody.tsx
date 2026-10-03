@@ -5,9 +5,13 @@ import type { ReactNode } from "react";
 // ## / ### headings, "- " bullets, "1. " steps, "> " notes, **bold**, [text](link), and
 // "[Leaders: ...]" placeholders, which are highlighted so drafts are easy to finish.
 
+/** A link within the app: one leading "/", not "//" or "/\" (protocol-relative, another site). */
+const isInternal = (href: string) => href.startsWith("/") && !href.startsWith("//") && !href.startsWith("/\\");
+
 function inline(text: string, key: string): ReactNode[] {
   const out: ReactNode[] = [];
-  const re = /(\*\*[^*]+\*\*|\[[^\]]+\]\((?:https?:\/\/|mailto:|\/)[^)\s]*\)|\[Leaders?:[^\]]*\])/g;
+  // Internal links start with one "/" (never "//" or "/\", which browsers treat as another site).
+  const re = /(\*\*[^*]+\*\*|\[[^\]]+\]\((?:https?:\/\/|mailto:|\/(?![/\\]))[^)\s]*\)|\[Leaders?:[^\]]*\])/g;
   let last = 0;
   let m: RegExpExecArray | null;
   let i = 0;
@@ -20,7 +24,7 @@ function inline(text: string, key: string): ReactNode[] {
     else {
       const [, label, href] = t.match(/^\[([^\]]+)\]\(([^)]+)\)$/)!;
       out.push(
-        href.startsWith("/") ? (
+        isInternal(href) ? (
           <Link key={k} href={href} className="font-semibold text-pine underline">
             {label}
           </Link>

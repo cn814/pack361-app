@@ -1,12 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { supabaseKey, supabaseUrl } from "./env";
+import { AUTH_COOKIE_OPTIONS, supabaseKey, supabaseUrl } from "./env";
 
 /** Supabase client for Server Components, Server Actions and Route Handlers.
  *  Create a new one per request; never share across requests. */
 export async function createClient() {
   const cookieStore = await cookies();
   return createServerClient(supabaseUrl(), supabaseKey(), {
+    cookieOptions: AUTH_COOKIE_OPTIONS,
     cookies: {
       getAll() {
         return cookieStore.getAll();
