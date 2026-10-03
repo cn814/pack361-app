@@ -20,6 +20,7 @@ Outputs:
 Usage: python build_roster_import.py <imports_dir> <date>
 """
 import csv
+import json
 import re
 import sys
 from collections import defaultdict
@@ -45,21 +46,16 @@ DEN_LEADER_PATTERNS = [
 ]
 ADMIN_EMAILS = {"cnealen@gmail.com"}   # first admin; add others in the dashboard
 
-# Scoutbook "first + last initial" / spelling differences -> TWH name
-NAME_FIXES = {
-    ("first", "last"): ("first", "last"),
-    ("first", "last"): ("first", "last"),
-    ("first", "last"): ("first", "last"),
-    ("first", "last"): ("first", "last"),
-}
-
-# Same parent, email typed two ways between the systems -> the adult record's spelling
-EMAIL_ALIASES = {
-    "parent1@example.com": "parent2@example.com",
-    "parent1@example.com": "parent2@example.com",
-}
-# TWH duplicate scout records to ignore
-TWH_DUPLICATES = {("first", "last")}
+# Name and email corrections between Scoutbook and TroopWebHost. They name real families, so they
+# live in imports/roster_fixes.json (not committed; /imports is ignored). Format:
+#   {"name_fixes": [[["first", "last"], ["first", "last"]], ...],
+#    "email_aliases": {"typed@example.com": "record@example.com"},
+#    "twh_duplicates": [["first", "last"], ...]}
+_FIXES_FILE = Path(__file__).resolve().parents[2] / "imports" / "roster_fixes.json"
+_fixes = json.loads(_FIXES_FILE.read_text()) if _FIXES_FILE.exists() else {}
+NAME_FIXES = {tuple(a): tuple(b) for a, b in _fixes.get("name_fixes", [])}
+EMAIL_ALIASES = dict(_fixes.get("email_aliases", {}))
+TWH_DUPLICATES = {tuple(x) for x in _fixes.get("twh_duplicates", [])}
 
 
 def norm(s: str) -> str:
