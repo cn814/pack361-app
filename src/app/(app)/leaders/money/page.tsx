@@ -56,7 +56,7 @@ import { addDuesCharges, addRegistrationFees, chargeAction, savePaySettings, set
 
 export const metadata: Metadata = { title: "Money" };
 
-const TABS = { charges: "Charges", dues: "Givebutter dues", registration: "Registration", add: "Add a fee", settings: "Settings" } as const;
+const TABS = { charges: "Charges", dues: "Pack dues", registration: "Registration", add: "Add a fee", settings: "Settings" } as const;
 type Tab = keyof typeof TABS;
 const SHOW_MAX = 300;
 
@@ -134,7 +134,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/leaders/mo
         <p className="flex items-start gap-2 rounded-xl bg-gold-50 p-3 text-xs text-gold-800">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>
-            {toReview} Givebutter dues payment{toReview === 1 ? " needs" : "s need"} matching to a family.{" "}
+            {toReview} pack dues payment{toReview === 1 ? " needs" : "s need"} matching to a family.{" "}
             <Link href="/leaders/money?tab=dues" className="font-bold underline">
               Match {toReview === 1 ? "it" : "them"}
             </Link>
@@ -896,7 +896,7 @@ async function SettingsTab({ settings }: { settings: Awaited<ReturnType<typeof g
           />
         </Field>
         <Field
-          label="Givebutter dues campaign"
+          label="Pack dues campaign on Givebutter"
           hint={
             campaigns.length
               ? "Families pay dues here. Payments in it are matched to families and marked paid when Givebutter syncs."
@@ -980,7 +980,7 @@ async function DuesTab({ campaign, orders }: { campaign: DuesCampaign | null; or
   if (!campaign) {
     return (
       <p className="card text-sm text-muted">
-        Pick the Givebutter dues campaign in{" "}
+        Pick the pack dues campaign in{" "}
         <Link href="/leaders/money?tab=settings" className="font-semibold text-pine underline">
           Settings
         </Link>{" "}
