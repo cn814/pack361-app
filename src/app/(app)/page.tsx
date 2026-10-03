@@ -27,7 +27,7 @@ import { myDenMeetingButtons } from "@/lib/meetings";
 import { getCatalog, getRecords, getReviewableScouts, getSubmissions } from "@/lib/advancement-data";
 import { RANK_LABEL, rankProgress } from "@/lib/advancement";
 import { canLead, getMode } from "@/lib/mode";
-import { daysUntil, fmtRange, timeAgo } from "@/lib/format";
+import { daysUntil, eventOver, fmtRange, timeAgo } from "@/lib/format";
 import type { CalItem } from "@/lib/calendar";
 
 /** To-dos that are a leader's job (the rest are their own family's). */
@@ -70,7 +70,7 @@ export default async function Home() {
 async function FamilyHome() {
   const [scouts, events, posts, jobs, todos, big, catalog, hidden] = await Promise.all([
     getMyScouts(),
-    getUpcomingEvents(8, { mine: true }),
+    getUpcomingEvents(12, { mine: true }).then((l) => l.filter((e) => !eventOver(e))),
     getAnnouncements(2),
     getOpenJobs(),
     getTodos(),
@@ -81,7 +81,9 @@ async function FamilyHome() {
   const records = await getRecords(scouts.map((s) => s.id));
   const openJobs = jobs.filter((j) => !hidden.has(`job-${j.slot_id}`));
   // The pack's big event is pinned while it's coming up; otherwise whatever's next.
-  const next = big?.event ?? events[0];
+  // Once it's over (the bottom bar keeps it a few more days), fall back to what's next.
+  const pinned = big && !eventOver(big.event) ? big : null;
+  const next = pinned?.event ?? events[0];
   const mine = todos.filter((t) => !LEADER_TODOS.has(t.key));
   // The big card already has an RSVP button for its event, so don't list it again below.
   const todoList = next ? mine.filter((t) => t.key !== `rsvp-${next.id}` || t.rsvp?.today) : mine;
@@ -90,7 +92,7 @@ async function FamilyHome() {
   return (
     <div className="page-wide flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-7">
       <div className="space-y-5">
-        {next && <NextUp e={next} label={big ? big.label : null} />}
+        {next && <NextUp e={next} label={pinned ? pinned.label : null} />}
 
         {todoList.length > 0 && (
           <section className="space-y-2">
@@ -154,7 +156,7 @@ async function LeaderHome() {
     getTodos(),
     myDenMeetingButtons(),
     getMessageableDens(me),
-    getUpcomingEvents(6),
+    getUpcomingEvents(10).then((l) => l.filter((e) => !eventOver(e)).slice(0, 6)),
     getAnnouncements(2),
     getReviewableScouts(),
     getSubmissions({ status: ["submitted"] }),

@@ -4,7 +4,7 @@ import EventRow from "@/components/EventRow";
 import { isLeader, requireMember } from "@/lib/data";
 import { denScopeFor, loadArchive } from "@/lib/calendar";
 import { createClient } from "@/lib/supabase/server";
-import { easternDate, startOfEasternDay } from "@/lib/tz";
+import { easternDate } from "@/lib/tz";
 
 export const metadata: Metadata = { title: "Event archive" };
 
@@ -12,7 +12,7 @@ export default async function ArchivePage() {
   const me = await requireMember();
   const supabase = await createClient();
   const scope = await denScopeFor(supabase, me);
-  const events = await loadArchive(supabase, scope, startOfEasternDay());
+  const events = await loadArchive(supabase, scope, new Date().toISOString());
   const byYear = new Map<string, typeof events>();
   for (const e of events) {
     const y = easternDate(e.starts_at).slice(0, 4);

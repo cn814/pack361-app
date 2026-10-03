@@ -8,7 +8,7 @@ import CalendarSubscribe from "@/components/CalendarSubscribe";
 import { getBigEvent, getCalendarToken, getUpcomingEvents, isCommittee, isLeader, requireMember } from "@/lib/data";
 import { getSignupSummaries } from "@/lib/signups";
 import { getMode } from "@/lib/mode";
-import { daysUntil, fmtMonth, fmtRange } from "@/lib/format";
+import { daysUntil, eventOver, fmtMonth, fmtRange } from "@/lib/format";
 import { daysBetween, easternDate, startOfEasternDay } from "@/lib/tz";
 import type { CalItem } from "@/lib/calendar";
 
@@ -61,7 +61,9 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
   const proto = h.get("x-forwarded-proto") ?? "https";
   const all = await getUpcomingEvents(150, { mine: show === "mine" });
   const events = all.filter((e) =>
-    show === "campouts"
+    eventOver(e)
+      ? false
+      : show === "campouts"
       ? e.kind === "event" && featuredKind(e)?.kind === "campout"
       : show === "big"
         ? e.kind === "event" && featuredKind(e) !== null
@@ -75,7 +77,7 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
     const g = bucket(e, today);
     groups.set(g, [...(groups.get(g) ?? []), e]);
   }
-  const pinned = show === "all" || show === "mine" ? big : null;
+  const pinned = (show === "all" || show === "mine") && big && !eventOver(big.event) ? big : null;
   const BigIcon = pinned ? ICON[pinned.kind] : Tent;
 
   return (
