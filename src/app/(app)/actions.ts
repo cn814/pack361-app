@@ -116,12 +116,20 @@ async function postEventMessage(
   if (error || !post) return { error: "Couldn't send that. Try again." };
   const eventTitle = String(ev.title).slice(0, 60);
   const url = ev.category === "Campout" ? `/campouts/${eventId}` : `/events/${eventId}`;
+  // Point families to the event's Signal group, when it has one (the link itself stays in the app).
+  const { data: signal } = await supabase.from("event_signal").select("event_id").eq("event_id", eventId).maybeSingle();
+  const more = signal ? "More in the Signal group." : "";
   after(async () => {
     const people = (await eventAudience(eventId, withMaybe)).filter((p) => p.id !== me.id);
     if (notify && people.length) {
       await sendPushTo(
         people.map((p) => p.id),
-        { title: `${eventTitle}: ${title.slice(0, 80)}`, body: body.slice(0, 180), url, tag: `event-${eventId}` },
+        {
+          title: `${eventTitle}: ${title.slice(0, 80)}`,
+          body: more ? `${body.length > 150 ? `${body.slice(0, 149)}…` : body} ${more}` : body.slice(0, 180),
+          url,
+          tag: `event-${eventId}`,
+        },
       );
     }
     if (email && people.length) {
@@ -131,7 +139,13 @@ async function postEventMessage(
         {
           subject: `${eventTitle}: ${title.slice(0, 100)}`,
           replyTo: me.email,
-          paragraphs: [`Hi ${eventTitle} families,`, body, `From ${from}. Reply to this email to reach them.`, `${APP_URL}${url}`],
+          paragraphs: [
+            `Hi ${eventTitle} families,`,
+            body,
+            ...(more ? ["More in the event's Signal group. Open the event in the app to join it."] : []),
+            `From ${from}. Reply to this email to reach them.`,
+            `${APP_URL}${url}`,
+          ],
         },
       );
       await createAdminClient().from("announcements").update({ emailed_count: r.sent }).eq("id", post.id);

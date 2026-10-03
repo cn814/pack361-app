@@ -31,7 +31,7 @@ export default function PostAnnouncement({
   /** Where to go once it's posted (the Announce page goes to Notifications). */
   doneHref?: string;
   /** Message the families going to this event (RSVP yes, optionally maybe) instead. */
-  event?: { id: string; title: string; yes: number; maybe: number };
+  event?: { id: string; title: string; yes: number; maybe: number; signal?: boolean };
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(startOpen);
@@ -76,6 +76,9 @@ export default function PostAnnouncement({
             <span className="block text-[11px] text-muted">It also shows in the app&apos;s news, linked to the event, for anyone who looks.</span>
           </span>
         </label>
+        {event.signal && (
+          <p className="text-xs text-muted">The alert and email end with &ldquo;More in the Signal group,&rdquo; and open the event, where families going can join it.</p>
+        )}
         {state.error && <p className="text-sm text-danger">{state.error}</p>}
         <button type="submit" className="btn-primary w-full" disabled={pending || n === 0}>
           {pending ? "Sending…" : n === 0 ? "Nobody has said yes yet" : `Send to ${families}`}

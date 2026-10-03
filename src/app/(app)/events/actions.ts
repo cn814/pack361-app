@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { easternToIso } from "@/lib/calendar";
 import type { ActionResult } from "@/components/ActionForm";
 import { parseDollars } from "@/lib/money";
+import { signalLinkFrom } from "@/lib/event-signal";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -145,6 +146,30 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
   if (UUID.test(id) && isCommittee(me)) await supabase.rpc("refresh_event_charges", { p_event_id: eventId });
   revalidatePath("/", "layout");
   redirect(category === "Campout" ? `/campouts/${eventId}` : `/events/${eventId}`);
+}
+
+/** Leaders: set, change or remove the event's Signal group link (blank removes it). */
+export async function saveEventSignal(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  const me = await requireMember();
+  if (!isLeader(me)) return { error: "Only leaders can change the Signal group." };
+  const id = String(form.get("event_id") ?? "");
+  if (!UUID.test(id)) return { error: "Event not found." };
+  const raw = String(form.get("url") ?? "").slice(0, 2000);
+  const supabase = await createClient();
+  if (form.get("remove") === "1" || !raw.trim()) {
+    const { error } = await supabase.from("event_signal").delete().eq("event_id", id);
+    if (error) return { error: "Couldn't remove the Signal group." };
+  } else {
+    const url = signalLinkFrom(raw);
+    if (!url) return { error: "That isn't a Signal group link. In Signal, open the group, tap its name, then Group link, and share or copy it. It starts with https://signal.group/#" };
+    const { error } = await supabase
+      .from("event_signal")
+      .upsert({ event_id: id, url, updated_at: new Date().toISOString(), updated_by: me.id }, { onConflict: "event_id" });
+    if (error) return { error: "Couldn't save the Signal group." };
+  }
+  revalidatePath(`/events/${id}`);
+  revalidatePath(`/campouts/${id}`);
+  return { ok: true, message: form.get("remove") === "1" || !raw.trim() ? "Signal group removed." : "Saved. Families who RSVP yes will see Join the Signal group." };
 }
 
 /** Answer (or change) the family's RSVP. */

@@ -4,6 +4,7 @@ import BackLink from "@/components/BackLink";
 import PostAnnouncement from "@/components/PostAnnouncement";
 import { isLeader, requireMember } from "@/lib/data";
 import { eventRsvpCounts, getMessageableDens } from "@/lib/audience";
+import { getEventSignal } from "@/lib/event-signal";
 import { getEvent } from "@/lib/data";
 import { packEmailConfigured } from "@/lib/bulk-email";
 
@@ -16,7 +17,7 @@ export default async function AnnouncePage({ searchParams }: PageProps<"/announc
   const { den, event: eventId } = await searchParams;
   const event = typeof eventId === "string" && /^[0-9a-f-]{36}$/i.test(eventId) ? await getEvent(eventId) : null;
   if (event) {
-    const counts = await eventRsvpCounts(event.id);
+    const [counts, signal] = await Promise.all([eventRsvpCounts(event.id), getEventSignal(event.id)]);
     const back = event.category === "Campout" ? `/campouts/${event.id}` : `/events/${event.id}`;
     return (
       <>
@@ -30,7 +31,7 @@ export default async function AnnouncePage({ searchParams }: PageProps<"/announc
         </div>
         <PostAnnouncement
           dens={[]}
-          event={{ id: event.id, title: event.title, yes: counts.yes, maybe: counts.maybe }}
+          event={{ id: event.id, title: event.title, yes: counts.yes, maybe: counts.maybe, signal: signal.exists }}
           startOpen
           doneHref={back}
         />

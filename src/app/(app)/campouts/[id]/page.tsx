@@ -12,6 +12,7 @@ import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
 import EventAttendance from "@/components/EventAttendance";
 import PermissionSlips from "@/components/PermissionSlips";
+import EventSignal from "@/components/EventSignal";
 import { EditEventLink, EventRsvp } from "@/components/EventRsvp";
 import SaveOffline from "@/components/SaveOffline";
 import { getSlots } from "@/lib/volunteer";
@@ -135,6 +136,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
         <div className="contents lg:block lg:space-y-4">
         <div className="order-2 space-y-4 empty:hidden">
           <EventRsvp e={event} me={me} />
+          <EventSignal e={event} me={me} />
           <PermissionSlips e={event} me={me} />
         </div>
         <div className="order-4 empty:hidden">

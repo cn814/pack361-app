@@ -9,6 +9,7 @@ import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
 import EventAttendance from "@/components/EventAttendance";
 import PermissionSlips from "@/components/PermissionSlips";
+import EventSignal from "@/components/EventSignal";
 import { EditEventLink, EventRsvp } from "@/components/EventRsvp";
 import { EventLinks, EventSections } from "@/components/EventInfo";
 import { getEvent, isLeader, requireMember } from "@/lib/data";
@@ -108,6 +109,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         </section>
       )}
       <EventRsvp e={event} me={me} />
+      <EventSignal e={event} me={me} />
       <PermissionSlips e={event} me={me} />
       <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={isLeader(me)} />
       <EventLinks links={event.links ?? []} />
