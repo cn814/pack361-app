@@ -14,7 +14,9 @@ import { courseFromText, type ReportRow } from "./training-import";
 //   github.com/mmarseglia/scouting-api (sign-in, token fields), github.com/natbros-git/scouts-cli
 //   (person profile, unit adults roster, Youth Protection training).
 
-const LOGIN = "https://my.scouting.org/api/users";
+// Sign-in moved to auth.scouting.org (Scoutbook Plus's own pages, 2026-10-02); my.scouting.org
+// answered 503. Both are tried, newest first.
+const LOGINS = ["https://auth.scouting.org/api/users", "https://my.scouting.org/api/users"];
 const API = "https://api.scouting.org";
 const WEB = "https://advancements.scouting.org";
 /** The unit to read: Pack 361. MYSCOUTING_ORG_GUID overrides the automatic lookup. */
@@ -56,19 +58,47 @@ function claims(token: string): Json {
   }
 }
 
+/** my.scouting's own words when it refuses, trimmed (never includes what was sent). */
+async function why(res: Response): Promise<string> {
+  const text = (await res.text().catch(() => "")).replace(/eyJ[\w.-]+/g, "…").replace(/\s+/g, " ").trim();
+  if (!text || /^<!doctype|^<html/i.test(text)) return "";
+  try {
+    const j = JSON.parse(text) as Json;
+    const m = [j.message, j.error, j.errorDescription, j.code].map(str).filter(Boolean).join(" ");
+    if (m) return ` It said: "${m.slice(0, 200)}".`;
+  } catch {}
+  return ` It said: "${text.slice(0, 200)}".`;
+}
+
 async function signIn(): Promise<{ token: string; userId: string; personGuid: string }> {
   const username = process.env.MYSCOUTING_USERNAME!;
-  const res = await request(`${LOGIN}/${encodeURIComponent(username)}/authenticate`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json; version=2",
-      "User-Agent": "Mozilla/5.0 (Pack 361 app)",
-    },
-    body: new URLSearchParams({ password: process.env.MYSCOUTING_PASSWORD! }).toString(),
-  });
-  if (res.status === 401 || res.status === 403) throw new StepError("my.scouting didn't accept the username or password.");
-  if (!res.ok) throw new StepError(`my.scouting sign-in answered ${res.status}.`);
+  let res: Response | null = null;
+  const tried: string[] = [];
+  for (const base of LOGINS) {
+    res = await request(`${base}/${encodeURIComponent(username)}/authenticate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json; version=2",
+        Origin: WEB,
+        Referer: `${WEB}/`,
+        "User-Agent": "Mozilla/5.0 (Pack 361 app)",
+      },
+      body: new URLSearchParams({ password: process.env.MYSCOUTING_PASSWORD! }).toString(),
+    });
+    tried.push(`${new URL(base).host} ${res.status}`);
+    if (res.status < 500 && res.status !== 404) break;
+  }
+  if (!res) throw new StepError("Couldn't reach my.scouting.");
+  if (res.status === 401 || res.status === 403) {
+    const said = await why(res);
+    throw new StepError(
+      /captcha|robot|verif/i.test(said)
+        ? `my.scouting wants a "not a robot" check at sign-in, which an app can't do.${said}`
+        : `my.scouting didn't accept the sign-in (${tried.join(", ")}).${said}`,
+    );
+  }
+  if (!res.ok) throw new StepError(`my.scouting sign-in failed (${tried.join(", ")}).${await why(res)}`);
   const body = (await res.json().catch(() => ({}))) as Json;
   const token = typeof body.token === "string" ? body.token : "";
   if (!token) {
