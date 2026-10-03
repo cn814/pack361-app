@@ -72,7 +72,7 @@ export async function getAlbumPhotos(key: string): Promise<Photo[]> {
   const supabase = await createClient();
   let q = supabase.from("photos").select(COLS).eq("status", "approved");
   q = key === "other" ? q.is("event_id", null) : q.eq("event_id", key);
-  const { data } = await q.order("created_at");
+  const { data } = await q.order("created_at").order("id"); // same order as paging
   return sign((data ?? []) as unknown as Photo[]);
 }
 
@@ -81,6 +81,20 @@ export async function getPhoto(id: string): Promise<Photo | null> {
   const { data } = await supabase.from("photos").select(COLS).eq("id", id).maybeSingle();
   if (!data) return null;
   return (await sign([data as unknown as Photo], true))[0];
+}
+
+/** The photo before and after this one in its album (album order: oldest first), for paging. */
+export async function getAlbumNeighbors(photo: Photo): Promise<{ prev: string | null; next: string | null; index: number; total: number }> {
+  const none = { prev: null, next: null, index: 0, total: 0 };
+  if (photo.status !== "approved") return none;
+  const supabase = await createClient();
+  let q = supabase.from("photos").select("id").eq("status", "approved");
+  q = photo.event_id ? q.eq("event_id", photo.event_id) : q.is("event_id", null);
+  const { data } = await q.order("created_at").order("id").limit(2000);
+  const ids = ((data ?? []) as { id: string }[]).map((r) => r.id);
+  const i = ids.indexOf(photo.id);
+  if (i < 0) return none;
+  return { prev: ids[i - 1] ?? null, next: ids[i + 1] ?? null, index: i + 1, total: ids.length };
 }
 
 /** Photos waiting for a leader: new uploads and ones someone asked to take down. */

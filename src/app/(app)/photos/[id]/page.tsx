@@ -5,7 +5,8 @@ import { Download, Flag, ShieldCheck } from "lucide-react";
 import ActionForm from "@/components/ActionForm";
 import BackLink from "@/components/BackLink";
 import { isLeader, requireMember } from "@/lib/data";
-import { getPhoto } from "@/lib/photos";
+import { getAlbumNeighbors, getPhoto } from "@/lib/photos";
+import PhotoPager from "@/components/PhotoPager";
 import { fmtDay } from "@/lib/format";
 import { flagPhoto } from "../actions";
 
@@ -17,6 +18,7 @@ export default async function PhotoPage({ params }: PageProps<"/photos/[id]">) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const photo = await getPhoto(id);
   if (!photo) notFound();
+  const nav = await getAlbumNeighbors(photo);
   const album = photo.event_id ?? "other";
   const leader = isLeader(me);
   // Only leaders remove photos (from Photo review). Everyone else asks for removal.
@@ -30,8 +32,10 @@ export default async function PhotoPage({ params }: PageProps<"/photos/[id]">) {
       )}
       <figure className="space-y-2">
         {photo.full_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo.full_url} alt={photo.caption ?? "Pack photo"} className="w-full rounded-2xl bg-surface" />
+          <PhotoPager prev={nav.prev} next={nav.next} index={nav.index} total={nav.total}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photo.full_url} alt={photo.caption ?? "Pack photo"} draggable={false} className="w-full rounded-2xl bg-surface" />
+          </PhotoPager>
         )}
         <figcaption className="px-1">
           {photo.caption && <p className="font-semibold text-ink">{photo.caption}</p>}
