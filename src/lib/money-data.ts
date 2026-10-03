@@ -101,11 +101,12 @@ export async function getRsvpTotals(eventIds: string[]): Promise<Map<string, Rsv
   for (let i = 0; i < eventIds.length; i += 100) {
     const { data } = await supabase
       .from("event_rsvps")
-      .select("event_id, family_id, adult_id, status, scouts, adults")
+      .select("event_id, family_id, adult_id, status, scouts, adults, waitlisted")
       .in("event_id", eventIds.slice(i, i + 100));
     for (const r of data ?? []) {
       const key = r.family_id ? `${r.event_id}:${r.family_id}` : `${r.event_id}:a:${r.adult_id}`;
-      map.set(key, { status: r.status as string, scouts: r.scouts as number, adults: r.adults as number });
+      // A waitlisted family owes nothing until it moves in.
+      map.set(key, { status: r.waitlisted ? "waitlist" : (r.status as string), scouts: r.scouts as number, adults: r.adults as number });
     }
   }
   return map;

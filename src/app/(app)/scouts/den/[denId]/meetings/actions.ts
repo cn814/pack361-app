@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import type { ActionResult } from "@/components/ActionForm";
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/data";
 import { getCatalog } from "@/lib/advancement-data";
 import { leadsDen, todayEastern, type MeetingWork } from "@/lib/meetings";
+import { alertDenMeeting } from "@/lib/family-alerts";
 import type { DenRank } from "@/lib/types";
 
 const UUID = /^[0-9a-f-]{36}$/i;
@@ -129,6 +131,17 @@ export async function recordDenMeeting(_prev: RecordResult, form: FormData): Pro
     entered: { scout: string; adventure: string; requirement: string }[];
   };
   revalidatePath("/", "layout");
+  // Tell families what the den worked on (and how to catch up at home if their scout missed it),
+  // once the leader has their answer. Only for meetings with adventure work; never repeated.
+  if (r.requirements > 0 && r.present > 0) {
+    after(async () => {
+      try {
+        await alertDenMeeting(r.meeting_id, me.id);
+      } catch (e) {
+        console.error("[den meeting alerts]", e instanceof Error ? e.message : e);
+      }
+    });
+  }
 
   const parts = [`Saved. ${plural(r.present, "scout")} here.`];
   if (r.requirements > 0) {

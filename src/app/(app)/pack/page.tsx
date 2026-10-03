@@ -8,6 +8,7 @@ import {
   FileText,
   FolderOpen,
   HandCoins,
+  HandHeart,
   Images,
   Landmark,
   Megaphone,
@@ -18,6 +19,7 @@ import {
   Shirt,
   ShoppingBag,
   Stamp,
+  Tent,
   UserPlus,
   Vote,
   type LucideIcon,
@@ -71,6 +73,7 @@ export default async function PackPage() {
   const info: Item[] = [
     { href: "/guide", label: "Pack guide", icon: BookOpen },
     { href: "/documents", label: "Documents", icon: FolderOpen },
+    { href: "/gear", label: "Gear closet", icon: Tent, note: "Borrow tents and camp gear" },
     { href: "/photos", label: "Photos", icon: Images },
     { href: "/polls", label: "Polls", icon: Vote },
     { href: "/inbox", label: "News and messages", icon: Megaphone },
@@ -78,6 +81,7 @@ export default async function PackPage() {
   const people: Item[] = [
     { href: "/leaders", label: "Leader contacts", icon: Phone },
     { href: "/recruit", label: "Invite a family", icon: UserPlus },
+    { href: "/help-wanted", label: "Help wanted", icon: HandHeart, note: "Grown-up jobs the pack needs this year" },
   ];
 
   const toHandle = waiting ? waiting.toReview + waiting.toPay : 0;
@@ -101,6 +105,7 @@ export default async function PackPage() {
     { href: "/leaders/training", label: "Training", icon: ShieldCheck, note: training ? "Import due" : undefined, alert: Boolean(training) },
     { href: "/leaders/paperwork", label: "Medical forms", icon: FileText },
     { href: "/leaders/attendance", label: "Attendance", icon: ClipboardCheck },
+    { href: "/gear/manage", label: "Gear requests", icon: Tent },
     { href: "/events/council", label: "Council events", icon: Landmark },
   ];
 

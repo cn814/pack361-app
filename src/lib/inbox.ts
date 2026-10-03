@@ -52,13 +52,13 @@ export const getSeenAt = cache(async (): Promise<string | null> => {
 /** Regular meetings: no RSVP to-do for these. */
 const ROUTINE_CATEGORIES = new Set(["Den Meeting", "Pack Meeting", "Committee"]);
 
-/** Things waiting on this person: polls to answer, forms, money due, photo questions, leader queues. */
+/** Things waiting on this person: polls to answer, forms, money due, leader queues. */
 export const getTodos = cache(async (): Promise<Todo[]> => {
   const me = await requireMember();
   const supabase = await createClient();
   const leader = isLeader(me);
   // Today's events too, so a "maybe" can come back on the day.
-  const rsvpQ = supabase.from("event_rsvps").select("event_id, status, scouts, event:events!inner(starts_at)").gte("event.starts_at", new Date(Date.now() - 86400000).toISOString());
+  const rsvpQ = supabase.from("event_rsvps").select("event_id, status, scouts, waitlisted, event:events!inner(starts_at)").gte("event.starts_at", new Date(Date.now() - 86400000).toISOString());
   const [polls, voted, scouts, paperwork, charges, events, pendingPhotos, waitingForms, openNotes, reportedPayments, myRsvps, hidden, waitingJoins, trainingImport] = await Promise.all([
     getPolls(20),
     getVotedPollIds(me),
@@ -133,7 +133,7 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
       .in("event_id", slipEvents.map((e) => e.id))
       .in("scout_id", scouts.map((s) => s.id));
     const signed = new Set((slipRows ?? []).map((r) => `${r.event_id}|${r.scout_id}`));
-    const goingScouts = new Map(myRsvps.filter((r) => r.status === "yes").map((r) => [r.event_id as string, Number(r.scouts ?? 0)]));
+    const goingScouts = new Map(myRsvps.filter((r) => r.status === "yes" && !r.waitlisted).map((r) => [r.event_id as string, Number(r.scouts ?? 0)]));
     for (const { event: e, names } of slipsToSign(slipEvents, goingScouts, scouts, signed)) {
       todos.push({
         key: `slip-${e.id}`,
@@ -205,16 +205,7 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
     });
   }
 
-  const noPhotoAnswer = scouts.filter((s) => !s.photo_permission);
-  if (noPhotoAnswer.length) {
-    todos.push({
-      key: "photo-permission",
-      title: "One quick question",
-      detail: `May ${noPhotoAnswer.map((s) => s.first_name).join(" and ")} appear in the pack's private photo album?`,
-      href: "/family/household#photos",
-      tone: "gold",
-    });
-  }
+  // No photo question: scouts are OK in pack photos unless the family opts out (Me → Family).
 
   if (waitingJoins) {
     todos.push({

@@ -70,10 +70,10 @@
 
   /* Contents */
   .toc { list-style: none; padding: 0; margin: 10pt 0 0; }
-  .toc li { display: flex; gap: 12pt; align-items: baseline; padding: 8pt 0; border-bottom: 1px solid var(--line); margin: 0; }
+  .toc li { display: flex; gap: 12pt; align-items: baseline; padding: 5pt 0; border-bottom: 1px solid var(--line); margin: 0; }
   .toc .n { font-weight: 800; color: var(--gold-700); width: 20pt; }
   .toc .t { font-weight: 700; color: var(--pine-950); }
-  .toc .d { color: var(--muted); font-size: 9.5pt; margin-left: auto; text-align: right; max-width: 3.4in; }
+  .toc .d { color: var(--muted); font-size: 9.5pt; margin-left: auto; text-align: right; max-width: 4.3in; }
 
   .steps { counter-reset: s; list-style: none; padding: 0; }
   .steps > li { counter-increment: s; position: relative; padding-left: 26pt; margin-bottom: 7pt; }
@@ -100,6 +100,8 @@
   .toc .part-row .t { font-size: 11pt; }
   .cover .new { margin-top: 18pt; max-width: 5.6in; border: 1px solid rgba(255,255,255,.18); border-radius: 10pt; padding: 9pt 12pt; font-size: 10pt; color: var(--mint-200); }
   .cover .new b { color: var(--gold); display: block; font-size: 9pt; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 3pt; }
+  table.roles td { padding: 3.5pt 6pt; font-size: 9pt; }
+  .versions td:nth-child(2) { white-space: nowrap; }
   .versions td:first-child { white-space: nowrap; font-weight: 800; color: var(--pine-950); }
   .howto { border-left: 4px solid var(--gold); padding: 2pt 0 2pt 10pt; margin: 4pt 0 8pt; break-inside: avoid; }
   .howto b.h { display: block; color: var(--pine-950); font-size: 10pt; margin-bottom: 2pt; }
@@ -113,10 +115,10 @@
   <div class="eyebrow">Cub Scout Pack 361 · Ellicott City, MD</div>
   <h1>The Pack 361 App<br />Guide</h1>
   <p class="sub">Part 1 is for every family: getting started, everyday use, privacy and help. Part 2 is for den leaders and pack leadership: running events and den meetings, advancement, money, expenses, reports and pack admin.</p>
-  <div class="new"><b>New in version 2.5</b>Faster pages, a scavenger-hunt checklist on campouts, and a friendly retry when your signal drops. 2.4: leaders start in Leader mode. 2.3 added Signal groups for events and messages to the families going; 2.2, advancement and training straight from Scoutbook; 2.1, dark mode; 2.0, the redesign: five tabs, search, and a Family / Leader switch (1.2, 2.1). Version history is on the last page.</div>
+  <div class="new"><b>New in version 3.0</b>Families: a Getting started list, Add to my calendar, the weather on event pages, RSVP waitlists, reminders and advancement alerts, a pack Gear closet, Help wanted and a printable season keepsake. Photos are now OK unless you opt out. Leaders: Build this event, copy and repeating events, a Ready to go? check, messages to who hasn&rsquo;t answered, and weather alerts. Version history is on the last page.</div>
   <div class="stripe"></div>
   <div class="url"><span>Open it at</span>app.pack361.org</div>
-  <div class="foot"><span>Questions: info@pack361.org</span><span>Version 2.5 · October 3, 2026</span></div>
+  <div class="foot"><span>Questions: info@pack361.org</span><span>Version 3.0 · October 3, 2026</span></div>
 </div>
 
 <!-- Contents -->
@@ -127,18 +129,18 @@
   <p class="lead">The Pack 361 app puts everything a pack family needs in one place: the calendar and RSVPs, campout details, paying the pack, your scout&rsquo;s advancement, announcements from leaders, photos, paperwork, pack documents and more. It&rsquo;s private: only families and leaders on the pack roster can sign in.</p>
   <ol class="toc">
     <li class="part-row"><span class="n">1</span><span class="t">Part 1 · For every family</span><span class="d">Everyone in the pack, leaders included</span></li>
-    <li><span class="n">1.1</span><span class="t">Getting started</span><span class="d">Put it on your phone, sign in, turn on alerts</span></li>
+    <li><span class="n">1.1</span><span class="t">Getting started</span><span class="d">Put it on your phone, sign in, alerts, the Getting started list</span></li>
     <li><span class="n">1.2</span><span class="t">Finding your way around</span><span class="d">The tabs, the bell and where everything lives</span></li>
-    <li><span class="n">1.3</span><span class="t">Using the app</span><span class="d">Calendar and RSVPs, campouts, advancement, paying the pack, getting paid back, paperwork</span></li>
+    <li><span class="n">1.3</span><span class="t">Using the app</span><span class="d">RSVPs and waitlists, weather, campouts, advancement, photos, volunteering, the gear closet, paying, getting paid back, paperwork</span></li>
     <li><span class="n">1.4</span><span class="t">Privacy and youth protection</span><span class="d">Who sees what, what we keep, photos</span></li>
     <li><span class="n">1.5</span><span class="t">Help and troubleshooting</span><span class="d">Sign-in trouble, alerts, photos, reporting a problem</span></li>
     <li class="part-row"><span class="n">2</span><span class="t">Part 2 · For leaders and pack leadership</span><span class="d">Den leaders, leadership, Cubmaster, admins</span></li>
     <li><span class="n">2.1</span><span class="t">Who can do what</span><span class="d">The five roles at a glance</span></li>
-    <li><span class="n">2.2</span><span class="t">Every leader</span><span class="d">Events, den meetings, advancement, messages, paperwork, photos, training</span></li>
+    <li><span class="n">2.2</span><span class="t">Every leader</span><span class="d">Building, copying and repeating events, Ready to go?, messages, weather alerts, den meetings, advancement, gear, photos, training</span></li>
     <li><span class="n">2.3</span><span class="t">Pack leadership: money</span><span class="d">Dues, Givebutter, fees, payments, registration</span></li>
     <li><span class="n">2.4</span><span class="t">Pack leadership: expenses and reports</span><span class="d">Reimbursements, pack spending, budget, financial reports</span></li>
-    <li><span class="n">2.5</span><span class="t">Pack leadership: the rest</span><span class="d">Pack guide, council events, documents, the year at a glance</span></li>
-    <li><span class="n">2.6</span><span class="t">Pack admin only</span><span class="d">Roster, roles, imports, welcome emails, settings</span></li>
+    <li><span class="n">2.5</span><span class="t">Pack leadership: the rest</span><span class="d">Help wanted, pack guide, council events, documents, the year</span></li>
+    <li><span class="n">2.6</span><span class="t">Pack admin only</span><span class="d">Roster, roles, imports, welcome emails and new families, settings</span></li>
     <li><span class="n">2.7</span><span class="t">Keeping the app secure</span><span class="d">How it&rsquo;s protected, what leaders and admins do, if something goes wrong</span></li>
     <li><span class="n">2.8</span><span class="t">Two-step sign-in</span><span class="d">Leadership and admins: setting it up, backups, a lost phone</span></li>
     <li><span class="n"></span><span class="t">Version history</span><span class="d">What changed in each version of this guide</span></li>
@@ -193,10 +195,10 @@
   <div class="note"><b>Using the home-screen app? Always type the code.</b> On phones, a link in an email opens your web browser, never the home-screen app. If you tap the link, the app shows a page telling you to go back and type the code instead. On a computer, tapping the link opens a page with <b>Sign in here</b>; one more click signs you in.</div>
 
   <h3>3. Turn on alerts (optional)</h3>
-  <p>Go to <b>Me → Phone alerts</b> and tap to turn on phone alerts. You&rsquo;ll get alerts for pack announcements, messages to your den, new polls, and reminders for jobs you volunteer for. On iPhone, alerts only work from the home-screen app.</p>
+  <p>Go to <b>Me → Phone alerts</b> and tap to turn on phone alerts. You&rsquo;ll get pack announcements, messages to your den, new polls, event reminders, news about your scout&rsquo;s advancement, and reminders for jobs you volunteer for. On iPhone, alerts only work from the home-screen app.</p>
 
-  <h3>4. Answer the first questions</h3>
-  <p>Home shows anything that needs you. For new families, that&rsquo;s usually whether your scout may appear in the pack&rsquo;s private photo album. It may also be medical forms before a campout, or a quick poll.</p>
+  <h3>4. Work through your Getting started list</h3>
+  <p>New families (your first 90 days) see a <b>Getting started</b> list at the top of Home: Scouting America registration, medical forms, pack dues, phone alerts, adding the pack calendar, reading the welcome guide and meeting your den leader. The first four tick themselves once they&rsquo;re done; tap the circle next to the other three yourself. Tap <b>Hide this list</b> to put it away. Home also shows anything else that needs you, like a permission slip or a quick poll.</p>
 </div>
 
 <!-- 1.2 Finding your way -->
@@ -209,15 +211,15 @@
     <div><b>Home</b>What&rsquo;s next, your to-dos, your scouts, pack news</div>
     <div><b>Calendar</b>Events, campouts, den meetings, RSVPs</div>
     <div><b>Scouts</b>Rank progress; report what your scout finished</div>
-    <div><b>Pack</b>Pay, fundraisers and store, guide, documents, photos, polls, leader contacts</div>
+    <div><b>Pack</b>Pay, store, guide, documents, gear closet, photos, polls, help wanted</div>
     <div><b>Me</b>Family and registration, medical forms, settings, help</div>
   </div>
   <p>The pack&rsquo;s next big event (a campout, a derby, Blue &amp; Gold, crossover) is pinned at the top of Home and Calendar from about six weeks before. The <b>Calendar</b> has quick filters: Campouts, Big events, Den meetings. Leaders start on <b>My dens</b> (their own scouts&rsquo; dens); <b>All</b> shows every den.</p>
 
   <div class="grid2">
     <div class="card"><h3>Search and the bell (top right)</h3><p>The <b>magnifier</b> finds anything: an event, &ldquo;dues&rdquo;, &ldquo;popcorn&rdquo;, &ldquo;medical forms&rdquo;, a leader&rsquo;s name. The <b>bell</b> has pack news, messages to your den and everything waiting on you; the red number shows what&rsquo;s new.</p></div>
-    <div class="card"><h3>Me</h3><p>Short pages for each thing: <b>Family and registration</b> (and photo permission), <b>Payments</b>, <b>Medical forms</b>, <b>Saved on this phone</b>, <b>Phone alerts</b>, <b>My contact info</b>, and <b>Report a problem or send a note</b>. <b>Appearance</b> turns dark mode on, off, or to match your phone. Sign out is at the bottom.</p></div>
-    <div class="card"><h3>Pack</h3><p><b>Pay the pack</b> and <b>Get paid back</b>; the <b>popcorn fundraiser</b>, pack apparel and uniforms; the <b>Pack guide</b>, <b>Documents</b>, <b>Photos</b>, <b>Polls</b> and news; <b>Leader contacts</b> and <b>Invite a family</b>.</p></div>
+    <div class="card"><h3>Me</h3><p>Short pages for each thing: <b>Family and registration</b> (and photos), <b>Payments</b>, <b>Medical forms</b>, <b>Saved on this phone</b>, <b>Phone alerts</b>, <b>My contact info</b>, and <b>Report a problem or send a note</b>. <b>Appearance</b> turns dark mode on, off, or to match your phone. Sign out is at the bottom.</p></div>
+    <div class="card"><h3>Pack</h3><p><b>Pay the pack</b> and <b>Get paid back</b>; the <b>popcorn fundraiser</b>, pack apparel and uniforms; the <b>Pack guide</b>, <b>Documents</b>, <b>Gear closet</b>, <b>Photos</b>, <b>Polls</b> and news; <b>Leader contacts</b>, <b>Invite a family</b> and <b>Help wanted</b>.</p></div>
     <div class="card"><h3>Leaders: Family or Leader</h3><p>Leaders get a <b>Family / Leader</b> switch (top of Home on a phone, bottom of the sidebar on a computer). Leader mode is where leaders start, with a <b>Now viewing in Leader mode</b> bar across the top; it shows what&rsquo;s waiting on you on Home, your dens on Scouts, and leader tools in Pack (2.1). Family lasts 12 hours or until you next sign in.</p></div>
   </div>
 </div>
@@ -234,10 +236,19 @@
     <li><b>RSVP right in the app</b>, for every event including den meetings. Tap <b>RSVP</b>, choose Going, Maybe or Can&rsquo;t go, and say how many scouts and adults are coming. Everyone sees the headcount; leaders see who&rsquo;s coming. Change your answer any time until the RSVP date.</li>
     <li><b>Answer right from Home or the bell.</b> Special events coming up soon (not regular meetings) show as a card with <b>Going</b>, <b>Maybe</b> and <b>Can&rsquo;t make it</b>. Going counts your scouts and one adult; open the event to change the numbers. <b>Maybe</b> hides the card until the morning of the event, then it asks again. If an event has a cost, Going opens the event so you can say how many are coming, and it&rsquo;s added to what you owe.</li>
     <li>Polls and volunteer jobs have <b>Not now</b> if you want them out of the way: a poll comes back a day before it closes, a job two days before its event. Money due, medical forms and registration stay until they&rsquo;re done.</li>
-    <li><b>Add the pack calendar to your phone:</b> at the bottom of the Calendar, one tap subscribes your phone&rsquo;s calendar app, and it stays up to date. The link is private to your family; if you share it by mistake, tap <b>Get a new link</b> there.</li>
+    <li><b>Add the pack calendar to your phone:</b> at the bottom of the Calendar, one tap subscribes your phone&rsquo;s calendar app, and it stays up to date. The link is private to your family; if you share it by mistake, tap <b>Get a new link</b> there. Just one event? Tap <b>Add to my calendar</b> on its page.</li>
     <li><b>Signal group:</b> if an event has one, RSVP Going and its page shows <b>Join the Signal group</b>.</li>
     <li>Past events, and events taken off the calendar, are in <b>Events → Past events and archive</b>, by year.</li>
   </ul>
+
+  <h3>Spots left and the waitlist</h3>
+  <p>Some events have room for only so many people (scouts and adults together). The RSVP card shows <b>3 spots left</b>, or <b>Full</b>. Say Going when it&rsquo;s full, or when your group doesn&rsquo;t fit, and you join the waitlist: <b>Full: you&rsquo;re on the waitlist (#2)</b>. If a spot opens, you&rsquo;re moved in automatically, in order, and get a <b>You&rsquo;re in!</b> alert. Nothing to pay unless you get in.</p>
+
+  <h3>Reminders</h3>
+  <p>The day before an event you said Going to, you get a reminder with the time and place (and, for a campout, what to bring). Two days before an event&rsquo;s RSVP-by date, families who haven&rsquo;t answered get a nudge. Den meetings don&rsquo;t send either. No phone alerts? You get an email instead.</p>
+
+  <h3>Weather</h3>
+  <p>From a week before an event or campout, its page shows the National Weather Service forecast for the event&rsquo;s address, day by day, with the chance of rain and the wind. Any watch or warning there shows at the top in red; tap <b>What the Weather Service says</b> for what to do.</p>
 
   <h3>Permission slips</h3>
   <p>If an event needs one, its page shows the wording, and Home reminds you once you&rsquo;ve said Going. Tick your scouts, type your full name, tick that you agree and tap <b>Sign</b>; the app keeps your name, the date and the wording. Prefer paper? Print the form and hand it to a leader.</p>
@@ -246,6 +257,7 @@
   <ul>
     <li>Each campout has its own page: schedule, what to bring, rules, links to sign up and pay, and volunteer jobs.</li>
     <li>The <b>packing checklist</b> lets you check items off as you pack. Under <b>No signal at camp?</b> tap <b>Save</b>, and the page works at camp without signal.</li>
+    <li>Some sections are <b>tap-to-check lists</b>, like a scavenger hunt: tick things off on your phone as you find them. They work without signal too.</li>
     <li>Every camper, adults too, needs a current medical form. See <i>Paperwork</i> below.</li>
   </ul>
 
@@ -254,15 +266,25 @@
     <li>Your scout&rsquo;s page shows their rank, which adventures and requirements are done, and what&rsquo;s left, from Scoutbook (the official Scouting America record).</li>
     <li>Did a requirement at home? Open the adventure, check it off and send it. Your den leader approves it, and it&rsquo;s entered in Scoutbook.</li>
     <li>The same page shows <b>attendance</b> for the season (den meetings, pack events) and <b>camping nights</b>, this season and all time.</li>
+    <li><b>Alerts:</b> after a den meeting, &ldquo;Today the Wolves worked on&hellip;&rdquo;. If your scout missed it, you get how to finish that adventure at home instead. You also hear when a leader approves or returns something you reported (with their note), and when the weekly Scoutbook update shows a new adventure or rank.</li>
+    <li><b>Season keepsake (print)</b>, on your scout&rsquo;s page: one page with the season&rsquo;s rank, adventures, awards, den meetings, pack events, camping nights and a few pack photos. Pick a past season if you like, then <b>Print keepsake</b>.</li>
   </ul>
 
-  <h3>Volunteering</h3>
-  <p>Events and campouts list jobs (setup, cooking, check-in), and open spots show on Home. Sign up in one tap and you&rsquo;ll get a reminder. Other families see only your first name and last initial.</p>
+  <h3>Volunteering and Help wanted</h3>
+  <p>Events and campouts list jobs (setup, cooking, check-in), and open spots show on Home. Sign up in one tap and you&rsquo;ll get a reminder. Other families see only your first name and last initial. Bigger jobs for the year (popcorn, Blue &amp; Gold) are on <b>Pack → Help wanted</b>: tap <b>I can help</b>, add a note if you like, and someone from pack leadership will reach out. Changed your mind? <b>Take back my offer</b>.</p>
+
+  <h3>The pack gear closet</h3>
+  <ol class="steps">
+    <li>Go to <b>Pack → Gear closet</b> to see the tents, camp stoves and other gear the pack lends, and how many are free now.</li>
+    <li>Tap an item, then under <b>Ask to borrow</b> say how many, the pack event it&rsquo;s for (optional), when you&rsquo;d pick it up and the day you&rsquo;ll bring it back. Tap <b>Send request</b>.</li>
+    <li>Your request shows at the top: <b>Waiting</b>, then <b>Ready to pick up</b> (or <b>Declined</b>), <b>Picked up</b> and <b>Returned</b>. You get an alert with the answer.</li>
+  </ol>
+  <p>Plans changed? <b>Cancel request</b> until you pick it up. Past the bring-back day, the app sends a reminder every few days until it&rsquo;s back.</p>
 
   <h3>Pack photos</h3>
   <ul>
     <li>The album is organized by event and only visible to signed-in pack families.</li>
-    <li>You decide whether your scout may appear (under Me); until you answer, it&rsquo;s no. Upload from any event page (<b>Take or add photos</b>), up to 20 at a time. A leader checks each photo before it appears.</li>
+    <li>Scouts may appear in the album unless their family opts out: <b>Me → Family and registration → Photos</b>, then <b>Opt out</b> (or <b>Allow photos</b> to undo it), for each scout, any time. Upload from any event page (<b>Take or add photos</b>), up to 20 at a time. A leader checks each photo before it appears.</li>
     <li>Swipe or use the arrows for the next photo; pinch or double-tap to zoom. See a photo that shouldn&rsquo;t be there? Tap <b>Request removal</b>. It&rsquo;s hidden right away, and a leader removes it.</li>
   </ul>
 
@@ -298,7 +320,7 @@
   <p>Leaders post to the whole pack or to your scout&rsquo;s den. Both show in the bell and on Home, and leaders can also send them by email. Polls ask quick questions (like which weekend works for a campout). Answer, then see the results.</p>
 
   <h3>The Sunday email</h3>
-  <p>Every adult gets one email on Sunday mornings: the next two weeks of events with your RSVP, anything waiting on you, announcements and open volunteer jobs.</p>
+  <p>Every adult gets one email on Sunday mornings: the next two weeks of events with your RSVP, anything waiting on you, announcements and open volunteer jobs. <b>Your scout this week</b> shows how far along the rank is, the adventure closest to done (with an idea to try at home), anything a leader approved or returned, and the next den meeting. <b>Help wanted</b> lists the pack&rsquo;s open jobs.</p>
 
   <h3>Invite a family</h3>
   <p>Most families join because a friend asked. <b>Invite a family</b> (under Pack) has a ready-to-send message with a link to our public page: edit it, then share, text or email it (on Android, pick people from your contacts; their numbers never reach the pack). There&rsquo;s also a QR code, a printable flyer, and the big events visiting families are welcome at.</p>
@@ -328,14 +350,14 @@
 
   <h3>What we keep, and what we don&rsquo;t</h3>
   <div class="grid2">
-    <div class="card"><b>We keep</b><p class="small" style="margin:4pt 0 0">Parent and leader names, emails and phone numbers; scout names, dens and member IDs; advancement from Scoutbook; attendance at den meetings, pack events and campouts; training dates; registration expiration dates; volunteer sign-ups; whether each medical form is on file and when it expires; what each family owes and has paid (amounts, dates, PayPal, Givebutter, check or cash); reimbursement requests and their receipts; RSVPs; poll answers; Givebutter orders; pack photos and pack documents.</p></div>
+    <div class="card"><b>We keep</b><p class="small" style="margin:4pt 0 0">Parent and leader names, emails and phone numbers; scout names, dens and member IDs; advancement from Scoutbook; attendance at den meetings, pack events and campouts; training dates; registration expiration dates; volunteer sign-ups; whether each medical form is on file and when it expires; what each family owes and has paid (amounts, dates, PayPal, Givebutter, check or cash); reimbursement requests and their receipts; RSVPs; poll answers; gear you borrow; Help wanted offers; Givebutter orders; pack photos and pack documents.</p></div>
     <div class="card"><b>We don&rsquo;t keep</b><p class="small" style="margin:4pt 0 0">Birthdates, home addresses, medical forms or any medical information, card or bank details (PayPal and Givebutter handle payments) or passwords. Files you save on your phone stay on your phone; the pack never sees them.</p></div>
   </div>
 
   <h3>Photos</h3>
   <ul>
     <li>Photos are resized, and their location (GPS) and camera data removed, before they&rsquo;re stored. They&rsquo;re deleted automatically after 24 months.</li>
-    <li>A leader approves every photo a parent uploads, and doesn&rsquo;t approve photos showing scouts whose families said no or haven&rsquo;t answered.</li>
+    <li>Scouts may appear unless their family opts out (Me → Family and registration → Photos). A leader approves every photo a parent uploads, and doesn&rsquo;t approve photos showing scouts whose families opted out.</li>
     <li>First names only in captions; no photos where a full name, school or address can be read. Anyone can request removal, and the photo is hidden right away. Please don&rsquo;t repost pack photos on public social media.</li>
   </ul>
 
@@ -368,10 +390,10 @@
   <p class="lead">Den leaders, pack leadership (the committee), the Cubmaster and pack admins get these tools on top of everything in Part 1. Den leaders work with their own dens; pack leadership, the Cubmaster and admins work with the whole pack.</p>
   <ul class="inpart">
     <li><span>2.1 Who can do what</span>The five roles at a glance</li>
-    <li><span>2.2 Every leader</span>Events, den meetings, advancement, messages</li>
+    <li><span>2.2 Every leader</span>Events, den meetings, advancement, messages, gear</li>
     <li><span>2.3 Leadership: money</span>Dues, Givebutter, fees, registration</li>
     <li><span>2.4 Leadership: expenses and reports</span>Reimbursements, budget, financial reports</li>
-    <li><span>2.5 Leadership: the rest</span>Guide, council events, the year at a glance</li>
+    <li><span>2.5 Leadership: the rest</span>Help wanted, guide, council events, the year</li>
     <li><span>2.6 Pack admin only</span>Roster, roles, imports, settings</li>
     <li><span>2.7 Keeping the app secure</span>For every leader, and admins</li>
     <li><span>2.8 Two-step sign-in</span>Pack leadership, the Cubmaster and admins</li>
@@ -384,21 +406,22 @@
   <h2>Who can do what</h2>
   <div class="rule"></div>
   <p class="lead">Every account has one role, set by a pack admin. Scouts don&rsquo;t have accounts. &ldquo;Leadership&rdquo; is the pack committee. Leader tools are in <b>Leader</b> mode (1.2).</p>
-  <table>
-    <tr><th style="width:38%">Can…</th><th>Parent</th><th>Den leader</th><th>Leadership</th><th>Cubmaster / Admin</th></tr>
+  <table class="roles">
+    <tr><th style="width:42%">Can…</th><th>Parent</th><th>Den leader</th><th>Leadership</th><th>Cubmaster / Admin</th></tr>
     <tr><td>See the calendar, campouts, guide, photos, store</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
     <tr><td>See own scouts&rsquo; advancement, report home requirements</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
     <tr><td>Answer polls, sign up to volunteer, upload photos</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
     <tr><td>RSVP, pay the pack, read pack documents</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
-    <tr><td>Ask to be paid back, invite a family</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
-    <tr><td>Add and edit events, add documents</td><td class="no">–</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
+    <tr><td>Ask to be paid back, invite a family, borrow gear, offer help</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
+    <tr><td>Add, build, copy and edit events; add documents</td><td class="no">–</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
     <tr><td>Approve advancement</td><td class="no">–</td><td class="c">Own den</td><td class="c">Whole pack</td><td class="c">Whole pack</td></tr>
     <tr><td>Plan den meetings, take attendance</td><td class="no">–</td><td class="c">Own den</td><td class="c">Any den</td><td class="c">Any den</td></tr>
     <tr><td>Post pack announcements, start pack polls</td><td class="no">–</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
+    <tr><td>Ready to go?, message families about an event, weather alerts</td><td class="no">–</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
     <tr><td>Message a den, poll a den</td><td class="no">–</td><td class="c">Own den</td><td class="c">Any den</td><td class="c">Any den</td></tr>
     <tr><td>Take attendance, see the attendance report</td><td class="no">–</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
-    <tr><td>Review photos, track paperwork, add volunteer jobs</td><td class="no">–</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
-    <tr><td>Edit the Pack guide, pick council events</td><td class="no">–</td><td class="no">–</td><td class="c">✓</td><td class="c">✓</td></tr>
+    <tr><td>Review photos, track paperwork, add volunteer jobs, handle gear requests</td><td class="no">–</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
+    <tr><td>Edit the Pack guide, pick council events, Help wanted jobs</td><td class="no">–</td><td class="no">–</td><td class="c">✓</td><td class="c">✓</td></tr>
     <tr><td>Money: dues, fees, payments, registration</td><td class="no">–</td><td class="no">–</td><td class="c">✓</td><td class="c">✓</td></tr>
     <tr><td>Expenses: approve and pay back requests, budget, reports</td><td class="no">–</td><td class="no">–</td><td class="c">✓ *</td><td class="c">✓ *</td></tr>
     <tr><td>Pack admin (roster, roles, imports, welcome emails, settings)</td><td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="c">✓</td></tr>
@@ -411,19 +434,24 @@
   <div class="kicker">Part 2 · Section 2.2 · <span class="tag t-lead">Leaders</span></div>
   <h2>Every leader</h2>
   <div class="rule"></div>
-  <div class="tip"><b>Leaders and youth protection:</b> keep Safeguarding Youth training current (it&rsquo;s renewed every year now), never upload medical forms or personal details anywhere in the app, and approve photos only of scouts whose families said yes.</div>
+  <div class="tip"><b>Leaders and youth protection:</b> keep Safeguarding Youth training current (it&rsquo;s renewed every year now), never upload medical forms or personal details anywhere in the app, and never approve photos showing scouts whose families opted out.</div>
 
   <div class="card"><h3>Events and RSVPs</h3><p><b>Add event</b> (Home or Calendar), or <b>Edit</b> on any event: date and time (or all day), place, details, which dens or ranks it&rsquo;s for, a sign-up link, an optional <b>cost</b> (per scout, per adult or per family) and an RSVP-by date. RSVPs are on for every event unless you turn them off. The event page shows who&rsquo;s coming and the headcount, and a family that says Going to an event with a cost is billed for it automatically. For a campout, <b>Camping nights</b> fills itself in from the dates (Friday to Sunday is 2); type a number to change it. Tick <b>Show on the public join page</b>, with a line for visiting families, for events newcomers are welcome at (section 2.5).</p></div>
-  <div class="card"><h3>Signal group and messages to families going</h3><p>In Signal, open the event&rsquo;s group, tap its name, then <b>Group link</b>; copy it, and turn on <b>Approve new members</b>. Paste it in the <b>Signal group</b> card on the event page: only leaders and families going see <b>Join the Signal group</b>. For a rain-out, tap <b>Message families going</b>: an alert (and optional email) to families who said Going, ending &ldquo;More in the Signal group.&rdquo;</p></div>
+  <div class="card"><h3>Repeating events, copies and RSVP limits</h3><p>On a new event, <b>Repeats</b> can be every week, every other week or monthly, <b>Until</b> a date; it adds one event per date. Editing one later? Tick <b>Also change the other upcoming events in this series</b> to change the name, time, place and details on all of them (each keeps its date). <b>Copy this event</b> (at the bottom of the event page) makes a new event on the date you pick with the same details, permission slip, schedule, packing list, info, links and volunteer jobs; RSVPs and the Signal group start fresh. <b>Limit</b> under RSVP caps scouts and adults together. Once it&rsquo;s full, families who say Going join a waitlist and move in on their own, in order, when spots open; <b>Who&rsquo;s coming (leaders only)</b> lists the waitlist in order. Families on the waitlist aren&rsquo;t billed until they&rsquo;re in.</p></div>
+  <div class="card"><h3>Build this event</h3><p>Tap <b>Build schedule, packing list and info</b> on a campout (or <b>Add schedule, info and links</b> on any event). Everything saves as you go, and families see it right away. <b>Schedule:</b> what&rsquo;s happening, the day and time, where. <b>Packing list:</b> items in groups; <b>Start from the standard list</b> for a campout. <b>Info sections:</b> a title, text and bullet items, Plain, <b>Good to know</b> (gold) or <b>Important</b> (red); tick <b>Tap-to-check list</b> for a scavenger hunt families tick off on their phones. <b>Links:</b> sign-up forms, maps and the like. <b>Start from a past campout or event</b> copies any of those four parts from an earlier one, with the schedule moved to this event&rsquo;s dates. <b>See it as families do</b> to check it.</p></div>
+  <div class="card"><h3>Ready to go?</h3><p>On any event that takes RSVPs, leaders see what the families going still need: <b>Medical forms</b>, <b>Permission slips</b>, <b>Not paid yet</b> and open <b>Volunteer jobs</b>, each naming the families. For an overnight it also checks that an adult going has current BALOO and Hazardous Weather training. Open a row, edit the message if you like, and tap <b>Remind these families</b> (or <b>Ask families going to help</b>): a phone alert, and an email if you tick it, to just those families, at most every 12 hours.</p></div>
+  <div class="card"><h3>Messaging families about an event, and Signal groups</h3><p><b>Message families</b> on the event page lets you pick <b>Going</b>, <b>Going and maybe</b> (<b>Going, maybe and waitlist</b> when there is one) or <b>No answer yet</b>, for a rain-out or a last call for RSVPs. It goes as a phone alert, with an optional email (replies come to you). For a Signal group: in Signal, open the event&rsquo;s group, tap its name, then <b>Group link</b>; copy it, and turn on <b>Approve new members</b>. Paste it in the <b>Signal group</b> card on the event page: only leaders and families going see <b>Join the Signal group</b>, and messages to families going end &ldquo;More in the Signal group.&rdquo;</p></div>
+  <div class="card"><h3>Weather alerts</h3><p>Each evening the app checks the Weather Service for events in the next three days that have an address. For a watch, warning or major advisory during the event, leaders get a phone alert (den leaders for pack-wide events and their own dens&rsquo;; pack leadership, the Cubmaster and admins for all). It opens the event, where you can message the families going. Families see the forecast and any warning on the event page.</p></div>
   <div class="card"><h3>Permission slips</h3><p>On the event form, tick <b>Families sign a permission slip for each scout</b>. Edit the wording parents agree to, and add a due date or a printable form from Pack documents if you like. Families who say Going are reminded until they sign. The event page shows leaders who has a slip (families going first), the phone number to reach each parent that day, and <b>Paper slip in</b> for paper ones. Check it before you leave for the event.</p></div>
   <div class="card"><h3>Taking attendance at pack events and campouts</h3><p>From the day of the event, its page has a <b>Take attendance</b> card: scouts by den, with families who said Going already ticked. Tap to fix it, then <b>Save</b>. <b>Pack → Attendance</b> shows every scout&rsquo;s den meetings, pack events and camping nights for the season (July to June), with a spreadsheet download.</p></div>
-  <div class="card"><h3>Recording a den meeting</h3><p>Tap <b>Record the … meeting</b> on Home. Then: <b>1.</b> tap the scouts who are there (families who RSVP&rsquo;d &ldquo;Going&rdquo; are already checked), <b>2.</b> tap the adventure you worked on (the ones most scouts still need are on top) and its requirements, <b>3.</b> tap <b>Save</b>. That records attendance and the requirements for everyone there, ready for the advancement chair to enter in Scoutbook. Planning meetings ahead is optional; families see planned meetings on their calendar and can RSVP.</p></div>
-  <div class="card"><h3>Advancement approvals and awards</h3><p><b>Scouts</b> tab: approve requirements families report, see each den&rsquo;s progress grid and what to plan next. <b>Awards to hand out</b> is a Scout Shop shopping list: every loop, pin and rank patch earned and not yet awarded, by rank like the store&rsquo;s shelves, with a photo, the SKU number, how many and for whom. It also prints <b>bag labels</b> (Avery 5160, 5163 or 5164) and an awards-night sheet. <b>Enter in Scoutbook</b> lists approved items <b>by scout</b> or <b>by requirement</b>; the second view matches Scoutbook Plus&rsquo;s screen for marking one requirement for several scouts at once. On a computer it&rsquo;s laid out like Scoutbook, one block per adventure, with <b>Entered</b> for a scout or the whole adventure once it&rsquo;s in.</p></div>
+  <div class="card"><h3>Recording a den meeting</h3><p>Tap <b>Record the … meeting</b> on Home. Then: <b>1.</b> tap the scouts who are there (families who RSVP&rsquo;d &ldquo;Going&rdquo; are already checked), <b>2.</b> tap the adventure you worked on (the ones most scouts still need are on top) and its requirements, <b>3.</b> tap <b>Save</b>. That records attendance and the requirements for everyone there, ready for the advancement chair to enter in Scoutbook. Families of scouts who were there get a recap alert; families who missed it get how to finish at home. Planning meetings ahead is optional; families see planned meetings on their calendar and can RSVP.</p></div>
+  <div class="card"><h3>Advancement approvals and awards</h3><p><b>Scouts</b> tab: approve or return requirements families report (they get an alert either way), see each den&rsquo;s progress grid and what to plan next. <b>Awards to hand out</b> is a Scout Shop shopping list: every loop, pin and rank patch earned and not yet awarded, by rank like the store&rsquo;s shelves, with a photo, the SKU number, how many and for whom. It also prints <b>bag labels</b> (Avery 5160, 5163 or 5164) and an awards-night sheet. <b>Enter in Scoutbook</b> lists approved items <b>by scout</b> or <b>by requirement</b>; the second view matches Scoutbook Plus&rsquo;s screen for marking one requirement for several scouts at once. On a computer it&rsquo;s laid out like Scoutbook, one block per adventure, with <b>Entered</b> for a scout or the whole adventure once it&rsquo;s in.</p></div>
   <div class="card"><h3>Announcements, den messages and polls</h3><p>Post to the whole pack, with a phone alert and, when it matters, <b>Also email every family</b>. Or message one den&rsquo;s parents with a phone alert and an optional email (replies come to you). Den leaders message their own dens; pack leadership and above, any den. Messages go to parents only, never to scouts. <b>Polls</b> go to the pack or a den, with one or several answers, one answer per family, a closing date, and results for everyone or leaders only.</p></div>
   <div class="card"><h3>Paperwork tracker</h3><p><b>Pack → Medical forms</b>: every scout and adult&rsquo;s form status by den. Check off paper forms as they come in. Before a campout, filter for missing and message those families.</p></div>
-  <div class="card"><h3>Photo review</h3><p>Approve or remove family uploads and handle removal requests. It lists the scouts whose families said no (or haven&rsquo;t answered), so you know whom to watch for. Leaders&rsquo; own uploads go straight into the album.</p></div>
+  <div class="card"><h3>Photo review</h3><p>Approve or remove family uploads and handle removal requests. It lists the scouts whose families opted out, so you know whom to watch for; every other scout is OK. Leaders&rsquo; own uploads go straight into the album.</p></div>
   <div class="card"><h3>Documents</h3><p><b>Documents → Add a document</b> (PDF, Word, Excel, PowerPoint, images; up to 10 MB) for everyone, leaders only, or one den. Never upload medical forms or anything with personal details.</p></div>
   <div class="card"><h3>Training</h3><p><b>Pack → Training</b> shows what each leader needs for their position and what&rsquo;s missing, plus a pack checklist (BALOO before any overnight, Hazardous Weather, water safety). <b>Safeguarding Youth is renewed every year.</b> <b>Me → My training</b> lists what&rsquo;s expiring and the modules for your position, with reminders 60, 30 and 7 days ahead. Dates come in from my.scouting every week.</p></div>
+  <div class="card"><h3>Gear requests</h3><p><b>Pack → Gear requests</b> lists requests <b>Waiting for an answer</b>, <b>Ready to pick up</b> and <b>Out now</b> (with any overdue). <b>Approve</b>, <b>Decline</b> (with a note), <b>Mark picked up</b>, <b>Mark returned</b>, or <b>More time</b> for a new bring-back day; families get an alert when you approve or decline. <b>Add gear</b> or <b>Edit</b> items in the closet. New requests alert leaders whose position mentions the quartermaster or gear (with none, the admins and Cubmaster).</p></div>
   <div class="card"><h3>Volunteer jobs and the calendar</h3><p>Add volunteer jobs to any event or campout. Take an event off the calendar, or put it back, from its page. Spent your own money on the den? <b>Pack → Get paid back</b>, with a photo of the receipt (1.3).</p></div>
   <div class="card"><h3>See the app as someone else</h3><p>Under <b>Me → See the app as…</b>, see the app the way a parent, a den leader or pack leadership sees it, using your own family. It only changes what you see, and switches off after 8 hours.</p></div>
 </div>
@@ -510,6 +538,7 @@
   <h2>Pack leadership: the rest</h2>
   <div class="rule"></div>
 
+  <div class="card"><h3>Help wanted</h3><p><b>Pack → Help wanted</b> is the board of grown-up jobs for the year. Under <b>For pack leadership</b>: <b>Add a job</b> (what it involves, and who questions go to; families see only the name), see who offered to help and their notes, <b>Close this job</b> (and say who&rsquo;s doing it), <b>Open it again</b>, or <b>Edit or delete</b>. An offer sends a phone alert to the job&rsquo;s contact, or to pack leadership when there isn&rsquo;t one. <b>Volunteer jobs this season</b> counts each family&rsquo;s event job sign-ups since July 1 and lists who hasn&rsquo;t had a turn; only pack leadership sees it.</p></div>
   <div class="card"><h3>Pack guide editing</h3><p>Pack leadership, the Cubmaster and admins edit and publish Pack guide pages from the app. Draft pages are visible to leaders only, with the parts still to fill in highlighted.</p></div>
   <div class="card"><h3>Council events</h3><p><b>Events → Council events</b> lists Baltimore Area Council and district events. Meetings, holidays and other districts are hidden by default, and Cub Scout events are marked. Tap <b>Add to our calendar</b> or <b>Skip</b>; den leaders can look but not add.</p></div>
   <div class="card"><h3>Recruiting and the public join page</h3><p>The public page (app.pack361.org/join, and pack361.org once it points to the app) tells families about the pack and how to join. Events ticked <b>Show on the public join page</b> appear there under <b>Big events coming up</b>, with only the name, dates, place name and your line for visitors (never the address or details). Families share the page from <b>Invite a family</b>.</p></div>
@@ -518,8 +547,8 @@
   <h3>The year at a glance</h3>
   <table>
     <tr><th style="width:24%">When</th><th>In the app</th></tr>
-    <tr><td><b>July–August</b></td><td>Money → Settings for the new season; Set up dues; registration dates; enter the budget; check Pack → Training for everyone&rsquo;s renewals.</td></tr>
-    <tr><td><b>Before each campout</b></td><td>Event with cost and RSVP-by date; volunteer jobs; Paperwork filtered for missing medical forms; a BALOO-trained adult on the training checklist. Afterward, take attendance so camping nights count.</td></tr>
+    <tr><td><b>July–August</b></td><td>Money → Settings for the new season; Set up dues; registration dates; enter the budget; check Pack → Training for everyone&rsquo;s renewals; post the year&rsquo;s jobs on Help wanted.</td></tr>
+    <tr><td><b>Before each campout</b></td><td>Event with cost, RSVP-by date and any limit; Build this event (or start from a past campout); volunteer jobs; the Ready to go? card for forms, slips, payments and BALOO. Afterward, take attendance so camping nights count.</td></tr>
     <tr><td><b>Before big events</b></td><td>Tick &ldquo;Show on the public join page&rdquo; on the ones visitors are welcome at, and remind families to use Invite a family.</td></tr>
     <tr><td><b>Every week or two</b></td><td>Confirm check and cash payments; match any pack dues waiting; review and pay back reimbursement requests.</td></tr>
     <tr><td><b>Each committee meeting</b></td><td>Money → Reports for the season so far, printed or saved as PDF; what&rsquo;s still outstanding.</td></tr>
@@ -541,9 +570,9 @@
     <tr><td><b>Join requests</b></td><td>People who signed in with an email that isn&rsquo;t on the roster and asked to be added. Check they&rsquo;re a pack family, pick a new or existing family and each scout&rsquo;s den (suggested from their grade), and tap <b>Add to the roster</b>; they get an email and can sign in right away. Or decline with a note they&rsquo;ll see. Scouts&rsquo; names are deleted from the request once it&rsquo;s answered. Admins get a phone alert and an email for each request.</td></tr>
     <tr><td><b>Roster check</b></td><td>The roster doesn&rsquo;t update itself from Scoutbook. After new families register, at the start of each school year (when scouts move up) and when someone leaves, export the youth roster from Scoutbook Plus (CSV or Excel) and choose it here, on a computer. The app lists who&rsquo;s <b>new in Scoutbook</b> (add each one to a family with one click), who&rsquo;s <b>in a different den</b> (<b>Move all</b>), member IDs to save, scouts registered again, and scouts <b>not in the export</b> (turn them off after checking with the den leader). The file is read on your computer and never uploaded.</td></tr>
     <tr><td><b>Families and scouts</b></td><td>Add and edit families, adults and scouts; move scouts between dens; turn off access when a family leaves (their data stays, they just can&rsquo;t sign in). Changing someone&rsquo;s email? Do it before they sign in: it&rsquo;s the only way into their account.</td></tr>
-    <tr><td><b>Roles and positions</b></td><td>Set each adult&rsquo;s app role (parent, den leader, leadership, Cubmaster or admin) and position title. Put &ldquo;Treasurer&rdquo; in the treasurer&rsquo;s position so reimbursement requests reach them.</td></tr>
+    <tr><td><b>Roles and positions</b></td><td>Set each adult&rsquo;s app role (parent, den leader, leadership, Cubmaster or admin) and position title. Put &ldquo;Treasurer&rdquo; in the treasurer&rsquo;s position so reimbursement requests reach them, and &ldquo;Quartermaster&rdquo; in the quartermaster&rsquo;s so gear requests do.</td></tr>
     <tr><td><b>Dens and den leaders</b></td><td>Add dens and assign their leaders. Dens show by rank (Lion, Tiger…); the Scoutbook den number stays on this page.</td></tr>
-    <tr><td><b>Welcome emails</b></td><td>Send each adult a one-time &ldquo;the app is ready&rdquo; email, in batches of up to 40 a day to stay within the free email plan. The page also links a printable <b>&ldquo;Get the pack app&rdquo; QR sign</b> for pack meetings (app.pack361.org/get/qr).</td></tr>
+    <tr><td><b>Welcome emails</b></td><td>Send each adult a one-time &ldquo;the app is ready&rdquo; email, in batches of up to 40 a day to stay within the free email plan. It shows who has signed in and how many have phone alerts on (<b>alerts on</b> by each name). <b>New families who could use a hand</b> lists families from the last 90 days with two or more Getting started steps still to do; a call or a word at the next meeting helps. The page also links a printable <b>&ldquo;Get the pack app&rdquo; QR sign</b> (app.pack361.org/get/qr).</td></tr>
     <tr><td><b>Messages</b></td><td>Problems and notes families send with &ldquo;Report a problem or send a note&rdquo;. Admins also get a phone alert and an email for each one.</td></tr>
     <tr><td><b>TroopWebHost calendar</b></td><td>Only while the pack still uses TroopWebHost: syncs every afternoon, or tap <b>Sync now</b>. Events removed there move to the archive; nothing is deleted. Editing a synced event in the app takes it out of the sync.</td></tr>
     <tr><td><b>Import training</b></td><td>Monthly (pack leadership can too; the Committee Chair gets a reminder). Upload the my.scouting training report (CSV or Excel). Leaders are matched by member ID and name, and only newer dates are applied. The file is read on your computer and never stored.</td></tr>
@@ -552,7 +581,7 @@
     <tr><td><b>Weekly newsletter</b></td><td>Who gets the Sunday email: off, testing (only the leaders ticked) or every family. <b>See this week&rsquo;s</b> shows it as your family would get it; <b>Email it to me</b> sends you a copy. Switch to every family when TroopWebHost is cancelled.</td></tr>
     <tr><td><b>Pack settings</b></td><td>Awards tracking start date, how long photos are kept (24 months), welcome emails per day, and <b>the pack&rsquo;s public page</b> (the link Invite a family shares; change it to https://pack361.org when that address points to the app). Dues and fee amounts are on <b>Pack → Money → Settings</b>.</td></tr>
     <tr><td><b>Beta site</b></td><td>New features go to <b>beta.pack361.org</b> first. It shows the pack&rsquo;s real information, but only the testers you tick here (and admins) can sign in, and its emails and alerts reach testers only. When a version is ready it&rsquo;s released to everyone; the version number is at the bottom of Me.</td></tr>
-    <tr><td><b>Nightly jobs</b></td><td>Reminders, photo clean-up and calendar syncs run every evening. If a step fails, Pack admin shows which one and why.</td></tr>
+    <tr><td><b>Nightly jobs</b></td><td>Reminders, weather checks, gear reminders, photo clean-up and calendar syncs run every evening. If a step fails, Pack admin shows which one and why.</td></tr>
   </table>
 </div>
 
@@ -639,7 +668,8 @@
   <div class="rule"></div>
   <p class="lead">Each time the app gains a feature people will notice, this guide gets a new version. Check the version on the cover against this list to see if your copy is current.</p>
   <table class="versions">
-    <tr><th style="width:18%">Version</th><th style="width:22%">Date</th><th>What&rsquo;s new</th></tr>
+    <tr><th style="width:10%">Version</th><th style="width:19%">Date</th><th>What&rsquo;s new</th></tr>
+    <tr><td>3.0</td><td>October 3, 2026</td><td><b>Photos are OK unless a family opts out</b> (1.3, 1.4, 2.2). Families: <b>Getting started</b> list (1.1), <b>Add to my calendar</b>, weather, RSVP limits and <b>waitlists</b>, reminders, advancement alerts, the Sunday email&rsquo;s <b>Your scout this week</b>, <b>Gear closet</b>, <b>Help wanted</b>, <b>Season keepsake</b> (1.3). Leaders: <b>Build this event</b>, copy and repeating events, <b>Ready to go?</b>, messages to who hasn&rsquo;t answered, weather alerts, gear requests (2.2); Help wanted jobs (2.5); new families on Welcome emails (2.6).</td></tr>
     <tr><td>2.5</td><td>October 3, 2026</td><td>Faster loading, a tap-to-check scavenger hunt, a retry message when signal drops, and a one-click sign-in page on computers (1.1).</td></tr>
     <tr><td>2.4</td><td>October 3, 2026</td><td><b>Leader mode</b> is the default for leaders, with a bar across the top (1.2).</td></tr>
     <tr><td>2.3</td><td>October 3, 2026</td><td><b>Signal group</b> on events for families going; <b>Message families going</b>; photo swipe and zoom (1.3, 2.2).</td></tr>

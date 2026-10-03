@@ -188,13 +188,16 @@ export async function saveScout(_prev: ActionResult, form: FormData): Promise<Ac
   const id = str(form, "id");
   const familyId = str(form, "family_id");
   const den = str(form, "den_id");
+  // Photos are OK unless the family opts out: save 'no' for an opt-out, 'yes' when turning it back
+  // on, and otherwise leave the saved answer alone (null means OK too).
   const photo = str(form, "photo_permission");
+  const photoChange = photo === "no" ? "no" : str(form, "photo_permission_was") === "no" ? "yes" : null;
   const row = {
     first_name: str(form, "first_name", 60),
     last_name: str(form, "last_name", 60),
     den_id: UUID.test(den) ? den : null,
     bsa_member_id: opt(form, "bsa_member_id", 20),
-    photo_permission: photo === "yes" || photo === "no" ? photo : null,
+    ...(photoChange ? { photo_permission: photoChange } : {}),
   };
   if (!row.first_name || !row.last_name) return { error: "Add a first and last name." };
   if (row.bsa_member_id && !/^\d{5,12}$/.test(row.bsa_member_id)) return { error: "BSA member IDs are numbers only." };

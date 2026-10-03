@@ -8,6 +8,7 @@ import { today, type TrainingRow } from "./training";
 import { changesText, type ImportChanges } from "./import-changes";
 import { sendPushTo } from "./push";
 import { APP_URL, emailConfigured, sendEmails } from "./email";
+import { alertNewlyEarned, earnedSnapshot, type EarnedSnapshot } from "./family-alerts";
 
 // The weekly Scoutbook job (Sunday night, /api/cron/scoutbook), when Pack admin has turned it on
 // (Scouts → Import from Scoutbook). It runs the same two imports a leader can run by hand:
@@ -21,7 +22,17 @@ import { APP_URL, emailConfigured, sendEmails } from "./email";
 
 export interface WeeklyResult {
   at: string;
-  advancement: { ok?: boolean; records?: number; scouts?: number; changes?: ImportChanges | null; skipped?: number; held?: string; error?: string };
+  advancement: {
+    ok?: boolean;
+    records?: number;
+    scouts?: number;
+    changes?: ImportChanges | null;
+    skipped?: number;
+    held?: string;
+    error?: string;
+    /** Families told about adventures and ranks new in Scoutbook (by push). */
+    earned?: { scouts: number; pushed?: number; error?: string };
+  };
   training: { ok?: boolean; updated?: number; waiting?: number; memberIds?: number; error?: string };
 }
 
@@ -50,10 +61,24 @@ export async function weeklyScoutbook(db: SupabaseClient): Promise<WeeklyResult 
     if (cmp.removed > limit) {
       result.advancement.held = `It would have removed ${cmp.removed} records (more than ${limit}), so nothing was changed. Run Compare on the import page to see why.`;
     } else {
+      // What scouts had before, to tell families what's new afterwards (never blocks the import).
+      let snap: EarnedSnapshot | null = null;
+      try {
+        snap = await earnedSnapshot(db);
+      } catch (e) {
+        result.advancement.earned = { scouts: 0, error: e instanceof Error ? e.message : "failed" };
+      }
       const { data, error } = await db.rpc("import_scout_advancement", { p_file_name: "Scoutbook (weekly)", p_rows: rows });
       if (error) throw new Error(error.message);
       const log = data as { row_count: number; scout_count: number; changes?: ImportChanges | null };
       Object.assign(result.advancement, { ok: true, records: log.row_count, scouts: log.scout_count, changes: log.changes ?? null });
+      if (snap && log.changes?.new) {
+        try {
+          result.advancement.earned = await alertNewlyEarned(rows, snap, db);
+        } catch (e) {
+          result.advancement.earned = { scouts: 0, error: e instanceof Error ? e.message : "failed" };
+        }
+      }
     }
   } catch (e) {
     result.advancement.error = e instanceof Error ? e.message : "failed";

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { CircleCheck, Clock, Mail, TriangleAlert } from "lucide-react";
+import { BellRing, CircleCheck, Clock, Mail, TriangleAlert, UserRoundPlus } from "lucide-react";
 import ActionForm from "@/components/ActionForm";
 import BackLink from "@/components/BackLink";
 import Link from "next/link";
 import { getAllAdults, getSignIns, requireAdmin, welcomeBudget } from "@/lib/roster-data";
+import { getAdultsWithAlerts, getNewFamilies, type NewFamilyRow } from "@/lib/onboarding";
 import { emailConfigured } from "@/lib/email";
 import { fmtDay } from "@/lib/format";
 import { sendWelcomeEmails } from "../actions";
@@ -12,13 +13,22 @@ export const metadata: Metadata = { title: "Welcome emails" };
 
 export default async function WelcomePage() {
   await requireAdmin();
-  const [adults, signIns, budget] = await Promise.all([getAllAdults(), getSignIns(), welcomeBudget()]);
+  const [adults, signIns, budget, alerts, newFamilies] = await Promise.all([
+    getAllAdults(),
+    getSignIns(),
+    welcomeBudget(),
+    getAdultsWithAlerts(),
+    getNewFamilies(),
+  ]);
   const active = adults.filter((a) => a.is_active);
   const signedIn = active.filter((a) => signIns.get(a.id));
   const welcomed = active.filter((a) => !signIns.get(a.id) && a.welcomed_at);
   const waiting = active.filter((a) => !signIns.get(a.id) && !a.welcomed_at);
   const configured = emailConfigured();
   const nextBatch = Math.min(waiting.length, budget.left, 100);
+  const alertsOn = signedIn.filter((a) => alerts.has(a.id)).length;
+  // New families (last 90 days) with two or more steps the app can see still to do.
+  const stuck = newFamilies.filter((f) => f.missing.length >= 2);
 
   return (
     <>
@@ -52,6 +62,12 @@ export default async function WelcomePage() {
           <p className="text-[11px] text-muted">not emailed</p>
         </div>
       </div>
+      <p className="-mt-2 flex items-center gap-1.5 px-1 text-xs text-muted">
+        <BellRing className="h-3.5 w-3.5 text-pine" aria-hidden />
+        {alertsOn} of {signedIn.length} signed-in {signedIn.length === 1 ? "adult has" : "adults have"} phone alerts on.
+      </p>
+
+      {newFamilies.length > 0 && <NewFamilies all={newFamilies.length} stuck={stuck} />}
 
       {!configured ? (
         <p className="flex items-start gap-2 rounded-2xl border border-gold-100 bg-gold-50 p-3 text-sm text-gold-800">
@@ -84,8 +100,8 @@ export default async function WelcomePage() {
         </section>
       )}
 
-      <PeopleList title="Not emailed yet" icon={Mail} people={waiting} canSend={configured} />
-      <PeopleList title="Emailed, hasn't signed in" icon={Clock} people={welcomed} canSend={configured} showWelcomed />
+      <PeopleList title="Not emailed yet" icon={Mail} people={waiting} canSend={configured} alerts={alerts} />
+      <PeopleList title="Emailed, hasn't signed in" icon={Clock} people={welcomed} canSend={configured} alerts={alerts} showWelcomed />
       <details className="card">
         <summary className="flex cursor-pointer list-none items-center gap-2 font-bold text-pine">
           <CircleCheck className="h-4 w-4" aria-hidden /> Signed in ({signedIn.length})
@@ -93,8 +109,11 @@ export default async function WelcomePage() {
         <ul className="divide-y divide-line pt-2 text-sm">
           {signedIn.map((a) => (
             <li key={a.id} className="flex justify-between gap-2 py-1.5">
-              <span className="truncate">
-                {a.first_name} {a.last_name}
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="truncate">
+                  {a.first_name} {a.last_name}
+                </span>
+                {alerts.has(a.id) && <AlertsOn />}
               </span>
               <span className="shrink-0 text-xs text-muted">{fmtDay(signIns.get(a.id)!)}</span>
             </li>
@@ -110,12 +129,14 @@ function PeopleList({
   icon: Icon,
   people,
   canSend,
+  alerts,
   showWelcomed,
 }: {
   title: string;
   icon: typeof Mail;
   people: Awaited<ReturnType<typeof getAllAdults>>;
   canSend: boolean;
+  alerts: Set<string>;
   showWelcomed?: boolean;
 }) {
   if (!people.length) return null;
@@ -128,8 +149,11 @@ function PeopleList({
         {people.map((a) => (
           <li key={a.id} className="flex items-center justify-between gap-2 py-2">
             <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold text-ink">
-                {a.first_name} {a.last_name}
+              <span className="flex items-center gap-1.5">
+                <span className="truncate text-sm font-semibold text-ink">
+                  {a.first_name} {a.last_name}
+                </span>
+                {alerts.has(a.id) && <AlertsOn />}
               </span>
               <span className="block truncate text-xs text-muted">
                 {a.email}
@@ -144,6 +168,51 @@ function PeopleList({
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/** Phone alerts are on for this adult (a phone or browser is saved). */
+function AlertsOn() {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-semibold text-pine" title="Phone alerts on">
+      <BellRing className="h-3 w-3" aria-hidden />
+      <span>alerts on</span>
+    </span>
+  );
+}
+
+/** New families (last 90 days) stuck on two or more steps of their Getting started list. */
+function NewFamilies({ all, stuck }: { all: number; stuck: NewFamilyRow[] }) {
+  return (
+    <section className="card space-y-2">
+      <h2 className="section-title flex items-center gap-1.5">
+        <UserRoundPlus className="h-3.5 w-3.5" aria-hidden /> New families who could use a hand ({stuck.length})
+      </h2>
+      <p className="text-xs text-muted">
+        {stuck.length
+          ? `Of ${all} ${all === 1 ? "family" : "families"} who joined in the last 90 days, these still have two or more getting-started steps to do. A friendly call or a word at the next meeting helps.`
+          : `All ${all} new ${all === 1 ? "family is" : "families are"} on track: at most one getting-started step left.`}
+      </p>
+      {stuck.length > 0 && (
+        <ul className="divide-y divide-line">
+          {stuck.map((f) => (
+            <li key={f.family_id}>
+              <Link href={`/admin/families/${f.family_id}`} className="block min-h-11 py-2">
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-sm font-semibold text-ink">{f.family_name}</span>
+                  <span className="shrink-0 text-[11px] text-muted">joined {fmtDay(f.joined_at)}</span>
+                </span>
+                {f.adults && <span className="block truncate text-xs text-muted">{f.adults}</span>}
+                <span className="block text-xs text-gold-800">
+                  To do: {f.missing.join(", ")}
+                  {f.signed_in ? "" : " · hasn't signed in yet"}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

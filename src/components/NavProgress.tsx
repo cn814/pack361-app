@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 // Links that hand back a file (CSV exports, documents, receipts) instead of a page: the
 // address never changes, so a bar started for them would hang until its timeout.
-const FILE_ROUTE = /\/csv$|^\/(documents|receipts)\/[0-9a-f-]{36}\/?$/i;
+const FILE_ROUTE = /\/(csv|ics)$|^\/(documents|receipts)\/[0-9a-f-]{36}\/?$/i;
 
 /**
  * Thin bar across the top of the screen that starts the instant an in-app link is tapped

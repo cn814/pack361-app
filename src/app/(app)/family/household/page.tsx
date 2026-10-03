@@ -64,10 +64,10 @@ export default async function HouseholdPage() {
 
       {scouts.length > 0 && (
         <section id="photos" className="card scroll-mt-20 space-y-3">
-          <h2 className="section-title">Pack photo album</h2>
+          <h2 className="section-title">Photos</h2>
           <p className="text-sm text-muted">
-            Leaders only approve photos showing scouts whose families said yes. Photos are visible only to signed-in pack families,
-            and you can change your answer any time.
+            Scouts can be in the pack&apos;s private photo album unless their family opts out. Photos are visible only to signed-in
+            pack families. Opt out any time, and leaders won&apos;t approve photos showing your scout.
           </p>
           <PhotoPermission scouts={scouts} />
         </section>

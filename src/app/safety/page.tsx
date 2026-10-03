@@ -61,7 +61,7 @@ export default function SafetyPage() {
           "Parents' phone numbers and emails aren't shown to other parents. The leader directory lists only leaders.",
           "Your calendar subscription link is private to you and contains pack events plus your scouts' den meetings.",
           "Volunteer sign-ups show other families only your first name and last initial.",
-          "Pack photos are visible only to signed-in pack families. A leader approves every photo a parent uploads, and scouts whose families haven't said yes aren't shown.",
+          "Pack photos are visible only to signed-in pack families. A leader approves every photo a parent uploads, and scouts whose families opted out aren't shown.",
           "Pack documents (forms, minutes, packing lists) are visible only to signed-in pack families, and some only to leaders or one den. Files open through links that expire after a minute.",
           "Only Leadership, the Cubmaster and admins see what families owe and pay for dues; den leaders see event sign-ups and store orders. Other parents don't see any of it.",
         ]}
@@ -97,7 +97,7 @@ export default function SafetyPage() {
         title="Your choices"
         items={[
           "Phone alerts are off unless you turn them on, and you can turn them off at any time.",
-          "You decide whether your scout may appear in pack photos, and anyone can request that a photo be removed. It's hidden right away, and a leader removes it.",
+          "Your scout may appear in pack photos unless you opt out (any time, in the app), and anyone can request that a photo be removed. It's hidden right away, and a leader removes it.",
           "Campout pages saved for use without signal stay on your phone only, and are deleted when you sign out.",
           "Files you save on your phone (Me → Saved on this phone) stay on your phone. They're never uploaded and the pack can't see them. Signing out doesn't delete them, so remove them on that page before handing your phone to someone else.",
           "You can update your phone number and the name you go by under Me → My contact info.",

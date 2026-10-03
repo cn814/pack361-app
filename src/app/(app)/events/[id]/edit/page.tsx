@@ -6,6 +6,7 @@ import { getEvent, isLeader, requireMember } from "@/lib/data";
 import { getDens } from "@/lib/roster-data";
 import { getDocuments } from "@/lib/documents";
 import { easternDate, easternParts } from "@/lib/tz";
+import { getEventExtras } from "@/lib/event-builder-data";
 
 export const metadata: Metadata = { title: "Edit event" };
 
@@ -14,12 +15,13 @@ const hhmm = (iso: string) => {
   return `${String(p.h).padStart(2, "0")}:${String(p.mi).padStart(2, "0")}`;
 };
 
-export default async function EditEventPage({ params }: PageProps<"/events/[id]/edit">) {
+export default async function EditEventPage({ params, searchParams }: PageProps<"/events/[id]/edit">) {
   const me = await requireMember();
   const { id } = await params;
+  const { copied } = await searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   if (!isLeader(me)) redirect(`/events/${id}`);
-  const [e, dens, docs] = await Promise.all([getEvent(id), getDens(false), getDocuments()]);
+  const [e, dens, docs, extras] = await Promise.all([getEvent(id), getDens(false), getDocuments(), getEventExtras(id)]);
   if (!e) notFound();
   const back = e.category === "Campout" ? `/campouts/${id}` : `/events/${id}`;
   return (
@@ -59,6 +61,9 @@ export default async function EditEventPage({ params }: PageProps<"/events/[id]/
             slip_due: e.slip_due ?? null,
             from_twh: e.source === "troopwebhost",
             from_council: e.source === "council",
+            rsvp_limit: extras.rsvp_limit,
+            series_upcoming: extras.series_upcoming,
+            copied: copied === "1",
           }}
         />
       </section>

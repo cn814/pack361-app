@@ -8,6 +8,9 @@ import { easternToIso } from "@/lib/calendar";
 import type { ActionResult } from "@/components/ActionForm";
 import { parseDollars } from "@/lib/money";
 import { signalLinkFrom } from "@/lib/event-signal";
+import { afterRsvpChange, rsvpFullMessage } from "@/lib/waitlist";
+import { MAX_REPEATS, REPEATS, repeatDates, shiftDate, type Repeat } from "@/lib/event-builder";
+import { addDays, daysBetween } from "@/lib/tz";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -100,12 +103,38 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
   if (slipRequired && !text("slip_text", 4000)) return { error: "Add the permission slip wording families agree to." };
   if (slipRequired && slipDue && (!DATE.test(slipDue) || slipDue > endDate)) return { error: "The permission slip due date should be on or before the event." };
 
-  const starts_at = easternToIso(startDate, allDay ? "00:00" : startTime);
-  let ends_at: string | null = null;
-  if (allDay) ends_at = endDate !== startDate ? easternToIso(endDate, "00:00") : null;
-  else if (endTime) ends_at = easternToIso(endDate, endTime);
-  else if (endDate !== startDate) ends_at = easternToIso(endDate, "23:59");
+  // Start and end for an event starting on `day` (the first one, or a later one in a series:
+  // the end keeps the same number of days after the start).
+  const timesOn = (day: string) => {
+    const end = addDays(endDate, daysBetween(startDate, day));
+    const starts_at = easternToIso(day, allDay ? "00:00" : startTime);
+    let ends_at: string | null = null;
+    if (allDay) ends_at = end !== day ? easternToIso(end, "00:00") : null;
+    else if (endTime) ends_at = easternToIso(end, endTime);
+    else if (end !== day) ends_at = easternToIso(end, "23:59");
+    return { starts_at, ends_at };
+  };
+  const { starts_at, ends_at } = timesOn(startDate);
   if (ends_at && ends_at < starts_at) return { error: "The event ends before it starts." };
+
+  // RSVP limit: at most this many people (scouts and adults); blank = no limit.
+  const limitRaw = String(form.get("rsvp_limit") ?? "").trim();
+  if (limitRaw && !/^\d{1,3}$/.test(limitRaw)) return { error: "The limit should be a number of people from 1 to 500, or blank." };
+  const rsvpLimit = limitRaw ? Number(limitRaw) : null;
+  if (rsvpLimit !== null && (rsvpLimit < 1 || rsvpLimit > 500)) return { error: "The limit should be a number of people from 1 to 500, or blank." };
+
+  // Repeats (new events only): one event per date, linked as a series.
+  const repeatRaw = String(form.get("repeat") ?? "never");
+  const repeat: Repeat = !UUID.test(id) && (REPEATS as string[]).includes(repeatRaw) ? (repeatRaw as Repeat) : "never";
+  const until = String(form.get("repeat_until") ?? "");
+  let dates = [startDate];
+  if (repeat !== "never") {
+    if (!DATE.test(until)) return { error: "Pick the date it repeats until." };
+    if (until <= startDate) return { error: "The “until” date should be after the first date." };
+    dates = repeatDates(startDate, repeat, until);
+    if (dates.length > MAX_REPEATS) return { error: `That's more than ${MAX_REPEATS} events. Pick an earlier “until” date.` };
+    if (dates.length < 2) return { error: "It doesn't repeat before the “until” date. Pick a later one." };
+  }
 
   const row = {
     title,
@@ -128,21 +157,34 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
     slip_text: slipRequired ? text("slip_text", 4000) : null,
     slip_document_id: slipRequired && UUID.test(slipDoc) ? slipDoc : null,
     slip_due: slipRequired && DATE.test(slipDue) ? slipDue : null,
+    rsvp_limit: form.get("rsvp_enabled") === "on" ? rsvpLimit : null,
     ...fees,
   };
   const supabase = await createClient();
   let eventId = id;
+  let seriesNote = "";
   if (UUID.test(id)) {
-    const { error } = await supabase.from("events").update({ ...row, source: "manual" }).eq("id", id);
+    const { error } = await withoutMissingLimit(row, (r) => supabase.from("events").update({ ...r, source: "manual" }).eq("id", id));
     if (error) return { error: "Couldn't save the event." };
+    // Also change the other upcoming events in the series: name, time, place and details.
+    if (form.get("apply_series") === "on") {
+      const { error: seriesError } = await supabase.rpc("apply_to_series", { p_event_id: id });
+      if (seriesError) seriesNote = "This event was saved, but the other events in the series couldn't be changed. Save again to retry.";
+    }
   } else {
-    const { data, error } = await supabase
-      .from("events")
-      .insert({ ...row, source: "manual", created_by: me.id })
-      .select("id")
-      .single();
-    if (error || !data) return { error: "Couldn't add the event." };
-    eventId = data.id as string;
+    const seriesId = dates.length > 1 ? crypto.randomUUID() : null;
+    const rows = dates.map((day) => ({
+      ...row,
+      ...timesOn(day),
+      rsvp_by: shiftDate(row.rsvp_by, startDate, day),
+      slip_due: shiftDate(row.slip_due, startDate, day),
+      series_id: seriesId,
+      source: "manual",
+      created_by: me.id,
+    }));
+    const { data, error } = await withoutMissingLimit(rows, (r) => supabase.from("events").insert(r).select("id, starts_at"));
+    if (error || !data?.length) return { error: dates.length > 1 ? "Couldn't add the events." : "Couldn't add the event." };
+    eventId = [...data].sort((a, b) => String(a.starts_at).localeCompare(String(b.starts_at)))[0].id as string;
   }
   // Bring families' event charges in line with the (new) cost. Paid ones stay as they are.
   // (Leadership only: den leaders can't change prices, and the database refuses them this.)
@@ -155,7 +197,27 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
     }
   }
   revalidatePath("/", "layout");
+  if (seriesNote) return { error: seriesNote };
+  if (UUID.test(id)) afterRsvpChange(eventId); // a raised or removed RSVP limit may let waitlisted families in
   redirect(category === "Campout" ? `/campouts/${eventId}` : `/events/${eventId}`);
+}
+
+/**
+ * Runs a save; if the database doesn't have the RSVP limit column yet (it comes with the RSVP
+ * waitlist update), saves again without it rather than failing.
+ */
+async function withoutMissingLimit<R extends { rsvp_limit?: number | null }, T extends { error: { message: string } | null }>(
+  rows: R | R[],
+  save: (rows: R | R[]) => PromiseLike<T>,
+): Promise<T> {
+  const first = await save(rows);
+  if (!first.error || !/rsvp_limit/.test(first.error.message)) return first;
+  const strip = (r: R) => {
+    const rest = { ...r };
+    delete rest.rsvp_limit;
+    return rest;
+  };
+  return save(Array.isArray(rows) ? rows.map(strip) : strip(rows));
 }
 
 /** Leaders: set, change or remove the event's Signal group link (blank removes it). */
@@ -184,7 +246,7 @@ export async function saveEventSignal(_prev: ActionResult, form: FormData): Prom
 
 /** Answer (or change) the family's RSVP. */
 export async function setRsvp(_prev: ActionResult, form: FormData): Promise<ActionResult> {
-  await requireMember();
+  const me = await requireMember();
   const id = String(form.get("event_id") ?? "");
   const status = String(form.get("status") ?? "");
   if (!UUID.test(id)) return { error: "Event not found." };
@@ -197,9 +259,20 @@ export async function setRsvp(_prev: ActionResult, form: FormData): Promise<Acti
     p_adults: Number(form.get("adults") ?? 0) || 0,
     p_note: String(form.get("note") ?? ""),
   });
-  if (error) return { error: error.message.includes("closed") ? "RSVPs for this event are closed. Contact a leader." : "Couldn't save your RSVP." };
+  if (error)
+    return {
+      error: rsvpFullMessage(error) ?? (error.message.includes("closed") ? "RSVPs for this event are closed. Contact a leader." : "Couldn't save your RSVP."),
+    };
+  afterRsvpChange(id); // a "no" or fewer people may let waitlisted families in: tell them
   revalidatePath("/", "layout");
-  return { ok: true, message: status === "no" ? "Thanks for letting us know." : "Thanks, you're on the list. You can change your answer until RSVPs close." };
+  if (status === "no") return { ok: true, message: "Thanks for letting us know." };
+  // A full event puts the family on the waitlist: say so instead of "you're on the list".
+  // Leaders can read every family's answer, so pick out this family's (or this adult's) own.
+  const mineQ = supabase.from("event_rsvps").select("waitlisted").eq("event_id", id).eq("status", "yes");
+  const { data: mine } = await (me.family_id ? mineQ.eq("family_id", me.family_id) : mineQ.is("family_id", null).eq("adult_id", me.id)).maybeSingle();
+  if ((mine as { waitlisted?: boolean } | null)?.waitlisted)
+    return { ok: true, message: "The event is full, so you're on the waitlist. We'll send you an alert if a spot opens up." };
+  return { ok: true, message: "Thanks, you're on the list. You can change your answer until RSVPs close." };
 }
 
 /** Leaders: save who was at an event (replaces the list). */

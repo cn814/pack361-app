@@ -11,6 +11,8 @@ import { fmtRegDate, needsRenewal, regStatus } from "./registration";
 import { rsvpOpen } from "./rsvp";
 import { easternDate, startOfEasternDay } from "./tz";
 import type { DenRank } from "./types";
+import { loadScoutWeek, type ScoutWeek } from "./scout-week";
+import { getOpenRoles } from "./help-wanted";
 
 // The weekly family newsletter: one email per adult every Sunday morning (sent by the morning
 // cron), the same for everyone in a family. It replaces TroopWebHost's Sunday newsletter.
@@ -85,9 +87,26 @@ export interface FamilyNews {
   announcements: { title: string; body: string; den: boolean }[];
   volunteers: { text: string; href: string }[];
   highlight: string | null;
+  /** "Your scout this week": one entry per active scout in the family. */
+  scouts: ScoutWeek[];
+  /** Pack jobs that need someone (the same for every family). */
+  helpWanted: { title: string; description: string | null }[];
 }
 
-async function familyNews(db: SupabaseClient, r: Recipient): Promise<FamilyNews> {
+/** What's the same in every family's newsletter, read once per run. */
+interface Shared {
+  helpWanted: { title: string; description: string | null }[];
+}
+
+async function loadShared(db: SupabaseClient): Promise<Shared> {
+  try {
+    return { helpWanted: (await getOpenRoles(db)).slice(0, 5) };
+  } catch {
+    return { helpWanted: [] };
+  }
+}
+
+async function familyNews(db: SupabaseClient, r: Recipient, shared: Shared = { helpWanted: [] }): Promise<FamilyNews> {
   const now = Date.now();
   const today = easternDate(now);
   const in14 = Date.parse(startOfEasternDay(easternDate(now + 14 * DAY)));
@@ -119,12 +138,12 @@ async function familyNews(db: SupabaseClient, r: Recipient): Promise<FamilyNews>
 
   const since7 = new Date(now - 7 * DAY).toISOString();
   const adultIds = adults.map((a) => a.id);
-  const [rsvps, meetingRsvps, charges, forms, posts, polls, votes, slots] = await Promise.all([
+  const [rsvps, meetingRsvps, charges, forms, posts, polls, votes, slots, scoutWeek] = await Promise.all([
     eventIds.length
       ? (r.family_id
-          ? db.from("event_rsvps").select("event_id, status, scouts").in("event_id", eventIds).eq("family_id", r.family_id)
-          : db.from("event_rsvps").select("event_id, status, scouts").in("event_id", eventIds).is("family_id", null).eq("adult_id", r.id)
-        ).then((x) => (x.data ?? []) as { event_id: string; status: string; scouts: number }[])
+          ? db.from("event_rsvps").select("event_id, status, scouts, waitlisted").in("event_id", eventIds).eq("family_id", r.family_id)
+          : db.from("event_rsvps").select("event_id, status, scouts, waitlisted").in("event_id", eventIds).is("family_id", null).eq("adult_id", r.id)
+        ).then((x) => (x.data ?? []) as { event_id: string; status: string; scouts: number; waitlisted?: boolean }[])
       : Promise.resolve([]),
     meetingIds.length && scouts.length
       ? db
@@ -172,6 +191,10 @@ async function familyNews(db: SupabaseClient, r: Recipient): Promise<FamilyNews>
           .in("event_id", eventIds)
           .then((x) => (x.data ?? []) as unknown as { id: string; event_id: string; role_title: string; shift_label: string | null; capacity: number; signups: { count: number }[] }[])
       : Promise.resolve([]),
+    // A problem reading advancement leaves the section out rather than stopping the email.
+    loadScoutWeek(db, scouts.map((s) => ({ id: s.id, first_name: s.first_name, den_id: s.den_id, rank: s.den?.rank ?? null })), today, now).catch(
+      () => [] as ScoutWeek[],
+    ),
   ]);
 
   const said = new Map(rsvps.map((x) => [x.event_id, x.status]));
@@ -210,7 +233,7 @@ async function familyNews(db: SupabaseClient, r: Recipient): Promise<FamilyNews>
       .in("event_id", slipEvents.map((e) => e.id))
       .in("scout_id", scouts.map((s) => s.id));
     const signed = new Set(((slipRows ?? []) as { event_id: string; scout_id: string }[]).map((x) => `${x.event_id}|${x.scout_id}`));
-    const goingScouts = new Map(rsvps.filter((x) => x.status === "yes").map((x) => [x.event_id, Number(x.scouts ?? 0)]));
+    const goingScouts = new Map(rsvps.filter((x) => x.status === "yes" && !x.waitlisted).map((x) => [x.event_id, Number(x.scouts ?? 0)]));
     const withDen = scouts.map((s) => ({ id: s.id, first_name: s.first_name, den: s.den_id && s.den ? { id: s.den_id, rank: s.den.rank } : null }));
     for (const { event: e, names } of slipsToSign(slipEvents, goingScouts, withDen, signed, now)) {
       needs.push({
@@ -278,6 +301,8 @@ async function familyNews(db: SupabaseClient, r: Recipient): Promise<FamilyNews>
     announcements: posts.map((p) => ({ title: p.title, body: p.body.replace(/\s+/g, " ").slice(0, 220), den: Boolean(p.den_id) })),
     volunteers,
     highlight: special ? special.title : null,
+    scouts: scoutWeek,
+    helpWanted: shared.helpWanted,
   };
 }
 
@@ -335,6 +360,33 @@ ${l.where ? `<div style="font-size:12px;color:#414844">${esc(l.where)}</div>` : 
   }
   parts.push(H("This week"), lines(n.thisWeek));
   parts.push(H("Next week"), lines(n.nextWeek));
+  if (n.scouts.length) {
+    const small = (s: string, color = "#1b1c19") => `<div style="font-size:13px;line-height:1.45;margin:3px 0;color:${color}">${s}</div>`;
+    parts.push(
+      H(n.scouts.length === 1 ? "Your scout this week" : "Your scouts this week"),
+      n.scouts
+        .map((s) => {
+          const rows: string[] = [];
+          if (s.closest) {
+            rows.push(
+              small(
+                `Closest to done: <b>${esc(s.closest.name)}</b>${s.closest.reqsDone ? ` (${s.closest.reqsDone} of ${s.closest.reqCount})` : ""}.${s.closest.idea ? ` Try at home: ${esc(s.closest.idea)}` : ""}`,
+              ),
+            );
+          }
+          if (s.approved.length) rows.push(small(`Approved: ${esc(s.approved.join("; "))}`, "#1b4332"));
+          for (const x of s.returned) rows.push(small(`Returned: ${esc(x.what)}${x.note ? `. &ldquo;${esc(x.note)}&rdquo;` : ""}`, "#7e5700"));
+          if (s.nextMeeting) rows.push(small(`Next den meeting: ${esc(s.nextMeeting.day)}${s.nextMeeting.plan ? `, ${esc(s.nextMeeting.plan)}` : ""}`));
+          const bar =
+            s.percent !== null
+              ? `<div style="background:#f2f2ee;border-radius:99px;height:6px;margin:5px 0 6px"><div style="width:${Math.max(3, s.percent)}%;background:#1b4332;height:6px;border-radius:99px"></div></div>`
+              : "";
+          const head = `${esc(s.first_name)}${s.rank ? ` <span style="font-size:12px;font-weight:400;color:#414844">· ${esc(s.rank)}${s.percent !== null ? ` · ${s.earned ? "rank earned!" : `${s.percent}% of the way`}` : ""}</span>` : ""}`;
+          return `<div style="padding:8px 0 10px;border-bottom:1px solid #e3e3de"><div style="font-size:14px;font-weight:700"><a href="${esc(link(`/scouts/${s.id}`))}" style="color:#012d1d;text-decoration:none">${head}</a></div>${bar}${rows.join("")}</div>`;
+        })
+        .join(""),
+    );
+  }
   if (n.announcements.length) {
     parts.push(
       H("From the pack"),
@@ -351,6 +403,17 @@ ${l.where ? `<div style="font-size:12px;color:#414844">${esc(l.where)}</div>` : 
     parts.push(
       H("Volunteers needed"),
       `<ul style="margin:0;padding-left:18px;font-size:13px">${n.volunteers.map((v) => `<li style="margin:3px 0"><a href="${esc(link(v.href))}" style="color:#1b4332">${esc(v.text)}</a></li>`).join("")}</ul>`,
+    );
+  }
+  if (n.helpWanted.length) {
+    parts.push(
+      H("Help wanted"),
+      `<ul style="margin:0;padding-left:18px;font-size:13px">${n.helpWanted
+        .map(
+          (h) =>
+            `<li style="margin:3px 0"><a href="${esc(link("/help-wanted"))}" style="color:#1b4332;font-weight:700">${esc(h.title)}</a>${h.description ? `<span style="color:#414844">: ${esc(h.description.replace(/\s+/g, " ").slice(0, 140))}${h.description.length > 140 ? "…" : ""}</span>` : ""}</li>`,
+        )
+        .join("")}</ul>`,
     );
   }
   parts.push(
@@ -372,8 +435,20 @@ ${parts.join("\n")}
   if (n.needs.length) t.push("NEEDS YOUR ATTENTION", ...n.needs.map((x) => `- ${x.text} ${link(x.href)}`), "");
   const tl = (list: Line[]) => (list.length ? list.map((l) => `- ${l.when}: ${l.title}${l.where ? `, ${l.where}` : ""}${l.rsvp ? ` [${l.rsvp}]` : l.askRsvp ? ` [RSVP: ${link(l.href)}]` : ""}`) : ["- Nothing on the calendar."]);
   t.push("THIS WEEK", ...tl(n.thisWeek), "", "NEXT WEEK", ...tl(n.nextWeek), "");
+  if (n.scouts.length) {
+    t.push(n.scouts.length === 1 ? "YOUR SCOUT THIS WEEK" : "YOUR SCOUTS THIS WEEK");
+    for (const s of n.scouts) {
+      t.push(`${s.first_name}${s.rank ? ` (${s.rank}${s.percent !== null ? `, ${s.earned ? "rank earned!" : `${s.percent}% of the way`}` : ""})` : ""}: ${link(`/scouts/${s.id}`)}`);
+      if (s.closest) t.push(`- Closest to done: ${s.closest.name}${s.closest.reqsDone ? ` (${s.closest.reqsDone} of ${s.closest.reqCount})` : ""}.${s.closest.idea ? ` Try at home: ${s.closest.idea}` : ""}`);
+      if (s.approved.length) t.push(`- Approved: ${s.approved.join("; ")}`);
+      for (const x of s.returned) t.push(`- Returned: ${x.what}${x.note ? `. "${x.note}"` : ""}`);
+      if (s.nextMeeting) t.push(`- Next den meeting: ${s.nextMeeting.day}${s.nextMeeting.plan ? `, ${s.nextMeeting.plan}` : ""}`);
+    }
+    t.push("");
+  }
   if (n.announcements.length) t.push("FROM THE PACK", ...n.announcements.map((a) => `- ${a.title}: ${a.body}`), "");
   if (n.volunteers.length) t.push("VOLUNTEERS NEEDED", ...n.volunteers.map((v) => `- ${v.text} ${link(v.href)}`), "");
+  if (n.helpWanted.length) t.push("HELP WANTED", ...n.helpWanted.map((h) => `- ${h.title}${h.description ? `: ${h.description.replace(/\s+/g, " ").slice(0, 140)}` : ""}`), `See them all: ${link("/help-wanted")}`, "");
   t.push(`Open the app: ${APP_URL}`);
   return { subject, html, text: t.join("\n") };
 }
@@ -400,7 +475,7 @@ export async function buildNewsletter(db: SupabaseClient, adultId: string, previ
   const { data } = await db.from("adults").select(RECIPIENT_COLS).eq("id", adultId).maybeSingle();
   if (!data) return null;
   const r = data as Recipient;
-  return render(await familyNews(db, r), r, weekOf(), preview);
+  return render(await familyNews(db, r, await loadShared(db)), r, weekOf(), preview);
 }
 
 /** Email one person their newsletter now (Pack admin → Send me a preview). Not recorded as the week's send. */
@@ -408,7 +483,7 @@ export async function sendPreview(db: SupabaseClient, adultId: string): Promise<
   const { data } = await db.from("adults").select(RECIPIENT_COLS).eq("id", adultId).maybeSingle();
   if (!data?.email) return "There's no email address on your roster record.";
   const r = data as Recipient;
-  const n = render(await familyNews(db, r), r, weekOf(), true);
+  const n = render(await familyNews(db, r, await loadShared(db)), r, weekOf(), true);
   const res = await sendPersonal([{ email: r.email, name: `${r.preferred_name || r.first_name} ${r.last_name}`, ...n }]);
   return res.error;
 }
@@ -441,12 +516,13 @@ export async function runWeeklyNewsletter(db: SupabaseClient, opts: { force?: bo
 
   // Build each family's newsletter once and send each adult their own copy.
   const cache = new Map<string, FamilyNews>();
+  const shared = todo.length ? await loadShared(db) : { helpWanted: [] };
   let ok = 0;
   let unrecorded = false;
   for (const r of todo) {
     const key = r.family_id ?? `adult:${r.id}`;
     try {
-      if (!cache.has(key)) cache.set(key, await familyNews(db, r));
+      if (!cache.has(key)) cache.set(key, await familyNews(db, r, shared));
       const n = render(cache.get(key)!, r, week, mode === "test");
       const res = await sendPersonal([{ email: r.email, name: `${r.preferred_name || r.first_name} ${r.last_name}`, ...n }]);
       if (res.error) {

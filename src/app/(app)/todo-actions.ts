@@ -1,5 +1,6 @@
 "use server";
 
+import { afterRsvpChange } from "@/lib/waitlist";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/data";
@@ -44,6 +45,7 @@ export async function quickRsvp(form: FormData) {
     p_adults: status === "no" ? 0 : 1,
     p_note: "",
   });
+  if (!error) afterRsvpChange(id);
   revalidatePath("/", "layout");
   // The to-do's buttons are a plain form with nowhere to show a message, so (like a paid event
   // above) open the event's RSVP card: it says when RSVPs are closed, and its form reports

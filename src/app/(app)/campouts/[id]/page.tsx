@@ -13,6 +13,10 @@ import ArchiveControl from "@/components/ArchiveControl";
 import EventAttendance from "@/components/EventAttendance";
 import PermissionSlips from "@/components/PermissionSlips";
 import EventSignal from "@/components/EventSignal";
+import ReadyToGo from "@/components/ReadyToGo";
+import EventWeather from "@/components/EventWeather";
+import AddToCalendar from "@/components/AddToCalendar";
+import { BuildEventLink, CopyEventButton } from "@/components/EventBuildButtons";
 import { EditEventLink, EventRsvp } from "@/components/EventRsvp";
 import SaveOffline from "@/components/SaveOffline";
 import { getSlots } from "@/lib/volunteer";
@@ -21,7 +25,11 @@ import { getEvent, getItinerary, getPackingList, isLeader, requireMember } from 
 import { getEventCampaign, getOrders } from "@/lib/fundraising-data";
 import { fmtDay, fmtRange, fmtTime, mapsLink } from "@/lib/format";
 
-export const metadata: Metadata = { title: "Campout" };
+export async function generateMetadata({ params }: PageProps<"/campouts/[id]">): Promise<Metadata> {
+  const { id } = await params;
+  const { eventTitle } = await import("@/lib/page-titles");
+  return { title: (await eventTitle(id)) ?? "Campout" };
+}
 
 export default async function CampoutPage({ params }: PageProps<"/campouts/[id]">) {
   const me = await requireMember();
@@ -77,10 +85,11 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
               )}
               {isLeader(me) && event.rsvp_enabled && (
                 <Link href={`/announce?event=${id}`} className="btn-ghost py-2">
-                  <Megaphone className="h-4 w-4" aria-hidden /> Message families going
+                  <Megaphone className="h-4 w-4" aria-hidden /> Message families
                 </Link>
               )}
             </div>
+            {!event.archived_at && <AddToCalendar eventId={id} className="btn-ghost w-full py-2" />}
           </section>
           <JumpLinks
             links={[
@@ -137,7 +146,9 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
         </div>
         <div className="contents lg:block lg:space-y-4">
         <div className="order-2 space-y-4 empty:hidden">
+          <EventWeather e={event} />
           <EventRsvp e={event} me={me} />
+          <ReadyToGo e={event} me={me} />
           <EventSignal e={event} me={me} />
           <PermissionSlips e={event} me={me} />
         </div>
@@ -162,6 +173,8 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
         </div>
       </div>
       <EditEventLink e={event} me={me} />
+      <BuildEventLink e={event} me={me} />
+      <CopyEventButton e={event} me={me} />
       <ArchiveControl e={event} leader={isLeader(me)} back={`/campouts/${id}`} part="button" />
     </>
   );

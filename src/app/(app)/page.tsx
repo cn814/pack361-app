@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import GettingStarted from "@/components/GettingStarted";
+import HelpWantedCard from "@/components/HelpWantedCard";
 import SubmitButton from "@/components/SubmitButton";
 import {
   CalendarPlus,
@@ -95,6 +98,9 @@ async function FamilyHome() {
   return (
     <div className="page-wide flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-7">
       <div className="space-y-5">
+        <Suspense fallback={null}>
+          <GettingStarted />
+        </Suspense>
         {next && <NextUp e={next} label={pinned ? pinned.label : null} />}
 
         {todoList.length > 0 && (
@@ -112,6 +118,9 @@ async function FamilyHome() {
         )}
 
         {openJobs.length > 0 && <Volunteers jobs={openJobs} />}
+        <Suspense fallback={null}>
+          <HelpWantedCard />
+        </Suspense>
 
         <PackNews posts={posts} />
       </div>

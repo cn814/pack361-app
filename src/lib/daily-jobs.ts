@@ -36,7 +36,7 @@ function whenWord(startsAt: string): string {
 }
 
 /** Send the emails that fit what's left of the run's budget; returns how many went out (0 on failure). */
-async function sendSome(emails: Email[], budget: EmailBudget): Promise<{ sent: number; error: string | null }> {
+export async function sendSome(emails: Email[], budget: EmailBudget): Promise<{ sent: number; error: string | null }> {
   if (!emails.length || !emailConfigured() || budget.left <= 0) return { sent: 0, error: null };
   const batch = emails.slice(0, budget.left);
   const error = await sendEmails(batch);

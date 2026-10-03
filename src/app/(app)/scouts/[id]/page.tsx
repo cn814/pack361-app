@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { scoutFirstName } from "@/lib/page-titles";
 import SubmitButton from "@/components/SubmitButton";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Award, CalendarDays, CircleCheck, ClipboardCheck, House, Medal, Plus, Tent } from "lucide-react";
+import { Award, CalendarDays, CircleCheck, ClipboardCheck, House, Medal, Plus, Printer, Tent } from "lucide-react";
 import { fmtMeetingDate, fmtMeetingTime, getUpcomingMeetings, meetingAdventures, myMeetingRsvps, todayEastern } from "@/lib/meetings";
 import { getAttendanceTotals } from "@/lib/attendance-data";
 import { nightsLabel } from "@/lib/attendance";
@@ -17,7 +18,10 @@ import { withdrawSubmission } from "../actions";
 import SubmissionStatusBadge from "@/components/SubmissionStatusBadge";
 import { fmtDay } from "@/lib/format";
 
-export const metadata: Metadata = { title: "Scout" };
+export async function generateMetadata({ params }: PageProps<"/scouts/[id]">): Promise<Metadata> {
+  const { id } = await params;
+  return { title: (await scoutFirstName(id)) ?? "Scout" };
+}
 
 export default async function ScoutPage({ params, searchParams }: PageProps<"/scouts/[id]">) {
   const me = await requireMember();
@@ -224,6 +228,12 @@ export default async function ScoutPage({ params, searchParams }: PageProps<"/sc
           </p>
         )}
       </section>
+
+      {(mine || isLeader(me)) && (
+        <Link href={`/scouts/${id}/keepsake`} className="btn-ghost min-h-11 w-full">
+          <Printer className="h-4 w-4" aria-hidden /> Season keepsake (print)
+        </Link>
+      )}
 
       <p className="text-center text-[11px] text-muted">
         {asOf

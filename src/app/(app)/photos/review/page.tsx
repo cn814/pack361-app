@@ -21,13 +21,14 @@ export default async function PhotoReviewPage() {
       .from("scouts")
       .select("first_name, last_name, photo_permission, den:dens(name, rank, number)")
       .eq("is_active", true)
-      .or("photo_permission.is.null,photo_permission.eq.no")
+      // OK unless the family opts out: only explicit "no" answers are listed.
+      .eq("photo_permission", "no")
       .order("last_name"),
   ]);
   const noPhotos = (scoutRows ?? []) as unknown as {
     first_name: string;
     last_name: string;
-    photo_permission: "no" | null;
+    photo_permission: "no";
     den: { name: string } | null;
   }[];
   const byDen = new Map<string, typeof noPhotos>();
@@ -43,7 +44,9 @@ export default async function PhotoReviewPage() {
           <CameraOff className="h-4 w-4" aria-hidden /> Don&apos;t approve photos showing these scouts ({noPhotos.length})
         </summary>
         <p className="pt-2 text-xs text-muted">
-          Families said no, or haven&apos;t answered yet (treated as no). Leaders only; don&apos;t share this list.
+          {noPhotos.length
+            ? "These families said no to pack photos. Every other scout is OK to include. Leaders only; don't share this list."
+            : "No family has opted out of pack photos, so every scout is OK to include."}
         </p>
         <div className="space-y-2 pt-2">
           {[...byDen.entries()].map(([den, list]) => (
@@ -53,13 +56,12 @@ export default async function PhotoReviewPage() {
                 {list.map((s, i) => (
                   <span key={i}>
                     {i > 0 && ", "}
-                    {s.first_name} {s.last_name[0]}.{s.photo_permission === null && <span className="text-muted">*</span>}
+                    {s.first_name} {s.last_name[0]}.
                   </span>
                 ))}
               </p>
             </div>
           ))}
-          <p className="text-[11px] text-muted">* hasn&apos;t answered yet</p>
         </div>
       </details>
 

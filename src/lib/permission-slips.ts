@@ -64,7 +64,7 @@ export async function getLeaderSlips(e: PackEvent): Promise<LeaderSlipRow[]> {
   const [{ data }, slips, { data: rsvps }] = await Promise.all([
     supabase.from("scouts").select("id, first_name, last_name, family_id, den:dens(id, rank, name)").eq("is_active", true),
     getSlips(e.id),
-    supabase.from("event_rsvps").select("family_id").eq("event_id", e.id).eq("status", "yes").not("family_id", "is", null),
+    supabase.from("event_rsvps").select("family_id").eq("event_id", e.id).eq("status", "yes").eq("waitlisted", false).not("family_id", "is", null),
   ]);
   const going = new Set((rsvps ?? []).map((r) => r.family_id as string));
   const scouts = ((data ?? []) as unknown as SlipScout[]).filter((s) => eventIsFor(e, s) || slips.some((x) => x.scout_id === s.id));

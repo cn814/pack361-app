@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/data";
 import { getCatalog, getScout, isAdmin } from "@/lib/advancement-data";
@@ -10,6 +11,7 @@ import type { DenRank } from "@/lib/types";
 import type { ImportChanges } from "@/lib/import-changes";
 import { fetchScoutbookAdvancement } from "@/lib/myscouting";
 import { compareAdvancement, type CompareResult } from "@/lib/scoutbook-compare";
+import { alertReviewed } from "@/lib/family-alerts";
 
 export type FormState = { ok?: boolean; error?: string; message?: string };
 
@@ -57,20 +59,41 @@ export async function reportRequirements(_prev: FormState, form: FormData): Prom
 const SUBMISSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function reviewSubmissions(form: FormData) {
-  await requireMember();
+  const me = await requireMember();
   const ids = [...new Set(form.getAll("id").map(String).filter((x) => SUBMISSION_ID.test(x)))].slice(0, 500);
   const decision = String(form.get("decision") ?? "");
   const note = String(form.get("review_note") ?? "").trim().slice(0, 500) || null;
   const status = decision === "approve" ? "approved" : decision === "return" ? "returned" : decision === "record" ? "recorded" : null;
   if (!ids.length || !status) return;
   const supabase = await createClient();
+  // Before the change: which of these are families' own reports whose status actually changes
+  // (den-meeting entries and repeat taps don't alert anyone).
+  const { data: before } =
+    status === "recorded"
+      ? { data: [] }
+      : await supabase.from("advancement_submissions").select("id, scout_id, adventure, requirement, status, meeting_id").in("id", ids);
   const update: Record<string, unknown> = { status };
   if (status !== "recorded") update.review_note = note;
-  const { error } = await supabase.from("advancement_submissions").update(update).in("id", ids);
+  const { data: saved, error } = await supabase.from("advancement_submissions").update(update).in("id", ids).select("id");
   // A plain form action has no result to show, so throw: the page's error screen says it
   // didn't save (with Try again) instead of the report silently staying put.
   if (error) throw new Error("Couldn't save the review.");
   revalidatePath("/scouts", "layout");
+
+  if (status === "approved" || status === "returned") {
+    const changed = new Set(((saved ?? []) as { id: string }[]).map((r) => r.id));
+    const reports = ((before ?? []) as { id: string; scout_id: string; adventure: string; requirement: string; status: string; meeting_id: string | null }[])
+      .filter((r) => changed.has(r.id) && r.status !== status && !r.meeting_id);
+    if (reports.length) {
+      after(async () => {
+        try {
+          await alertReviewed(reports, status, note, me.id);
+        } catch (e) {
+          console.error("[review alerts]", e instanceof Error ? e.message : e);
+        }
+      });
+    }
+  }
 }
 
 /** Family withdraws a report that hasn't been reviewed yet. */

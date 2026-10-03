@@ -10,8 +10,8 @@ export default async function PhotoRulesPage() {
   const settings = await getSettings();
   const rules = [
     "Only signed-in Pack 361 families and leaders can see the album. Photos are never public, and search engines can't reach them.",
-    "Each family decides whether their scout may appear in pack photos (Me → Family and registration → Pack photo album). Until a family answers, the answer is no.",
-    "A leader checks every photo from a parent before it appears, and turns down any photo showing a scout without permission.",
+    "Scouts may appear in pack photos unless their family opts out. Families can opt out any time (Me → Family and registration → Photos).",
+    "A leader checks every photo from a parent before it appears, and turns down any photo showing a scout whose family opted out.",
     "No names on photos: captions use first names only, and we don't post photos where a full name, school or home address can be read.",
     "Photos are resized and their location (GPS) and camera data are removed before they're stored.",
     "Anyone can request that a photo be removed (Request removal on the photo). It's hidden right away, and a leader removes it. Only leaders delete photos, so nothing disappears by accident.",

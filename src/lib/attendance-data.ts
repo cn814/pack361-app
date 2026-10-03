@@ -58,7 +58,7 @@ export async function getEventAttendance(e: PackEvent): Promise<{
       .from("event_attendance")
       .select("scout:scouts(id, first_name, last_name, family_id, is_active, den:dens(id, rank, name))")
       .eq("event_id", e.id),
-    supabase.from("event_rsvps").select("family_id").eq("event_id", e.id).eq("status", "yes").not("family_id", "is", null),
+    supabase.from("event_rsvps").select("family_id").eq("event_id", e.id).eq("status", "yes").eq("waitlisted", false).not("family_id", "is", null),
   ]);
   const scouts = (scoutRows ?? []) as unknown as AttendanceScout[];
   const savedScouts = ((saved ?? []) as unknown as { scout: AttendanceScout | null }[]).map((r) => r.scout).filter(Boolean) as AttendanceScout[];

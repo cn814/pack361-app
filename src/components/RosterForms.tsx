@@ -97,10 +97,11 @@ export function ScoutFields({ scout, familyId, dens }: { scout?: RosterScout; fa
         </Field>
       </div>
       <Field label="Photos in the pack album">
-        <select className="input" name="photo_permission" defaultValue={scout?.photo_permission ?? ""}>
-          <option value="">Family hasn&apos;t answered (treated as no)</option>
-          <option value="yes">Yes, OK in pack photos</option>
-          <option value="no">No photos</option>
+        {/* OK unless the family opts out. "ok" keeps a scout's saved answer (yes, or never changed). */}
+        <input type="hidden" name="photo_permission_was" value={scout?.photo_permission ?? ""} />
+        <select className="input" name="photo_permission" defaultValue={scout?.photo_permission === "no" ? "no" : "ok"}>
+          <option value="ok">OK in pack photos</option>
+          <option value="no">No photos (family opted out)</option>
         </select>
       </Field>
       {scout && (

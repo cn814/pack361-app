@@ -6,6 +6,7 @@ import { saveEvent } from "@/app/(app)/events/actions";
 import { centsToInput } from "@/lib/money";
 import { asksForNights, nightsBetween } from "@/lib/attendance";
 import { DEFAULT_SLIP_TEXT } from "@/lib/slips";
+import { MAX_REPEATS, monthlyLabel, repeatDates, type Repeat } from "@/lib/event-builder";
 
 export const EVENT_CATEGORIES = [
   "Pack Meeting",
@@ -59,6 +60,12 @@ export interface EventFormValues {
   slip_due?: string | null;
   from_twh?: boolean;
   from_council?: boolean;
+  /** Most people (scouts and adults) who can come; null = no limit. */
+  rsvp_limit?: number | null;
+  /** Other upcoming events in the same repeating series (editing only). */
+  series_upcoming?: number;
+  /** Just made with "Copy this event". */
+  copied?: boolean;
 }
 
 /** Leaders: add or edit an event. */
@@ -81,10 +88,18 @@ export default function EventForm({
   const [onJoin, setOnJoin] = useState(Boolean(v.public_on_join));
   const [startDate, setStartDate] = useState(v.start_date ?? "");
   const [endDate, setEndDate] = useState(v.end_date ?? "");
+  const [repeat, setRepeat] = useState<Repeat>("never");
+  const [until, setUntil] = useState("");
   const autoNights = nightsBetween(startDate, endDate || startDate);
+  const repeatCount = repeat !== "never" && startDate && until > startDate ? repeatDates(startDate, repeat, until).length : 0;
   return (
     <ActionForm action={saveEvent} submit={v.id ? "Save event" : "Add event"}>
       {v.id && <input type="hidden" name="id" value={v.id} />}
+      {v.copied && (
+        <p className="rounded-xl bg-mint p-3 text-sm font-semibold text-pine">
+          Here&apos;s your copy. Check the date, details and cost, then save.
+        </p>
+      )}
       {v.from_twh && (
         <p className="rounded-xl bg-gold-50 p-3 text-xs text-gold-800">
           This event came from TroopWebHost. Once you save it here, the app keeps your version and TroopWebHost no longer changes it.
@@ -128,6 +143,32 @@ export default function EventForm({
           </Field>
         )}
       </div>
+      {!v.id && (
+        <div className="space-y-2">
+          <Field label="Repeats">
+            <select className="input" name="repeat" value={repeat} onChange={(e) => setRepeat(e.target.value as Repeat)}>
+              <option value="never">Never (just this once)</option>
+              <option value="weekly">Every week</option>
+              <option value="biweekly">Every other week</option>
+              <option value="monthly">Monthly, on the {startDate ? monthlyLabel(startDate) : "same weekday"}</option>
+            </select>
+          </Field>
+          {repeat !== "never" && (
+            <Field
+              label="Until"
+              hint={
+                repeatCount > MAX_REPEATS
+                  ? `That's more than ${MAX_REPEATS} events. Pick an earlier date.`
+                  : repeatCount > 1
+                    ? `Adds ${repeatCount} events. You can change or remove any of them later.`
+                    : "The last date it can happen on."
+              }
+            >
+              <input className="input" type="date" name="repeat_until" required min={startDate || undefined} value={until} onChange={(e) => setUntil(e.target.value)} />
+            </Field>
+          )}
+        </div>
+      )}
       {asksForNights(category, startDate, endDate) && (
         <Field
           label="Camping nights (optional)"
@@ -188,9 +229,30 @@ export default function EventForm({
           Ask families to RSVP in the app (with how many scouts and adults)
         </label>
         {rsvp && (
-          <Field label="RSVP by (optional)" hint="Families can answer through the end of this day.">
-            <input className="input" type="date" name="rsvp_by" defaultValue={v.rsvp_by ?? ""} />
-          </Field>
+          <>
+            <Field label="RSVP by (optional)" hint="Families can answer through the end of this day.">
+              <input className="input" type="date" name="rsvp_by" defaultValue={v.rsvp_by ?? ""} />
+            </Field>
+            <div className="space-y-1">
+              <span className="block text-xs font-bold text-navy">Limit (optional)</span>
+              <label className="flex items-center gap-2 text-sm text-navy">
+                At most
+                <input
+                  className="input w-20"
+                  type="number"
+                  name="rsvp_limit"
+                  min={1}
+                  max={500}
+                  step={1}
+                  inputMode="numeric"
+                  defaultValue={v.rsvp_limit ?? ""}
+                  aria-label="Limit: at most this many people (scouts and adults)"
+                />
+                people
+              </label>
+              <p className="text-[11px] text-muted">Scouts and adults together. Leave blank for no limit.</p>
+            </div>
+          </>
         )}
       </fieldset>
 
@@ -264,6 +326,16 @@ export default function EventForm({
           </>
         )}
       </fieldset>
+
+      {v.id && (v.series_upcoming ?? 0) > 0 && (
+        <label className="flex items-start gap-2 rounded-xl border border-line bg-surface-low p-3 text-sm text-navy">
+          <input type="checkbox" name="apply_series" className="mt-0.5 h-4 w-4 accent-pine" />
+          <span>
+            Also change the other {v.series_upcoming === 1 ? "upcoming event" : `${v.series_upcoming} upcoming events`} in this series
+            <span className="block text-xs text-muted">Only the name, time, place and details. Each keeps its own date.</span>
+          </span>
+        </label>
+      )}
     </ActionForm>
   );
 }

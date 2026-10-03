@@ -10,6 +10,11 @@ import ArchiveControl from "@/components/ArchiveControl";
 import EventAttendance from "@/components/EventAttendance";
 import PermissionSlips from "@/components/PermissionSlips";
 import EventSignal from "@/components/EventSignal";
+import ReadyToGo from "@/components/ReadyToGo";
+import EventWeather from "@/components/EventWeather";
+import EventPlan from "@/components/EventPlan";
+import AddToCalendar from "@/components/AddToCalendar";
+import { BuildEventLink, CopyEventButton } from "@/components/EventBuildButtons";
 import { EditEventLink, EventRsvp } from "@/components/EventRsvp";
 import { EventLinks, EventSections } from "@/components/EventInfo";
 import { getEvent, isLeader, requireMember } from "@/lib/data";
@@ -20,7 +25,11 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { fmtRange, mapsLink } from "@/lib/format";
 
-export const metadata: Metadata = { title: "Event" };
+export async function generateMetadata({ params }: PageProps<"/events/[id]">): Promise<Metadata> {
+  const { id } = await params;
+  const { eventTitle } = await import("@/lib/page-titles");
+  return { title: (await eventTitle(id)) ?? "Event" };
+}
 
 export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const me = await requireMember();
@@ -77,10 +86,11 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           )}
           {isLeader(me) && event.rsvp_enabled && (
             <Link href={`/announce?event=${id}`} className="btn-ghost py-2">
-              <Megaphone className="h-4 w-4" aria-hidden /> Message families going
+              <Megaphone className="h-4 w-4" aria-hidden /> Message families
             </Link>
           )}
         </div>
+        {!event.archived_at && <AddToCalendar eventId={id} className="btn-ghost w-full py-2" />}
       </section>
       {event.archived_at && <ArchiveControl e={event} leader={false} back={`/events/${id}`} part="note" />}
       <JumpLinks
@@ -91,6 +101,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         ]}
       />
       <EventAttendance e={event} me={me} />
+      <EventWeather e={event} />
       {elsewhere.length > 0 && (
         <section className="card space-y-2 border-l-4 border-l-gold">
           <h2 className="section-title">Meeting somewhere else tonight</h2>
@@ -109,13 +120,17 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         </section>
       )}
       <EventRsvp e={event} me={me} />
+      <ReadyToGo e={event} me={me} />
       <EventSignal e={event} me={me} />
       <PermissionSlips e={event} me={me} />
       <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={isLeader(me)} />
+      <EventPlan eventId={id} />
       <EventLinks links={event.links ?? []} />
       <EventSections eventId={id} sections={event.sections ?? []} />
       <EventPhotosLink eventId={id} startsAt={event.starts_at} />
       <EditEventLink e={event} me={me} />
+      <BuildEventLink e={event} me={me} />
+      <CopyEventButton e={event} me={me} />
       <ArchiveControl e={event} leader={isLeader(me)} back={`/events/${id}`} part="button" />
     </>
   );

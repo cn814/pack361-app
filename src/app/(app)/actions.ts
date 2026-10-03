@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { sendPushTo, sendPushToAll } from "@/lib/push";
 import { packEmailConfigured, sendBulk } from "@/lib/bulk-email";
-import { denAudience, eventAudience } from "@/lib/audience";
+import { EVENT_AUDIENCES, denAudience, eventAudience, type EventAudience } from "@/lib/audience";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyAdmins } from "@/lib/notify";
 import { APP_URL } from "@/lib/email";
@@ -25,7 +25,11 @@ export async function postAnnouncement(_prev: PostState, form: FormData): Promis
   const category = String(form.get("category") ?? (den ? "Den" : "General"));
   const email = form.getAll("email").includes("on") && (den !== null || eventMsg !== null || packEmailConfigured());
   if (!title || !body) return { error: "Add a title and a message." };
-  if (eventMsg) return postEventMessage(me, eventMsg, title, body, form.getAll("notify").includes("on"), email, form.get("maybe") === "on");
+  if (eventMsg) {
+    const picked = String(form.get("audience") ?? "") as EventAudience;
+    const audience: EventAudience = EVENT_AUDIENCES.includes(picked) ? picked : form.get("maybe") === "on" ? "going_maybe" : "going";
+    return postEventMessage(me, eventMsg, title, body, form.getAll("notify").includes("on"), email, audience);
+  }
   const supabase = await createClient();
   // RLS: den leaders can only message the dens they lead; committee members any den.
   const { data: post, error } = await supabase
@@ -92,9 +96,10 @@ export async function postAnnouncement(_prev: PostState, form: FormData): Promis
 }
 
 /**
- * A message to the families going to an event (RSVP yes, and maybe if ticked): a phone alert
- * and optional email to them. It's also posted in the app's news, linked to the event, so
- * anyone looking can see the change.
+ * A message about an event to the families going (RSVP yes), going and maybe (with the
+ * waitlist), or the families it's for who haven't answered yet: a phone alert and optional
+ * email to them. It's also posted in the app's news, linked to the event, so anyone looking
+ * can see the change.
  */
 async function postEventMessage(
   me: Awaited<ReturnType<typeof requireMember>>,
@@ -103,7 +108,7 @@ async function postEventMessage(
   body: string,
   notify: boolean,
   email: boolean,
-  withMaybe: boolean,
+  audience: EventAudience,
 ): Promise<PostState> {
   const supabase = await createClient();
   const { data: ev } = await supabase.from("events").select("id, title, category").eq("id", eventId).maybeSingle();
@@ -115,12 +120,16 @@ async function postEventMessage(
     .single();
   if (error || !post) return { error: "Couldn't send that. Try again." };
   const eventTitle = String(ev.title).slice(0, 60);
-  const url = ev.category === "Campout" ? `/campouts/${eventId}` : `/events/${eventId}`;
-  // Point families to the event's Signal group, when it has one (the link itself stays in the app).
-  const { data: signal } = await supabase.from("event_signal").select("event_id").eq("event_id", eventId).maybeSingle();
+  const eventUrl = ev.category === "Campout" ? `/campouts/${eventId}` : `/events/${eventId}`;
+  // Families who haven't answered land on the RSVP card.
+  const url = audience === "no_answer" ? `${eventUrl}#rsvp` : eventUrl;
+  // Point families going to the event's Signal group, when it has one (the link itself stays in
+  // the app, and only families going can open it).
+  const { data: signal } =
+    audience === "no_answer" ? { data: null } : await supabase.from("event_signal").select("event_id").eq("event_id", eventId).maybeSingle();
   const more = signal ? "More in the Signal group." : "";
   after(async () => {
-    const people = (await eventAudience(eventId, withMaybe)).filter((p) => p.id !== me.id);
+    const people = (await eventAudience(eventId, audience)).filter((p) => p.id !== me.id);
     if (notify && people.length) {
       await sendPushTo(
         people.map((p) => p.id),
@@ -173,7 +182,7 @@ export async function updateMyContact(_prev: PostState, form: FormData): Promise
   return { ok: true };
 }
 
-/** A family answers "may this scout appear in pack photos?" (RLS: own scouts only). */
+/** A family opts a scout out of pack photos ('no') or back in ('yes'). OK unless they opt out. (RLS: own scouts only.) */
 export async function setPhotoPermission(form: FormData) {
   await requireMember();
   const scoutId = String(form.get("scout_id") ?? "");
@@ -181,7 +190,7 @@ export async function setPhotoPermission(form: FormData) {
   if (answer !== "yes" && answer !== "no") return;
   const supabase = await createClient();
   await supabase.from("scouts").update({ photo_permission: answer }).eq("id", scoutId);
-  revalidatePath("/family");
+  revalidatePath("/family", "layout");
   revalidatePath("/");
 }
 
