@@ -8,6 +8,8 @@ import { fmtDay, fmtTime } from "@/lib/format";
 import ImportForm from "./ImportForm";
 import ScoutbookSync from "./ScoutbookSync";
 import { myScoutingConfigured } from "@/lib/myscouting";
+import { getSettings } from "@/lib/settings";
+import { weeklySummary, type WeeklyResult } from "@/lib/scoutbook-weekly";
 import { changesText } from "@/lib/import-changes";
 
 export const metadata: Metadata = { title: "Import from Scoutbook" };
@@ -17,7 +19,12 @@ export const maxDuration = 300;
 export default async function ImportPage() {
   const me = await requireMember();
   if (!isAdmin(me)) redirect("/scouts");
-  const last = await getLastImport();
+  const [last, settings] = await Promise.all([getLastImport(), getSettings()]);
+  let weeklyLast: { at: string; lines: string[] } | null = null;
+  try {
+    const r = settings.scoutbook_weekly_last ? (JSON.parse(settings.scoutbook_weekly_last) as WeeklyResult) : null;
+    if (r?.at) weeklyLast = { at: `${fmtDay(r.at)} at ${fmtTime(r.at)}`, lines: weeklySummary(r) };
+  } catch {}
 
   return (
     <>
@@ -51,7 +58,7 @@ export default async function ImportPage() {
       )}
 
       <ImportForm />
-      <ScoutbookSync configured={myScoutingConfigured()} />
+      <ScoutbookSync configured={myScoutingConfigured()} weekly={settings.scoutbook_weekly === "on"} weeklyLast={weeklyLast} />
     </>
   );
 }

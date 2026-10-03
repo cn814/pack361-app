@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./supabase/server";
 import type { ImportRow } from "./advancement";
 
@@ -47,8 +48,9 @@ const COLS = "scout_id, kind, rank, adventure, item, version, completed_on, appr
 const label = (r: { source_type: string; source_name: string }) =>
   /requirements$/i.test(r.source_type) ? `${r.source_type} ${r.source_name}` : r.source_name;
 
-export async function compareAdvancement(rows: ImportRow[]): Promise<CompareResult> {
-  const supabase = await createClient();
+/** `db`: the signed-in admin's client by default; the weekly job passes the server's. */
+export async function compareAdvancement(rows: ImportRow[], db?: SupabaseClient): Promise<CompareResult> {
+  const supabase = db ?? (await createClient());
   const { data: scouts } = await supabase.from("scouts").select("id, bsa_member_id").not("bsa_member_id", "is", null);
   const byMember = new Map(((scouts ?? []) as { id: string; bsa_member_id: string }[]).map((s) => [s.bsa_member_id.trim(), s.id]));
 

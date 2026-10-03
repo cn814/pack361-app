@@ -22,7 +22,9 @@ export type SettingKey =
   | "newsletter_test_adults"
   | "beta_testers"
   | "training_last_import"
-  | "training_import_reminded";
+  | "training_import_reminded"
+  | "scoutbook_weekly"
+  | "scoutbook_weekly_last";
 
 // Fee amounts start at 0 (pack dues at $255 per scout): leaders keep them up to date on Leaders → Money.
 export const SETTING_DEFAULTS: Record<SettingKey, string> = {
@@ -46,6 +48,8 @@ export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   beta_testers: "",
   training_last_import: "",
   training_import_reminded: "",
+  scoutbook_weekly: "off",
+  scoutbook_weekly_last: "",
 };
 const DEFAULTS = SETTING_DEFAULTS;
 

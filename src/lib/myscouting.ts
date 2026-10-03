@@ -333,6 +333,33 @@ function limiter(n: number) {
 }
 
 const done = (o: Json, re: RegExp) => isoDate(pick(o, re));
+// Scoutbook's site and its CSV export spell a few things differently; the import matches the
+// export, so records keep the same labels whichever way they arrive (compared 2026-10-02).
+const EXPORT_NAMES: Record<string, string> = {
+  "Tiger Roar": "Tiger's Roar",
+  "Tiger Circles: Duty to God": "My Family\u2019s Duty to God",
+};
+/** An adventure name as the export writes it: commas become semicolons. */
+const exportName = (name: string) => (EXPORT_NAMES[name.trim()] ?? name.trim()).replace(/,/g, ";");
+
+/** Requirement numbers as the export writes them: "3." is "3", and a lone "a" under "3" is "3a". */
+function requirementNumbers(list: Json[]): Map<Json, string> {
+  const own = (x: Json) => (str(x.requirementNumber) || str(x.listNumber).replace(/[()]/g, "")).trim().replace(/\.$/, "");
+  const byId = new Map<string, Json>();
+  for (const x of list) {
+    const id = str(x.requirementId ?? x.id);
+    if (id) byId.set(id, x);
+  }
+  const out = new Map<Json, string>();
+  for (const x of list) {
+    let n = own(x);
+    const parent = byId.get(str(x.parentRequirementId));
+    if (/^[a-z]$/i.test(n) && parent) n = `${own(parent)}${n}`;
+    out.set(x, n);
+  }
+  return out;
+}
+
 /** The requirements list of a requirements answer (only its own items, not nested lists). */
 const reqList = (data: unknown): Json[] => {
   const r = data && typeof data === "object" ? (data as Json).requirements : null;
@@ -415,26 +442,24 @@ export async function fetchScoutbookAdvancement(): Promise<AdvancementSync> {
             if (!progress || !str(r.id)) return;
             const q = await get(`/advancements/v2/youth/${uid}/ranks/${str(r.id)}/requirements`);
             if (q.status !== 200) fail("rank requirements", q.status);
-            for (const x of reqList(q.data)) {
-              const num = str(x.requirementNumber) || str(x.listNumber).replace(/[()]/g, "");
-              add(`${rname} Rank Requirements`, num, version, x, done(x, /^dateCompleted$/i));
-            }
+            const list = reqList(q.data);
+            const nums = requirementNumbers(list);
+            for (const x of list) add(`${rname} Rank Requirements`, nums.get(x) ?? "", version, x, done(x, /^dateCompleted$/i));
           });
 
           // Adventures, and the requirements of any adventure with progress.
           const adventures = objectArrays(ad.data).flat().filter((a) => str(a.adventureName) && str(a.adventureId));
           const advReqs = adventures.map(async (a) => {
-            const aname = str(a.adventureName);
+            const aname = exportName(str(a.adventureName));
             const version = str(a.version);
             add("Adventure", `${aname} Adventure`, version, a, done(a, /^dateCompleted$/i));
             const progress = Number(a.percentCompleted ?? 0) > 0 || done(a, /^dateCompleted$/i);
             if (!progress) return;
             const q = await get(`/advancements/v2/youth/${uid}/adventures/${str(a.adventureId)}/requirements`);
             if (q.status !== 200) fail("adventure requirements", q.status);
-            for (const x of reqList(q.data)) {
-              const num = str(x.requirementNumber) || str(x.listNumber).replace(/[()]/g, "");
-              add(`${aname} Adventure Requirements`, num, version, x, done(x, /^dateCompleted$/i));
-            }
+            const list = reqList(q.data);
+            const nums = requirementNumbers(list);
+            for (const x of list) add(`${aname} Adventure Requirements`, nums.get(x) ?? "", version, x, done(x, /^dateCompleted$/i));
           });
 
           // Awards (Totin' Chip, Whittling Chip...).

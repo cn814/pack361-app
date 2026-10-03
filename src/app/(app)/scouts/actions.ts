@@ -161,3 +161,16 @@ export async function importFromScoutbook(): Promise<ImportState & { steps?: str
   const res = await runImport("Scoutbook (read automatically)", rows);
   return { ...res, steps: sync.steps, skipped: sync.skipped };
 }
+
+/** Admin: turn the weekly Scoutbook update (Sunday night) on or off. */
+export async function setScoutbookWeekly(on: boolean): Promise<{ ok?: boolean; error?: string }> {
+  const me = await requireMember();
+  if (!isAdmin(me)) return { error: "Only pack admins can do this." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("pack_settings")
+    .upsert({ key: "scoutbook_weekly", value: on ? "on" : "off", updated_at: new Date().toISOString() });
+  if (error) return { error: "Couldn't save that." };
+  revalidatePath("/scouts/import");
+  return { ok: true };
+}

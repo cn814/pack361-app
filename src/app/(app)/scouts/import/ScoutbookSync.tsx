@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { CircleCheck, CloudDownload, GitCompare } from "lucide-react";
-import { compareScoutbook, importFromScoutbook, type ImportState, type ScoutbookCompareState } from "../actions";
+import { useState, useTransition } from "react";
+import { CalendarClock, CircleCheck, CloudDownload, GitCompare } from "lucide-react";
+import { compareScoutbook, importFromScoutbook, setScoutbookWeekly, type ImportState, type ScoutbookCompareState } from "../actions";
 import { changesText } from "@/lib/import-changes";
 
 type ImportRes = ImportState & { steps?: string[]; skipped?: { name: string; reason: string }[] };
@@ -10,7 +10,17 @@ type ImportRes = ImportState & { steps?: string[]; skipped?: { name: string; rea
 const KIND: Record<string, string> = { rank: "Ranks", adventure: "Adventures", requirement: "Requirements", award: "Awards" };
 
 /** Read advancement straight from Scoutbook (experimental): compare first, then import. */
-export default function ScoutbookSync({ configured }: { configured: boolean }) {
+export default function ScoutbookSync({
+  configured,
+  weekly,
+  weeklyLast,
+}: {
+  configured: boolean;
+  weekly: boolean;
+  weeklyLast: { at: string; lines: string[] } | null;
+}) {
+  const [saving, startSaving] = useTransition();
+  const [weeklyOn, setWeeklyOn] = useState(weekly);
   const [busy, setBusy] = useState<"compare" | "import" | null>(null);
   const [cmp, setCmp] = useState<ScoutbookCompareState | null>(null);
   const [imp, setImp] = useState<ImportRes | null>(null);
@@ -74,6 +84,41 @@ export default function ScoutbookSync({ configured }: { configured: boolean }) {
         >
           <CloudDownload className="h-4 w-4" aria-hidden /> {busy === "import" ? "Importing…" : "Import from Scoutbook"}
         </button>
+      </div>
+
+      <div className="space-y-1.5 rounded-xl bg-surface-low p-3">
+        <div className="flex items-center gap-2">
+          <CalendarClock className="h-4 w-4 shrink-0 text-pine" aria-hidden />
+          <p className="flex-1 font-bold">Every Sunday night</p>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={weeklyOn}
+            disabled={saving}
+            onClick={() =>
+              startSaving(async () => {
+                const next = !weeklyOn;
+                const res = await setScoutbookWeekly(next);
+                if (res.ok) setWeeklyOn(next);
+              })
+            }
+            className={`rounded-full px-3 py-1 text-xs font-extrabold ${weeklyOn ? "bg-brand text-white" : "border border-line bg-card text-muted"}`}
+          >
+            {weeklyOn ? "On" : "Off"}
+          </button>
+        </div>
+        <p className="text-xs text-muted">
+          Imports advancement and Safeguarding Youth dates from Scoutbook automatically before the Sunday email. Pack admins
+          get a note when something changed. If it would remove more than a few records it holds off and asks you to look.
+        </p>
+        {weeklyLast && (
+          <div className="text-xs">
+            <p className="font-semibold">Last run {weeklyLast.at}:</p>
+            {weeklyLast.lines.map((l, i) => (
+              <p key={i}>{l}</p>
+            ))}
+          </div>
+        )}
       </div>
 
       {cmp && !imp && (
