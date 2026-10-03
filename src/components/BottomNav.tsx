@@ -71,7 +71,7 @@ export default function BottomNav({
   return (
     <nav
       aria-label="Main"
-      className={`${focused ? "max-lg:hidden " : ""}print:hidden fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:inset-y-0 lg:right-auto lg:flex lg:w-64 lg:flex-col lg:overflow-y-auto lg:border-r lg:border-t-0 lg:bg-deep lg:pb-0 lg:backdrop-blur-none`}
+      className={`${focused ? "max-lg:hidden " : ""}print:hidden fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:inset-y-0 lg:right-auto lg:flex lg:w-64 lg:flex-col lg:overflow-y-auto lg:border-r lg:border-t-0 lg:bg-deep lg:pb-0 lg:backdrop-blur-none`}
     >
       <Link href="/" className="hidden items-center gap-3 px-5 pb-6 pt-6 lg:flex">
         {/* eslint-disable-next-line @next/next/no-img-element */}
