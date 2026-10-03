@@ -151,16 +151,16 @@ rollback;
 
 set role service_role;
 select test.check(public.apply_givebutter_dues(9006, '20000000-0000-0000-0000-0000000000e3',
-                    array['40000000-0000-0000-0000-0000000000e5', '40000000-0000-0000-0000-0000000000e4']::uuid[], 'matched', '2 of 2 scouts matched') = 'partial',
-                  'sync applies a two-scout order ($510 for $500 of dues: flagged)');
+                    array['40000000-0000-0000-0000-0000000000e5', '40000000-0000-0000-0000-0000000000e4']::uuid[], 'matched', '2 of 2 scouts matched') = 'matched',
+                  'sync applies a two-scout order at full price ($510; the $10 sibling discount is optional)');
 select test.check((select paid_amount_cents from public.charges where scout_id = '40000000-0000-0000-0000-0000000000e4' and season = '2030-31') = 25500
-                  and (select paid_amount_cents from public.charges where scout_id = '40000000-0000-0000-0000-0000000000e5' and season = '2030-31') = 24500,
-                  'each scout''s dues are paid at their own amount');
-select test.check((select sum(paid_amount_cents) from public.charges where givebutter_order_id = 9006) = 50000, 'no charge is credited more than it owed');
+                  and (select paid_amount_cents from public.charges where scout_id = '40000000-0000-0000-0000-0000000000e5' and season = '2030-31') = 25500,
+                  'skipping the discount puts the extra on the second scout''s dues');
+select test.check((select sum(paid_amount_cents) from public.charges where givebutter_order_id = 9006) = 51000, 'paid totals match what came in');
 select test.check((select bool_and(status = 'paid' and paid_via = 'givebutter' and paid_at = '2026-09-19 12:00-04')
                      from public.charges where givebutter_order_id = 9006), 'charges are paid on Givebutter on the order date');
-select test.check((select dues_match = 'partial' and dues_note = 'Paid $10 more than was due; 2 of 2 scouts matched' and dues_applied_at is not null
-                          and cardinality(matched_scout_ids) = 2 from public.givebutter_orders where id = 9006), 'order records the match and the extra $10');
+select test.check((select dues_match = 'matched' and dues_note = '2 of 2 scouts matched; full price, no sibling discount' and dues_applied_at is not null
+                          and cardinality(matched_scout_ids) = 2 from public.givebutter_orders where id = 9006), 'order records the match at full price');
 
 select test.check(public.apply_givebutter_dues(9001, '20000000-0000-0000-0000-0000000000e1',
                     array['40000000-0000-0000-0000-0000000000e1', '40000000-0000-0000-0000-0000000000e2']::uuid[], 'matched', '2 of 2 scouts matched') = 'partial',

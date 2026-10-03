@@ -174,7 +174,8 @@ export function planDuesMatch(
       ? { familyId, scoutIds: ids, match: "partial", note: `${plural(unmatched, "scout name")} didn't match` }
       : { familyId, scoutIds: ids, match: "matched", note: `${ids.length} of ${total} ${total === 1 ? "scout" : "scouts"} matched` };
   }
-  if (fullCents > 0 && t.amountCents === duesTotalCents(scouts.length, fullCents, discountCents)) {
+  // With or without the sibling discount (it's optional).
+  if (fullCents > 0 && [discountCents, 0].some((d) => t.amountCents === duesTotalCents(scouts.length, fullCents, d))) {
     return { familyId, scoutIds: scouts.map((s) => s.id), match: "matched", note: `Matched by amount: ${plural(scouts.length, "scout")}` };
   }
   return {
