@@ -52,3 +52,8 @@ export function startOfEasternDay(date?: string): string {
 export function daysBetween(from: string, to: string): number {
   return Math.round((Date.UTC(+to.slice(0, 4), +to.slice(5, 7) - 1, +to.slice(8, 10)) - Date.UTC(+from.slice(0, 4), +from.slice(5, 7) - 1, +from.slice(8, 10))) / 86400000);
 }
+
+/** Add `n` calendar days to a YYYY-MM-DD date (no clock math, so DST changes can't skip or repeat a day). */
+export function addDays(date: string, n: number): string {
+  return new Date(Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10) + n)).toISOString().slice(0, 10);
+}

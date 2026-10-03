@@ -8,10 +8,11 @@ import {
   getAwardsToHandOut,
   getCatalog,
   getLastImport,
+  countReviewSubmissions,
   getRecords,
   getReviewableScouts,
-  getSubmissions,
   isAdmin,
+  recordsByScout,
   type ScoutRecord,
 } from "@/lib/advancement-data";
 import { RANK_LABEL, rankProgress, type CatalogAdventure } from "@/lib/advancement";
@@ -21,9 +22,9 @@ import type { Scout } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Scouts" };
 
-function progressFor(s: Scout, records: ScoutRecord[], catalog: CatalogAdventure[]) {
+function progressFor(s: Scout, records: Map<string, ScoutRecord[]>, catalog: CatalogAdventure[]) {
   if (!s.den) return null;
-  return rankProgress(s.den.rank, records.filter((r) => r.scout_id === s.id), catalog);
+  return rankProgress(s.den.rank, records.get(s.id) ?? [], catalog);
 }
 
 export default async function ScoutsPage({ searchParams }: PageProps<"/scouts">) {
@@ -31,33 +32,34 @@ export default async function ScoutsPage({ searchParams }: PageProps<"/scouts">)
   const { scout: picked } = await searchParams;
   // Leader mode puts dens first; Family mode shows just your own scouts.
   const leader = isLeader(me) && (await getMode(me)) === "leader";
-  const [mine, catalog, reviewable, settings] = await Promise.all([
+  // The leader counts don't need the scouts: read them alongside (counted in the database).
+  const [mine, catalog, reviewable, settings, pendingCount, approvedCount, lastImport] = await Promise.all([
     getMyScouts(),
     getCatalog(),
     leader ? getReviewableScouts() : Promise.resolve([] as Scout[]),
     getSettings(),
-  ]);
-  const reviewIds = reviewable.map((s) => s.id);
-  const [records, pending, approved, awards, lastImport] = await Promise.all([
-    getRecords([...new Set([...mine, ...reviewable].map((s) => s.id))]),
-    leader ? getSubmissions({ status: ["submitted"] }) : Promise.resolve([]),
-    leader ? getSubmissions({ status: ["approved"] }) : Promise.resolve([]),
-    getAwardsToHandOut(reviewIds, settings.awards_tracked_from),
+    leader ? countReviewSubmissions("submitted") : Promise.resolve(0),
+    leader ? countReviewSubmissions("approved") : Promise.resolve(0),
     leader ? getLastImport() : Promise.resolve(null),
   ]);
-  const inScope = (id: string) => reviewIds.includes(id);
-  const pendingCount = pending.filter((s) => inScope(s.scout_id)).length;
-  const approvedCount = approved.filter((s) => inScope(s.scout_id)).length;
+  const reviewIds = reviewable.map((s) => s.id);
+  const [recordList, awards] = await Promise.all([
+    getRecords([...new Set([...mine, ...reviewable].map((s) => s.id))]),
+    getAwardsToHandOut(reviewIds, settings.awards_tracked_from),
+  ]);
+  const records = recordsByScout(recordList);
 
   // Den roster, grouped by den
   const dens = new Map<string, Scout[]>();
   for (const s of reviewable) {
     const k = s.den?.name ?? "No den";
-    dens.set(k, [...(dens.get(k) ?? []), s]);
+    const list = dens.get(k);
+    if (list) list.push(s);
+    else dens.set(k, [s]);
   }
   const denOrder = [...dens.keys()].sort((a, b) => {
-    const ra = reviewable.find((s) => (s.den?.name ?? "No den") === a)?.den;
-    const rb = reviewable.find((s) => (s.den?.name ?? "No den") === b)?.den;
+    const ra = dens.get(a)![0].den;
+    const rb = dens.get(b)![0].den;
     const order = ["lion", "tiger", "wolf", "bear", "webelos", "aol"];
     return (ra ? order.indexOf(ra.rank) : 9) - (rb ? order.indexOf(rb.rank) : 9) || a.localeCompare(b);
   });
@@ -173,7 +175,7 @@ function Tool({
 }
 
 /** One scout at a time: a chip per scout (name and den), then their rank progress and what's left. */
-function MyScouts({ mine, picked, records, catalog }: { mine: Scout[]; picked?: string; records: ScoutRecord[]; catalog: CatalogAdventure[] }) {
+function MyScouts({ mine, picked, records, catalog }: { mine: Scout[]; picked?: string; records: Map<string, ScoutRecord[]>; catalog: CatalogAdventure[] }) {
   const s = mine.find((x) => x.id === picked) ?? mine[0];
   const p = progressFor(s, records, catalog);
   const req = p?.required ?? [];

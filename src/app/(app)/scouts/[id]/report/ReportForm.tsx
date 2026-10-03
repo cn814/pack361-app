@@ -1,6 +1,6 @@
 "use client";
 
-import { useSubmitKeepingValues } from "@/components/ActionForm";
+import { useSubmitKeepingValues, guardAction } from "@/components/ActionForm";
 import { useActionState, useState } from "react";
 import { reportRequirements, type FormState } from "../../actions";
 import type { DenRank } from "@/lib/types";
@@ -25,7 +25,7 @@ export default function ReportForm({
   adventures: ReportAdventure[];
   today: string;
 }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(reportRequirements, {});
+  const [state, action, pending] = useActionState<FormState, FormData>(guardAction(reportRequirements), {});
   const keep = useSubmitKeepingValues(action);
   const [name, setName] = useState("");
   const adv = adventures.find((a) => a.name === name);

@@ -33,12 +33,13 @@ const PACK_LINKS = [
  */
 export default function BottomNav({
   me,
-  inbox = 0,
+  inboxBadge,
   leaderMode = false,
   modeSwitch,
 }: {
   me: { initials: string; name: string };
-  inbox?: number;
+  /** The number on Notifications (computer sidebar), streamed in from the server. */
+  inboxBadge?: ReactNode;
   leaderMode?: boolean;
   /** The Family / Leader switch (leaders only), shown at the bottom of the sidebar. */
   modeSwitch?: ReactNode;
@@ -75,7 +76,7 @@ export default function BottomNav({
     >
       <Link href="/" className="hidden items-center gap-3 px-5 pb-6 pt-6 lg:flex">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/badge.png" alt="" className="h-12 w-12 rounded-full ring-2 ring-white/20" />
+        <img src="/badge-96.png" alt="" width={48} height={48} className="h-12 w-12 rounded-full ring-2 ring-white/20" />
         <span>
           <span className="block font-extrabold leading-tight text-white">Pack 361</span>
           <span className="block text-xs text-mint-200/80">Ellicott City, MD</span>
@@ -144,7 +145,7 @@ export default function BottomNav({
             }`}
           >
             <Bell className="mx-1 h-5 w-5" aria-hidden /> Notifications
-            {inbox > 0 && <span className="ml-auto rounded-full bg-alarm px-2 py-0.5 text-[11px] font-extrabold text-white">{inbox > 9 ? "9+" : inbox}</span>}
+            {inboxBadge}
           </Link>
         </li>
       </ul>

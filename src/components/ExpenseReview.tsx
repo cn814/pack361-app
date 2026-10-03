@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { CircleCheck } from "lucide-react";
-import { useSubmitKeepingValues, type ActionResult } from "@/components/ActionForm";
+import { useSubmitKeepingValues, type ActionResult, guardAction } from "@/components/ActionForm";
 import { reviewExpense } from "@/app/(app)/leaders/money/expenses/actions";
 import { PAID_VIA_LABEL, type PaidVia, type PayMeBy } from "@/lib/finance";
 
@@ -27,7 +27,7 @@ export default function ExpenseReview({
   self: boolean;
   today: string;
 }) {
-  const [state, formAction, pending] = useActionState<ActionResult, FormData>(reviewExpense, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(guardAction(reviewExpense), {});
   const onSubmit = useSubmitKeepingValues(formAction);
   const [mode, setMode] = useState<"" | "pay" | "decline">("");
 

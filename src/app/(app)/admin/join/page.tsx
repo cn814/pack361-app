@@ -59,10 +59,10 @@ function RequestCard({ r, families, dens }: { r: JoinRequest; families: Fam[]; d
                     {s.grade && <span className="text-xs font-normal text-muted">· {GRADE_LABEL[s.grade]}</span>}
                   </label>
                   <div className="grid grid-cols-2 gap-1.5">
-                    <input className="input py-2 text-sm" name={`first_${i}`} defaultValue={s.first_name} aria-label="First name" maxLength={60} />
-                    <input className="input py-2 text-sm" name={`last_${i}`} defaultValue={s.last_name} aria-label="Last name" maxLength={60} />
+                    <input className="input py-2" name={`first_${i}`} defaultValue={s.first_name} aria-label="First name" maxLength={60} />
+                    <input className="input py-2" name={`last_${i}`} defaultValue={s.last_name} aria-label="Last name" maxLength={60} />
                   </div>
-                  <select className="input py-2 text-sm" name={`den_${i}`} defaultValue={den?.id ?? ""} aria-label="Den">
+                  <select className="input py-2" name={`den_${i}`} defaultValue={den?.id ?? ""} aria-label="Den">
                     <option value="">Den (pick later)</option>
                     {dens.map((d) => (
                       <option key={d.id} value={d.id}>

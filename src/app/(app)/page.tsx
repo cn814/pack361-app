@@ -24,7 +24,7 @@ import { getHidden, getTodos } from "@/lib/inbox";
 import TodoCard from "@/components/TodoCard";
 import { hideTodo } from "./todo-actions";
 import { myDenMeetingButtons } from "@/lib/meetings";
-import { getCatalog, getRecords, getReviewableScouts, getSubmissions } from "@/lib/advancement-data";
+import { countReviewSubmissions, getCatalog, getRecords, recordsByScout } from "@/lib/advancement-data";
 import { RANK_LABEL, rankProgress } from "@/lib/advancement";
 import { canLead, getMode } from "@/lib/mode";
 import { daysUntil, eventOver, fmtRange, timeAgo } from "@/lib/format";
@@ -68,9 +68,12 @@ export default async function Home() {
 // Family: what's next, what needs you, your scouts, pack news
 // ---------------------------------------------------------------------------
 async function FamilyHome() {
-  const [scouts, events, posts, jobs, todos, big, catalog, hidden] = await Promise.all([
-    getMyScouts(),
-    getUpcomingEvents(12, { mine: true }).then((l) => l.filter((e) => !eventOver(e))),
+  // Records only need the scouts, not everything else: start them as soon as the scouts arrive.
+  const scoutsP = getMyScouts();
+  const [scouts, records, events, posts, jobs, todos, big, catalog, hidden] = await Promise.all([
+    scoutsP,
+    scoutsP.then((list) => getRecords(list.map((s) => s.id))),
+    getUpcomingEvents(12, { mine: true, near: true }).then((l) => l.filter((e) => !eventOver(e))),
     getAnnouncements(2),
     getOpenJobs(),
     getTodos(),
@@ -78,7 +81,7 @@ async function FamilyHome() {
     getCatalog(),
     getHidden(),
   ]);
-  const records = await getRecords(scouts.map((s) => s.id));
+  const byScout = recordsByScout(records);
   const openJobs = jobs.filter((j) => !hidden.has(`job-${j.slot_id}`));
   // The pack's big event is pinned while it's coming up; otherwise whatever's next.
   // Once it's over (the bottom bar keeps it a few more days), fall back to what's next.
@@ -119,7 +122,7 @@ async function FamilyHome() {
             <Heading title="Your scouts" right={<Link href="/scouts" className="text-sm font-bold text-pine">All</Link>} />
             <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
               {scouts.map((s) => {
-                const p = s.den ? rankProgress(s.den.rank, records.filter((r) => r.scout_id === s.id), catalog) : null;
+                const p = s.den ? rankProgress(s.den.rank, byScout.get(s.id) ?? [], catalog) : null;
                 return (
                   <Link key={s.id} href={`/scouts/${s.id}`} className="card space-y-1.5 py-3">
                     <span className="block text-[15px] font-extrabold text-pine-950">{s.first_name}</span>
@@ -152,17 +155,15 @@ async function FamilyHome() {
 // ---------------------------------------------------------------------------
 async function LeaderHome() {
   const me = await requireMember();
-  const [todos, denButtons, dens, events, posts, reviewable, submitted] = await Promise.all([
+  const [todos, denButtons, dens, events, posts, toApprove] = await Promise.all([
     getTodos(),
     myDenMeetingButtons(),
     getMessageableDens(me),
-    getUpcomingEvents(10).then((l) => l.filter((e) => !eventOver(e)).slice(0, 6)),
+    getUpcomingEvents(10, { near: true }).then((l) => l.filter((e) => !eventOver(e)).slice(0, 6)),
     getAnnouncements(2),
-    getReviewableScouts(),
-    getSubmissions({ status: ["submitted"] }),
+    // Reports from this leader's dens (or the whole pack) waiting for approval: just the number.
+    countReviewSubmissions("submitted"),
   ]);
-  const reviewIds = new Set(reviewable.map((s) => s.id));
-  const toApprove = submitted.filter((s) => reviewIds.has(s.scout_id)).length;
   const leaderTodos = todos.filter((t) => LEADER_TODOS.has(t.key));
   const familyCount = todos.length - leaderTodos.length;
 

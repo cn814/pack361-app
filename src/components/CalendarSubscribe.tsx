@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import { CalendarPlus, Check, Copy } from "lucide-react";
 import { resetCalendarLink } from "@/app/(app)/actions";
 
 /** Subscribe buttons for the private pack calendar feed. */
 export default function CalendarSubscribe({ feedUrl }: { feedUrl: string }) {
-  const [copied, setCopied] = useState(false);
+  // Which link was copied: after "Get a new link" the old one's "Link copied" goes away.
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const copied = copiedUrl === feedUrl;
   const webcal = feedUrl.replace(/^https?:/, "webcal:");
   const google = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcal)}`;
   return (
@@ -30,9 +33,9 @@ export default function CalendarSubscribe({ feedUrl }: { feedUrl: string }) {
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(feedUrl);
-              setCopied(true);
+              setCopiedUrl(feedUrl);
             } catch {
-              setCopied(false);
+              setCopiedUrl(null);
             }
           }}
         >
@@ -41,16 +44,26 @@ export default function CalendarSubscribe({ feedUrl }: { feedUrl: string }) {
         </button>
         <p className="text-[11px] text-muted">This link is just for your family. Don&apos;t post it publicly.</p>
         <form action={resetCalendarLink}>
-          <button
-            className="text-[11px] font-semibold text-muted underline"
-            onClick={(e) => {
-              if (!window.confirm("Make a new calendar link? The old one stops working, so you'll need to add the calendar to your phone again.")) e.preventDefault();
-            }}
-          >
-            Shared it by mistake? Get a new link
-          </button>
+          <ResetButton />
         </form>
       </div>
     </details>
+  );
+}
+
+/** Inside the reset form, so it can show that the new link is being made. */
+function ResetButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      className={`text-[11px] font-semibold text-muted underline ${pending ? "is-busy" : ""}`}
+      disabled={pending}
+      aria-busy={pending || undefined}
+      onClick={(e) => {
+        if (!window.confirm("Make a new calendar link? The old one stops working, so you'll need to add the calendar to your phone again.")) e.preventDefault();
+      }}
+    >
+      {pending ? "Making a new link…" : "Shared it by mistake? Get a new link"}
+    </button>
   );
 }

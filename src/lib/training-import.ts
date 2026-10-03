@@ -4,6 +4,7 @@
 // Pure functions, no Supabase calls.
 
 import { parseCsv } from "./advancement";
+import { easternDate } from "./tz";
 import { COURSE_BY_KEY, MEMBER_ID, defaultExpiry, type CourseKey, type TrainingRow } from "./training";
 
 export type Cell = string | number | boolean | Date | null | undefined;
@@ -241,7 +242,7 @@ function parseStatusReport(table: Cell[][]): ParsedReport | null {
     const m = (row ?? []).map(cellText).join(" ").match(/generated:?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
     if (m) asOf = `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
   }
-  if (!asOf) asOf = new Date().toISOString().slice(0, 10);
+  if (!asOf) asOf = easternDate(Date.now()); // the Eastern day, not UTC (after 8 PM it would be tomorrow)
 
   const codes = (row: Cell[], i: number) => (i < 0 ? [] : cellText(row[i]).split(/[,;\s]+/).map((c) => c.trim()).filter(Boolean));
   const people = new Map<string, { line: number; memberId: string | null; first: string; last: string; positionDone: boolean; needs: Set<string> }>();

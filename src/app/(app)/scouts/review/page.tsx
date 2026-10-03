@@ -95,7 +95,7 @@ export default async function ReviewPage({ searchParams }: PageProps<"/scouts/re
                     {s.notes && <p className="rounded-lg bg-surface-low p-2 text-xs text-navy">{s.notes}</p>}
                     <form action={reviewSubmissions} className="flex gap-2">
                       <input type="hidden" name="id" value={s.id} />
-                      <input name="review_note" placeholder="Note (optional)" maxLength={500} className="input min-w-0 flex-1 py-2 text-sm" />
+                      <input name="review_note" placeholder="Note (optional)" maxLength={500} className="input min-w-0 flex-1 py-2" />
                       <SubmitButton name="decision" value="return" className="btn-ghost px-3 py-2" aria-label="Send back">
                         <Undo2 className="h-4 w-4" aria-hidden />
                       </SubmitButton>

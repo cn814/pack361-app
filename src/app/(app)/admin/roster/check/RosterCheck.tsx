@@ -41,7 +41,7 @@ function Section({ title, count, hint, children, action }: { title: string; coun
 
 function DenSelect({ dens, name, defaultValue }: { dens: AppDen[]; name: string; defaultValue: string }) {
   return (
-    <select className="input py-2 text-sm" name={name} defaultValue={defaultValue} aria-label="Den">
+    <select className="input py-2" name={name} defaultValue={defaultValue} aria-label="Den">
       <option value="">Den (pick later)</option>
       {dens
         .filter((d) => d.is_active || d.id === defaultValue)
@@ -72,7 +72,7 @@ function NewScoutCard({ n, dens, families }: { n: NewScout; dens: AppDen[]; fami
         <input type="hidden" name="first_name" value={r.first} />
         {r.initialOnly ? (
           <Field label="Last name" hint={`This report only gives the initial "${r.last}". Type the full last name.`}>
-            <input className="input py-2 text-sm" name="last_name" required maxLength={60} aria-label="Last name" />
+            <input className="input py-2" name="last_name" required maxLength={60} aria-label="Last name" />
           </Field>
         ) : (
           <input type="hidden" name="last_name" value={r.last} />
@@ -80,7 +80,7 @@ function NewScoutCard({ n, dens, families }: { n: NewScout; dens: AppDen[]; fami
         <input type="hidden" name="bsa_member_id" value={r.memberId ?? ""} />
         <DenSelect dens={dens} name="den_id" defaultValue={n.den?.id ?? ""} />
         <Field label="Family" hint={family && family === n.family?.id ? n.familyWhy : undefined}>
-          <select className="input py-2 text-sm" name="family_id" value={family} onChange={(e) => setFamily(e.target.value)}>
+          <select className="input py-2" name="family_id" value={family} onChange={(e) => setFamily(e.target.value)}>
             <option value="">New family</option>
             {families
               .filter((f) => f.is_active || f.id === family)
@@ -93,13 +93,13 @@ function NewScoutCard({ n, dens, families }: { n: NewScout; dens: AppDen[]; fami
         </Field>
         {!family && (
           <div className="space-y-2 rounded-xl bg-surface-low p-2">
-            <input className="input py-2 text-sm" name="family_name" defaultValue={r.initialOnly ? "" : r.last} placeholder="Family name" aria-label="Family name" maxLength={80} />
+            <input className="input py-2" name="family_name" defaultValue={r.initialOnly ? "" : r.last} placeholder="Family name" aria-label="Family name" maxLength={80} />
             <p className="text-[11px] font-bold text-navy">Parent who&apos;ll sign in (optional; you can add them later)</p>
             <div className="grid grid-cols-2 gap-1.5">
-              <input className="input py-2 text-sm" name="parent_first" defaultValue={r.parentFirst} placeholder="First name" aria-label="Parent first name" maxLength={60} />
-              <input className="input py-2 text-sm" name="parent_last" defaultValue={r.parentLast || (r.initialOnly ? "" : r.last)} placeholder="Last name" aria-label="Parent last name" maxLength={60} />
+              <input className="input py-2" name="parent_first" defaultValue={r.parentFirst} placeholder="First name" aria-label="Parent first name" maxLength={60} />
+              <input className="input py-2" name="parent_last" defaultValue={r.parentLast || (r.initialOnly ? "" : r.last)} placeholder="Last name" aria-label="Parent last name" maxLength={60} />
             </div>
-            <input className="input py-2 text-sm" type="email" name="parent_email" defaultValue={r.parentEmail} placeholder="Their email" aria-label="Parent email" maxLength={200} />
+            <input className="input py-2" type="email" name="parent_email" defaultValue={r.parentEmail} placeholder="Their email" aria-label="Parent email" maxLength={200} />
           </div>
         )}
       </ActionForm>

@@ -1,5 +1,7 @@
 "use client";
 
+import { guardAction } from "@/components/ActionForm";
+
 import { useActionState } from "react";
 import { RefreshCw } from "lucide-react";
 import { syncGivebutterNow, type ActionState } from "@/app/(app)/store/actions";
@@ -14,7 +16,7 @@ function Result({ s }: { s: ActionState }) {
 }
 
 export function SyncGivebutterButton() {
-  const [s, action, pending] = useActionState<ActionState, FormData>(syncGivebutterNow, {});
+  const [s, action, pending] = useActionState<ActionState, FormData>(guardAction(syncGivebutterNow), {});
   return (
     <form action={action} className="space-y-2">
       <button className="btn-ghost w-full" disabled={pending}>

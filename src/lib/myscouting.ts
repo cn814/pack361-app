@@ -39,6 +39,12 @@ export interface SyncResult {
 type Json = Record<string, unknown>;
 
 class StepError extends Error {}
+/** The time budget ran out before this request's turn came. */
+class OutOfTime extends StepError {
+  constructor() {
+    super("ran out of time");
+  }
+}
 
 async function request(url: string, init: RequestInit): Promise<Response> {
   const ctrl = new AbortController();
@@ -137,10 +143,23 @@ function isoDate(v: unknown): string | null {
   if (m) return `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
   return null;
 }
-/** The first value among these keys (case-insensitive) on an object. */
+/**
+ * The first text or number value among these keys (case-insensitive) on an object. Flags and
+ * nested objects are skipped: every caller wants text, and `isCompleted: true` must not hide the
+ * `completionDate` after it.
+ */
 function pick(o: Json, re: RegExp): unknown {
-  for (const [k, v] of Object.entries(o)) if (re.test(k) && v !== null && v !== "") return v;
+  for (const [k, v] of Object.entries(o)) if (re.test(k) && ((typeof v === "string" && v !== "") || typeof v === "number")) return v;
   return undefined;
+}
+/** The first value among these keys that reads as a date, as YYYY-MM-DD ("completedBy: 'Jane'" is skipped). */
+function pickDate(o: Json, re: RegExp): string | null {
+  for (const [k, v] of Object.entries(o)) {
+    if (!re.test(k)) continue;
+    const d = v instanceof Date ? (Number.isNaN(v.getTime()) ? null : v.toISOString().slice(0, 10)) : typeof v === "string" ? isoDate(v) : null;
+    if (d) return d;
+  }
+  return null;
 }
 /** Every array of objects anywhere inside a response. */
 function objectArrays(v: unknown, out: Json[][] = [], depth = 0): Json[][] {
@@ -193,17 +212,26 @@ function trainingEntries(data: unknown): { course: string; completed: string | n
         .map(str)
         .filter(Boolean)
         .join(" ");
-      const completed = isoDate(pick(o, /complet|dateTaken|trainedDate|takenOn/i));
-      const expires = isoDate(pick(o, /expir|validThrough|dueDate/i));
+      const completed = pickDate(o, /complet|dateTaken|trainedDate|takenOn/i);
+      const expires = pickDate(o, /expir|validThrough|dueDate/i);
       if (course && (completed || expires)) out.push({ course, completed, expires });
     }
   }
   return out;
 }
 
-/** Read every adult's training for Pack 361. */
-export async function fetchMyScoutingTraining(): Promise<SyncResult> {
+/** How long the training read may take by default (the adults are read 8 at a time). */
+const TRAINING_BUDGET_MS = 90_000;
+
+/**
+ * Read every adult's training for Pack 361. Stops starting new requests at `deadline` (epoch
+ * ms; default 90 seconds from now) and returns what it has: adults it didn't get to are left out
+ * (their records stay as they are) and a step says how many. A caller running this after another
+ * long job in the same function (the weekly cron) should pass its own deadline.
+ */
+export async function fetchMyScoutingTraining(opts: { deadline?: number } = {}): Promise<SyncResult> {
   const steps: string[] = [];
+  const deadline = opts.deadline ?? Date.now() + TRAINING_BUDGET_MS;
   if (!myScoutingConfigured()) return { rows: [], steps, error: "Not set up: MYSCOUTING_USERNAME and MYSCOUTING_PASSWORD aren't set in Vercel." };
   try {
     const s = await signIn();
@@ -245,34 +273,55 @@ export async function fetchMyScoutingTraining(): Promise<SyncResult> {
       rows.push({ line: ++line, memberId: a.memberId, first: a.first, last: a.last, courseText, course: courseFromText(courseText), completed, expires });
     };
 
-    for (const a of adults.slice(0, MAX_ADULTS)) {
-      // Safeguarding Youth (Youth Protection) from its own endpoint.
-      const y = await get(`/persons/v2/${a.personGuid}/trainings/ypt`);
-      if (y.status === 200 && y.data && typeof y.data === "object") {
-        const d = y.data as Json;
-        const completed = isoDate(pick(d, /^yptCompletionDate$|complet/i));
-        const expires = isoDate(pick(d, /^yptExpireDate$|expir/i));
-        if (completed || expires) {
-          add(a, "Safeguarding Youth (YPT)", completed, expires);
-          ypt++;
+    // A few adults at a time, each request checking the clock first; results are added in
+    // roster order afterwards so the line numbers stay stable.
+    const run = limiter(PARALLEL);
+    const timed = (path: string) =>
+      run(() => {
+        if (Date.now() > deadline) throw new StepError("ran out of time");
+        return get(path);
+      });
+    type Found = { course: string; completed: string | null; expires: string | null; ypt?: boolean };
+    let late = 0;
+    const perAdult = await Promise.all(
+      adults.slice(0, MAX_ADULTS).map(async (a): Promise<{ found: Found[]; full: boolean } | null> => {
+        try {
+          const found: Found[] = [];
+          // Safeguarding Youth (Youth Protection) from its own endpoint.
+          const y = await timed(`/persons/v2/${a.personGuid}/trainings/ypt`);
+          if (y.status === 200 && y.data && typeof y.data === "object") {
+            const d = y.data as Json;
+            const completed = pickDate(d, /^yptCompletionDate$|complet/i);
+            const expires = pickDate(d, /^yptExpireDate$|expir/i);
+            if (completed || expires) found.push({ course: "Safeguarding Youth (YPT)", completed, expires, ypt: true });
+          }
+          // Everything else (position training, Hazardous Weather, BALOO...), where my.scouting shares it.
+          const t = await timed(`/persons/${a.personGuid}/trainings`);
+          if (t.status === 200) found.push(...trainingEntries(t.data));
+          // Some rosters carry training dates on each person, too.
+          found.push(...trainingEntries([a.raw]));
+          return { found, full: t.status === 200 };
+        } catch (e) {
+          if (e instanceof StepError) {
+            late++;
+            return null;
+          }
+          throw e;
         }
-      }
-      // Everything else (position training, Hazardous Weather, BALOO...), where my.scouting shares it.
-      const t = await get(`/persons/${a.personGuid}/trainings`);
-      if (t.status === 200) {
-        fullTrainingWorked = true;
-        for (const e of trainingEntries(t.data)) {
-          add(a, e.course, e.completed, e.expires);
-          other++;
-        }
-      }
-      // Some rosters carry training dates on each person, too.
-      for (const e of trainingEntries([a.raw])) {
+      }),
+    );
+    adults.slice(0, MAX_ADULTS).forEach((a, i) => {
+      const got = perAdult[i];
+      if (!got) return;
+      if (got.full) fullTrainingWorked = true;
+      for (const e of got.found) {
         add(a, e.course, e.completed, e.expires);
-        other++;
+        if (e.ypt) ypt++;
+        else other++;
       }
-    }
+    });
     if (adults.length > MAX_ADULTS) steps.push(`Read the first ${MAX_ADULTS} adults only.`);
+    if (late) steps.push(`Ran out of time: ${late} adult${late === 1 ? "" : "s"} not read; their training stays as it is.`);
     steps.push(`Safeguarding Youth dates for ${ypt} adult${ypt === 1 ? "" : "s"}.`);
     steps.push(
       fullTrainingWorked
@@ -332,7 +381,7 @@ function limiter(n: number) {
   };
 }
 
-const done = (o: Json, re: RegExp) => isoDate(pick(o, re));
+const done = (o: Json, re: RegExp) => pickDate(o, re);
 // Scoutbook's site and its CSV export spell a few things differently; the import matches the
 // export, so records keep the same labels whichever way they arrive (compared 2026-10-02).
 const EXPORT_NAMES: Record<string, string> = {
@@ -368,8 +417,12 @@ const reqList = (data: unknown): Json[] => {
 };
 const flag = (v: unknown) => v === true || /^(true|yes|1)$/i.test(str(v));
 
-/** Read every scout's advancement from Scoutbook, as export lines. Read-only. */
-export async function fetchScoutbookAdvancement(): Promise<AdvancementSync> {
+/**
+ * Read every scout's advancement from Scoutbook, as export lines. Read-only. Each request checks
+ * the clock when its turn comes (not when the scout is queued); once past `deadline` (epoch ms;
+ * default 240 seconds from the start) the remaining scouts are skipped and counted.
+ */
+export async function fetchScoutbookAdvancement(opts: { deadline?: number } = {}): Promise<AdvancementSync> {
   const steps: string[] = [];
   const lines: ScoutbookLine[] = [];
   const skipped: AdvancementSync["skipped"] = [];
@@ -377,16 +430,20 @@ export async function fetchScoutbookAdvancement(): Promise<AdvancementSync> {
     return { lines, steps, scoutsRead: 0, skipped, error: "Not set up: MYSCOUTING_USERNAME and MYSCOUTING_PASSWORD aren't set in Vercel." };
   }
   const started = Date.now();
+  const deadline = opts.deadline ?? started + TIME_BUDGET_MS;
   try {
     const s = await signIn();
     steps.push("Signed in to Scoutbook.");
     const raw = api(s.token);
     const run = limiter(PARALLEL);
     let requests = 0;
-    const get = (path: string) => {
-      requests++;
-      return run(() => raw(path));
-    };
+    const get = (path: string) =>
+      run(() => {
+        // Checked here, when the request's turn comes: all scouts are queued at once at the start.
+        if (Date.now() > deadline) throw new OutOfTime();
+        requests++;
+        return raw(path);
+      });
     const unit = await findUnit(raw, s.userId, s.personGuid);
     steps.push(`Found ${unit.name}.`);
 
@@ -399,6 +456,7 @@ export async function fetchScoutbookAdvancement(): Promise<AdvancementSync> {
     steps.push(`Youth roster: ${youths.length} scouts.`);
 
     let read = 0;
+    let outOfTime = 0;
     await Promise.all(
       youths.map(async (y) => {
         const uid = str(y.userId);
@@ -423,7 +481,6 @@ export async function fetchScoutbookAdvancement(): Promise<AdvancementSync> {
           throw new StepError(`${what} answered ${status}`);
         };
         try {
-          if (Date.now() - started > TIME_BUDGET_MS) throw new StepError("ran out of time");
           const [rk, ad, aw] = await Promise.all([
             get(`/advancements/v2/youth/${uid}/ranks`),
             get(`/advancements/v2/youth/${uid}/adventures`),
@@ -474,12 +531,14 @@ export async function fetchScoutbookAdvancement(): Promise<AdvancementSync> {
           lines.push(...mine);
           read++;
         } catch (e) {
+          if (e instanceof OutOfTime) outOfTime++;
           skipped.push({ name, reason: e instanceof StepError ? e.message : e instanceof Error && e.name === "AbortError" ? "timed out" : "couldn't be read" });
         }
       }),
     );
     steps.push(`Read ${read} scout${read === 1 ? "" : "s"} (${requests} requests, ${Math.round((Date.now() - started) / 1000)} seconds).`);
     if (skipped.length) steps.push(`${skipped.length} scout${skipped.length === 1 ? "" : "s"} skipped; their records stay as they are.`);
+    if (outOfTime) steps.push(`Ran out of time: ${outOfTime} of those ${outOfTime === 1 ? "was" : "were"} skipped because the ${Math.round((deadline - started) / 1000)}-second limit was reached.`);
     return { lines, steps, scoutsRead: read, skipped };
   } catch (e) {
     const msg =

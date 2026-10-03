@@ -1,5 +1,7 @@
 "use client";
 
+import { guardAction } from "@/components/ActionForm";
+
 import { startTransition, useActionState, useState, type FormEvent } from "react";
 import { Check, CircleCheck, ClipboardCheck, Pencil } from "lucide-react";
 import type { ActionResult } from "@/components/ActionForm";
@@ -22,7 +24,7 @@ const wereThere = (n: number) => (n === 1 ? "1 scout was there" : `${n} scouts w
 
 /** Leaders, from the event's day on: tap who came, Save. Collapsed once it's saved. */
 export default function TakeAttendance(p: Props) {
-  const [state, formAction, pending] = useActionState<Result, FormData>(recordEventAttendance, {});
+  const [state, formAction, pending] = useActionState<Result, FormData>(guardAction(recordEventAttendance), {});
   const [present, setPresent] = useState<Set<string>>(new Set(p.present));
   const [open, setOpen] = useState(!p.taken);
   const [lastOk, setLastOk] = useState<Result | null>(null);

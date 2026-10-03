@@ -5,7 +5,7 @@ import { featuredKind, type FeaturedKind } from "@/lib/featured";
 import { headers } from "next/headers";
 import EventRow from "@/components/EventRow";
 import CalendarSubscribe from "@/components/CalendarSubscribe";
-import { getBigEvent, getCalendarToken, getUpcomingEvents, isCommittee, isLeader, requireMember } from "@/lib/data";
+import { getBigEvent, getCalendarToken, getUpcomingEvents, isCommittee, isLeader, preloadCalendar, requireMember } from "@/lib/data";
 import { getSignupSummaries } from "@/lib/signups";
 import { getMode } from "@/lib/mode";
 import { daysUntil, eventOver, fmtMonth, fmtRange } from "@/lib/format";
@@ -53,7 +53,11 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
   const start: Show = leader ? "mine" : "all";
   const wanted = (sp.show ?? (sp.view === "mine" ? "mine" : start)) as Show;
   const show: Show = SHOWS.some((s) => s.key === wanted && (!("leaderOnly" in s) || leader)) ? wanted : start;
-  const [signups, token, h, big, mode] = await Promise.all([
+  // The list reads the full calendar; the pinned big event (and the bell) reuse it when it's
+  // the same family calendar instead of reading their own.
+  preloadCalendar(show === "mine" || !leader ? "family" : "all");
+  const [all, signups, token, h, big, mode] = await Promise.all([
+    getUpcomingEvents(150, { mine: show === "mine" }),
     getSignupSummaries(me.family_id),
     getCalendarToken(),
     headers(),
@@ -62,7 +66,6 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
   ]);
   const host = h.get("x-forwarded-host") ?? h.get("host");
   const proto = h.get("x-forwarded-proto") ?? "https";
-  const all = await getUpcomingEvents(150, { mine: show === "mine" });
   const events = all.filter((e) =>
     eventOver(e)
       ? false

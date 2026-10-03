@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { CircleCheck } from "lucide-react";
-import { useSubmitKeepingValues, type ActionResult } from "@/components/ActionForm";
+import { useSubmitKeepingValues, type ActionResult, guardAction } from "@/components/ActionForm";
 import type { DenMeeting } from "@/lib/meetings";
 
 export interface AdventureOption {
@@ -35,7 +35,7 @@ export default function MeetingForm({
   defaultEnd?: string;
   defaultLocation?: string;
 }) {
-  const [state, formAction, pending] = useActionState<ActionResult, FormData>(action, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(guardAction(action), {});
   const onSubmit = useSubmitKeepingValues(formAction);
   const [adventure, setAdventure] = useState(meeting?.adventure ?? "");
   const [reqs, setReqs] = useState<string[]>(meeting?.requirements ?? []);

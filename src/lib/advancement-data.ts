@@ -98,19 +98,62 @@ export async function getReviewableScouts(): Promise<Scout[]> {
 export async function getRecords(scoutIds: string[]): Promise<ScoutRecord[]> {
   if (!scoutIds.length) return [];
   const supabase = await createClient();
-  const out: ScoutRecord[] = [];
-  // PostgREST caps a response at 1000 rows by default; page through.
-  for (let from = 0; ; from += 1000) {
-    const { data } = await supabase
+  // PostgREST caps a response at 1000 rows by default; page through. The first page also
+  // counts the rows, so the rest of the pages load at once.
+  const PAGE = 1000;
+  const page = (from: number, count?: "exact") =>
+    supabase
       .from("scout_advancement")
-      .select(RECORD_COLS)
+      .select(RECORD_COLS, count ? { count } : undefined)
       .in("scout_id", scoutIds)
       .order("id")
-      .range(from, from + 999);
+      .range(from, from + PAGE - 1);
+  const first = await page(0, "exact");
+  const out = (first.data ?? []) as ScoutRecord[];
+  if (out.length < PAGE) return out;
+  const total = first.count ?? 0;
+  const starts: number[] = [];
+  for (let from = PAGE; from < total; from += PAGE) starts.push(from);
+  const rest = await Promise.all(starts.map((from) => page(from)));
+  for (const r of rest) out.push(...((r.data ?? []) as ScoutRecord[]));
+  // Rows added after the count: keep reading one page at a time (rare).
+  for (let from = PAGE * (starts.length + 1); out.length === from; from += PAGE) {
+    const { data } = await page(from);
     out.push(...((data ?? []) as ScoutRecord[]));
-    if (!data || data.length < 1000) break;
+    if (!data || data.length < PAGE) break;
   }
   return out;
+}
+
+/** Records by scout, for pages that show many scouts. */
+export function recordsByScout(records: ScoutRecord[]): Map<string, ScoutRecord[]> {
+  const by = new Map<string, ScoutRecord[]>();
+  for (const r of records) {
+    const list = by.get(r.scout_id);
+    if (list) list.push(r);
+    else by.set(r.scout_id, [r]);
+  }
+  return by;
+}
+
+/**
+ * How many reports with this status are waiting for this adult: their dens' active scouts, or
+ * the whole pack's. Counted in the database (no rows come back).
+ */
+export async function countReviewSubmissions(status: SubmissionStatus): Promise<number> {
+  const me = await requireMember();
+  const whole = reviewsWholePack(me);
+  const denIds = whole ? [] : await getMyDenIds();
+  if (!whole && denIds.length === 0) return 0;
+  const supabase = await createClient();
+  let q = supabase
+    .from("advancement_submissions")
+    .select("id, scout:scouts!inner(id)", { count: "exact", head: true })
+    .eq("status", status)
+    .eq("scout.is_active", true);
+  if (!whole) q = q.in("scout.den_id", denIds);
+  const { count } = await q;
+  return count ?? 0;
 }
 
 export async function getSubmissions(filter: { scoutId?: string; status?: SubmissionStatus[] }): Promise<Submission[]> {

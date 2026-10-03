@@ -39,6 +39,19 @@ export async function getCampaigns(): Promise<GbCampaign[]> {
   return (data ?? []) as GbCampaign[];
 }
 
+/** The Givebutter campaign tied to an event (the newest, if more than one). */
+export async function getEventCampaign(eventId: string): Promise<GbCampaign | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("givebutter_campaigns")
+    .select(CAMPAIGN_COLS)
+    .eq("event_id", eventId)
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as GbCampaign | null) ?? null;
+}
+
 /** Orders visible to the signed-in adult: their family's, or everyone's for leaders (RLS decides). */
 export async function getOrders(campaignIds: number[]): Promise<GbOrder[]> {
   if (!campaignIds.length) return [];
@@ -52,7 +65,7 @@ export async function getOrders(campaignIds: number[]): Promise<GbOrder[]> {
   return (data ?? []) as GbOrder[];
 }
 
-export function isPaid(o: GbOrder) {
+export function isPaid(o: Pick<GbOrder, "status">) {
   return !o.status || ["succeeded", "authorized", "captured", "paid", "completed"].includes(o.status.toLowerCase());
 }
 

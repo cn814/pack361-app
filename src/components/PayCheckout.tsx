@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CircleCheck, Loader2 } from "lucide-react";
 import ActionForm from "@/components/ActionForm";
@@ -78,7 +78,11 @@ export default function PayCheckout({
   otherHow: string;
 }) {
   const router = useRouter();
-  const [selected, setSelected] = useState<string[]>(items.map((i) => i.id));
+  // Everything starts ticked; remember what the person unticked rather than what's ticked, so
+  // the selection always matches the current items: one reported paid (and gone after the
+  // refresh) drops out, and a newly added one shows up ticked like the rest.
+  const [unticked, setUnticked] = useState<string[]>([]);
+  const selected = useMemo(() => items.map((i) => i.id).filter((id) => !unticked.includes(id)), [items, unticked]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sdkState, setSdkState] = useState<"loading" | "ready" | "failed">(clientId ? "loading" : "failed");
@@ -151,7 +155,7 @@ export default function PayCheckout({
     };
   }, [clientId, sandbox, router]);
 
-  const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  const toggle = (id: string) => setUnticked((u) => (u.includes(id) ? u.filter((x) => x !== id) : [...u, id]));
 
   if (message) {
     return (

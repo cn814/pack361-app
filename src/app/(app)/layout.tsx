@@ -8,14 +8,15 @@ import { Bell, Search } from "lucide-react";
 import { displayName, requireMember } from "@/lib/data";
 import { canLead, getMode } from "@/lib/mode";
 import ModeSwitch from "@/components/ModeSwitch";
-import { getInboxCount } from "@/lib/inbox";
+import InboxBadge from "@/components/InboxBadge";
 import ViewAsBanner from "@/components/ViewAsBanner";
 import LeaderModeBanner from "@/components/LeaderModeBanner";
 import BetaBanner from "@/components/BetaBanner";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const me = await requireMember();
-  const [inbox, mode] = await Promise.all([getInboxCount(), getMode(me)]);
+  // The bell's number streams in on its own (InboxBadge), so pages don't wait for it.
+  const mode = await getMode(me);
   const initials = (displayName(me)[0] + me.last_name[0]).toUpperCase();
   return (
     <div className="min-h-dvh w-full lg:pl-64 print:pl-0">
@@ -30,7 +31,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/badge.png" alt="" className="h-10 w-10 rounded-full ring-2 ring-white/25" />
+            <img src="/badge-96.png" alt="" width={40} height={40} className="h-10 w-10 rounded-full ring-2 ring-white/25" />
             <span>
               <span className="block text-sm font-bold leading-tight">Pack 361</span>
               <span className="block text-xs text-mint-200/80">Ellicott City, MD</span>
@@ -47,15 +48,13 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             <Link
               href="/inbox"
               prefetch={false}
-              aria-label={inbox ? `Notifications, ${inbox} new` : "Notifications"}
               className="relative flex h-10 w-10 items-center justify-center rounded-full text-white active:bg-white/15"
             >
               <Bell className="h-6 w-6" aria-hidden />
-              {inbox > 0 && (
-                <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-alarm px-1 text-[11px] font-extrabold leading-none text-white ring-2 ring-brand">
-                  {inbox > 9 ? "9+" : inbox}
-                </span>
-              )}
+              <span className="sr-only">Notifications</span>
+              <Suspense fallback={null}>
+                <InboxBadge variant="header" />
+              </Suspense>
             </Link>
           </div>
         </div>
@@ -67,7 +66,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       </main>
       <BottomNav
         me={{ initials, name: `${displayName(me)} ${me.last_name}` }}
-        inbox={inbox}
+        inboxBadge={
+          <Suspense fallback={null}>
+            <InboxBadge variant="sidebar" />
+          </Suspense>
+        }
         leaderMode={mode === "leader"}
         modeSwitch={canLead(me) ? <ModeSwitch mode={mode} dark /> : undefined}
       />

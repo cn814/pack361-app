@@ -30,7 +30,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    out.newsletter = await runWeeklyNewsletter(db);
+    const news = await runWeeklyNewsletter(db);
+    out.newsletter = news;
+    // Some emails failed (or weren't recorded): report the run as failed so it shows up in
+    // Vercel's cron log. Tomorrow's run picks up whoever is still waiting this week.
+    if ("errors" in news && news.errors?.length) failed = true;
   } catch (e) {
     failed = true;
     out.newsletter = { error: e instanceof Error ? e.message : "newsletter failed" };

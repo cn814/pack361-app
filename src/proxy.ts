@@ -22,7 +22,12 @@ function siteRoute(request: NextRequest): NextResponse | null {
     return NextResponse.rewrite(to);
   }
   if (pathname === "/join" || SITE_ASSETS.test(pathname)) return NextResponse.next();
-  return NextResponse.redirect(new URL(pathname + search, APP_ORIGIN), 308);
+  // Build the address on the app's origin and set the path, rather than parsing the request
+  // path as a URL: "//evil.com" or "/\evil.com" would otherwise point off-site.
+  const to = new URL(APP_ORIGIN);
+  to.pathname = "/" + pathname.replace(/^[/\\]+/, "");
+  to.search = search;
+  return NextResponse.redirect(to, 308);
 }
 
 export async function proxy(request: NextRequest) {
@@ -72,5 +77,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|webp|ico)$).*)"],
+  // Static files skip the sign-in check (the opening video, the service worker, the manifest).
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|webp|ico|mp4|js|webmanifest)$).*)"],
 };

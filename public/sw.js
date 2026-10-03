@@ -5,16 +5,24 @@
 //  * the "Saved on this phone" page (/family/files), so a family's own saved forms open at
 //    camp. Only the page itself is cached here; the files live in IndexedDB, which sign-out
 //    and this worker never touch.
-const CACHE = "pack361-offline-v2"; // v2: new pack logo icons (2026-10-03)
+const CACHE = "pack361-offline-v3"; // v3: navigation preload, small header badge (2026-10-03)
 const OFFLINE_PAGES = /^\/(?:campouts\/[0-9a-f-]{36}|family\/files)\/?$/i;
 // The opening video itself isn't cached here: phones ask for video in ranges, which a cached
 // whole file can't answer (Safari then won't play it). The browser's own cache keeps it.
-const STATIC = /^\/(_next\/static\/|icon-|splash-poster|badge\.png|notification-badge\.png|apple-icon|icon\.png|favicon\.ico)/;
+const STATIC = /^\/(_next\/static\/|icon-|splash-poster|badge\.png|badge-96\.png|notification-badge\.png|apple-icon|icon\.png|favicon\.ico)/;
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) =>
   event.waitUntil(
     (async () => {
+      // Navigation preload: the page request starts while the worker boots, instead of after.
+      if (self.registration.navigationPreload) {
+        try {
+          await self.registration.navigationPreload.enable();
+        } catch {
+          // not supported here
+        }
+      }
       for (const key of await caches.keys()) if (key.startsWith("pack361-") && key !== CACHE) await caches.delete(key);
       await self.clients.claim();
     })(),
@@ -29,14 +37,16 @@ async function trimStatic(cache) {
   for (const r of keys.slice(0, Math.max(0, keys.length - 400))) await cache.delete(r);
 }
 
-async function cacheFirst(request) {
+// Answers right away; saving the copy (and trimming old ones) finishes in the background.
+async function cacheFirst(event) {
+  const request = event.request;
   const cache = await caches.open(CACHE);
   const hit = await cache.match(request);
   if (hit) return hit;
   const res = await fetch(request);
   if (res.ok) {
-    await cache.put(request, res.clone());
-    trimStatic(cache);
+    const copy = res.clone();
+    event.waitUntil(cache.put(request, copy).then(() => trimStatic(cache)).catch(() => {}));
   }
   return res;
 }
@@ -52,13 +62,18 @@ function offlinePage() {
   );
 }
 
-async function networkFirst(request) {
+async function networkFirst(event) {
+  const request = event.request;
   const cache = await caches.open(CACHE);
   const key = new URL(request.url).pathname;
   try {
-    const res = await fetch(request);
+    // The preloaded response (started while the worker woke up), else a normal fetch.
+    const res = (await event.preloadResponse) || (await fetch(request));
     // Don't save sign-in redirects or errors
-    if (res.ok && !res.redirected) await cache.put(key, res.clone());
+    if (res.ok && !res.redirected) {
+      const copy = res.clone();
+      event.waitUntil(cache.put(key, copy).catch(() => {}));
+    }
     return res;
   } catch {
     return (await cache.match(key)) || offlinePage();
@@ -71,9 +86,12 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   if (STATIC.test(url.pathname)) {
-    event.respondWith(cacheFirst(req));
+    event.respondWith(cacheFirst(event));
   } else if (req.mode === "navigate" && OFFLINE_PAGES.test(url.pathname)) {
-    event.respondWith(networkFirst(req));
+    event.respondWith(networkFirst(event));
+  } else if (req.mode === "navigate" && self.registration.navigationPreload) {
+    // Other pages aren't saved: use the preloaded response so the page isn't requested twice.
+    event.respondWith(Promise.resolve(event.preloadResponse).then((res) => res || fetch(req)));
   }
 });
 

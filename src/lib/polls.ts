@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "./supabase/server";
+import { adminConfigured, createAdminClient } from "./supabase/admin";
 
 export interface Poll {
   id: string;
@@ -36,11 +37,30 @@ export async function getPoll(id: string): Promise<Poll | null> {
   return (data as unknown as Poll | null) ?? null;
 }
 
-/** Poll ids this person (or, for one-per-family polls, their family) already answered. */
+/**
+ * Poll ids this person (or, for one-per-family polls, their family) already answered. Mirrors
+ * poll_results(): on a one-per-family poll a vote by any adult in the family counts (cast_vote
+ * keeps only the latest one). RLS (poll_votes_read) only shows a parent their own votes, so the
+ * co-parent's are read with the secret key, limited to polls this person can see (RLS on polls),
+ * that are one-per-family, and to adults in this person's family; only poll ids come back.
+ */
 export async function getVotedPollIds(me: { id: string; family_id: string | null }): Promise<Set<string>> {
   const supabase = await createClient();
-  const { data } = await supabase.from("poll_votes").select("poll_id, adult_id").eq("adult_id", me.id);
-  return new Set((data ?? []).map((v) => v.poll_id as string));
+  const [{ data }, { data: familyPolls }] = await Promise.all([
+    supabase.from("poll_votes").select("poll_id").eq("adult_id", me.id),
+    me.family_id ? supabase.from("polls").select("id").eq("one_per_family", true).order("created_at", { ascending: false }).limit(200) : Promise.resolve({ data: [] }),
+  ]);
+  const voted = new Set((data ?? []).map((v) => v.poll_id as string));
+  const pending = ((familyPolls ?? []) as { id: string }[]).map((p) => p.id).filter((id) => !voted.has(id));
+  if (me.family_id && pending.length && adminConfigured()) {
+    const { data: fam } = await createAdminClient()
+      .from("poll_votes")
+      .select("poll_id, adult:adults!inner(family_id)")
+      .in("poll_id", pending)
+      .eq("adult.family_id", me.family_id);
+    for (const v of (fam ?? []) as { poll_id: string }[]) voted.add(v.poll_id);
+  }
+  return voted;
 }
 
 /** Counts per answer, or null when this person can't see results yet. */

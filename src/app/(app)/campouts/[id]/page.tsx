@@ -18,7 +18,7 @@ import SaveOffline from "@/components/SaveOffline";
 import { getSlots } from "@/lib/volunteer";
 import { EventLinks, EventSections } from "@/components/EventInfo";
 import { getEvent, getItinerary, getPackingList, isLeader, requireMember } from "@/lib/data";
-import { getCampaigns, getOrders } from "@/lib/fundraising-data";
+import { getEventCampaign, getOrders } from "@/lib/fundraising-data";
 import { fmtDay, fmtRange, fmtTime, mapsLink } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Campout" };
@@ -27,16 +27,18 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
   const me = await requireMember();
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const event = await getEvent(id);
-  if (!event) notFound();
-  const [itinerary, packing, campaigns, slots] = await Promise.all([
+  // Everything on the page keys off the id, so read it all at once (the sign-up orders follow
+  // their campaign).
+  const campaignP = getEventCampaign(id);
+  const [event, itinerary, packing, campaign, orders, slots] = await Promise.all([
+    getEvent(id),
     getItinerary(id),
     getPackingList(id),
-    getCampaigns(),
+    campaignP,
+    campaignP.then((c) => (c ? getOrders([c.id]) : [])),
     getSlots(id),
   ]);
-  const campaign = campaigns.find((c) => c.event_id === id) ?? null;
-  const orders = campaign ? await getOrders([campaign.id]) : [];
+  if (!event) notFound();
 
   const byDay = new Map<string, typeof itinerary>();
   for (const i of itinerary) byDay.set(fmtDay(i.starts_at), [...(byDay.get(fmtDay(i.starts_at)) ?? []), i]);

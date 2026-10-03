@@ -1,8 +1,8 @@
 "use client";
 
-import { useSubmitKeepingValues } from "@/components/ActionForm";
+import { failedCallMessage, useSubmitKeepingValues } from "@/components/ActionForm";
 import { useActionState, useState } from "react";
-import { Megaphone } from "lucide-react";
+import { CircleCheck, Megaphone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { postAnnouncement, type PostState } from "@/app/(app)/actions";
 
@@ -36,9 +36,24 @@ export default function PostAnnouncement({
   const router = useRouter();
   const [open, setOpen] = useState(startOpen);
   const [den, setDen] = useState(defaultDen || (canPostPack ? "" : (dens[0]?.id ?? "")));
+  // Set once a post goes through: the button stays off (and says Sent) so a slow redirect or
+  // a second tap can't send it twice. Opening the form again starts a new message.
+  const [sent, setSent] = useState(false);
   const [state, action, pending] = useActionState<PostState, FormData>(async (prev, form) => {
-    const result = await postAnnouncement(prev, form);
+    let result: PostState;
+    try {
+      result = await postAnnouncement(prev, form);
+    } catch (e) {
+      // Unlike a save, sending twice would alert families twice: say so instead of "tap again".
+      const msg = failedCallMessage(e);
+      return {
+        error: msg.startsWith("No connection")
+          ? "The connection dropped, so it may or may not have gone out. Check the news before you send it again; what you typed is still here."
+          : "Something went wrong on our end, so it may not have gone out. Check the news before you send it again.",
+      };
+    }
     if (result.ok) {
+      setSent(true);
       setOpen(false);
       if (doneHref) router.push(doneHref);
     }
@@ -80,8 +95,18 @@ export default function PostAnnouncement({
           <p className="text-xs text-muted">The alert and email end with &ldquo;More in the Signal group,&rdquo; and open the event, where families going can join it.</p>
         )}
         {state.error && <p className="text-sm text-danger">{state.error}</p>}
-        <button type="submit" className="btn-primary w-full" disabled={pending || n === 0}>
-          {pending ? "Sending…" : n === 0 ? "Nobody has said yes yet" : `Send to ${families}`}
+        <button type="submit" className={`btn-primary w-full ${pending ? "is-busy" : ""}`} disabled={pending || sent || n === 0}>
+          {sent ? (
+            <>
+              <CircleCheck className="h-4 w-4" aria-hidden /> Sent
+            </>
+          ) : pending ? (
+            "Sending…"
+          ) : n === 0 ? (
+            "Nobody has said yes yet"
+          ) : (
+            `Send to ${families}`
+          )}
         </button>
       </form>
     );
@@ -89,9 +114,22 @@ export default function PostAnnouncement({
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="btn-ghost w-full">
-        <Megaphone className="h-4 w-4" aria-hidden /> {canPostPack ? "Post an announcement or den message" : "Message my den"}
-      </button>
+      <div className="space-y-2">
+        {sent && (
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-pine" role="status">
+            <CircleCheck className="h-4 w-4" aria-hidden /> Sent
+          </p>
+        )}
+        <button
+          onClick={() => {
+            setSent(false);
+            setOpen(true);
+          }}
+          className="btn-ghost w-full"
+        >
+          <Megaphone className="h-4 w-4" aria-hidden /> {canPostPack ? "Post an announcement or den message" : "Message my den"}
+        </button>
+      </div>
     );
   }
   return (
@@ -121,7 +159,7 @@ export default function PostAnnouncement({
       />
       {!den && (
         <div className="flex items-center gap-3">
-          <select name="category" className="input w-auto py-2 text-sm" defaultValue="General">
+          <select name="category" className="input w-auto py-2" defaultValue="General">
             {CATEGORIES.map((c) => (
               <option key={c}>{c}</option>
             ))}
@@ -158,8 +196,18 @@ export default function PostAnnouncement({
       )}
       {state.error && <p className="text-sm text-danger">{state.error}</p>}
       <div className="flex gap-2">
-        <button type="submit" className="btn-primary flex-1" disabled={pending}>
-          {pending ? "Sending…" : den ? "Send to the den" : "Post"}
+        <button type="submit" className={`btn-primary flex-1 ${pending ? "is-busy" : ""}`} disabled={pending || sent}>
+          {sent ? (
+            <>
+              <CircleCheck className="h-4 w-4" aria-hidden /> Sent
+            </>
+          ) : pending ? (
+            "Sending…"
+          ) : den ? (
+            "Send to the den"
+          ) : (
+            "Post"
+          )}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="btn-ghost">
           Cancel

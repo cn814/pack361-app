@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
+// Links that hand back a file (CSV exports, documents, receipts) instead of a page: the
+// address never changes, so a bar started for them would hang until its timeout.
+const FILE_ROUTE = /\/csv$|^\/(documents|receipts)\/[0-9a-f-]{36}\/?$/i;
+
 /**
  * Thin bar across the top of the screen that starts the instant an in-app link is tapped
  * and disappears when the new page arrives, so a tap never feels ignored.
@@ -25,6 +29,7 @@ export default function NavProgress() {
       if (!a || (a.target && a.target !== "_self") || a.hasAttribute("download")) return;
       const url = new URL(a.href, location.href);
       if (url.origin !== location.origin || url.pathname.startsWith("/api/")) return;
+      if (url.searchParams.has("download") || FILE_ROUTE.test(url.pathname)) return;
       if (url.pathname === location.pathname && url.search === location.search) return;
       setFrom(location.pathname + location.search);
       clearTimeout(timer);

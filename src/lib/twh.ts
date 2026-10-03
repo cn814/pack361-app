@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DenRank } from "./types";
 import { twhEventUrl } from "./twh-link";
-import { easternDate, easternParts, easternWallToIso } from "./tz";
+import { addDays, daysBetween, easternDate, easternParts, easternWallToIso } from "./tz";
 
 // TroopWebHost calendar sync. TroopWebHost gives each user a private iCalendar subscription
 // link (My Stuff -> Subscribe to Calendar); TWH_CALENDAR_URL holds an admin's link. The sync
@@ -144,9 +144,10 @@ export function parseIcs(text: string, until = Date.now() + 400 * 86400000, from
       if (cur.UID && start) {
         let end = cur.DTEND ? parseDate(cur.DTEND.params, cur.DTEND.value) : null;
         // All-day DTEND is exclusive: a one-day event ends the next day.
+        // Calendar-day math (not -24h) so a span across a DST change keeps the right last day.
         if (end && start.allDay && end.allDay) {
-          const days = (new Date(end.iso).getTime() - new Date(start.iso).getTime()) / 86400000;
-          end = days <= 1.05 ? null : { iso: new Date(new Date(end.iso).getTime() - 86400000).toISOString(), allDay: true };
+          const last = addDays(easternDate(end.iso), -1);
+          end = last <= easternDate(start.iso) ? null : { iso: easternWallToIso(+last.slice(0, 4), +last.slice(5, 7), +last.slice(8, 10)), allDay: true };
         }
         const uid = cur.UID.value.trim();
         const description = cur.DESCRIPTION ? unescape(cur.DESCRIPTION.value) || null : null;
@@ -173,6 +174,8 @@ export function parseIcs(text: string, until = Date.now() + 400 * 86400000, from
           const exParams = cur.EXDATE?.params ?? "";
           const skip = new Set((cur.EXDATE?.all ?? []).flatMap((v) => v.split(",")).map((v) => icsDay(exParams, v)));
           const length = end ? new Date(end.iso).getTime() - new Date(start.iso).getTime() : null;
+          // All-day copies keep the same number of calendar days, whatever DST does in between.
+          const spanDays = end && start.allDay ? daysBetween(easternDate(start.iso), easternDate(end.iso)) : null;
           const copies = expandRule(cur.RRULE.value, startDay, until, from)
             .filter((day) => !skip.has(day))
             .map((day) => {
@@ -183,7 +186,15 @@ export function parseIcs(text: string, until = Date.now() + 400 * 86400000, from
                 ...base,
                 uid: `${uid}#${day}`,
                 starts_at: iso,
-                ends_at: length === null ? null : new Date(new Date(iso).getTime() + length).toISOString(),
+                ends_at:
+                  length === null
+                    ? null
+                    : spanDays !== null
+                      ? (() => {
+                          const last = addDays(`${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}`, spanDays);
+                          return easternWallToIso(+last.slice(0, 4), +last.slice(5, 7), +last.slice(8, 10));
+                        })()
+                      : new Date(new Date(iso).getTime() + length).toISOString(),
               };
             });
           series.set(uid, copies);

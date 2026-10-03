@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/ActionForm";
 import { isLeader, requireMember } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
-import { easternDate } from "@/lib/tz";
+import { addDays, easternDate } from "@/lib/tz";
 
 const UUID = /^[0-9a-f-]{36}$/i;
+/** Same window as formState() in src/lib/paperwork.ts: "expiring" within this many days. */
+const RENEW_DAYS = 45;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** "s:<scout id>" or "a:<adult id>" -> the matching column. */
@@ -33,11 +35,32 @@ export async function reportHealthForm(_prev: ActionResult, form: FormData): Pro
   if (date && (!DATE.test(date) || date > easternDate(Date.now()))) return { error: "Use the date written on the form (not in the future)." };
   const supabase = await createClient();
   const row = { status: "submitted", form_date: date || null, expires_on: null };
-  const { data: existing } = await supabase.from("health_forms").select("id").eq(who.col, who.id).maybeSingle();
-  const { error } = existing
-    ? await supabase.from("health_forms").update(row).eq("id", existing.id)
-    : await supabase.from("health_forms").insert({ [who.col]: who.id, ...row });
-  if (error) return { error: "Couldn't save that. Try again." };
+  const onFile = { ok: true, message: "A leader already has this form on file. Nothing more to do." };
+  // An on-file form can be replaced only once it's expired or expiring (when the card offers
+  // "I turned it in" again), so a leader's "received" mark is never undone by a family.
+  const renewFrom = addDays(easternDate(Date.now()), RENEW_DAYS);
+  const { data: existing } = await supabase
+    .from("health_forms")
+    .select("id, status, expires_on")
+    .eq(who.col, who.id)
+    .maybeSingle();
+  if (existing?.status === "on_file" && !(existing.expires_on && existing.expires_on <= renewFrom)) return onFile;
+  if (existing) {
+    const { data: updated, error } = await supabase
+      .from("health_forms")
+      .update(row)
+      .eq("id", existing.id)
+      .or(`status.neq.on_file,expires_on.lte.${renewFrom}`)
+      .select("id");
+    if (error) return { error: "Couldn't save that. Try again." };
+    if (!updated?.length) {
+      refresh();
+      return onFile;
+    }
+  } else {
+    const { error } = await supabase.from("health_forms").insert({ [who.col]: who.id, ...row });
+    if (error) return { error: "Couldn't save that. Try again." };
+  }
   refresh();
   return { ok: true, message: "Thanks! A leader will confirm it when they get the form." };
 }

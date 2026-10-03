@@ -3,6 +3,10 @@
 import { useEffect, useState, useTransition } from "react";
 import { Bell, BellOff } from "lucide-react";
 import { removePushSubscription, savePushSubscription, sendTestPush } from "@/app/(app)/push-actions";
+import { failedCallMessage } from "@/components/ActionForm";
+
+/** Message for a server call that didn't go through (dropped signal). */
+const offline = (e: unknown) => failedCallMessage(e, "the button");
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -50,7 +54,12 @@ export default function PushToggle() {
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(vapid!),
         });
-        const res = await savePushSubscription(JSON.parse(JSON.stringify(sub)), navigator.userAgent);
+        let res: { error?: string };
+        try {
+          res = await savePushSubscription(JSON.parse(JSON.stringify(sub)), navigator.userAgent);
+        } catch (e) {
+          throw new Error(offline(e));
+        }
         if (res.error) throw new Error(res.error);
         setState("on");
       } catch (e) {
@@ -63,18 +72,29 @@ export default function PushToggle() {
   const sendTest = () =>
     start(async () => {
       setTest(null);
-      setTest(await sendTestPush());
+      try {
+        setTest(await sendTestPush());
+      } catch (e) {
+        setTest({ ok: false, message: offline(e) });
+      }
     });
 
   const turnOff = () =>
     start(async () => {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) {
-        await removePushSubscription(sub.endpoint);
-        await sub.unsubscribe();
+      setError(null);
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          // Tell the server first: if that fails the alerts stay on (and say so), rather than
+          // the device thinking they're off while the pack keeps sending.
+          await removePushSubscription(sub.endpoint);
+          await sub.unsubscribe();
+        }
+        setState("off");
+      } catch (e) {
+        setError(`Alerts are still on. ${offline(e)}`);
       }
-      setState("off");
     });
 
   return (

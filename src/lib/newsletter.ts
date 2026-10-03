@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadCalendar, type CalItem, type DenScope } from "./calendar";
 import { APP_URL } from "./email";
 import { sendPersonal } from "./bulk-email";
-import { fmtDay, fmtRange } from "./format";
+import { eventOver, fmtDay, fmtRange } from "./format";
 import { fmtMoney } from "./money";
 import { formState, needsForm, type HealthForm } from "./paperwork";
 import { namesList, slipsToSign } from "./slips";
@@ -109,8 +109,11 @@ async function familyNews(db: SupabaseClient, r: Recipient): Promise<FamilyNews>
   const scope: DenScope = { dens, ranks: [...new Set(scouts.map((s) => s.den?.rank).filter((x): x is DenRank => Boolean(x)))] };
 
   // Six weeks of calendar: two for the list, the rest to spot a campout that needs forms.
-  const items = await loadCalendar(db, scope, { since: new Date(now).toISOString(), limit: 150 });
-  const soon = items.filter((i) => Date.parse(i.starts_at) < in14 && Date.parse(i.ends_at ?? i.starts_at) >= now);
+  // From the start of today (Eastern), so today's all-day events and a campout that ends today
+  // (all-day ends_at is the last day's midnight) are still listed at 6 AM; eventOver then keeps
+  // all-day items through their last day and timed ones until they end.
+  const items = (await loadCalendar(db, scope, { since: startOfEasternDay(today), limit: 150 })).filter((i) => !eventOver(i));
+  const soon = items.filter((i) => Date.parse(i.starts_at) < in14);
   const eventIds = soon.filter((i) => i.kind === "event").map((i) => i.id);
   const meetingIds = soon.filter((i) => i.kind === "meeting").map((i) => i.id);
 
@@ -378,10 +381,18 @@ ${parts.join("\n")}
 // ---------------------------------------------------------------------------
 // Sending
 // ---------------------------------------------------------------------------
-async function getMode(db: SupabaseClient): Promise<{ mode: NewsletterMode; testIds: string[] }> {
-  const { data } = await db.from("pack_settings").select("key, value").in("key", ["newsletter_mode", "newsletter_test_adults"]);
+/** pack_settings key holding the week (its Sunday) whose run hasn't reached everyone yet, or "". */
+const PENDING_KEY = "newsletter_pending_week";
+
+async function getMode(db: SupabaseClient): Promise<{ mode: NewsletterMode; testIds: string[]; pendingWeek: string | null }> {
+  const { data } = await db.from("pack_settings").select("key, value").in("key", ["newsletter_mode", "newsletter_test_adults", PENDING_KEY]);
   const get = (k: string) => ((data ?? []) as { key: string; value: string }[]).find((r) => r.key === k)?.value;
-  return { mode: newsletterMode(get("newsletter_mode")), testIds: testAdultIds(get("newsletter_test_adults")) };
+  return { mode: newsletterMode(get("newsletter_mode")), testIds: testAdultIds(get("newsletter_test_adults")), pendingWeek: get(PENDING_KEY) || null };
+}
+
+async function setPending(db: SupabaseClient, week: string): Promise<string | null> {
+  const { error } = await db.from("pack_settings").upsert({ key: PENDING_KEY, value: week, updated_at: new Date().toISOString() });
+  return error ? `Couldn't save the newsletter retry marker: ${error.message}` : null;
 }
 
 /** Build one person's newsletter (for a preview). */
@@ -404,14 +415,23 @@ export async function sendPreview(db: SupabaseClient, adultId: string): Promise<
 
 /**
  * The Sunday run: everyone the setting covers who hasn't had this week's newsletter yet.
- * Safe to run more than once a week; only Sundays send unless `force` is set.
+ * Safe to run more than once a week (newsletter_sends records who already got it). Sundays
+ * start the week's send; if that run stopped early (the email service refusing), the next
+ * days' runs (Mon-Sat of the same week) finish it. Otherwise only Sundays send unless `force`.
  */
 export async function runWeeklyNewsletter(db: SupabaseClient, opts: { force?: boolean } = {}) {
-  if (!opts.force && !isSundayEastern()) return { skipped: "not Sunday" };
-  const { mode, testIds } = await getMode(db);
+  const week = weekOf();
+  const sunday = isSundayEastern();
+  const { mode, testIds, pendingWeek } = await getMode(db);
+  if (!opts.force && !sunday && pendingWeek !== week) return { skipped: "not Sunday" };
   if (mode === "off") return { skipped: "turned off" };
   if (mode === "test" && !testIds.length) return { skipped: "testing, but nobody is ticked" };
-  const week = weekOf();
+  const errors: string[] = [];
+  // Mark the week as started, so a run that stops early (or throws) is picked up tomorrow.
+  if (pendingWeek !== week) {
+    const err = await setPending(db, week);
+    if (err) errors.push(err);
+  }
   let q = db.from("adults").select(RECIPIENT_COLS).eq("is_active", true).not("email", "is", null);
   if (mode === "test") q = q.in("id", testIds);
   const [{ data: people, error }, { data: done }] = await Promise.all([q, db.from("newsletter_sends").select("adult_id").eq("week_of", week)]);
@@ -422,7 +442,7 @@ export async function runWeeklyNewsletter(db: SupabaseClient, opts: { force?: bo
   // Build each family's newsletter once and send each adult their own copy.
   const cache = new Map<string, FamilyNews>();
   let ok = 0;
-  const errors: string[] = [];
+  let unrecorded = false;
   for (const r of todo) {
     const key = r.family_id ?? `adult:${r.id}`;
     try {
@@ -434,12 +454,25 @@ export async function runWeeklyNewsletter(db: SupabaseClient, opts: { force?: bo
         if (errors.length >= 3) break; // the email service is refusing; try again next run
         continue;
       }
-      await db.from("newsletter_sends").insert({ adult_id: r.id, week_of: week });
       ok++;
+      const { error: insErr } = await db.from("newsletter_sends").insert({ adult_id: r.id, week_of: week });
+      if (insErr) {
+        // Sent but not recorded: a retry would send it again, so stop here rather than keep
+        // sending emails nothing remembers.
+        errors.push(`Sent to ${r.email} but couldn't record it (they may get it twice): ${insErr.message}`);
+        unrecorded = true;
+        break;
+      }
     } catch (e) {
       errors.push(e instanceof Error ? e.message : "failed");
       if (errors.length >= 3) break;
     }
   }
-  return { mode, week, sent: ok, waiting: todo.length - ok, errors: [...new Set(errors)].slice(0, 3) };
+  const waiting = todo.length - ok;
+  // Everyone reached (and recorded): nothing for the rest of the week's runs to finish.
+  if (!waiting && !unrecorded) {
+    const err = await setPending(db, "");
+    if (err) errors.push(err);
+  }
+  return { mode, week, sent: ok, waiting, errors: [...new Set(errors)].slice(0, 4) };
 }

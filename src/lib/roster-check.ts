@@ -262,10 +262,14 @@ export function matchDen(row: Pick<ExportRow, "rank" | "denNumber">, dens: AppDe
 export function diffRoster(rows: ExportRow[], scouts: AppScout[], dens: AppDen[], families: AppFamily[]): RosterDiff {
   const byId = new Map<string, AppScout[]>();
   const byName = new Map<string, AppScout[]>();
+  // Roster Lite exports carry only a last initial: those rows match on first name + initial.
+  const byInitial = new Map<string, AppScout[]>();
   for (const s of scouts) {
     if (s.bsa_member_id) byId.set(idKey(s.bsa_member_id), [...(byId.get(idKey(s.bsa_member_id)) ?? []), s]);
     const n = firstKey(s.first_name) + "|" + key(s.last_name);
     byName.set(n, [...(byName.get(n) ?? []), s]);
+    const i = firstKey(s.first_name) + "|" + key(s.last_name).slice(0, 1);
+    byInitial.set(i, [...(byInitial.get(i) ?? []), s]);
   }
   const denById = new Map(dens.map((d) => [d.id, d]));
   const diff: RosterDiff = { newScouts: [], moves: [], memberIds: [], inactive: [], missing: [], unknownDens: [], nameDiffs: [], ambiguous: [], matched: 0 };
@@ -280,9 +284,12 @@ export function diffRoster(rows: ExportRow[], scouts: AppScout[], dens: AppDen[]
     }
     if (idHits.length === 1) scout = idHits[0];
     else {
-      const names = [row.first, row.nickname].filter(Boolean).map((f) => firstKey(f) + "|" + key(row.last));
-      const hits = [...new Set(names.flatMap((n) => byName.get(n) ?? []))];
-      // A name match whose app member ID differs is a different child.
+      const lastKey = row.initialOnly ? key(row.last).slice(0, 1) : key(row.last);
+      const index = row.initialOnly ? byInitial : byName;
+      const names = [row.first, row.nickname].filter(Boolean).map((f) => firstKey(f) + "|" + lastKey);
+      const hits = lastKey ? [...new Set(names.flatMap((n) => index.get(n) ?? []))] : [];
+      // A name match whose app member ID differs is a different child. With only an initial,
+      // two scouts sharing a first name and initial is ambiguous (only a single hit is accepted).
       const usable = hits.filter((s) => !s.bsa_member_id || !row.memberId || idKey(s.bsa_member_id) === idKey(row.memberId));
       if (usable.length > 1) {
         diff.ambiguous.push(row);

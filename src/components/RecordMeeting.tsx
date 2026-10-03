@@ -1,11 +1,15 @@
 "use client";
 
-import { startTransition, useActionState, useState, type FormEvent } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Check, CircleCheck, ExternalLink, Pencil, Plus, TriangleAlert, X } from "lucide-react";
 import type { AdventureOption } from "@/components/MeetingForm";
 import type { MeetingWork } from "@/lib/meetings";
 import { recordDenMeeting, type RecordResult } from "@/app/(app)/scouts/den/[denId]/meetings/actions";
+import { guardAction } from "@/components/ActionForm";
+
+// Module level so the wrapped action keeps one identity across renders.
+const record = guardAction(recordDenMeeting);
 
 interface Props {
   denId: string;
@@ -22,12 +26,14 @@ interface Props {
   work: MeetingWork[];
 }
 
+const snapshot = (present: Set<string>, work: MeetingWork[]) => JSON.stringify([[...present].sort(), work]);
+
 const range = (n: number) => Array.from({ length: n }, (_, i) => String(i + 1));
 
 /** Record a den meeting on a phone: tap who's here, tap what you did, Save. */
 export default function RecordMeeting(p: Props) {
   const router = useRouter();
-  const [state, formAction, pending] = useActionState<RecordResult, FormData>(recordDenMeeting, {});
+  const [state, formAction, pending] = useActionState<RecordResult, FormData>(record, {});
   const [present, setPresent] = useState<Set<string>>(new Set(p.present));
   const [work, setWork] = useState<MeetingWork[]>(p.work);
   const [noAdventure, setNoAdventure] = useState(Boolean(p.savedAt) && p.work.length === 0);
@@ -36,11 +42,37 @@ export default function RecordMeeting(p: Props) {
   const [showDate, setShowDate] = useState(p.day !== p.today);
   const [editing, setEditing] = useState(true);
   const [lastOk, setLastOk] = useState<RecordResult | null>(null);
+  // What's saved (or was on the page when it opened), to tell whether there are unsaved taps.
+  const [baseline, setBaseline] = useState(() => snapshot(new Set(p.present), p.work));
   if (state.ok && state !== lastOk) {
     setLastOk(state);
     setEditing(false);
+    setBaseline(snapshot(present, work));
   }
   const meetingId = state.meetingId ?? p.meetingId;
+  const leaving = useRef<string | null>(null);
+  const dayTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  /**
+   * Open another day once the date box holds a whole, real date. Typing a date on a computer
+   * passes through dates like 0002-10-03 or the 1st of the month, so a change waits a moment
+   * for the next keystroke; leaving the box (or a phone's date picker closing) goes at once.
+   */
+  const goToDay = (input: HTMLInputElement) => {
+    clearTimeout(dayTimer.current);
+    const v = input.value;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+    if (!m || Number(m[1]) < 2000 || v > p.today || v === p.day || leaving.current === v) return;
+    const d = new Date(`${v}T12:00:00Z`);
+    if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== v) return;
+    if (snapshot(present, work) !== baseline && !window.confirm("Go to another day? The scouts and adventures you tapped here aren't saved yet.")) {
+      input.value = p.day;
+      return;
+    }
+    leaving.current = v;
+    router.push(`/scouts/den/${p.denId}/today?date=${v}`);
+  };
+  useEffect(() => () => clearTimeout(dayTimer.current), []);
 
   const byName = new Map(p.adventures.map((a) => [a.name, a]));
   const chosen = new Set(work.map((w) => w.adventure));
@@ -122,10 +154,13 @@ export default function RecordMeeting(p: Props) {
               className="input w-auto py-1.5"
               max={p.today}
               defaultValue={p.day}
+              min="2000-01-01"
               onChange={(e) => {
-                const v = e.target.value;
-                if (/^\d{4}-\d{2}-\d{2}$/.test(v) && v <= p.today) router.push(`/scouts/den/${p.denId}/today?date=${v}`);
+                const input = e.currentTarget;
+                clearTimeout(dayTimer.current);
+                dayTimer.current = setTimeout(() => goToDay(input), 700);
               }}
+              onBlur={(e) => goToDay(e.currentTarget)}
             />
           </label>
         ) : (

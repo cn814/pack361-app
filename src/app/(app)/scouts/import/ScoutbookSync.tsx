@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { CalendarClock, CircleCheck, CloudDownload, GitCompare } from "lucide-react";
 import { compareScoutbook, importFromScoutbook, setScoutbookWeekly, type ImportState, type ScoutbookCompareState } from "../actions";
 import { changesText } from "@/lib/import-changes";
+import { failedCallMessage } from "@/components/ActionForm";
 
 type ImportRes = ImportState & { steps?: string[]; skipped?: { name: string; reason: string }[] };
 
@@ -24,6 +25,7 @@ export default function ScoutbookSync({
   const [busy, setBusy] = useState<"compare" | "import" | null>(null);
   const [cmp, setCmp] = useState<ScoutbookCompareState | null>(null);
   const [imp, setImp] = useState<ImportRes | null>(null);
+  const [weeklyError, setWeeklyError] = useState<string | null>(null);
 
   if (!configured) {
     return (
@@ -65,8 +67,13 @@ export default function ScoutbookSync({
           onClick={async () => {
             setBusy("compare");
             setImp(null);
-            setCmp(await compareScoutbook());
-            setBusy(null);
+            try {
+              setCmp(await compareScoutbook());
+            } catch (e) {
+              setCmp({ error: failedCallMessage(e, "Compare"), steps: [], skipped: [] });
+            } finally {
+              setBusy(null);
+            }
           }}
         >
           <GitCompare className="h-4 w-4" aria-hidden /> {busy === "compare" ? "Reading Scoutbook…" : "Compare with Scoutbook"}
@@ -78,8 +85,15 @@ export default function ScoutbookSync({
           title={cmp?.compare ? undefined : "Compare first"}
           onClick={async () => {
             setBusy("import");
-            setImp(await importFromScoutbook());
-            setBusy(null);
+            try {
+              setImp(await importFromScoutbook());
+            } catch (e) {
+              // The import may have finished on the server even though the answer didn't
+              // arrive; comparing again shows where things stand.
+              setImp({ error: `${failedCallMessage(e, "Compare")} If the import got through, Compare will show nothing new.` });
+            } finally {
+              setBusy(null);
+            }
           }}
         >
           <CloudDownload className="h-4 w-4" aria-hidden /> {busy === "import" ? "Importing…" : "Import from Scoutbook"}
@@ -98,8 +112,14 @@ export default function ScoutbookSync({
             onClick={() =>
               startSaving(async () => {
                 const next = !weeklyOn;
-                const res = await setScoutbookWeekly(next);
-                if (res.ok) setWeeklyOn(next);
+                setWeeklyError(null);
+                try {
+                  const res = await setScoutbookWeekly(next);
+                  if (res.ok) setWeeklyOn(next);
+                  else setWeeklyError(res.error ?? "Couldn't change it. Try again.");
+                } catch (e) {
+                  setWeeklyError(failedCallMessage(e, weeklyOn ? "On" : "Off"));
+                }
               })
             }
             className={`rounded-full px-3 py-1 text-xs font-extrabold ${weeklyOn ? "bg-brand text-white" : "border border-line bg-card text-muted"}`}
@@ -111,6 +131,7 @@ export default function ScoutbookSync({
           Imports advancement and Safeguarding Youth dates from Scoutbook automatically before the Sunday email. Pack admins
           get a note when something changed. If it would remove more than a few records it holds off and asks you to look.
         </p>
+        {weeklyError && <p className="text-xs font-semibold text-danger">{weeklyError}</p>}
         {weeklyLast && (
           <div className="text-xs">
             <p className="font-semibold">Last run {weeklyLast.at}:</p>

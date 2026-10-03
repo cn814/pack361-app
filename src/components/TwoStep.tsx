@@ -2,7 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { KeyRound, QrCode, Smartphone } from "lucide-react";
-import ActionForm, { useSubmitKeepingValues } from "@/components/ActionForm";
+import ActionForm, { failedCallMessage, guardAction, useSubmitKeepingValues } from "@/components/ActionForm";
 import { finishTwoStepSetup, startTwoStepSetup, verifyTwoStep, type SetupStart } from "@/app/two-step/actions";
 
 function CodeInput({ autoFocus = false }: { autoFocus?: boolean }) {
@@ -27,9 +27,12 @@ function CodeInput({ autoFocus = false }: { autoFocus?: boolean }) {
   );
 }
 
+// Module level so the wrapped action keeps one identity across renders.
+const guarded = guardAction(verifyTwoStep, "Continue");
+
 /** Sign-in: enter the code from the authenticator app. */
 export function TwoStepVerify() {
-  const [state, action, pending] = useActionState(verifyTwoStep, {});
+  const [state, action, pending] = useActionState(guarded, {});
   const onSubmit = useSubmitKeepingValues(action);
   return (
     <form action={action} onSubmit={onSubmit} className="space-y-3">
@@ -50,7 +53,14 @@ export function TwoStepVerify() {
 export function TwoStepSetup({ next, startLabel = "Set up two-step sign-in" }: { next?: "home"; startLabel?: string }) {
   const [setup, setSetup] = useState<SetupStart | null>(null);
   const [starting, start] = useTransition();
-  const begin = () => start(async () => setSetup(await startTwoStepSetup()));
+  const begin = () =>
+    start(async () => {
+      try {
+        setSetup(await startTwoStepSetup());
+      } catch (e) {
+        setSetup({ error: failedCallMessage(e, startLabel) });
+      }
+    });
 
   if (!setup || "error" in setup) {
     return (

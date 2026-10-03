@@ -33,10 +33,13 @@ export async function weeklyScoutbook(db: SupabaseClient): Promise<WeeklyResult 
   if (!myScoutingConfigured()) return { skipped: "no Scoutbook login saved" };
 
   const result: WeeklyResult = { at: new Date().toISOString(), advancement: {}, training: {} };
+  // Both reads share the cron's 300 seconds: advancement may read until 200s (leaving time to
+  // compare and import), training until 270s, so the result is always saved and reported.
+  const started = Date.now();
 
   // 1. Advancement
   try {
-    const sync = await fetchScoutbookAdvancement();
+    const sync = await fetchScoutbookAdvancement({ deadline: started + 200_000 });
     if (sync.error) throw new Error(sync.error);
     const { data: catalog } = await db.from("adventures").select("rank, name, required, req_count, special, sort_order").order("sort_order");
     const { rows } = rowsFromLines(sync.lines, (catalog ?? []) as CatalogAdventure[]);
@@ -58,7 +61,7 @@ export async function weeklyScoutbook(db: SupabaseClient): Promise<WeeklyResult 
 
   // 2. Training (Safeguarding Youth)
   try {
-    const sync = await fetchMyScoutingTraining();
+    const sync = await fetchMyScoutingTraining({ deadline: Math.min(started + 270_000, Date.now() + 90_000) });
     if (sync.error) throw new Error(sync.error);
     const [{ data: adults }, { data: trainings }] = await Promise.all([
       db.from("adults").select("id, first_name, last_name, preferred_name, bsa_member_id, other_names").eq("is_active", true),

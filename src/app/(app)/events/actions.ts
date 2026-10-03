@@ -27,7 +27,10 @@ export async function setEventArchived(form: FormData) {
   // Putting back an event that TroopWebHost removed: the app keeps it from now on, so the next
   // sync doesn't archive it again.
   if (!archive && ev.archived_reason === "removed_in_twh" && ev.source === "troopwebhost") patch.source = "manual";
-  await supabase.from("events").update(patch).eq("id", id);
+  const { error } = await supabase.from("events").update(patch).eq("id", id);
+  // Plain form action (no result to show): throw so the error page says it didn't save,
+  // instead of redirecting as if it had.
+  if (error) throw new Error(archive ? "Couldn't archive the event." : "Couldn't put the event back.");
   revalidatePath("/", "layout");
   redirect(/^\/(?![\/\\])/.test(back) ? back : `/events/${id}`);
 }
@@ -143,7 +146,14 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
   }
   // Bring families' event charges in line with the (new) cost. Paid ones stay as they are.
   // (Leadership only: den leaders can't change prices, and the database refuses them this.)
-  if (UUID.test(id) && isCommittee(me)) await supabase.rpc("refresh_event_charges", { p_event_id: eventId });
+  // The real role, not the "View as" one: the database checks the real one.
+  if (UUID.test(id) && isCommittee({ ...me, role: me.real_role ?? me.role })) {
+    const { error } = await supabase.rpc("refresh_event_charges", { p_event_id: eventId });
+    if (error) {
+      revalidatePath("/", "layout");
+      return { error: "The event was saved, but families' charges for it couldn't be updated to the new cost. Save again to retry." };
+    }
+  }
   revalidatePath("/", "layout");
   redirect(category === "Campout" ? `/campouts/${eventId}` : `/events/${eventId}`);
 }

@@ -26,10 +26,10 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const me = await requireMember();
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const event = await getEvent(id);
+  // The volunteer jobs don't depend on the event row: read both at once.
+  const [event, slots] = await Promise.all([getEvent(id), getSlots(id)]);
   if (!event) notFound();
   if (event.category === "Campout") redirect(`/campouts/${id}`);
-  const slots = await getSlots(id);
   // On a pack-wide den-meeting night, list the dens that meet somewhere else.
   let elsewhere: { id: string; title: string; location: string | null; start_time: string | null; end_time: string | null; den: { name: string } | null }[] = [];
   if (event.category === "Den Meeting" && !event.den_id) {

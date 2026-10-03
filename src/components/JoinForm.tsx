@@ -1,16 +1,17 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 import type { ActionResult } from "./ActionForm";
-import { useSubmitKeepingValues } from "./ActionForm";
+import { guardAction, useSubmitKeepingValues } from "./ActionForm";
 import { GRADES, GRADE_LABEL, MAX_JOIN_SCOUTS } from "@/lib/join";
 
 type Action = (prev: ActionResult, form: FormData) => Promise<ActionResult>;
 
 /** The "ask to join" form on the not-on-roster page: you, then your scouts. */
 export default function JoinForm({ action }: { action: Action }) {
-  const [state, formAction, pending] = useActionState<ActionResult, FormData>(action, {});
+  const guarded = useMemo(() => guardAction(action, "Ask to join"), [action]);
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(guarded, {});
   const onSubmit = useSubmitKeepingValues(formAction);
   const [rows, setRows] = useState([0]);
   const [next, setNext] = useState(1);
@@ -49,10 +50,12 @@ export default function JoinForm({ action }: { action: Action }) {
         <legend className="text-xs font-bold text-navy">Your Cub Scouts</legend>
         {rows.map((key, i) => (
           <div key={key} className="flex items-start gap-1.5">
-            <div className="grid flex-1 grid-cols-[1fr_1fr_7.5rem] gap-1.5">
-              <input className="input py-2 text-sm" name="scout_first" placeholder="First name" aria-label={`Scout ${i + 1} first name`} maxLength={60} />
-              <input className="input py-2 text-sm" name="scout_last" placeholder="Last name" aria-label={`Scout ${i + 1} last name`} maxLength={60} />
-              <select className="input py-2 text-sm" name="scout_grade" defaultValue="" aria-label={`Scout ${i + 1} grade this school year`}>
+            {/* Names side by side and the grade underneath on a phone; one row on wider screens.
+                16px text so iPhone doesn't zoom in on tap. */}
+            <div className="grid min-w-0 flex-1 grid-cols-2 gap-1.5 sm:grid-cols-[1fr_1fr_7.5rem]">
+              <input className="input min-w-0 py-2" name="scout_first" placeholder="First name" aria-label={`Scout ${i + 1} first name`} maxLength={60} />
+              <input className="input min-w-0 py-2" name="scout_last" placeholder="Last name" aria-label={`Scout ${i + 1} last name`} maxLength={60} />
+              <select className="input col-span-2 py-2 sm:col-span-1" name="scout_grade" defaultValue="" aria-label={`Scout ${i + 1} grade this school year`}>
                 <option value="">Grade</option>
                 {GRADES.map((g) => (
                   <option key={g} value={g}>
@@ -62,7 +65,7 @@ export default function JoinForm({ action }: { action: Action }) {
               </select>
             </div>
             {rows.length > 1 && (
-              <button type="button" className="mt-2 text-muted" aria-label={`Remove scout ${i + 1}`} onClick={() => setRows(rows.filter((r) => r !== key))}>
+              <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center text-muted" aria-label={`Remove scout ${i + 1}`} onClick={() => setRows(rows.filter((r) => r !== key))}>
                 <X className="h-4 w-4" aria-hidden />
               </button>
             )}

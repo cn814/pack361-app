@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { CircleCheck } from "lucide-react";
 
 /**
@@ -16,23 +16,29 @@ const MESSAGES: Record<string, (n: number) => string> = {
 
 export default function Toast() {
   const params = useSearchParams();
-  const router = useRouter();
-  const path = usePathname();
   const code = params.get("done");
   const n = Math.max(1, Number(params.get("n")) || 1);
   const make = code ? MESSAGES[code] : undefined;
+  const key = make ? `${code}:${n}` : null;
+  // `handled` is the ?done= the toast has already picked up, so closing it while the code is
+  // still in the address doesn't bring it straight back. It resets once the address is clean,
+  // so the next upload's toast still shows.
+  const [handled, setHandled] = useState<string | null>(null);
   const [shown, setShown] = useState<string | null>(null);
-  if (make && shown !== make(n)) setShown(make(n));
+  if (key !== handled) {
+    setHandled(key);
+    if (make) setShown(make(n));
+  }
 
   useEffect(() => {
-    if (!make) return;
-    // Clean the address so a refresh doesn't show it again.
-    const rest = new URLSearchParams(params.toString());
-    rest.delete("done");
-    rest.delete("n");
-    const q = rest.toString();
-    router.replace(q ? `${path}?${q}` : path, { scroll: false });
-  }, [make, params, path, router]);
+    if (!key) return;
+    // Clean the address so a refresh doesn't show it again. replaceState updates the URL
+    // (and Next's search params) without asking the server for the page again.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("done");
+    url.searchParams.delete("n");
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [key]);
 
   useEffect(() => {
     if (!shown) return;

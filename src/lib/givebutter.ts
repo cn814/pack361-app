@@ -228,8 +228,18 @@ async function matchDues(
       p_note: plan.note,
     });
     if (error) throw new Error(`Matching dues order ${o.id} failed: ${error.message}`);
-    if (data === "needs_review") out.needReview++;
-    else if (data === "matched" || data === "partial") out.matched++;
+    // apply_givebutter_dues (20261003000100_review_db_fixes.sql) maps the core's 'nothing_due' to
+    // 'needs_review' and 'short' to 'partial', so 'partial' is either an overpayment (applied) or an
+    // order too small for the scouts' dues (not applied, waiting on a leader). Tell them apart by
+    // whether it was applied; accept the raw values too in case the wrapper changes.
+    if (data === "needs_review" || data === "nothing_due" || data === "short") out.needReview++;
+    else if (data === "matched") out.matched++;
+    else if (data === "partial") {
+      const { data: row, error: readErr } = await db.from("givebutter_orders").select("dues_applied_at").eq("id", Number(o.id)).maybeSingle();
+      if (readErr) throw new Error(`Checking dues order ${o.id} failed: ${readErr.message}`);
+      if (row?.dues_applied_at) out.matched++;
+      else out.needReview++;
+    }
   }
   return out;
 }

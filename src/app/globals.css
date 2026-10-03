@@ -38,7 +38,9 @@
   --color-alarm: #ba1a1a;
   --color-on-gold: #1b2638;
 
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  /* --font-jakarta is set on <html> by next/font in src/app/layout.tsx (self-hosted, no
+     render-blocking request to Google). */
+  --font-sans: var(--font-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 
   --shadow-card: 0 2px 6px -1px rgba(30, 41, 58, 0.06), 0 1px 3px rgba(27, 67, 50, 0.04);
   --shadow-float: 0 10px 20px -3px rgba(27, 67, 50, 0.12), 0 4px 6px -2px rgba(233, 168, 37, 0.08);
@@ -125,6 +127,20 @@
   }
 }
 
+/* mint-200 is also the light text on the dark green fills (sidebar, Home's event cards), which
+   stay dark in dark mode, so the token itself keeps its light value. Only its use as the edge
+   of a mint box (border-mint-200 bg-mint) needs a dark value, or it glows against the dark mint. */
+@media screen {
+  html[data-theme="dark"] .border-mint-200 {
+    border-color: #2a4a3a;
+  }
+}
+@media screen and (prefers-color-scheme: dark) {
+  html[data-theme="auto"] .border-mint-200 {
+    border-color: #2a4a3a;
+  }
+}
+
 /* Opening animation (src/components/Splash.tsx): hidden unless its head script says to show it. */
 #splash {
   display: none;
@@ -145,6 +161,16 @@ body {
 }
 
 @layer base {
+  /* Long pasted links and words wrap instead of pushing the page sideways. Text blocks that
+     show what members typed may break anywhere, so they also shrink inside flex rows. */
+  body {
+    overflow-wrap: break-word;
+  }
+  .whitespace-pre-line,
+  .whitespace-pre-wrap {
+    overflow-wrap: anywhere;
+  }
+
   /* Tap feedback: anything pressable dims for a moment so the tap visibly registers. */
   a,
   button,

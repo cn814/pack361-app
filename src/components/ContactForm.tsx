@@ -1,11 +1,11 @@
 "use client";
 
-import { useSubmitKeepingValues } from "@/components/ActionForm";
+import { useSubmitKeepingValues, guardAction } from "@/components/ActionForm";
 import { useActionState } from "react";
 import { updateMyContact, type PostState } from "@/app/(app)/actions";
 
 export default function ContactForm({ phone, preferred }: { phone: string | null; preferred: string | null }) {
-  const [state, action, pending] = useActionState<PostState, FormData>(updateMyContact, {});
+  const [state, action, pending] = useActionState<PostState, FormData>(guardAction(updateMyContact), {});
   const keep = useSubmitKeepingValues(action);
   return (
     <form action={action} onSubmit={keep} className="space-y-3">

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { CalendarCheck } from "lucide-react";
 import { setDenMeetingRsvp } from "@/app/(app)/meetings/actions";
+import { failedCallMessage } from "@/components/ActionForm";
 
 interface Props {
   meetingId: string;
@@ -23,10 +24,16 @@ export default function DenMeetingRsvp({ meetingId, scouts, compact }: Props) {
     setAnswers((a) => ({ ...a, [scoutId]: going }));
     setError(null);
     start(async () => {
-      const res = await setDenMeetingRsvp(meetingId, scoutId, going);
-      if (res.error) {
+      let problem: string | null = null;
+      try {
+        problem = (await setDenMeetingRsvp(meetingId, scoutId, going)).error ?? null;
+      } catch (e) {
+        problem = failedCallMessage(e, "your answer");
+      }
+      if (problem) {
+        // Show the answer that's actually saved, not the one that didn't go through.
         setAnswers((a) => ({ ...a, [scoutId]: before }));
-        setError(res.error);
+        setError(problem);
       }
     });
   };
@@ -47,7 +54,7 @@ export default function DenMeetingRsvp({ meetingId, scouts, compact }: Props) {
                   aria-checked={on}
                   disabled={pending}
                   onClick={() => answer(s.id, g)}
-                  className={`rounded-xl border px-3 py-2 text-sm font-bold ${on ? "border-pine bg-brand text-white" : "border-line bg-card text-navy"}`}
+                  className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-bold ${on ? "border-pine bg-brand text-white" : "border-line bg-card text-navy"}`}
                 >
                   {g ? "Going" : "Can't go"}
                 </button>

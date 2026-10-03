@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarCheck } from "lucide-react";
+import { CalendarCheck, CircleCheck } from "lucide-react";
 import ActionForm from "@/components/ActionForm";
 import ChargeLine, { type EventCharge } from "@/components/ChargeLine";
 import { setRsvp } from "@/app/(app)/events/actions";
@@ -27,6 +27,8 @@ const LABEL = { yes: "Going", maybe: "Maybe", no: "Can't go" } as const;
 export default function RsvpCard({ eventId, open, deadline, mine, counts, defaultScouts, hasFamily, rows, cost, charge }: Props) {
   const [status, setStatus] = useState<"yes" | "maybe" | "no" | "">(mine?.status ?? "");
   const [editing, setEditing] = useState(!mine);
+  // After a save the card folds back to "Your answer", with the thank-you under it.
+  const [savedNote, setSavedNote] = useState<string | null>(null);
   return (
     <section id="rsvp" className="card scroll-mt-20 space-y-3 border-l-4 border-l-gold">
       <h2 className="section-title flex items-center gap-1.5">
@@ -47,25 +49,51 @@ export default function RsvpCard({ eventId, open, deadline, mine, counts, defaul
       <ChargeLine charge={charge ?? null} />
 
       {mine && !editing ? (
-        <div className="flex items-center justify-between gap-2 rounded-xl bg-mint p-3 text-sm text-pine">
-          <span>
-            <b>Your answer: {LABEL[mine.status]}</b>
-            {mine.status !== "no" && (
-              <span className="block text-xs">
-                {hasFamily ? `${mine.scouts} scout${mine.scouts === 1 ? "" : "s"}, ` : ""}
-                {mine.adults} adult{mine.adults === 1 ? "" : "s"}
-                {mine.note ? ` · “${mine.note}”` : ""}
-              </span>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-2 rounded-xl bg-mint p-3 text-sm text-pine">
+            <span>
+              <b>Your answer: {LABEL[mine.status]}</b>
+              {mine.status !== "no" && (
+                <span className="block text-xs">
+                  {hasFamily ? `${mine.scouts} scout${mine.scouts === 1 ? "" : "s"}, ` : ""}
+                  {mine.adults} adult{mine.adults === 1 ? "" : "s"}
+                  {mine.note ? ` · “${mine.note}”` : ""}
+                </span>
+              )}
+            </span>
+            {open && (
+              <button
+                type="button"
+                className="min-h-10 shrink-0 px-1 text-xs font-bold underline"
+                onClick={() => {
+                  setSavedNote(null);
+                  setEditing(true);
+                }}
+              >
+                Change
+              </button>
             )}
-          </span>
-          {open && (
-            <button type="button" className="text-xs font-bold underline" onClick={() => setEditing(true)}>
-              Change
-            </button>
+          </div>
+          {savedNote && (
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-pine" role="status">
+              <CircleCheck className="h-4 w-4 shrink-0" aria-hidden /> {savedNote}
+            </p>
           )}
         </div>
       ) : open ? (
-        <ActionForm action={setRsvp} submit="Send my RSVP" busy="Sending…" className="space-y-3">
+        // No reset after saving: the yes/maybe/no choice is React state, and the card folds
+        // up on success anyway.
+        <ActionForm
+          action={setRsvp}
+          submit="Send my RSVP"
+          busy="Sending…"
+          className="space-y-3"
+          resetOnSuccess={false}
+          onSuccess={(r) => {
+            setSavedNote(r.message ?? "Saved");
+            setEditing(false);
+          }}
+        >
           <input type="hidden" name="event_id" value={eventId} />
           <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Are you coming?">
             {(["yes", "maybe", "no"] as const).map((s) => (

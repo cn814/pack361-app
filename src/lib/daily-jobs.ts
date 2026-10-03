@@ -432,6 +432,7 @@ export async function remindTrainingImport(db: SupabaseClient, budget: EmailBudg
     tag: "training-import",
   });
   let emailed = 0;
+  let mailError: string | null = null;
   {
     const mail = await sendSome(
       to.map((p) => ({
@@ -447,12 +448,16 @@ export async function remindTrainingImport(db: SupabaseClient, budget: EmailBudg
       budget,
     );
     emailed = mail.sent;
-    if (mail.error) return { due: true, errors: [mail.error] };
+    mailError = mail.error;
   }
+  // Record the reminder whenever anyone got it (phone or email), even if some emails failed,
+  // so tomorrow doesn't push the same alert again.
+  const errors: string[] = mailError ? [mailError] : [];
   if (push.sent || emailed) {
-    await db
+    const { error: saveErr } = await db
       .from("pack_settings")
       .upsert({ key: "training_import_reminded", value: new Date().toISOString(), updated_at: new Date().toISOString() });
+    if (saveErr) errors.push(`Couldn't record the reminder: ${saveErr.message}`);
   }
-  return { due: true, pushed: push.sent, emailed, every: TRAINING_IMPORT_DAYS };
+  return { due: true, pushed: push.sent, emailed, every: TRAINING_IMPORT_DAYS, ...(errors.length ? { errors } : {}) };
 }

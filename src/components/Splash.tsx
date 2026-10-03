@@ -48,11 +48,11 @@ export default function Splash() {
   return (
     <div
       id="splash"
-      aria-hidden="true"
       className={`fixed inset-0 z-[100] flex-col items-center justify-center bg-[linear-gradient(#3673a0,#3673a0_45%,#2a2822)] transition-opacity duration-300 print:hidden ${leaving ? "opacity-0" : "opacity-100"}`}
     >
       <video
         ref={video}
+        aria-hidden="true"
         poster="/splash-poster.jpg"
         muted
         playsInline

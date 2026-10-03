@@ -367,6 +367,14 @@ export default function DeviceFiles({
     return () => urls.forEach((u) => URL.revokeObjectURL(u));
   }, []);
 
+  // The in-page viewer's object URL is released when it closes, shows another file, or the
+  // page is left (otherwise the file's copy stays in memory until the app is closed).
+  useEffect(() => {
+    if (!viewing) return;
+    const url = viewing.url;
+    return () => URL.revokeObjectURL(url);
+  }, [viewing]);
+
   function say(ok: string | null, err: string | null = null) {
     setNotice(ok);
     setError(err);
@@ -429,13 +437,11 @@ export default function DeviceFiles({
 
   // ----- view, share, download -----
   function closeView() {
-    if (viewing) URL.revokeObjectURL(viewing.url);
     setViewing(null);
   }
 
   function view(f: DeviceFile) {
     if (viewing?.id === f.id) return closeView();
-    if (viewing) URL.revokeObjectURL(viewing.url);
     const url = URL.createObjectURL(f.blob);
     if (f.mimeType === "application/pdf" && !standaloneIos) {
       // Opens in a new tab while the tap still counts, so pop-up blockers allow it.

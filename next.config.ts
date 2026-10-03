@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
     ];
   },
   experimental: {
+    // Going back to a page you opened in the last 30 seconds shows it right away instead of
+    // asking the server again. Saving anything (server actions revalidate) clears this.
+    staleTimes: {
+      dynamic: 30,
+    },
     serverActions: {
       // Scoutbook advancement export upload (about 1 MB per 5,000 rows)
       bodySizeLimit: "4mb",

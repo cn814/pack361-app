@@ -1,4 +1,6 @@
 // Minimal iCalendar (RFC 5545) writer for the pack calendar feed.
+import { addDays, easternDate } from "./tz";
+
 export interface IcsEvent {
   id: string;
   title: string;
@@ -14,8 +16,9 @@ const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace
 const stamp = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 
 /** Eastern-time calendar date as YYYYMMDD (all-day events). */
-const ymd = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date(iso)).replace(/-/g, "");
-const nextDay = (iso: string) => new Date(new Date(iso).getTime() + 86400000).toISOString();
+const ymd = (iso: string) => easternDate(iso).replace(/-/g, "");
+/** The Eastern calendar day after `iso`, as YYYYMMDD (exclusive DTEND). Calendar math, not +24h, so DST days work. */
+const nextYmd = (iso: string) => addDays(easternDate(iso), 1).replace(/-/g, "");
 
 /** Fold lines longer than 75 octets (continuation lines start with a space). */
 function fold(line: string): string {
@@ -52,7 +55,7 @@ export function buildIcs(name: string, events: IcsEvent[], now = new Date()): st
       `UID:${e.id}@pack361-app`,
       `DTSTAMP:${stamp(now.toISOString())}`,
       ...(e.allDay
-        ? [`DTSTART;VALUE=DATE:${ymd(e.starts_at)}`, `DTEND;VALUE=DATE:${ymd(nextDay(e.ends_at ?? e.starts_at))}`]
+        ? [`DTSTART;VALUE=DATE:${ymd(e.starts_at)}`, `DTEND;VALUE=DATE:${nextYmd(e.ends_at ?? e.starts_at)}`]
         : [`DTSTART:${stamp(e.starts_at)}`, `DTEND:${stamp(end)}`]),
       `SUMMARY:${esc(e.title)}`,
     );

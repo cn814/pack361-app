@@ -1,12 +1,14 @@
 "use client";
 
+import { guardAction } from "@/components/ActionForm";
+
 import { useActionState } from "react";
 import { CircleCheck, FileUp } from "lucide-react";
 import { importScoutbook, type ImportState } from "../actions";
 import { changesText } from "@/lib/import-changes";
 
 export default function ImportForm() {
-  const [state, action, pending] = useActionState<ImportState, FormData>(importScoutbook, {});
+  const [state, action, pending] = useActionState<ImportState, FormData>(guardAction(importScoutbook), {});
   return (
     <form action={action} className="card space-y-3">
       <label className="block">

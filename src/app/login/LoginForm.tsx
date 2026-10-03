@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useSyncExternalStore } from "react";
-import { useSubmitKeepingValues } from "@/components/ActionForm";
+import { useSubmitKeepingValues, guardAction } from "@/components/ActionForm";
 import { ArrowRight, KeyRound, Mail } from "lucide-react";
 import { sendLoginEmail, verifyLoginCode, type LoginState } from "./actions";
 
@@ -13,8 +13,8 @@ const initial: LoginState = { step: "email", email: "" };
  * set LOGIN_CODE_ENABLED=false to go back to link-only emails.
  */
 export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
-  const [sent, sendAction, sending] = useActionState(sendLoginEmail, initial);
-  const [verify, verifyAction, verifying] = useActionState(verifyLoginCode, initial);
+  const [sent, sendAction, sending] = useActionState(guardAction(sendLoginEmail), initial);
+  const [verify, verifyAction, verifying] = useActionState(guardAction(verifyLoginCode), initial);
   const keepCode = useSubmitKeepingValues(verifyAction);
   // Opened from the home screen: the email's link would open the browser, not this app.
   const standalone = useSyncExternalStore(

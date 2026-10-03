@@ -1,8 +1,17 @@
 import type { Metadata, Viewport } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { BAR_LIGHT, THEME_SCRIPT } from "@/lib/theme";
 import { SPLASH_SCRIPT } from "@/lib/splash";
 import Splash from "@/components/Splash";
+
+// Self-hosted at build time, so phones never wait on fonts.googleapis.com before first paint.
+// Variable font: covers the 400-800 weights the app uses. globals.css reads --font-jakarta.
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-jakarta",
+});
 
 export const metadata: Metadata = {
   title: { default: "Pack 361", template: "%s · Pack 361" },
@@ -22,17 +31,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // The head script sets data-theme before React loads, so React leaves it alone.
-    <html lang="en" className="h-full antialiased" data-theme="light" suppressHydrationWarning>
+    <html lang="en" className={`${jakarta.variable} h-full antialiased`} data-theme="light" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        />
       </head>
       <body className="min-h-full">
         <Splash />

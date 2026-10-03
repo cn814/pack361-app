@@ -1,8 +1,17 @@
+"use client";
+
 import { HandHelping, Plus, Trash2, X } from "lucide-react";
 import ActionForm, { Field } from "@/components/ActionForm";
 import SubmitButton from "@/components/SubmitButton";
 import { addVolunteerSlot, deleteVolunteerSlot, volunteerCancel, volunteerSignUp } from "@/app/(app)/volunteer-actions";
 import type { VolunteerSlot } from "@/lib/volunteer";
+
+/** Leaders' remove and delete buttons are small and easy to hit by accident: ask first. */
+function confirmFirst(question: string) {
+  return (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!window.confirm(question)) e.preventDefault();
+  };
+}
 
 /** Volunteer jobs for one event: families sign up; leaders add jobs and manage the list. */
 export default function VolunteerJobs({
@@ -42,7 +51,8 @@ export default function VolunteerJobs({
                   {(s.shift_label || s.notes) && (
                     <p className="text-xs text-muted">{[s.shift_label, s.notes].filter(Boolean).join(" · ")}</p>
                   )}
-                  <p className="mt-1 text-xs text-navy">
+                  {/* A div, not a p: the remove buttons are forms, which can't sit inside a p. */}
+                  <div className="mt-1 text-xs text-navy">
                     {s.people.length}/{s.capacity}
                     {s.people.length > 0 && ": "}
                     {s.people.map((p, i) => (
@@ -54,20 +64,33 @@ export default function VolunteerJobs({
                             <input type="hidden" name="slot_id" value={s.id} />
                             <input type="hidden" name="event_id" value={eventId} />
                             <input type="hidden" name="adult_id" value={p.adult_id} />
-                            <SubmitButton className="ml-0.5 inline-flex align-middle text-muted" aria-label={`Remove ${p.name}`}>
-                              <X className="h-3 w-3" aria-hidden />
+                            {/* 40px tap target; the negative margins keep the line of names its normal height. */}
+                            <SubmitButton
+                              className="-my-3 -mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full align-middle text-muted"
+                              aria-label={`Remove ${p.name}`}
+                              onClick={confirmFirst(`Take ${p.name} off “${s.role_title}”?`)}
+                            >
+                              <X className="h-4 w-4" aria-hidden />
                             </SubmitButton>
                           </form>
                         )}
                       </span>
                     ))}
-                  </p>
+                  </div>
                 </div>
                 {leader && (
                   <form action={deleteVolunteerSlot}>
                     <input type="hidden" name="slot_id" value={s.id} />
                     <input type="hidden" name="event_id" value={eventId} />
-                    <SubmitButton className="flex h-8 w-8 items-center justify-center rounded-full text-muted" aria-label={`Delete job ${s.role_title}`}>
+                    <SubmitButton
+                      className="-mr-2 -mt-2 flex h-10 w-10 items-center justify-center rounded-full text-muted"
+                      aria-label={`Delete job ${s.role_title}`}
+                      onClick={confirmFirst(
+                        s.people.length
+                          ? `Delete “${s.role_title}”? ${s.people.length === 1 ? "The person" : `The ${s.people.length} people`} signed up for it will be taken off.`
+                          : `Delete “${s.role_title}”?`,
+                      )}
+                    >
                       <Trash2 className="h-4 w-4" aria-hidden />
                     </SubmitButton>
                   </form>

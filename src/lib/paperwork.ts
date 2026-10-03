@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "./supabase/server";
+import { getMyScouts } from "./data";
 import { daysBetween, easternDate } from "./tz";
 import type { Adult } from "./types";
 
@@ -57,43 +58,58 @@ export interface Person {
   form?: HealthForm;
 }
 
-/** The signed-in family's people with their forms. */
+const FORM_COLS = "id, scout_id, adult_id, status, form_date, expires_on, updated_at";
+
+/**
+ * The signed-in family's people with their forms. `me` is the signed-in adult (the scouts come
+ * from getMyScouts, read once per request). Only this family's forms are read, even for leaders,
+ * who may see the whole pack's.
+ */
 export async function getMyPaperwork(me: Adult): Promise<{ people: Person[] }> {
   const supabase = await createClient();
-  const [scouts, adults, forms] = await Promise.all([
-    me.family_id
-      ? supabase
-          .from("scouts")
-          .select("id, first_name, den:dens(name)")
-          .eq("family_id", me.family_id)
-          .eq("is_active", true)
-          .order("first_name")
-      : Promise.resolve({ data: [] }),
-    me.family_id
-      ? supabase
+  const scoutsP: Promise<{ id: string; first_name: string; den: { name: string } | null }[]> = me.family_id
+    ? getMyScouts()
+    : Promise.resolve([]);
+  const adultsP: Promise<{ id: string; first_name: string; preferred_name: string | null }[]> = me.family_id
+    ? Promise.resolve(
+        supabase
           .from("adults")
           .select("id, first_name, preferred_name")
           .eq("family_id", me.family_id)
           .eq("is_active", true)
-          .order("first_name")
-      : Promise.resolve({ data: [{ id: me.id, first_name: me.first_name, preferred_name: me.preferred_name }] }),
-    supabase.from("health_forms").select("id, scout_id, adult_id, status, form_date, expires_on, updated_at"),
+          .order("first_name"),
+      ).then((r) => (r.data ?? []) as { id: string; first_name: string; preferred_name: string | null }[])
+    : Promise.resolve([{ id: me.id, first_name: me.first_name, preferred_name: me.preferred_name }]);
+  const formsFor = (col: "scout_id" | "adult_id", ids: string[]): PromiseLike<HealthForm[]> =>
+    ids.length
+      ? supabase
+          .from("health_forms")
+          .select(FORM_COLS)
+          .in(col, ids)
+          .then((r) => (r.data ?? []) as HealthForm[])
+      : Promise.resolve([]);
+  const [scouts, adults, scoutForms, adultForms] = await Promise.all([
+    scoutsP,
+    adultsP,
+    scoutsP.then((list) => formsFor("scout_id", list.map((s) => s.id))),
+    adultsP.then((list) => formsFor("adult_id", list.map((a) => a.id))),
   ]);
-  const list = (forms.data ?? []) as HealthForm[];
+  const byScout = new Map(scoutForms.map((f) => [f.scout_id, f]));
+  const byAdult = new Map(adultForms.map((f) => [f.adult_id, f]));
   const people: Person[] = [
-    ...((scouts.data ?? []) as unknown as { id: string; first_name: string; den: { name: string } | null }[]).map((s) => ({
+    ...scouts.map((s) => ({
       kind: "scout" as const,
       id: s.id,
       name: s.first_name,
       detail: s.den?.name ?? "Scout",
-      form: list.find((f) => f.scout_id === s.id),
+      form: byScout.get(s.id),
     })),
-    ...((adults.data ?? []) as { id: string; first_name: string; preferred_name: string | null }[]).map((a) => ({
+    ...adults.map((a) => ({
       kind: "adult" as const,
       id: a.id,
       name: a.preferred_name || a.first_name,
       detail: "Adult (needed if you camp)",
-      form: list.find((f) => f.adult_id === a.id),
+      form: byAdult.get(a.id),
     })),
   ];
   return { people };
@@ -121,7 +137,7 @@ export async function getPaperworkOverview() {
     supabase.from("scouts").select("id, first_name, last_name, family_id, den:dens(id, name, rank, number)").eq("is_active", true),
     supabase.from("adults").select("id, first_name, preferred_name, last_name, family_id").eq("is_active", true).not("family_id", "is", null),
     supabase.from("families").select("id, family_name").eq("is_active", true).order("family_name"),
-    supabase.from("health_forms").select("id, scout_id, adult_id, status, form_date, expires_on, updated_at"),
+    supabase.from("health_forms").select(FORM_COLS),
   ]);
   return {
     scouts: (scouts.data ?? []) as unknown as OverviewScout[],

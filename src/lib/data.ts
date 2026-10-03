@@ -8,7 +8,7 @@ import { LEADER_ROLES, TWO_STEP_ROLES } from "./types";
 import { VIEW_AS_COOKIE, viewAsRole } from "./view-as";
 import { isBeta } from "./version";
 import { getTesters } from "./beta";
-import { denScopeFor, loadCalendar, type CalItem } from "./calendar";
+import { denScopeFromScouts, loadCalendar, type CalItem, type DenScope } from "./calendar";
 import { startOfEasternDay } from "./tz";
 import { FEATURE_DAYS_AFTER, FEATURE_DAYS_BEFORE, featuredKind, type FeaturedTab } from "./featured";
 
@@ -86,7 +86,8 @@ export function displayName(a: { first_name: string; preferred_name?: string | n
   return a.preferred_name || a.first_name;
 }
 
-export async function getMyScouts(): Promise<Scout[]> {
+/** The signed-in family's active scouts, read once per request (calendar, to-dos, forms and pages share it). */
+export const getMyScouts = cache(async (): Promise<Scout[]> => {
   const me = await requireMember();
   if (!me.family_id) return [];
   const supabase = await createClient();
@@ -97,7 +98,7 @@ export async function getMyScouts(): Promise<Scout[]> {
     .eq("is_active", true)
     .order("first_name");
   return (data ?? []) as unknown as Scout[];
-}
+});
 
 export async function getFamilyAdults(): Promise<Adult[]> {
   const me = await requireMember();
@@ -114,25 +115,59 @@ export async function getFamilyAdults(): Promise<Adult[]> {
 /**
  * Upcoming calendar for the signed-in adult: pack-wide events plus events and den meetings
  * for their scouts' dens. Leaders see every den, unless `mine` asks for just their family's.
+ * `near` reads a shorter window (Home, to-dos, the bell): enough for the first 60 or so items.
  */
-export async function getUpcomingEvents(limit = 50, opts: { mine?: boolean } = {}): Promise<CalItem[]> {
+export async function getUpcomingEvents(limit = 50, opts: { mine?: boolean; near?: boolean } = {}): Promise<CalItem[]> {
   const me = await requireMember();
   const who = opts.mine || !isLeader(me) ? "family" : "all";
   // Everything today stays up all day; campouts stay up until they end.
   const today = Date.parse(startOfEasternDay());
-  return (await calendarWindow(who)).filter((e) => Date.parse(e.ends_at ?? e.starts_at) >= today).slice(0, limit);
+  const items = await calendarWindow(who, opts.near && limit <= NEAR_LIMIT - 20 ? "near" : "full");
+  return items.filter((e) => Date.parse(e.ends_at ?? e.starts_at) >= today).slice(0, limit);
 }
 
 /**
- * The calendar from ten days ago on, read once per request and shared by the bottom bar's
- * featured tab and the page. "family" = pack-wide plus the family's own dens (leaders too).
+ * Start reading the full calendar now (a page that lists it), so the short reads in the same
+ * request (the pinned big event, the bell's to-dos) reuse it instead of reading their own.
+ * `who` must match what getUpcomingEvents works out for the page.
  */
-const calendarWindow = cache(async (who: "family" | "all"): Promise<CalItem[]> => {
-  const me = await requireMember();
-  const supabase = await createClient();
-  const scope = await denScopeFor(supabase, who === "family" ? { ...me, role: "parent" } : me);
-  return loadCalendar(supabase, scope, { since: new Date(Date.now() - 10 * 86400000).toISOString(), limit: 300 });
-});
+export function preloadCalendar(who: "family" | "all") {
+  void calendarWindow(who, "full").catch(() => {});
+}
+
+/** Items in the short window (it also covers the ten days back, so keep 20 spare). */
+const NEAR_LIMIT = 80;
+type Span = "near" | "full";
+
+/** This request's calendar reads, so the short window can reuse a full one already started. */
+const calendarWindows = cache(() => new Map<string, Promise<CalItem[]>>());
+
+/**
+ * The calendar from ten days ago on, read once per request and shared by Home, the to-dos,
+ * the bell and the page. "family" = pack-wide plus the family's own dens (leaders too).
+ * List pages never show an event's details, so they're left out here (the feed reads them).
+ */
+function calendarWindow(who: "family" | "all", span: Span): Promise<CalItem[]> {
+  const windows = calendarWindows();
+  const full = windows.get(`${who}:full`);
+  if (full) return full;
+  const key = `${who}:${span}`;
+  let p = windows.get(key);
+  if (!p) {
+    p = (async () => {
+      const supabase = await createClient();
+      // Leaders' "all" is every den; a family's dens come from its scouts (read once per request).
+      const scope: DenScope = who === "all" ? "all" : denScopeFromScouts(await getMyScouts());
+      return loadCalendar(supabase, scope, {
+        since: new Date(Date.now() - 10 * 86400000).toISOString(),
+        limit: span === "near" ? NEAR_LIMIT : 300,
+        details: false,
+      });
+    })();
+    windows.set(key, p);
+  }
+  return p;
+}
 
 export async function getEvent(id: string): Promise<PackEvent | null> {
   const supabase = await createClient();
@@ -207,7 +242,7 @@ export const getFeaturedTab = cache(async (): Promise<FeaturedTab | null> => {
 export const getBigEvent = cache(async (): Promise<{ event: CalItem; label: string; kind: FeaturedTab["kind"] } | null> => {
   const now = Date.now();
   // Pack-wide events plus this family's own dens and ranks (leaders included).
-  const items = await calendarWindow("family");
+  const items = await calendarWindow("family", "near");
   for (const e of items) {
     if (e.kind !== "event" || new Date(e.starts_at).getTime() > now + FEATURE_DAYS_BEFORE * 86400000) continue;
     const k = featuredKind(e);

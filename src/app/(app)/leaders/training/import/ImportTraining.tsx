@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CircleAlert, CircleCheck } from "lucide-react";
 import { applyTrainingImport, fetchFromMyScouting, type ImportResult } from "../actions";
 import { fmtShortDate } from "@/lib/advancement";
+import { failedCallMessage } from "@/components/ActionForm";
 import { COURSE_BY_KEY, type TrainingRow } from "@/lib/training";
 import { IMPORT_MAX, buildPlan, csvTable, parseReport, type Cell, type ParsedReport, type RosterAdult } from "@/lib/training-import";
 
@@ -73,7 +74,13 @@ export default function ImportTraining({ roster, today, liveSync = false }: { ro
     setReport(null);
     setSyncSteps([]);
     startSync(async () => {
-      const res = await fetchFromMyScouting();
+      let res: Awaited<ReturnType<typeof fetchFromMyScouting>>;
+      try {
+        res = await fetchFromMyScouting();
+      } catch (e) {
+        setFileError(failedCallMessage(e, "Get training from my.scouting"));
+        return;
+      }
       setSyncSteps(res.steps);
       if (res.error) setFileError(res.error);
       else if (!res.rows.length) setFileError("my.scouting didn't return any training dates.");
@@ -90,7 +97,13 @@ export default function ImportTraining({ roster, today, liveSync = false }: { ro
       names: chosen.filter((u) => u.warn && u.reportName).map((u) => ({ adult_id: u.adultId, name: u.reportName })),
     };
     startTransition(async () => {
-      const res = await applyTrainingImport(payload);
+      let res: ImportResult;
+      try {
+        res = await applyTrainingImport(payload);
+      } catch (e) {
+        // The preview stays, so tapping Apply again sends the same updates.
+        res = { error: failedCallMessage(e, "Apply") };
+      }
       setResult(res);
       if (res.ok) {
         setReport(null);

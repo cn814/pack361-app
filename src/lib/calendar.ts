@@ -28,10 +28,12 @@ export async function denScopeFor(
     .select("den:dens(id, rank)")
     .eq("family_id", adult.family_id)
     .eq("is_active", true);
-  const dens = ((data ?? []) as unknown as { den: { id: string; rank: DenRank } | null }[]).map((s) => s.den).filter(Boolean) as {
-    id: string;
-    rank: DenRank;
-  }[];
+  return denScopeFromScouts((data ?? []) as unknown as { den: { id: string; rank: DenRank } | null }[]);
+}
+
+/** A family's dens and ranks from its active scouts (already read for the page). */
+export function denScopeFromScouts(scouts: { den?: { id: string; rank: DenRank } | null }[]): DenScope {
+  const dens = scouts.map((s) => s.den).filter(Boolean) as { id: string; rank: DenRank }[];
   return { dens: [...new Set(dens.map((d) => d.id))], ranks: [...new Set(dens.map((d) => d.rank))] };
 }
 
@@ -52,30 +54,36 @@ export function ranksLabel(ranks: DenRank[] | null | undefined): string | null {
 }
 const MEETING_COLS =
   "id, den_id, meets_on, title, adventure, work, location, address, family_note, start_time, end_time, den:dens(name, meeting_info)";
+// Lists (Home, Calendar, to-dos, search) never show details: leave out the long text.
+const EVENT_LIST_COLS = EVENT_COLS.replace(" details,", "");
+const MEETING_LIST_COLS = "id, den_id, meets_on, title, location, address, start_time, end_time, den:dens(name)";
 
 export async function loadCalendar(
   db: SupabaseClient,
   scope: DenScope,
-  opts: { since: string; limit?: number },
+  opts: { since: string; limit?: number; /** false: leave out details (list pages). */ details?: boolean },
 ): Promise<CalItem[]> {
   const limit = opts.limit ?? 100;
+  const withDetails = opts.details !== false;
   // Multi-day events (campouts) stay on the calendar until they end, so look back two weeks
   // for starts and keep the ones still running at `since`.
   const lookBack = new Date(new Date(opts.since).getTime() - 14 * 86400000).toISOString();
   let evq = db
     .from("events")
-    .select(EVENT_COLS)
+    .select(withDetails ? EVENT_COLS : EVENT_LIST_COLS)
     .gte("starts_at", lookBack)
     .is("archived_at", null)
     .order("starts_at")
     .limit(limit + 40);
   evq = scoped(evq, scope);
   const sinceDate = easternDate(opts.since);
-  let mq = db.from("den_meetings").select(MEETING_COLS).gte("meets_on", sinceDate).order("meets_on").limit(limit);
+  let mq = db.from("den_meetings").select(withDetails ? MEETING_COLS : MEETING_LIST_COLS).gte("meets_on", sinceDate).order("meets_on").limit(limit);
   if (scope !== "all") mq = mq.in("den_id", scope.dens.length ? scope.dens : ["00000000-0000-0000-0000-000000000000"]);
   const [{ data: allEvents }, { data: meetings }] = await Promise.all([evq, mq]);
   const since = Date.parse(opts.since);
-  const events = ((allEvents ?? []) as unknown as PackEvent[]).filter((e) => Date.parse(e.ends_at ?? e.starts_at) >= since || Date.parse(e.starts_at) >= since);
+  const events = ((allEvents ?? []) as unknown as PackEvent[])
+    .filter((e) => Date.parse(e.ends_at ?? e.starts_at) >= since || Date.parse(e.starts_at) >= since)
+    .map((e) => (withDetails ? e : { ...e, details: null }));
   return merge(events, (meetings ?? []) as unknown as MeetingRow[], scope, limit);
 }
 
@@ -120,14 +128,14 @@ interface MeetingRow {
   den_id: string;
   meets_on: string;
   title: string;
-  adventure: string | null;
+  adventure?: string | null;
   work?: { adventure: string }[] | null;
   location: string | null;
   address: string | null;
-  family_note: string | null;
+  family_note?: string | null;
   start_time: string | null;
   end_time: string | null;
-  den: { name: string; meeting_info: string | null } | null;
+  den: { name: string; meeting_info?: string | null } | null;
 }
 
 function merge(events: PackEvent[], meetings: MeetingRow[], scope: DenScope, limit: number): CalItem[] {

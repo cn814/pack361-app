@@ -65,7 +65,7 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
     getMyScouts(),
     getMyPaperwork(me),
     getMyCharges(me),
-    getUpcomingEvents(60, { mine: true }),
+    getUpcomingEvents(60, { mine: true, near: true }),
     leader ? countPendingPhotos() : Promise.resolve(0),
     leader
       ? supabase.from("health_forms").select("id", { count: "exact", head: true }).eq("status", "submitted").then((r) => r.count ?? 0)
@@ -292,10 +292,15 @@ async function trainingImportTodo(myId: string): Promise<Todo | null> {
 export const getInboxCount = cache(async (): Promise<number> => {
   const me = await requireMember();
   const supabase = await createClient();
-  const seen = (await getSeenAt()) ?? new Date(Date.now() - 14 * 86400000).toISOString();
-  const [posts, polls, todos] = await Promise.all([
-    supabase.from("announcements").select("id", { count: "exact", head: true }).gt("created_at", seen).neq("author_id", me.id),
-    supabase.from("polls").select("id", { count: "exact", head: true }).gt("created_at", seen).neq("created_by", me.id),
+  // The to-dos don't depend on when Notifications was opened: read both at once.
+  const [[posts, polls], todos] = await Promise.all([
+    getSeenAt().then((seenAt) => {
+      const seen = seenAt ?? new Date(Date.now() - 14 * 86400000).toISOString();
+      return Promise.all([
+        supabase.from("announcements").select("id", { count: "exact", head: true }).gt("created_at", seen).neq("author_id", me.id),
+        supabase.from("polls").select("id", { count: "exact", head: true }).gt("created_at", seen).neq("created_by", me.id),
+      ]);
+    }),
     getTodos(),
   ]);
   // A new poll is also a to-do; don't count it twice.

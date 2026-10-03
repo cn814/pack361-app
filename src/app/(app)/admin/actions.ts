@@ -55,8 +55,14 @@ export async function saveFamily(_prev: ActionResult, form: FormData): Promise<A
     if (error) return { error: dbError(error.message) };
     if (!active) {
       // Leaving the pack: turn off the family's scouts and parent logins too.
-      await supabase.from("scouts").update({ is_active: false }).eq("family_id", id);
-      await supabase.from("adults").update({ is_active: false }).eq("family_id", id).eq("role", "parent");
+      const [{ error: e1 }, { error: e2 }] = await Promise.all([
+        supabase.from("scouts").update({ is_active: false }).eq("family_id", id),
+        supabase.from("adults").update({ is_active: false }).eq("family_id", id).eq("role", "parent"),
+      ]);
+      if (e1 || e2) {
+        revalidateRoster(id);
+        return { error: "The family is marked inactive, but its scouts and parent sign-ins couldn't all be turned off. Save again to retry." };
+      }
       // Leaders in the family keep their access (they may stay on as leaders); say so, so an
       // admin turns them off too if they're leaving.
       const { data: still } = await supabase
@@ -100,12 +106,20 @@ export async function saveFamily(_prev: ActionResult, form: FormData): Promise<A
   const scoutFirst = str(form, "scout_first_name", 60);
   if (scoutFirst) {
     const den = str(form, "scout_den_id");
-    await supabase.from("scouts").insert({
+    const { error: e3 } = await supabase.from("scouts").insert({
       family_id: familyId,
       first_name: scoutFirst,
       last_name: str(form, "scout_last_name", 60) || name,
       den_id: UUID.test(den) ? den : null,
     });
+    if (e3) {
+      // The family (and parent) exist now, so don't invite a second save that would add the
+      // family twice: say where to add the scout instead.
+      revalidateRoster(familyId);
+      return {
+        error: `The ${name} family was added, but the scout wasn't (${dbError(e3.message)}). Don't save this form again: open the family from Families and add the scout there.`,
+      };
+    }
   }
   revalidateRoster(familyId);
   redirect(`/admin/families/${familyId}`);
@@ -369,7 +383,9 @@ export async function sendWelcomeEmails(_prev: ActionResult, form: FormData): Pr
   const { left } = await welcomeBudget();
   const oneId = str(form, "adult_id");
 
-  let q = supabase.from("adults").select("id, first_name, preferred_name, email, family_id").eq("is_active", true);
+  if (oneId && !UUID.test(oneId)) return { error: "Unknown person." };
+
+  let q = supabase.from("adults").select("id, first_name, preferred_name, email, family_id, welcomed_at").eq("is_active", true);
   if (oneId) q = q.eq("id", oneId);
   else q = q.is("welcomed_at", null);
   const { data } = await q.order("last_name");
@@ -378,15 +394,40 @@ export async function sendWelcomeEmails(_prev: ActionResult, form: FormData): Pr
   if (!targets.length) return { ok: true, message: "Everyone has been welcomed already." };
   if (left <= 0) return { error: "Today's email limit is used up. Send the rest tomorrow." };
 
-  const batch = targets.slice(0, Math.min(left, 100));
+  // Claim the batch before sending, so a double tap (or two admins at once) can't email the
+  // same people twice: only rows this request marked get an email. Resending to one person
+  // is deliberate, so that one is claimed even if they were welcomed before.
+  const picked = targets.slice(0, Math.min(left, 100));
+  const pickedIds = picked.map((a) => a.id as string);
+  let claim = supabase.from("adults").update({ welcomed_at: new Date().toISOString() }).in("id", pickedIds);
+  if (!oneId) claim = claim.is("welcomed_at", null);
+  const { data: claimed, error: claimError } = await claim.select("id");
+  if (claimError) return { error: "Couldn't start sending. Try again." };
+  const claimedIds = new Set((claimed ?? []).map((r) => r.id as string));
+  const batch = picked.filter((a) => claimedIds.has(a.id as string));
+  if (!batch.length) return { ok: true, message: "Those welcome emails are already being sent." };
+
   const err = await sendEmails(batch.map((a) => welcomeEmail(a as { first_name: string; preferred_name: string | null; email: string })));
-  if (err) return { error: `Emails not sent: ${err}` };
-  await supabase
-    .from("adults")
-    .update({ welcomed_at: new Date().toISOString() })
-    .in("id", batch.map((a) => a.id as string));
+  if (err) {
+    // A timeout or dropped connection may still have delivered them: leave them marked
+    // rather than risk a second copy. Any other error means nothing went out, so un-claim.
+    const unsure = err === "Couldn't reach the email service.";
+    if (!unsure) {
+      if (oneId) {
+        await supabase.from("adults").update({ welcomed_at: (batch[0].welcomed_at as string | null) ?? null }).eq("id", oneId);
+      } else {
+        await supabase.from("adults").update({ welcomed_at: null }).in("id", batch.map((a) => a.id as string));
+      }
+    }
+    revalidatePath("/admin/welcome");
+    return {
+      error: unsure
+        ? "The email service didn't answer, so these may or may not have gone out. They're marked as sent so no one gets two; resend to anyone who says they didn't get it."
+        : `Emails not sent: ${err}`,
+    };
+  }
   revalidatePath("/admin/welcome");
-  const rest = targets.length - batch.length;
+  const rest = targets.length - picked.length;
   return {
     ok: true,
     message: `Sent ${batch.length} welcome email${batch.length === 1 ? "" : "s"}.${rest > 0 ? ` ${rest} more to send tomorrow.` : ""}`,

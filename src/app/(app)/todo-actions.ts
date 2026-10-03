@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { eventPath } from "@/lib/featured";
 
 const UUID = /^[0-9a-f-]{36}$/i;
-const HIDE_KEY = /^(poll|job)-[0-9a-f-]{36}$/i;
+const HIDE_KEY = /^((poll|job)-[0-9a-f-]{36}|training-import)$/i;
 
 /**
  * Answer an RSVP straight from a to-do. Going counts the family's scouts the event is for (all
@@ -37,7 +37,7 @@ export async function quickRsvp(form: FormData) {
     const forEvent = list.filter((k) => (e.den_id ? k.den_id === e.den_id : ranks.length ? ranks.includes(k.den?.rank ?? "") : true));
     scouts = (forEvent.length ? forEvent : list).length;
   }
-  await supabase.rpc("set_rsvp", {
+  const { error } = await supabase.rpc("set_rsvp", {
     p_event_id: id,
     p_status: status,
     p_scouts: status === "no" ? 0 : scouts,
@@ -45,6 +45,10 @@ export async function quickRsvp(form: FormData) {
     p_note: "",
   });
   revalidatePath("/", "layout");
+  // The to-do's buttons are a plain form with nowhere to show a message, so (like a paid event
+  // above) open the event's RSVP card: it says when RSVPs are closed, and its form reports
+  // any other problem if they try again there.
+  if (error) redirect(`${eventPath(e as { id: string; category: string })}#rsvp`);
 }
 
 /** "Not now": hide a poll or volunteer job from Home and the bell until `until` (or for good). */

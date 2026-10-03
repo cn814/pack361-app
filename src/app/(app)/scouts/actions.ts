@@ -54,9 +54,11 @@ export async function reportRequirements(_prev: FormState, form: FormData): Prom
 }
 
 /** Leaders: approve / return / mark recorded. RLS (can_review_scout) decides who may. */
+const SUBMISSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function reviewSubmissions(form: FormData) {
   await requireMember();
-  const ids = form.getAll("id").map(String).filter(Boolean);
+  const ids = [...new Set(form.getAll("id").map(String).filter((x) => SUBMISSION_ID.test(x)))].slice(0, 500);
   const decision = String(form.get("decision") ?? "");
   const note = String(form.get("review_note") ?? "").trim().slice(0, 500) || null;
   const status = decision === "approve" ? "approved" : decision === "return" ? "returned" : decision === "record" ? "recorded" : null;
@@ -64,7 +66,10 @@ export async function reviewSubmissions(form: FormData) {
   const supabase = await createClient();
   const update: Record<string, unknown> = { status };
   if (status !== "recorded") update.review_note = note;
-  await supabase.from("advancement_submissions").update(update).in("id", ids);
+  const { error } = await supabase.from("advancement_submissions").update(update).in("id", ids);
+  // A plain form action has no result to show, so throw: the page's error screen says it
+  // didn't save (with Try again) instead of the report silently staying put.
+  if (error) throw new Error("Couldn't save the review.");
   revalidatePath("/scouts", "layout");
 }
 

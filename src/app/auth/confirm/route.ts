@@ -9,11 +9,12 @@ import { MODE_COOKIE } from "@/lib/mode";
 // Verifying by token hash (instead of a PKCE code) works even when the link is opened
 // in a different browser or app than the one that requested it.
 //
-// On phones, the link first opens a page that asks before signing in (/auth/open). A link in
-// an email always opens the phone's browser, never the home-screen app, and signing in there
-// would use up the one-time code the person may still want to type into the app.
-
-const PHONE = /iPhone|iPad|iPod|Android/i;
+// Every link first opens a page that asks before signing in (/auth/open), and only its button
+// (a POST) uses up the one-time code:
+//  * On phones, a link in an email always opens the phone's browser, never the home-screen app,
+//    and signing in there would use up the code the person may still want to type into the app.
+//  * Email link scanners (Outlook Safe Links and the like) open every link in an email before the
+//    person does. They only GET, so they no longer burn the code on any device.
 
 async function verify(request: NextRequest, token_hash: string | null, type: EmailOtpType, code: string | null) {
   const supabase = await createClient();
@@ -30,13 +31,15 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const token_hash = searchParams.get("token_hash");
   const type = (searchParams.get("type") ?? "email") as EmailOtpType;
-  if (token_hash && PHONE.test(request.headers.get("user-agent") ?? "")) {
+  if (token_hash) {
     const to = new URL("/auth/open", request.nextUrl.origin);
     to.searchParams.set("token_hash", token_hash);
     to.searchParams.set("type", type);
     return NextResponse.redirect(to);
   }
-  return verify(request, token_hash, type, searchParams.get("code"));
+  // The default template's PKCE code: only the browser that asked for the link holds its
+  // verifier, so a scanner opening it can't use it up.
+  return verify(request, null, type, searchParams.get("code"));
 }
 
 /** "Sign in here" from /auth/open. */

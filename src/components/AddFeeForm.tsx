@@ -94,7 +94,10 @@ export default function AddFeeForm({
   const whoChoices = (Object.keys(WHO_LABEL) as Who[]).filter((w) => !registration || PER_PERSON.includes(w));
 
   return (
-    <ActionForm action={addFee} submit="Add fee" busy="Adding…">
+    // No reset after adding: the selects are React-controlled, and a DOM reset would show
+    // "Every active family" while React still holds the old choice (or the reverse), so the
+    // next fee could go to everyone.
+    <ActionForm action={addFee} submit="Add fee" busy="Adding…" resetOnSuccess={false}>
       <Field label="What it's for">
         <select className="input" name="kind" value={kind} onChange={(e) => changeKind(e.target.value as ChargeKind)}>
           {(Object.keys(KIND_LABEL) as ChargeKind[]).filter((k) => registrationBilling || (k !== "national" && k !== "council")).map((k) => (

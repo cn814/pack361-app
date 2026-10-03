@@ -1,8 +1,8 @@
 "use client";
 
-import { startTransition, useActionState, useState, type FormEvent } from "react";
+import { startTransition, useActionState, useMemo, useRef, useState, type FormEvent } from "react";
 import { Camera, TriangleAlert } from "lucide-react";
-import { Field, type ActionResult } from "@/components/ActionForm";
+import { Field, guardAction, type ActionResult } from "@/components/ActionForm";
 import { cancelReceiptUpload, prepareReceiptUpload } from "@/app/(app)/reimburse/actions";
 import { PAID_VIA_LABEL, PAY_ME_BY_LABEL, RECEIPT_ACCEPT, RECEIPT_HELP, checkReceipt, receiptTypeFor, type PaidVia, type PayMeBy } from "@/lib/finance";
 
@@ -79,21 +79,34 @@ export default function ExpenseForm({
   /** Where to go after saving (leadership pages). */
   back?: string;
 }) {
-  const [state, formAction, saving] = useActionState<ActionResult, FormData>(action, {});
+  const guarded = useMemo(() => guardAction(action), [action]);
+  const [state, formAction, saving] = useActionState<ActionResult, FormData>(guarded, {});
   const [file, setFile] = useState<File | null>(null);
+  // Shrinking a big phone photo takes a few seconds; Save waits for it so the receipt isn't
+  // left out. `picks` makes a slow earlier pick lose to a newer one.
+  const [preparing, setPreparing] = useState(false);
+  const picks = useRef(0);
   const [uploading, setUploading] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [who, setWho] = useState(values ? (values.paid_by === "pack" ? "pack" : "member") : mode === "leader" ? "pack" : "member");
   const [alreadyPaid, setAlreadyPaid] = useState(values?.status === "paid");
   const [spentOn, setSpentOn] = useState(values?.spent_on ?? today);
-  const busy = uploading || saving;
+  const busy = preparing || uploading || saving;
   const leader = mode === "leader";
   const showPaid = leader && (who === "pack" || (who !== "pack" && alreadyPaid));
 
   async function pick(f: File | null) {
     setProblem(null);
-    if (!f) return setFile(null);
+    const pickNo = ++picks.current;
+    if (!f) {
+      setPreparing(false);
+      return setFile(null);
+    }
+    setFile(null);
+    setPreparing(true);
     const ready = await shrinkPhoto(f);
+    if (pickNo !== picks.current) return;
+    setPreparing(false);
     const bad = checkReceipt(ready.name, ready.size);
     if (bad) {
       setFile(null);
@@ -261,7 +274,7 @@ export default function ExpenseForm({
         <span className="font-bold text-pine">
           {file ? file.name : values?.receipt_name ? "Replace the receipt (optional)" : leader ? "Add the receipt (optional)" : "Add the receipt"}
         </span>
-        <span className="text-xs text-muted">{file ? "Ready to upload" : values?.receipt_name ? `Now: ${values.receipt_name}` : RECEIPT_HELP}</span>
+        <span className="text-xs text-muted">{preparing ? "Preparing photo…" : file ? "Ready to upload" : values?.receipt_name ? `Now: ${values.receipt_name}` : RECEIPT_HELP}</span>
         <input
           type="file"
           name="file"
@@ -276,7 +289,7 @@ export default function ExpenseForm({
       </label>
 
       <button className={`btn-primary w-full ${busy ? "is-busy" : ""}`} disabled={busy}>
-        {uploading ? "Uploading the receipt…" : saving ? "Saving…" : (submitLabel ?? "Save")}
+        {preparing ? "Preparing photo…" : uploading ? "Uploading the receipt…" : saving ? "Saving…" : (submitLabel ?? "Save")}
       </button>
       {error && (
         <p className="flex items-start gap-1.5 text-sm font-semibold text-danger">

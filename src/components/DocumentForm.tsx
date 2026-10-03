@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useState, type FormEvent } from "react";
 import { FileUp, TriangleAlert } from "lucide-react";
-import { Field, type ActionResult } from "@/components/ActionForm";
+import { Field, type ActionResult, guardAction } from "@/components/ActionForm";
 import { cancelDocumentUpload, prepareDocumentUpload, saveDocument } from "@/app/(app)/documents/actions";
 import { DOC_ACCEPT, DOC_AUDIENCES, DOC_FOLDERS, DOC_TYPES_HELP, checkDocFile, fmtBytes, type DocAudience } from "@/lib/document-files";
 
@@ -34,7 +34,7 @@ export default function DocumentForm({
   /** Committee members can make committee-only documents. */
   committee: boolean;
 }) {
-  const [state, formAction, saving] = useActionState<ActionResult, FormData>(saveDocument, {});
+  const [state, formAction, saving] = useActionState<ActionResult, FormData>(guardAction(saveDocument), {});
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState(doc?.title ?? "");
   const [uploading, setUploading] = useState(false);

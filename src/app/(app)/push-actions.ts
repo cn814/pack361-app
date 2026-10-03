@@ -10,17 +10,16 @@ interface SubJson {
 }
 
 export async function savePushSubscription(sub: SubJson, userAgent: string): Promise<{ error?: string }> {
-  const me = await requireMember();
+  await requireMember();
   if (!sub?.endpoint || !isPushEndpoint(sub.endpoint) || !sub.keys?.p256dh || !sub.keys?.auth) return { error: "Invalid subscription." };
   const supabase = await createClient();
-  // Same device re-subscribing: replace the old row
-  await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
-  const { error } = await supabase.from("push_subscriptions").insert({
-    adult_id: me.id,
-    endpoint: sub.endpoint,
-    p256dh: sub.keys.p256dh,
-    auth: sub.keys.auth,
-    user_agent: userAgent.slice(0, 300),
+  // One row per device: re-subscribing (even after signing in as someone else on a shared
+  // device) updates the row and moves it to the signed-in adult.
+  const { error } = await supabase.rpc("register_push_subscription", {
+    p_endpoint: sub.endpoint,
+    p_p256dh: sub.keys.p256dh,
+    p_auth: sub.keys.auth,
+    p_user_agent: String(userAgent ?? "").slice(0, 300),
   });
   return error ? { error: "Couldn't save. Try again." } : {};
 }
