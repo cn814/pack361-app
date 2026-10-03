@@ -25,6 +25,11 @@ export default function Splash() {
       setLeaving(true);
       window.setTimeout(() => root.removeAttribute("data-splash"), 350);
     };
+    // Opened in a background tab: nobody's watching, so go straight to the app.
+    if (document.visibilityState === "hidden") {
+      root.removeAttribute("data-splash");
+      return;
+    }
     const v = video.current;
     const timer = window.setTimeout(finish, LONGEST_MS);
     if (v) {
