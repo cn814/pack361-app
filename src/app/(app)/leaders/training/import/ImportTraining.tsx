@@ -86,6 +86,8 @@ export default function ImportTraining({ roster, today, liveSync = false }: { ro
       // Only IDs, course keys, dates and member IDs: no names, emails or other report columns.
       rows: chosen.map((u) => ({ adult_id: u.adultId, course: u.course, completed_on: u.completed, expires_on: u.expires })),
       memberIds: chosenIds.map((o) => ({ adult_id: o.adultId, member_id: o.memberId })),
+      // A flagged row you ticked: remember the report's name for this adult next time.
+      names: chosen.filter((u) => u.warn && u.reportName).map((u) => ({ adult_id: u.adultId, name: u.reportName })),
     };
     startTransition(async () => {
       const res = await applyTrainingImport(payload);
@@ -216,6 +218,7 @@ export default function ImportTraining({ roster, today, liveSync = false }: { ro
                               <CircleAlert className="h-3 w-3" aria-hidden /> {u.warn}
                             </span>
                           )}
+                          {u.warn && <span className="block text-[11px] text-muted">Tick it if it&apos;s the same person; the app will remember.</span>}
                         </td>
                         <td className="p-1">{COURSE_BY_KEY[u.course].label}</td>
                         <td className="p-1 text-muted">{currentText(u.current)}</td>

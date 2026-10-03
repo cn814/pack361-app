@@ -83,6 +83,7 @@ export interface ImportAdult {
   last_name: string;
   preferred_name: string | null;
   bsa_member_id: string | null;
+  other_names: string[];
   trainings: TrainingRow[];
 }
 
@@ -92,7 +93,7 @@ export async function getImportRoster(): Promise<ImportAdult[]> {
   const [{ data: adults }, { data: rows }] = await Promise.all([
     supabase
       .from("adults")
-      .select("id, first_name, last_name, preferred_name, bsa_member_id")
+      .select("id, first_name, last_name, preferred_name, bsa_member_id, other_names")
       .eq("is_active", true)
       .order("last_name"),
     supabase.from("adult_trainings").select("adult_id, course, completed_on, expires_on"),

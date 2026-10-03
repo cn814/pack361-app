@@ -54,6 +54,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export interface ImportPayload {
   rows: { adult_id: string; course: string; completed_on: string | null; expires_on: string | null }[];
   memberIds: { adult_id: string; member_id: string }[];
+  /** Report names confirmed as these adults (a ticked row the app flagged), to remember. */
+  names?: { adult_id: string; name: string }[];
 }
 
 export type ImportResult = ActionResult & { trainings?: number; adults?: number; memberIds?: number };
@@ -85,9 +87,16 @@ export async function applyTrainingImport(payload: ImportPayload): Promise<Impor
     .filter((x) => UUID.test(String(x.adult_id)) && MEMBER_ID.test(String(x.member_id)))
     .map((x) => ({ adult_id: x.adult_id, member_id: String(x.member_id) }));
 
+  const cleanNames = (Array.isArray(payload?.names) ? payload.names : [])
+    .filter((x) => UUID.test(String(x.adult_id)) && typeof x.name === "string" && x.name.trim().length >= 2)
+    .slice(0, 200)
+    .map((x) => ({ adult_id: x.adult_id, name: x.name.trim().slice(0, 80) }));
+
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("import_trainings", { p_rows: clean, p_member_ids: cleanIds });
   if (error) return { error: "Couldn't apply the updates. Try again." };
+  // Remember confirmed names; the import itself already worked if this fails.
+  if (cleanNames.length) await supabase.rpc("remember_adult_names", { p_names: cleanNames });
   const res = (data ?? {}) as { trainings?: number; adults?: number; member_ids?: number };
   revalidatePath("/leaders/training");
   revalidatePath("/family");

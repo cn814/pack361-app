@@ -355,6 +355,8 @@ export interface RosterAdult {
   last_name: string;
   preferred_name: string | null;
   bsa_member_id: string | null;
+  /** Names confirmed in earlier imports ("Benjamin Greenspon"). */
+  other_names?: string[];
   trainings: TrainingRow[];
 }
 
@@ -384,6 +386,62 @@ const key = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCas
 const idKey = (s: string | null) => (s ? s.trim().replace(/^0+(?=\d)/, "") : "");
 const fullName = (a: RosterAdult) => `${a.preferred_name || a.first_name} ${a.last_name}`;
 
+// Common nicknames, both ways ("Cathy" is "Catherine"). Shorter forms that start the full name
+// ("Ben" / "Benjamin") are matched without the list.
+const NICKNAMES: string[][] = [
+  ["catherine", "katherine", "kathryn", "cathy", "kathy", "cat", "kate", "katie", "kat"],
+  ["william", "bill", "billy", "will", "liam"],
+  ["robert", "bob", "bobby", "rob", "robbie", "bert"],
+  ["richard", "rick", "ricky", "dick", "rich"],
+  ["james", "jim", "jimmy", "jamie"],
+  ["john", "jack", "johnny", "jon"],
+  ["elizabeth", "liz", "beth", "betsy", "eliza", "lisa", "libby"],
+  ["margaret", "maggie", "meg", "peggy", "margie"],
+  ["edward", "ed", "eddie", "ted", "ned"],
+  ["theodore", "ted", "teddy", "theo"],
+  ["anthony", "tony"],
+  ["andrew", "andy", "drew"],
+  ["patricia", "pat", "patty", "tricia", "trish"],
+  ["charles", "chuck", "charlie", "chas"],
+  ["susan", "sue", "suzy"],
+  ["jennifer", "jen", "jenny"],
+  ["christopher", "chris", "kit"],
+  ["christina", "christine", "chris", "tina", "chrissy"],
+  ["michael", "mike", "mikey"],
+  ["nicholas", "nick", "nicky"],
+  ["stephen", "steven", "steve"],
+  ["thomas", "tom", "tommy"],
+  ["joseph", "joe", "joey"],
+  ["daniel", "dan", "danny"],
+  ["matthew", "matt"],
+  ["lawrence", "larry"],
+  ["victoria", "vicky", "tori"],
+  ["deborah", "debra", "deb", "debbie"],
+  ["rebecca", "becky", "becca"],
+  ["alexander", "alexandra", "alex", "sasha"],
+];
+const NICK = new Map<string, Set<string>>();
+for (const group of NICKNAMES) for (const n of group) NICK.set(n, new Set([...(NICK.get(n) ?? []), ...group]));
+
+/** First token of a first name, compared loosely: equal, one starts the other, or a known nickname. */
+function sameFirst(a: string, b: string): boolean {
+  const x = key(a.trim().split(/\s+/)[0] ?? "");
+  const y = key(b.trim().split(/\s+/)[0] ?? "");
+  if (!x || !y) return false;
+  if (x === y) return true;
+  if (x.length >= 3 && y.length >= 3 && (x.startsWith(y) || y.startsWith(x))) return true;
+  return NICK.get(x)?.has(y) ?? false;
+}
+
+/** Does this report name belong to this adult (given names, preferred name, or a remembered name)? */
+function nameFits(a: RosterAdult, first: string, last: string): { first: boolean; last: boolean } {
+  const remembered = (a.other_names ?? []).some((n) => key(n) === key(`${first} ${last}`));
+  if (remembered) return { first: true, last: true };
+  const lastOk = !last || key(last) === key(a.last_name);
+  const firstOk = !first || [a.first_name, a.preferred_name].some((n) => n && sameFirst(n, first));
+  return { first: firstOk, last: lastOk };
+}
+
 /** Would this report entry replace what the app has? Mirrors import_trainings() in the database. */
 export function isNewer(current: TrainingRow | undefined, completed: string | null, expires: string | null): boolean {
   if (!current || (!current.completed_on && !current.expires_on)) return Boolean(completed || expires);
@@ -402,6 +460,13 @@ export function buildPlan(rows: ReportRow[], roster: RosterAdult[], today: strin
     if (a.bsa_member_id) byId.set(idKey(a.bsa_member_id), [...(byId.get(idKey(a.bsa_member_id)) ?? []), a]);
     const names = new Set([key(a.first_name) + "|" + key(a.last_name)]);
     if (a.preferred_name) names.add(key(a.preferred_name) + "|" + key(a.last_name));
+    // "Woodrow A" in the app is also "Woodrow".
+    const firstToken = a.first_name.trim().split(/\s+/)[0];
+    if (firstToken && firstToken !== a.first_name.trim()) names.add(key(firstToken) + "|" + key(a.last_name));
+    for (const n of a.other_names ?? []) {
+      const { first, last } = splitName(n);
+      if (first && last) names.add(key(first) + "|" + key(last));
+    }
     for (const n of names) byName.set(n, [...(byName.get(n) ?? []), a]);
   }
 
@@ -441,8 +506,9 @@ export function buildPlan(rows: ReportRow[], roster: RosterAdult[], today: strin
       adult = idHits[0];
       // Adults can type in their own member ID, so an ID alone isn't proof: the name on the
       // report must agree too. No name match at all means someone may have entered the wrong ID.
-      const lastOk = !r.last || key(r.last) === key(adult.last_name);
-      const firstOk = !r.first || [adult.first_name, adult.preferred_name].some((n) => n && key(n) === key(r.first));
+      const fit = nameFits(adult, r.first, r.last);
+      const lastOk = fit.last;
+      const firstOk = fit.first;
       if (!lastOk && !firstOk) {
         miss(r, `Member ID is on ${fullName(adult)} in the app, but the report says ${r.first} ${r.last}. Check the member ID`);
         continue;
