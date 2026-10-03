@@ -116,6 +116,8 @@ const norm = (h: string) => h.toLowerCase().replace(/[^a-z0-9]/g, "");
 function headerCol(h: string): Col | null {
   const n = norm(h);
   if (!n) return null;
+  // A registration or membership expiry is not a training date.
+  if (/regist|membership|renew|recharter/.test(n)) return null;
   for (const [col, names] of Object.entries(HEADERS) as [Col, string[]][]) if (names.includes(n)) return col;
   if (/memberid|bsaid/.test(n)) return "memberId";
   if (/expir/.test(n)) return "expires";
@@ -175,6 +177,8 @@ export interface ReportRow {
   course: CourseKey | null;
   completed: string | null;
   expires: string | null;
+  /** From a status report with no dates: "done as of the report date"; only fills a gap. */
+  asOf?: boolean;
 }
 
 export interface ParsedReport {
@@ -183,6 +187,8 @@ export interface ParsedReport {
   columns: string[];
   /** No course column: a Safeguarding Youth (YPT Aging) report. */
   yptOnly: boolean;
+  /** my.scouting's Trained Leaders Status report: who's trained and what's missing, but no dates. */
+  status?: { asOf: string; stillNeeded: { name: string; needs: string[] }[] };
   error?: string;
 }
 
@@ -199,8 +205,84 @@ function splitName(full: string): { first: string; last: string } {
   return { first: parts[0], last: parts[parts.length - 1] };
 }
 
+// ---------------------------------------------------------------------------
+// Trained Leaders Status report (my.scouting Training Manager): one row per person and position,
+// with Trained YES/NO and the course codes still missing, but no completion dates.
+// ---------------------------------------------------------------------------
+const POSITION_CODE = /^(c\d{2}|sco_?(2[67]\d|4[5-9]\d))$/i;
+
+function codeLabel(code: string): string {
+  if (POSITION_CODE.test(code)) return "position training";
+  const c = courseFromText(code);
+  return c ? COURSE_BY_KEY[c].label : code;
+}
+
+function parseStatusReport(table: Cell[][]): ParsedReport | null {
+  const hi = table.slice(0, 25).findIndex((row) => {
+    const h = (row ?? []).map((c) => norm(cellText(c)));
+    return h.includes("trained") && h.some((x) => x.startsWith("incomplete"));
+  });
+  if (hi < 0) return null;
+  const head = (table[hi] ?? []).map((c) => norm(cellText(c)));
+  const at = (n: string) => head.indexOf(n);
+  const first = at("firstname");
+  const last = at("lastname");
+  const id = head.findIndex((h) => /memberid|bsaid/.test(h));
+  const trained = at("trained");
+  const position = at("position");
+  const mandatory = at("incompletemandatory");
+  const classroom = at("incompleteclassroom");
+  const online = at("incompleteonline");
+  if (first < 0 || last < 0) return null;
+
+  // "Date Report Generated: 10/02/2026" in the lines above the table.
+  let asOf = "";
+  for (const row of table.slice(0, hi)) {
+    const m = (row ?? []).map(cellText).join(" ").match(/generated:?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
+    if (m) asOf = `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+  }
+  if (!asOf) asOf = new Date().toISOString().slice(0, 10);
+
+  const codes = (row: Cell[], i: number) => (i < 0 ? [] : cellText(row[i]).split(/[,;\s]+/).map((c) => c.trim()).filter(Boolean));
+  const people = new Map<string, { line: number; memberId: string | null; first: string; last: string; positionDone: boolean; needs: Set<string> }>();
+  for (let r = hi + 1; r < table.length; r++) {
+    const row = table[r] ?? [];
+    const f = cellText(row[first]);
+    const l = cellText(row[last]);
+    const memberId = id < 0 ? null : cellMemberId(row[id]);
+    if (!f || !l) continue;
+    const k = memberId ?? `${key(f)}|${key(l)}`;
+    const p = people.get(k) ?? { line: r + 1, memberId, first: f, last: l, positionDone: true, needs: new Set<string>() };
+    // Position training is done when neither the classroom course nor the online modules are listed.
+    const positionMissing = [...codes(row, classroom), ...codes(row, online)].some((c) => POSITION_CODE.test(c));
+    if (positionMissing) p.positionDone = false;
+    for (const c of [...codes(row, mandatory), ...codes(row, classroom), ...codes(row, online)]) {
+      const label = codeLabel(c);
+      p.needs.add(label === "position training" && position >= 0 && cellText(row[position]) ? `${cellText(row[position])} position training` : label);
+    }
+    if (trained >= 0 && /^n/i.test(cellText(row[trained])) && !p.needs.size) p.needs.add("something (my.scouting says not trained)");
+    people.set(k, p);
+  }
+
+  const rows: ReportRow[] = [];
+  const stillNeeded: { name: string; needs: string[] }[] = [];
+  for (const p of people.values()) {
+    if (p.positionDone)
+      rows.push({ line: p.line, memberId: p.memberId, first: p.first, last: p.last, courseText: "Trained Leaders Status", course: "position", completed: asOf, expires: null, asOf: true });
+    if (p.needs.size) stillNeeded.push({ name: `${p.first} ${p.last}`, needs: [...p.needs] });
+  }
+  return {
+    rows,
+    columns: ["First_Name", "Last_Name", "MemberID", "Trained", "Incomplete_Mandatory", "Incomplete_Classroom", "Incomplete_Online"].filter((c) => at(norm(c)) >= 0),
+    yptOnly: false,
+    status: { asOf, stillNeeded },
+  };
+}
+
 /** Read a report table (from the CSV parser or the Excel reader). */
 export function parseReport(table: Cell[][]): ParsedReport {
+  const status = parseStatusReport(table);
+  if (status) return status;
   let layout: Layout | null = null;
   let best = 0;
   for (let i = 0; i < Math.min(table.length, 25); i++) {
@@ -397,7 +479,8 @@ export function buildPlan(rows: ReportRow[], roster: RosterAdult[], today: strin
       continue;
     }
     const current = adult.trainings.find((t) => t.course === course);
-    if (!isNewer(current, completed, expires)) {
+    const hasAny = Boolean(current && (current.completed_on || current.expires_on));
+    if ((r.asOf && hasAny) || !isNewer(current, completed, expires)) {
       upToDate++;
       continue;
     }

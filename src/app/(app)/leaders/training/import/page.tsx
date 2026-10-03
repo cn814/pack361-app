@@ -34,8 +34,9 @@ export default async function ImportTrainingPage() {
             Sign in at my.scouting.org on a computer. <MyScoutingLink />
           </li>
           <li>
-            Open <b>Menu → My Dashboard → Training Manager</b> (or the unit&apos;s training reports), pick Pack 361, and run
-            the leader training report. For Safeguarding Youth only, the <b>YPT Aging</b> report works too.
+            Open <b>Menu → Pack 361 → Training Manager</b>. Under the Youth Protection chart, open the{" "}
+            <b>Safeguarding Youth Training Report</b> (Safeguarding Youth dates). Under the Trained Leaders chart, open the{" "}
+            <b>Trained Leaders Status</b> report, Detail (position training, and what each leader still needs). Import each one.
           </li>
           <li>
             <b>Export</b> it as CSV or Excel (.xlsx) and choose the file below.

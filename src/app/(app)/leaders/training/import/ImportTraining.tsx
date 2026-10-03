@@ -160,6 +160,27 @@ export default function ImportTraining({ roster, today, liveSync = false }: { ro
               {plan.updates.length === 1 ? "" : "s"}; {plan.upToDate} already up to date in the app.
             </p>
             <p className="text-[11px] text-muted">Columns used: {report.columns.join(", ")}. Everything else in the file is ignored.</p>
+            {report.status && (
+              <div className="space-y-1.5 rounded-xl bg-gold-50 p-2.5 text-xs text-gold-800">
+                <p>
+                  <b>Trained Leaders Status report.</b> It says who&apos;s trained but has no completion dates, so it can only
+                  record <b>position training</b> as done (dated {report.status.asOf}) for people the app has nothing for yet.
+                  For Safeguarding Youth and Hazardous Weather dates, also upload the <b>Safeguarding Youth Training Report</b>.
+                </p>
+                {report.status.stillNeeded.length > 0 && (
+                  <>
+                    <p className="font-bold">my.scouting says still needed:</p>
+                    <ul className="list-disc space-y-0.5 pl-4">
+                      {report.status.stillNeeded.map((n) => (
+                        <li key={n.name}>
+                          <b>{n.name}</b>: {n.needs.join(", ")}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
 
             {plan.updates.length > 0 && (
               <div className="-mx-1 overflow-x-auto">
