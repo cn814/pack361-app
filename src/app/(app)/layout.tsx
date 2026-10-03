@@ -10,6 +10,7 @@ import { canLead, getMode } from "@/lib/mode";
 import ModeSwitch from "@/components/ModeSwitch";
 import { getInboxCount } from "@/lib/inbox";
 import ViewAsBanner from "@/components/ViewAsBanner";
+import LeaderModeBanner from "@/components/LeaderModeBanner";
 import BetaBanner from "@/components/BetaBanner";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -59,6 +60,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </div>
         </div>
       </header>
+      {canLead(me) && mode === "leader" && <LeaderModeBanner />}
       <ViewAsBanner me={me} />
       <main className="mx-auto w-full max-w-md space-y-4 px-4 pb-28 pt-4 lg:max-w-3xl lg:px-8 lg:pb-12 lg:pt-8 lg:has-[.page-wide]:max-w-6xl print:max-w-none print:pb-0">
         {children}

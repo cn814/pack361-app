@@ -106,10 +106,7 @@ export default async function PackPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack</h1>
-        {leader && <span className="badge bg-brand text-white normal-case tracking-normal">Leader mode</span>}
-      </div>
+      <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack</h1>
       {canLead(me) && (
         <div className="lg:hidden">
           <ModeSwitch mode={mode} />

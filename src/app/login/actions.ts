@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { SPLASH_COOKIE, SPLASH_COOKIE_OPTIONS } from "@/lib/splash";
+import { MODE_COOKIE } from "@/lib/mode";
 import { createClient } from "@/lib/supabase/server";
 
 const HELP = "info@pack361.org";
@@ -58,5 +59,6 @@ export async function verifyLoginCode(_prev: LoginState, form: FormData): Promis
     };
   }
   (await cookies()).set(SPLASH_COOKIE, "1", SPLASH_COOKIE_OPTIONS); // the welcome animation
+  (await cookies()).delete(MODE_COOKIE); // leaders start in Leader mode
   redirect("/");
 }
