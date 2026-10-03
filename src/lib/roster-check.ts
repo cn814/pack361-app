@@ -55,6 +55,8 @@ export interface ExportRow {
   parentFirst: string;
   parentLast: string;
   parentEmail: string;
+  /** The report gives only the last initial ("John B" in Unit Roster Lite). */
+  initialOnly: boolean;
 }
 
 export interface ParsedRoster {
@@ -145,6 +147,9 @@ export function parseRosterExport(table: Cell[][]): ParsedRoster {
   let skipped = 0;
   for (let r = header + 1; r < table.length; r++) {
     const row = table[r] ?? [];
+    // Reports like Unit Roster Lite list the leaders after the youth, with other columns.
+    const cells = row.map(cellText).filter(Boolean);
+    if (cells.length === 1 && /^(leader|adult)s?( members?)?:?$/i.test(cells[0])) break;
     let first = get(row, "first");
     let last = get(row, "last");
     if ((!first || !last) && cols.name !== undefined) ({ first, last } = splitName(get(row, "name")));
@@ -177,6 +182,7 @@ export function parseRosterExport(table: Cell[][]): ParsedRoster {
       parentFirst: get(row, "parentFirst"),
       parentLast: get(row, "parentLast"),
       parentEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : "",
+      initialOnly: /^[a-z]\.?$/i.test(last),
     });
   }
   return { rows, skipped, columns };
@@ -296,7 +302,8 @@ export function diffRoster(rows: ExportRow[], scouts: AppScout[], dens: AppDen[]
     diff.matched++;
     if (!scout.is_active) diff.inactive.push({ scout, row });
     const firstOk = [row.first, row.nickname].some((f) => f && firstKey(f) === firstKey(scout.first_name));
-    if (!firstOk || key(row.last) !== key(scout.last_name)) diff.nameDiffs.push({ scout, row });
+    const lastOk = row.initialOnly ? key(row.last)[0] === key(scout.last_name)[0] : key(row.last) === key(scout.last_name);
+    if (!firstOk || !lastOk) diff.nameDiffs.push({ scout, row });
     if (!den) {
       if (row.denText || row.rank) diff.unknownDens.push({ row, scout });
     } else if (den.id !== scout.den_id) {
