@@ -20,7 +20,8 @@ export async function syncGivebutterNow(): Promise<ActionState> {
     const r = await syncGivebutter(createAdminClient());
     revalidatePath("/", "layout");
     const dues = r.duesMatched || r.duesNeedReview ? ` Dues: ${r.duesMatched} matched, ${r.duesNeedReview} to review.` : "";
-    return { ok: true, message: `Synced ${r.campaigns} campaigns and ${r.orders} orders (${r.matchedFamilies} pack families matched).${dues}` };
+    const skipped = r.skipped ? ` ${r.skipped} transactions had no id and were left out (fields: ${r.skippedFields.join(", ")}).` : "";
+    return { ok: true, message: `Synced ${r.campaigns} campaigns and ${r.orders} orders (${r.matchedFamilies} pack families matched).${dues}${skipped}` };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Sync failed." };
   }

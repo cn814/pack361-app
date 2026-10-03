@@ -57,6 +57,9 @@ function lineItems(t: Json): LineItem[] {
 export interface SyncResult {
   campaigns: number;
   orders: number;
+  /** Transactions left out because they had no usable id, and the field names one of them had. */
+  skipped: number;
+  skippedFields: string[];
   matchedFamilies: number;
   duesMatched: number;
   duesNeedReview: number;
@@ -94,17 +97,35 @@ export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
   };
 
   const campaignIds = new Set(campaigns.map((c) => Number(c.id)));
-  const orders = transactions
-    .filter((t) => campaignIds.has(Number(t.campaign_id)))
+  // A transaction's id is a number; some list entries carry it on their first payment instead.
+  const txId = (t: Json): number | null => {
+    const nested = Array.isArray(t.transactions) ? ((t.transactions as Json[])[0] ?? {}) : {};
+    for (const v of [t.id, t.transaction_id, nested.id]) {
+      const n = num(v);
+      if (n !== null && Number.isInteger(n) && n > 0) return n;
+    }
+    return null;
+  };
+  const inPack = transactions.filter((t) => campaignIds.has(Number(t.campaign_id)));
+  const noId = inPack.filter((t) => txId(t) === null);
+  const seenIds = new Set<number>();
+  const orders = inPack
+    .filter((t) => {
+      const id = txId(t);
+      if (id === null || seenIds.has(id)) return false;
+      seenIds.add(id);
+      return true;
+    })
     .map((t) => {
+      const id = txId(t)!;
       const email = str(t.email)?.toLowerCase() ?? null;
       const items = lineItems(t);
       const tickets = items.filter((i) => i.type === "ticket").reduce((n, i) => n + i.quantity, 0);
-      answersById.set(Number(t.id), customAnswers(t));
+      answersById.set(id, customAnswers(t));
       return {
-        id: Number(t.id),
+        id,
         campaign_id: Number(t.campaign_id),
-        family_id: placedFamily.get(Number(t.id)) ?? (email ? familyByEmail.get(email) : null) ?? null,
+        family_id: placedFamily.get(id) ?? (email ? familyByEmail.get(email) : null) ?? null,
         name: [str(t.first_name), str(t.last_name)].filter(Boolean).join(" ") || str(t.company),
         email,
         amount: num(t.amount),
@@ -150,6 +171,8 @@ export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
   return {
     campaigns: rows.length,
     orders: orders.length,
+    skipped: noId.length,
+    skippedFields: noId.length ? Object.keys(noId[0]).sort().slice(0, 40) : [],
     matchedFamilies: new Set(orders.map((o) => o.family_id).filter(Boolean)).size,
     duesMatched: dues.matched,
     duesNeedReview: dues.needReview,
