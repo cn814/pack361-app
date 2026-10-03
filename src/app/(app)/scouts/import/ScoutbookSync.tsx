@@ -180,6 +180,12 @@ export default function ScoutbookSync({
                 <CircleCheck className="h-4 w-4" aria-hidden /> Imported {imp.rows?.toLocaleString()} records for {imp.scouts} scouts.
               </p>
               {changesText(imp.changes) && <p className="font-semibold">{changesText(imp.changes)}</p>}
+              {!!imp.unmatched?.length && (
+                <p className="text-xs text-navy">
+                  Not on the app roster (no matching member ID): {imp.unmatched.map((u) => `${u.name} (#${u.member_id})`).join(", ")}. Add
+                  them, or their member ID, under Pack admin → Families and scouts.
+                </p>
+              )}
             </div>
           )}
         </div>

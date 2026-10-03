@@ -54,6 +54,8 @@ export default async function ImportPage() {
         <p className="text-xs text-muted">
           Last import {fmtDay(last.imported_at)} at {fmtTime(last.imported_at)}: {last.row_count.toLocaleString()} records for{" "}
           {last.scout_count} scouts. {changesText(last.changes)}
+          {last.unmatched.length > 0 &&
+            ` Not on the app roster: ${last.unmatched.map((u) => `${u.name} (#${u.member_id})`).join(", ")}.`}
         </p>
       )}
 
