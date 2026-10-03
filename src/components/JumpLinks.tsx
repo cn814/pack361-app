@@ -4,7 +4,7 @@ export default function JumpLinks({ links }: { links: { href: string; label: str
   return (
     <nav aria-label="On this page" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 print:hidden lg:mx-0 lg:flex-wrap lg:px-0">
       {links.map((l) => (
-        <a key={l.href} href={l.href} className="flex h-9 shrink-0 items-center rounded-full border border-line bg-white px-4 text-sm font-bold text-pine">
+        <a key={l.href} href={l.href} className="flex h-9 shrink-0 items-center rounded-full border border-line bg-card px-4 text-sm font-bold text-pine">
           {l.label}
         </a>
       ))}

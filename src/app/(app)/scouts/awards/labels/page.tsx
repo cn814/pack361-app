@@ -64,7 +64,7 @@ export default async function AwardLabelsPage({ searchParams }: PageProps<"/scou
         </p>
         <div className="flex flex-wrap gap-2 text-sm font-semibold">
           {LABEL_SHEETS.map((s) => (
-            <Link key={s.id} href={href(s.id)} className={`rounded-full px-3 py-1 ${s.id === sheet.id ? "bg-pine text-white" : "bg-white text-pine ring-1 ring-line"}`}>
+            <Link key={s.id} href={href(s.id)} className={`rounded-full px-3 py-1 ${s.id === sheet.id ? "bg-brand text-white" : "bg-card text-pine ring-1 ring-line"}`}>
               {s.name}
             </Link>
           ))}
@@ -90,7 +90,7 @@ export default async function AwardLabelsPage({ searchParams }: PageProps<"/scou
         {sheets.map((cellsOnSheet, si) => (
           <div
             key={si}
-            className="label-sheet relative bg-white ring-1 ring-line print:ring-0"
+            className="label-sheet relative bg-card ring-1 ring-line print:ring-0"
             style={{ width: "8.5in", height: "11in" }}
           >
             {cellsOnSheet.map((c, i) => {
@@ -123,7 +123,7 @@ export default async function AwardLabelsPage({ searchParams }: PageProps<"/scou
                     </p>
                   </div>
                   <span
-                    className={`ml-1 flex shrink-0 items-center justify-center self-center rounded-full bg-gold font-extrabold text-pine-950 ${small ? "h-[0.36in] w-[0.36in] text-[10pt]" : "h-[0.5in] w-[0.5in] text-[14pt]"}`}
+                    className={`ml-1 flex shrink-0 items-center justify-center self-center rounded-full bg-gold font-extrabold text-on-gold ${small ? "h-[0.36in] w-[0.36in] text-[10pt]" : "h-[0.5in] w-[0.5in] text-[14pt]"}`}
                     aria-label={`${names.length} items`}
                   >
                     {names.length}

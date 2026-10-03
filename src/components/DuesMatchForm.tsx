@@ -29,7 +29,7 @@ export default function DuesMatchForm({ orderId, families, familyId }: { orderId
         (picked.scouts.length ? (
           <div className="flex flex-wrap gap-2" key={picked.id}>
             {picked.scouts.map((s) => (
-              <label key={s.id} className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-2 py-1.5 text-sm font-semibold text-navy">
+              <label key={s.id} className="flex items-center gap-1.5 rounded-xl border border-line bg-card px-2 py-1.5 text-sm font-semibold text-navy">
                 <input type="checkbox" name="scout_id" value={s.id} defaultChecked={picked.scouts.length === 1} className="h-4 w-4 accent-pine" />
                 {s.first_name}
               </label>

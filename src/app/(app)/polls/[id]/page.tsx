@@ -43,7 +43,7 @@ export default async function PollPage({ params }: PageProps<"/polls/[id]">) {
             <input type="hidden" name="poll_id" value={poll.id} />
             <p className="text-xs text-muted">{poll.allow_multiple ? "Pick all that apply." : "Pick one."}</p>
             {poll.options.map((o, i) => (
-              <label key={i} className="flex items-center gap-3 rounded-xl border border-line bg-white p-3 has-[:checked]:border-pine has-[:checked]:bg-mint">
+              <label key={i} className="flex items-center gap-3 rounded-xl border border-line bg-card p-3 has-[:checked]:border-pine has-[:checked]:bg-mint">
                 <input
                   type={poll.allow_multiple ? "checkbox" : "radio"}
                   name="choice"
@@ -76,7 +76,7 @@ export default async function PollPage({ params }: PageProps<"/polls/[id]">) {
                       <span className="shrink-0 tabular-nums text-muted">{n}</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-surface">
-                      <div className="h-full rounded-full bg-pine" style={{ width: `${(n / max) * 100}%` }} />
+                      <div className="h-full rounded-full bg-brand" style={{ width: `${(n / max) * 100}%` }} />
                     </div>
                   </li>
                 );

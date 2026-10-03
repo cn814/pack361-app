@@ -62,7 +62,7 @@ export default async function PopcornPage() {
     <>
       <BackLink href="/store" label="Pack store" />
       <div>
-        <span className="badge bg-navy text-white">Pack 361 fundraiser</span>
+        <span className="badge bg-deep-navy text-white">Pack 361 fundraiser</span>
         <h1 className="mt-2 flex items-center gap-2 text-2xl font-extrabold tracking-tight text-pine-950">
           <Popcorn className="h-7 w-7 text-gold-700" aria-hidden /> Trail&apos;s End popcorn
         </h1>
@@ -90,7 +90,7 @@ export default async function PopcornPage() {
         <ol className="divide-y divide-line">
           {POPCORN_STEPS.map((s, i) => (
             <li key={s.title} className="flex gap-3 py-2.5">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-navy text-sm font-extrabold text-white">{i + 1}</span>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-deep-navy text-sm font-extrabold text-white">{i + 1}</span>
               <span>
                 <span className="block font-bold text-navy">{s.title}</span>
                 <span className="block text-sm text-muted">{s.body}</span>

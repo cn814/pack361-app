@@ -159,11 +159,11 @@ export default function RecordMeeting(p: Props) {
                 aria-pressed={on}
                 onClick={() => toggleScout(s.id)}
                 className={`flex min-h-14 items-center gap-2 rounded-2xl border-2 px-3 py-3 text-left text-base font-bold ${
-                  on ? "border-pine bg-pine text-white" : "border-line bg-white text-navy"
+                  on ? "border-pine bg-brand text-white" : "border-line bg-card text-navy"
                 }`}
               >
                 <span
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${on ? "border-white bg-white text-pine" : "border-outline"}`}
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${on ? "border-white bg-white text-brand" : "border-outline"}`}
                   aria-hidden
                 >
                   {on && <Check className="h-4 w-4" />}
@@ -219,7 +219,7 @@ export default function RecordMeeting(p: Props) {
                         aria-label={`Requirement ${r}`}
                         onClick={() => toggleReq(i, r)}
                         className={`flex h-12 w-12 items-center justify-center rounded-xl border-2 text-lg font-extrabold ${
-                          on ? "border-pine bg-pine text-white" : "border-line bg-white text-muted line-through"
+                          on ? "border-pine bg-brand text-white" : "border-line bg-card text-muted line-through"
                         }`}
                       >
                         {r}
@@ -245,7 +245,7 @@ export default function RecordMeeting(p: Props) {
                     key={a.name}
                     type="button"
                     onClick={() => addAdventure(a.name)}
-                    className="flex min-h-14 items-center justify-between gap-2 rounded-2xl border-2 border-line bg-white px-4 py-3 text-left"
+                    className="flex min-h-14 items-center justify-between gap-2 rounded-2xl border-2 border-line bg-card px-4 py-3 text-left"
                   >
                     <span className="text-base font-bold text-ink">{a.name}</span>
                     <span className="shrink-0 text-xs text-muted">
@@ -341,7 +341,7 @@ export default function RecordMeeting(p: Props) {
                                       aria-label={`${s.label}, requirement ${r}`}
                                       onClick={() => toggleSkip(i, s.id, r)}
                                       className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border-2 ${
-                                        on ? "border-pine bg-pine text-white" : "border-line bg-white text-muted"
+                                        on ? "border-pine bg-brand text-white" : "border-line bg-card text-muted"
                                       }`}
                                     >
                                       {on ? <Check className="h-4 w-4" aria-hidden /> : "–"}

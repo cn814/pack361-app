@@ -22,7 +22,7 @@ export default async function GetTheAppQr() {
           <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-pine-950">Get the pack app</h1>
           <p className="mt-2 text-xl text-pine">Calendar · RSVPs · Campouts · Advancement · News</p>
         </div>
-        <div className="mx-auto w-[3.6in] rounded-2xl bg-white p-3 ring-1 ring-line" dangerouslySetInnerHTML={{ __html: qr }} role="img" aria-label="QR code for app.pack361.org/get" />
+        <div className="mx-auto w-[3.6in] rounded-2xl bg-card p-3 ring-1 ring-line" dangerouslySetInnerHTML={{ __html: qr }} role="img" aria-label="QR code for app.pack361.org/get" />
         <ol className="mx-auto max-w-md space-y-2 text-left text-lg text-ink">
           <li>
             <b>1.</b> Point your phone&apos;s camera at the code and tap the link.

@@ -177,7 +177,7 @@ export default async function StorePage() {
                     <input type="hidden" name="id" value={c.id} />
                     <input type="hidden" name="show" value={String(!c.show_as_fundraiser)} />
                     <SubmitButton
-                      className={`badge shrink-0 normal-case tracking-normal ${c.show_as_fundraiser ? "bg-pine text-white" : "bg-surface text-muted"}`}
+                      className={`badge shrink-0 normal-case tracking-normal ${c.show_as_fundraiser ? "bg-brand text-white" : "bg-surface text-muted"}`}
                     >
                       {c.show_as_fundraiser ? "In store" : "Hidden"}
                     </SubmitButton>

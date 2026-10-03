@@ -69,8 +69,8 @@ export default function ReportForm({
               return (
                 <label
                   key={n}
-                  className={`flex h-12 items-center justify-center rounded-xl border-[1.5px] text-base font-bold has-[:checked]:border-pine has-[:checked]:bg-pine has-[:checked]:text-white ${
-                    done ? "border-line bg-surface text-outline" : "border-[#d1d5db] bg-white text-navy"
+                  className={`flex h-12 items-center justify-center rounded-xl border-[1.5px] text-base font-bold has-[:checked]:border-pine has-[:checked]:bg-brand has-[:checked]:text-white ${
+                    done ? "border-line bg-surface text-outline" : "border-outline bg-card text-navy"
                   }`}
                 >
                   <input type="checkbox" name="requirement" value={n} disabled={done} className="sr-only" />

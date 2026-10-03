@@ -62,13 +62,13 @@ export default async function DocumentsPage({ searchParams }: PageProps<"/docume
         <nav className="flex gap-2 text-sm">
           <Link
             href="/documents"
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-bold ${archived ? "text-pine" : "bg-pine text-white"}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-bold ${archived ? "text-pine" : "bg-brand text-white"}`}
           >
             <FolderOpen className="h-4 w-4" aria-hidden /> Current
           </Link>
           <Link
             href="/documents?view=archived"
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-bold ${archived ? "bg-pine text-white" : "text-pine"}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-bold ${archived ? "bg-brand text-white" : "text-pine"}`}
           >
             <Archive className="h-4 w-4" aria-hidden /> Archived{archivedCount ? ` (${archivedCount})` : ""}
           </Link>

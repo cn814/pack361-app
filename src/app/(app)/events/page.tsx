@@ -95,7 +95,7 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
             href={s.key === "all" ? "/events" : `/events?show=${s.key}`}
             aria-current={show === s.key ? "page" : undefined}
             className={`flex h-9 shrink-0 items-center rounded-full px-4 text-sm font-bold ${
-              show === s.key ? "bg-pine text-white" : "border border-line bg-white text-ink"
+              show === s.key ? "bg-brand text-white" : "border border-line bg-card text-ink"
             }`}
           >
             {s.label}
@@ -117,8 +117,8 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
       )}
 
       {pinned && (
-        <Link href={pinned.event.href} className="flex items-center gap-3 rounded-2xl bg-pine-950 p-4 text-white shadow-[var(--shadow-float)]">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gold text-pine-950">
+        <Link href={pinned.event.href} className="flex items-center gap-3 rounded-2xl bg-deep p-4 text-white shadow-[var(--shadow-float)]">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gold text-on-gold">
             <BigIcon className="h-6 w-6" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">

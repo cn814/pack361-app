@@ -47,7 +47,7 @@ export default function DenMeetingRsvp({ meetingId, scouts, compact }: Props) {
                   aria-checked={on}
                   disabled={pending}
                   onClick={() => answer(s.id, g)}
-                  className={`rounded-xl border px-3 py-2 text-sm font-bold ${on ? "border-pine bg-pine text-white" : "border-line bg-white text-navy"}`}
+                  className={`rounded-xl border px-3 py-2 text-sm font-bold ${on ? "border-pine bg-brand text-white" : "border-line bg-card text-navy"}`}
                 >
                   {g ? "Going" : "Can't go"}
                 </button>

@@ -29,6 +29,15 @@
   --color-danger: #ba1a1a;
   --color-danger-50: #ffdad6;
 
+  /* Fills that stay the same in dark mode, so white (or on-gold) text on them keeps its
+     contrast: the dark green cards and sidebar, the green buttons and header, navy and red
+     fills, and the dark text on gold. */
+  --color-deep: #012d1d;
+  --color-brand: #1b4332;
+  --color-deep-navy: #1b2638;
+  --color-alarm: #ba1a1a;
+  --color-on-gold: #1b2638;
+
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 
   --shadow-card: 0 2px 6px -1px rgba(30, 41, 58, 0.06), 0 1px 3px rgba(27, 67, 50, 0.04);
@@ -36,7 +45,84 @@
 }
 
 :root {
-  color-scheme: light; /* outdoor readability: one high-contrast light theme */
+  color-scheme: light; /* outdoor readability: high-contrast light theme by default */
+}
+
+/* Dark mode (Me → Appearance): "dark" always, "auto" when the phone or computer is set to dark.
+   Screen only, so printouts (award labels, reports) stay light. */
+@media screen {
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --color-canvas: #0f1411;
+    --color-card: #171e1a;
+    --color-surface-low: #1b231e;
+    --color-surface: #232c26;
+    --color-line: #2d3731;
+    --color-outline: #4d5a52;
+
+    --color-pine-950: #e2efe6;
+    --color-pine-900: #1d4734;
+    --color-pine: #8fd1ad;
+    --color-pine-600: #a6ccb6;
+    --color-sage: #8fb19b;
+    --color-mint: #1a2f24;
+
+    --color-gold-50: #2a2313;
+    --color-gold-100: #4b3a16;
+    --color-gold-700: #f2a94e;
+    --color-gold-800: #f6c76c;
+
+    --color-navy: #dbe3ee;
+    --color-ink: #e4e8e4;
+    --color-muted: #a9b3ac;
+    --color-danger: #ffb4ab;
+    --color-danger-50: #3c1b18;
+
+    --color-deep: #11382a;
+    --color-brand: #24583f;
+    --color-deep-navy: #24324a;
+    --color-alarm: #c62a22;
+
+    --shadow-card: 0 2px 6px -1px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
+    --shadow-float: 0 10px 20px -3px rgba(0, 0, 0, 0.45), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  }
+}
+@media screen and (prefers-color-scheme: dark) {
+  html[data-theme="auto"] {
+    color-scheme: dark;
+    --color-canvas: #0f1411;
+    --color-card: #171e1a;
+    --color-surface-low: #1b231e;
+    --color-surface: #232c26;
+    --color-line: #2d3731;
+    --color-outline: #4d5a52;
+
+    --color-pine-950: #e2efe6;
+    --color-pine-900: #1d4734;
+    --color-pine: #8fd1ad;
+    --color-pine-600: #a6ccb6;
+    --color-sage: #8fb19b;
+    --color-mint: #1a2f24;
+
+    --color-gold-50: #2a2313;
+    --color-gold-100: #4b3a16;
+    --color-gold-700: #f2a94e;
+    --color-gold-800: #f6c76c;
+
+    --color-navy: #dbe3ee;
+    --color-ink: #e4e8e4;
+    --color-muted: #a9b3ac;
+    --color-danger: #ffb4ab;
+    --color-danger-50: #3c1b18;
+
+    --color-deep: #11382a;
+    --color-brand: #24583f;
+    --color-deep-navy: #24324a;
+    --color-alarm: #c62a22;
+
+    --shadow-card: 0 2px 6px -1px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
+    --shadow-float: 0 10px 20px -3px rgba(0, 0, 0, 0.45), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  }
 }
 
 html,
@@ -123,19 +209,19 @@ body {
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-pine px-4 py-3 text-sm font-bold text-white transition active:translate-y-px active:bg-pine-900 disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-bold text-white transition active:translate-y-px active:bg-pine-900 disabled:opacity-60;
   }
 
   .btn-gold {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-navy transition active:translate-y-px;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-on-gold transition active:translate-y-px;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border-[1.5px] border-pine bg-white px-4 py-2.5 text-sm font-bold text-pine transition active:translate-y-px;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border-[1.5px] border-pine bg-card px-4 py-2.5 text-sm font-bold text-pine transition active:translate-y-px;
   }
 
   .input {
-    @apply w-full rounded-xl border-[1.5px] border-[#d1d5db] bg-canvas px-3 py-3 text-base outline-none transition focus:border-pine focus:ring-[3px] focus:ring-pine/15;
+    @apply w-full rounded-xl border-[1.5px] border-outline bg-canvas px-3 py-3 text-base outline-none transition focus:border-pine focus:ring-[3px] focus:ring-pine/15;
   }
 
   .section-title {

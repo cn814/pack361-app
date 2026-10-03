@@ -5,7 +5,7 @@ import { APP_VERSION, isBeta, LIVE_URL } from "@/lib/version";
 export default function BetaBanner() {
   if (!isBeta()) return null;
   return (
-    <div className="print:hidden bg-navy text-white">
+    <div className="print:hidden bg-deep-navy text-white">
       <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-1.5 text-xs lg:max-w-3xl lg:px-8">
         <FlaskConical className="h-3.5 w-3.5 shrink-0 text-gold" aria-hidden />
         <span className="min-w-0 flex-1">

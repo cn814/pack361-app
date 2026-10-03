@@ -39,7 +39,7 @@ function Thumb({ shop, kind }: { shop: ShopItem | null; kind: Row["kind"] }) {
       width={56}
       height={56}
       loading="lazy"
-      className={`h-14 w-14 shrink-0 rounded-lg bg-white object-contain ring-1 ring-line print:h-10 print:w-10 ${kind === "rank" ? "p-0.5" : ""}`}
+      className={`h-14 w-14 shrink-0 rounded-lg bg-card object-contain ring-1 ring-line print:h-10 print:w-10 ${kind === "rank" ? "p-0.5" : ""}`}
     />
   );
 }
@@ -105,16 +105,16 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
         {items.length > 0 && <PrintButton label="Print" />}
       </div>
       <div className="flex flex-wrap gap-2 text-sm font-semibold print:hidden">
-        <Link href="/scouts/awards" className={`rounded-full px-3 py-1 ${!byScoutView ? "bg-pine text-white" : "bg-white text-pine ring-1 ring-line"}`}>
+        <Link href="/scouts/awards" className={`rounded-full px-3 py-1 ${!byScoutView ? "bg-brand text-white" : "bg-card text-pine ring-1 ring-line"}`}>
           Shopping list
         </Link>
-        <Link href="/scouts/awards?view=scout" className={`rounded-full px-3 py-1 ${byScoutView ? "bg-pine text-white" : "bg-white text-pine ring-1 ring-line"}`}>
+        <Link href="/scouts/awards?view=scout" className={`rounded-full px-3 py-1 ${byScoutView ? "bg-brand text-white" : "bg-card text-pine ring-1 ring-line"}`}>
           By scout
         </Link>
-        <Link href="/scouts/awards/labels" className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-pine ring-1 ring-line">
+        <Link href="/scouts/awards/labels" className="inline-flex items-center gap-1 rounded-full bg-card px-3 py-1 text-pine ring-1 ring-line">
           <Tags className="h-3.5 w-3.5" aria-hidden /> Bag labels
         </Link>
-        <Link href="/scouts/awards/sheet" className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-pine ring-1 ring-line">
+        <Link href="/scouts/awards/sheet" className="inline-flex items-center gap-1 rounded-full bg-card px-3 py-1 text-pine ring-1 ring-line">
           <Printer className="h-3.5 w-3.5" aria-hidden /> Awards night sheet
         </Link>
       </div>
@@ -139,7 +139,7 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="font-extrabold leading-tight text-pine-950">{l.kind === "adventure" ? (l.rows[0].adventure ?? l.label) : l.label}</h3>
-                        <span className="badge shrink-0 bg-gold text-base text-pine-950 print:text-sm">× {l.rows.length}</span>
+                        <span className="badge shrink-0 bg-gold text-base text-on-gold print:text-sm">× {l.rows.length}</span>
                       </div>
                       {l.shop ? (
                         <p className="text-xs text-muted">
@@ -186,7 +186,7 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
                       <li key={r.kind + awardLabel(r)} className="flex items-center gap-2">
                         {shop ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={shopImage(shop)} alt="" width={28} height={28} loading="lazy" className="h-7 w-7 shrink-0 rounded bg-white object-contain ring-1 ring-line" />
+                          <img src={shopImage(shop)} alt="" width={28} height={28} loading="lazy" className="h-7 w-7 shrink-0 rounded bg-card object-contain ring-1 ring-line" />
                         ) : (
                           <Award className="h-7 w-7 shrink-0 p-1 text-muted" aria-hidden />
                         )}

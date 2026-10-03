@@ -24,7 +24,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
   return (
     <>
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Search the pack</h1>
-      <form action="/search" role="search" className="flex items-center gap-2 rounded-2xl border-[1.5px] border-line bg-white px-3">
+      <form action="/search" role="search" className="flex items-center gap-2 rounded-2xl border-[1.5px] border-line bg-card px-3">
         <Search className="h-5 w-5 shrink-0 text-muted" aria-hidden />
         <input
           name="q"
@@ -35,7 +35,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
           aria-label="Search the pack"
           className="h-12 min-w-0 flex-1 bg-transparent text-base outline-none"
         />
-        <button className="rounded-xl bg-pine px-3 py-2 text-sm font-bold text-white">Search</button>
+        <button className="rounded-xl bg-brand px-3 py-2 text-sm font-bold text-white">Search</button>
       </form>
 
       {query.trim().length >= 2 && total === 0 && (

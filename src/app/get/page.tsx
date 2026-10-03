@@ -13,7 +13,7 @@ export default function GetTheApp() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-4 px-4 py-8">
       <section className="card overflow-hidden p-0 text-center">
-        <div className="h-1.5 bg-pine" />
+        <div className="h-1.5 bg-brand" />
         <div className="space-y-2 p-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icon-192.png" alt="" className="mx-auto h-24 w-24 rounded-[22%] shadow-[var(--shadow-float)]" />

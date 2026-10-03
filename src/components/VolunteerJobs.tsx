@@ -37,7 +37,7 @@ export default function VolunteerJobs({
                 <div className="min-w-0">
                   <p className="font-semibold text-ink">
                     {s.role_title}
-                    {s.is_urgent && !full && <span className="badge ml-2 bg-gold text-pine-950">Needed</span>}
+                    {s.is_urgent && !full && <span className="badge ml-2 bg-gold text-on-gold">Needed</span>}
                   </p>
                   {(s.shift_label || s.notes) && (
                     <p className="text-xs text-muted">{[s.shift_label, s.notes].filter(Boolean).join(" · ")}</p>

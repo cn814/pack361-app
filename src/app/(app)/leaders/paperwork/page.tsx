@@ -82,7 +82,7 @@ export default async function PaperworkPage({ searchParams }: PageProps<"/leader
           <Link
             key={k}
             href={`/leaders/paperwork?show=${k}`}
-            className={`rounded-full px-3 py-1 ${show === k ? "bg-navy text-white" : "border border-line bg-white text-navy"}`}
+            className={`rounded-full px-3 py-1 ${show === k ? "bg-deep-navy text-white" : "border border-line bg-card text-navy"}`}
           >
             {SHOW[k]}
             {k === "waiting" && waiting.length ? ` (${waiting.length})` : ""}

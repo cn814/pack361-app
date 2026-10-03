@@ -78,7 +78,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/leaders
             href={`/leaders/money/expenses?tab=${t}`}
             role="tab"
             aria-selected={tab === t}
-            className={`rounded-full px-3 py-1.5 ${tab === t ? "bg-pine text-white" : "border border-line bg-white text-navy"}`}
+            className={`rounded-full px-3 py-1.5 ${tab === t ? "bg-brand text-white" : "border border-line bg-card text-navy"}`}
           >
             {TABS[t]}
             {t === "review" && waiting.length > 0 ? ` (${waiting.length})` : ""}
@@ -312,7 +312,7 @@ async function ExpensesTab({
                 <input type="hidden" name="back" value={back} />
                 <details className="text-right">
                   <summary className="cursor-pointer text-[11px] font-bold text-danger">Delete…</summary>
-                  <SubmitButton className="mt-1 rounded-lg bg-danger px-3 py-1.5 text-xs font-bold text-white">Delete this expense for good</SubmitButton>
+                  <SubmitButton className="mt-1 rounded-lg bg-alarm px-3 py-1.5 text-xs font-bold text-white">Delete this expense for good</SubmitButton>
                 </details>
               </form>
             </ExpenseCard>
@@ -397,7 +397,7 @@ async function IncomeTab({ season, seasons, categories, today }: { season: strin
                   <input type="hidden" name="id" value={r.id} />
                   <details>
                     <summary className="cursor-pointer text-[11px] font-bold text-danger">Delete…</summary>
-                    <SubmitButton className="mt-1 rounded-lg bg-danger px-2 py-1 text-[11px] font-bold text-white">Delete</SubmitButton>
+                    <SubmitButton className="mt-1 rounded-lg bg-alarm px-2 py-1 text-[11px] font-bold text-white">Delete</SubmitButton>
                   </details>
                 </form>
               </span>
@@ -448,7 +448,7 @@ async function BudgetTab({ season, seasons, categories }: { season: string; seas
                     defaultValue={budget.has(c.id) ? centsToInput(budget.get(c.id)) : ""}
                     aria-label={`Budget for ${c.name}`}
                     placeholder="$"
-                    className="w-28 rounded-lg border border-line bg-white px-2 py-1.5 text-right text-sm"
+                    className="w-28 rounded-lg border border-line bg-card px-2 py-1.5 text-right text-sm"
                   />
                 </label>
               ))}
@@ -473,7 +473,7 @@ async function BudgetTab({ season, seasons, categories }: { season: string; seas
                   maxLength={60}
                   required
                   aria-label="Category name"
-                  className={`min-w-0 flex-1 rounded-lg border border-line bg-white px-2 py-1.5 text-sm ${c.archived_at ? "text-muted line-through" : ""}`}
+                  className={`min-w-0 flex-1 rounded-lg border border-line bg-card px-2 py-1.5 text-sm ${c.archived_at ? "text-muted line-through" : ""}`}
                 />
               </ActionForm>
               {c.source ? (

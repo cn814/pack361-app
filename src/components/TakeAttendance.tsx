@@ -106,11 +106,11 @@ export default function TakeAttendance(p: Props) {
                   aria-pressed={on}
                   onClick={() => toggle(s.id)}
                   className={`flex min-h-14 items-center gap-2 rounded-2xl border-2 px-3 py-3 text-left text-base font-bold ${
-                    on ? "border-pine bg-pine text-white" : "border-line bg-white text-navy"
+                    on ? "border-pine bg-brand text-white" : "border-line bg-card text-navy"
                   }`}
                 >
                   <span
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${on ? "border-white bg-white text-pine" : "border-outline"}`}
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${on ? "border-white bg-white text-brand" : "border-outline"}`}
                     aria-hidden
                   >
                     {on && <Check className="h-4 w-4" />}

@@ -3,7 +3,7 @@ import type { Mode } from "@/lib/mode";
 
 /** The Family / Leader switch for leaders (Home on phones, the bottom of the computer sidebar). */
 export default function ModeSwitch({ mode, dark = false }: { mode: Mode; dark?: boolean }) {
-  const on = dark ? "bg-white text-pine-950" : "bg-pine text-white";
+  const on = dark ? "bg-card text-pine-950" : "bg-brand text-white";
   const off = dark ? "text-mint-200 hover:text-white" : "text-muted";
   return (
     <form action={setMode} className={`flex gap-1 rounded-full p-1 ${dark ? "bg-white/10" : "bg-surface"}`} aria-label="Show the app as">

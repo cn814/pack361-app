@@ -19,7 +19,7 @@ export default async function NewsletterPreviewPage() {
           <p className="-mt-1 text-sm text-muted">
             As your family would get it. Subject: <b className="text-ink">{n.subject}</b>
           </p>
-          <iframe title="Newsletter preview" srcDoc={n.html} sandbox="allow-popups allow-popups-to-escape-sandbox" className="h-[75vh] w-full rounded-2xl border border-line bg-white" />
+          <iframe title="Newsletter preview" srcDoc={n.html} sandbox="allow-popups allow-popups-to-escape-sandbox" className="h-[75vh] w-full rounded-2xl border border-line bg-card" />
         </>
       ) : (
         <p className="card text-sm text-muted">The server&apos;s secret key isn&apos;t set, so the newsletter can&apos;t be built here.</p>

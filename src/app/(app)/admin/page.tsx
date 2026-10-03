@@ -141,13 +141,13 @@ export default async function AdminPage() {
           role="img"
           aria-label={`Photos ${mb(photoBytes)}, documents ${mb(docBytes)}, of 1 GB`}
         >
-          <span className="bg-pine" style={{ width: `${pct(photoBytes)}%` }} />
+          <span className="bg-brand" style={{ width: `${pct(photoBytes)}%` }} />
           <span className="bg-gold" style={{ width: `${pct(docBytes)}%` }} />
           <span className="bg-sage" style={{ width: `${pct(otherBytes)}%` }} />
         </div>
         <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
           <li className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-pine" aria-hidden /> Photos {mb(photoBytes)}
+            <span className="h-2.5 w-2.5 rounded-full bg-brand" aria-hidden /> Photos {mb(photoBytes)}
           </li>
           <li className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-gold" aria-hidden /> Documents {mb(docBytes)}

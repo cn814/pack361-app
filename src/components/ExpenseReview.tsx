@@ -106,7 +106,7 @@ export default function ExpenseReview({
           </button>
         )}
         {mode === "decline" && (
-          <button name="do" value="decline" className={`rounded-lg bg-danger px-3 py-1.5 text-xs font-bold text-white ${pending ? "is-busy" : ""}`} disabled={pending}>
+          <button name="do" value="decline" className={`rounded-lg bg-alarm px-3 py-1.5 text-xs font-bold text-white ${pending ? "is-busy" : ""}`} disabled={pending}>
             Decline and tell them
           </button>
         )}

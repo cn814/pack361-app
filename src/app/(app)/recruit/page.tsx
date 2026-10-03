@@ -26,7 +26,7 @@ export default async function RecruitPage() {
       </section>
 
       <section className="card grid gap-4 sm:grid-cols-[160px_1fr] sm:items-center">
-        <div className="mx-auto w-40 rounded-xl border border-line bg-white p-2" dangerouslySetInnerHTML={{ __html: qr }} aria-label="QR code for the pack's page" role="img" />
+        <div className="mx-auto w-40 rounded-xl border border-line bg-card p-2" dangerouslySetInnerHTML={{ __html: qr }} aria-label="QR code for the pack's page" role="img" />
         <div className="space-y-2">
           <h2 className="section-title">Face to face</h2>
           <p className="text-sm text-ink">At school pickup or a ball game, let them scan this with their phone&apos;s camera.</p>

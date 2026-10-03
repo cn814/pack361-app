@@ -7,7 +7,7 @@ import { HEADER } from "./photos";
 export default function JoinShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="bg-pine-950 text-white">
+      <header className="bg-deep text-white">
         <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 px-4 py-3">
           <Link href="/join" className="flex items-center gap-2 font-extrabold tracking-tight">
             {/* eslint-disable-next-line @next/next/no-img-element */}

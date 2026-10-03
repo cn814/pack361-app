@@ -25,7 +25,7 @@ export default async function PollsPage() {
         {voted.has(p.id) ? (
           <span className="badge bg-mint text-pine">Answered</span>
         ) : (
-          isOpen(p) && <span className="badge bg-gold text-pine-950">Answer</span>
+          isOpen(p) && <span className="badge bg-gold text-on-gold">Answer</span>
         )}
         <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
       </Link>

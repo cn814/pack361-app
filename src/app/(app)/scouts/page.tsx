@@ -163,7 +163,7 @@ function Tool({
       <span className="flex items-center justify-between">
         <Icon className="h-5 w-5 text-pine" aria-hidden />
         {count !== undefined && (
-          <span className={`badge ${count ? "bg-gold text-pine-950" : "bg-surface text-muted"}`}>{count}</span>
+          <span className={`badge ${count ? "bg-gold text-on-gold" : "bg-surface text-muted"}`}>{count}</span>
         )}
       </span>
       <span className="text-sm font-bold leading-tight text-navy">{label}</span>
@@ -189,7 +189,7 @@ function MyScouts({ mine, picked, records, catalog }: { mine: Scout[]; picked?: 
               href={`/scouts?scout=${x.id}`}
               aria-current={x.id === s.id ? "page" : undefined}
               className={`flex h-10 shrink-0 items-center gap-1 rounded-full px-4 text-sm font-extrabold ${
-                x.id === s.id ? "bg-pine text-white" : "border border-line bg-white text-ink"
+                x.id === s.id ? "bg-brand text-white" : "border border-line bg-card text-ink"
               }`}
             >
               {x.first_name}
@@ -205,7 +205,7 @@ function MyScouts({ mine, picked, records, catalog }: { mine: Scout[]; picked?: 
             style={{ background: `conic-gradient(var(--color-pine) 0 ${pct}%, var(--color-surface) ${pct}% 100%)` }}
             aria-hidden
           >
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-sm font-extrabold text-pine-950">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-card text-sm font-extrabold text-pine-950">
               {p ? `${p.requiredDone}/${req.length}` : "–"}
             </span>
           </span>

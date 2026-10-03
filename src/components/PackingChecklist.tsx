@@ -69,7 +69,7 @@ export default function PackingChecklist({ eventId, items }: { eventId: string; 
           <span className="rounded-lg bg-mint px-2 py-0.5 text-sm font-extrabold text-pine">{pct}%</span>
         </div>
         <div className="h-2.5 overflow-hidden rounded-full bg-surface" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-          <div className="h-full rounded-full bg-pine transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${pct}%` }} />
         </div>
         <p className="flex items-center gap-1.5 text-[11px] text-muted">
           <WifiOff className="h-3.5 w-3.5" aria-hidden /> Saved on this phone, so it works without signal at camp.
@@ -86,11 +86,11 @@ export default function PackingChecklist({ eventId, items }: { eventId: string; 
                 type="button"
                 onClick={() => toggle(i.id)}
                 aria-pressed={on}
-                className="flex w-full items-start gap-3 rounded-xl border border-[#eae7dc] bg-white p-3 text-left"
+                className="flex w-full items-start gap-3 rounded-xl border border-line bg-card p-3 text-left"
               >
                 <span
                   className={`mt-0.5 flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md border-2 border-pine transition ${
-                    on ? "bg-pine" : "bg-white"
+                    on ? "bg-brand" : "bg-card"
                   }`}
                 >
                   {on && <Check className="h-4 w-4 text-white" strokeWidth={3} aria-hidden />}

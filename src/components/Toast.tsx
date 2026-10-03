@@ -43,12 +43,12 @@ export default function Toast() {
   if (!shown) return null;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-pine-950/30 px-6 backdrop-blur-[2px] animate-[fade-in_150ms_ease-out] print:hidden"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-deep/30 px-6 backdrop-blur-[2px] animate-[fade-in_150ms_ease-out] print:hidden"
       role="status"
       aria-live="polite"
       onClick={() => setShown(null)}
     >
-      <div className="flex w-full max-w-xs flex-col items-center gap-3 rounded-3xl bg-white px-6 py-7 text-center shadow-[var(--shadow-float)] animate-[toast-in_220ms_cubic-bezier(0.2,0.9,0.3,1.2)]">
+      <div className="flex w-full max-w-xs flex-col items-center gap-3 rounded-3xl bg-card px-6 py-7 text-center shadow-[var(--shadow-float)] animate-[toast-in_220ms_cubic-bezier(0.2,0.9,0.3,1.2)]">
         <span className="flex h-16 w-16 items-center justify-center rounded-full bg-mint">
           <CircleCheck className="h-10 w-10 text-pine" strokeWidth={2.5} aria-hidden />
         </span>

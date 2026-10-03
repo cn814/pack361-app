@@ -56,7 +56,7 @@ export default async function JoinPage() {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={BANNER.src} alt={BANNER.alt} width={BANNER.width} height={BANNER.height} className="h-auto w-full" />
         ) : (
-          <div className="h-1.5 bg-pine" />
+          <div className="h-1.5 bg-brand" />
         )}
         <div className="space-y-3 p-6 sm:p-8">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-sage">Cub Scouts · Pack 361 · Ellicott City, MD</p>

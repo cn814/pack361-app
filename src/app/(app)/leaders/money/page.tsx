@@ -96,7 +96,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/leaders/mo
       <div className="grid grid-cols-2 gap-2">
         <Link href="/leaders/money/expenses" className="btn-ghost py-2">
           <Receipt className="h-4 w-4" aria-hidden /> Expenses
-          {toHandle > 0 && <span className="rounded-full bg-gold px-1.5 text-[11px] font-extrabold text-pine-950">{toHandle}</span>}
+          {toHandle > 0 && <span className="rounded-full bg-gold px-1.5 text-[11px] font-extrabold text-on-gold">{toHandle}</span>}
         </Link>
         <Link href="/leaders/money/reports" className="btn-ghost py-2">
           <BarChart3 className="h-4 w-4" aria-hidden /> Reports
@@ -182,7 +182,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/leaders/mo
             href={`/leaders/money?tab=${t}`}
             role="tab"
             aria-selected={tab === t}
-            className={`rounded-full px-3 py-1.5 ${tab === t ? "bg-pine text-white" : "border border-line bg-white text-navy"}`}
+            className={`rounded-full px-3 py-1.5 ${tab === t ? "bg-brand text-white" : "border border-line bg-card text-navy"}`}
           >
             {TABS[t]}
             {t === "dues" && toReview > 0 ? ` (${toReview})` : ""}
@@ -386,7 +386,7 @@ function ChargeItem({ c, back, mismatch }: { c: LeaderCharge; back: string; mism
               required
               placeholder="$"
               aria-label="Amount in dollars"
-              className="w-20 rounded-lg border border-line bg-white px-2 py-1.5 text-xs"
+              className="w-20 rounded-lg border border-line bg-card px-2 py-1.5 text-xs"
             />
             <SubmitButton name="do" value="amount" className="btn-primary px-3 py-1.5 text-xs">
               Set amount
@@ -400,7 +400,7 @@ function ChargeItem({ c, back, mismatch }: { c: LeaderCharge; back: string; mism
         )}
         {c.status === "open" && c.amount_cents > 0 && (
           <>
-            <select name="how" className="rounded-lg border border-line bg-white px-2 py-1.5 text-xs" defaultValue="check" aria-label="How they paid">
+            <select name="how" className="rounded-lg border border-line bg-card px-2 py-1.5 text-xs" defaultValue="check" aria-label="How they paid">
               <option value="check">Check</option>
               <option value="cash">Cash</option>
               <option value="other">Other</option>
@@ -458,7 +458,7 @@ function ChargeItem({ c, back, mismatch }: { c: LeaderCharge; back: string; mism
               required
               defaultValue={centsToInput(c.amount_cents)}
               aria-label="New amount in dollars"
-              className="w-24 rounded-lg border border-line bg-white px-2 py-1.5 text-xs"
+              className="w-24 rounded-lg border border-line bg-card px-2 py-1.5 text-xs"
             />
             <SubmitButton name="do" value="amount" className="btn-ghost px-3 py-1.5 text-xs">
               Save amount
@@ -585,7 +585,7 @@ async function RegistrationTracker({ filter: filterParam }: { filter: string }) 
           <Link
             key={f}
             href={`/leaders/money?tab=registration${f === "all" ? "" : `&reg=${f}`}`}
-            className={`rounded-full px-3 py-1 ${filter === f ? "bg-navy text-white" : "border border-line bg-white text-navy"}`}
+            className={`rounded-full px-3 py-1 ${filter === f ? "bg-deep-navy text-white" : "border border-line bg-card text-navy"}`}
           >
             {REG_FILTERS[f]} ({f === "all" ? withStatus.length : counts[f]})
           </Link>
@@ -623,7 +623,7 @@ async function RegistrationTracker({ filter: filterParam }: { filter: string }) 
                     name={`on_${r.key}`}
                     defaultValue={r.expires ?? ""}
                     aria-label={`Expiration date for ${r.name}`}
-                    className="rounded-lg border border-line bg-white px-2 py-1 text-xs"
+                    className="rounded-lg border border-line bg-card px-2 py-1 text-xs"
                   />
                   <SubmitButton name="row" value={r.key} className="btn-ghost px-2 py-1 text-xs">
                     Save

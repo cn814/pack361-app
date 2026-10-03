@@ -122,7 +122,7 @@ export default async function CouncilEventsPage({ searchParams }: PageProps<"/ev
   }
   const denOptions = dens.map((d) => ({ id: d.id, name: d.name }));
   const chip = (on: boolean) =>
-    `inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold ${on ? "bg-pine text-white" : "border border-line bg-white text-navy"}`;
+    `inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold ${on ? "bg-brand text-white" : "border border-line bg-card text-navy"}`;
 
   return (
     <>
@@ -272,7 +272,7 @@ function CouncilCard({ r, committee, dens }: { r: Row; committee: boolean; dens:
   return (
     <article className={`card space-y-1.5 ${cub ? "border-l-4 border-l-gold" : ""}`}>
       <div className="flex flex-wrap items-center gap-1.5">
-        {cub && <span className="badge bg-gold text-pine-950">Cub Scouts</span>}
+        {cub && <span className="badge bg-gold text-on-gold">Cub Scouts</span>}
         {r.status === "added" && <span className="badge bg-mint text-pine">On our calendar</span>}
         {r.status === "skipped" && <span className="badge bg-surface text-muted">Skipped</span>}
         {district && <span className="badge bg-surface text-navy">{district}</span>}

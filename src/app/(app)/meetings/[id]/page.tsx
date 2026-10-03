@@ -32,7 +32,7 @@ export default async function MeetingInfoPage({ params }: PageProps<"/meetings/[
       <BackLink href="/events" label="Calendar" />
       <section className="card space-y-2 border-t-4 border-t-navy">
         <div className="flex flex-wrap gap-2">
-          <span className="badge bg-navy text-white">Den meeting</span>
+          <span className="badge bg-deep-navy text-white">Den meeting</span>
           {den && <span className="badge bg-gold-50 text-gold-800">{den.name}</span>}
         </div>
         <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-pine-950">{meeting.title}</h1>

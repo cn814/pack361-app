@@ -143,7 +143,7 @@ export default function RosterCheck({ scouts, dens, families }: { scouts: AppSco
           type="file"
           accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           onChange={onFile}
-          className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-pine file:px-3 file:py-2 file:font-semibold file:text-white"
+          className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand file:px-3 file:py-2 file:font-semibold file:text-white"
         />
         {fileError && <span className="block text-sm font-semibold text-danger">{fileError}</span>}
       </label>

@@ -181,9 +181,9 @@ async function LeaderHome() {
           <Link
             key={d.denId}
             href={`/scouts/den/${d.denId}/today`}
-            className="flex min-h-16 items-center gap-3 rounded-3xl bg-gold px-4 py-4 text-pine-950 shadow-[var(--shadow-card)] active:brightness-95"
+            className="flex min-h-16 items-center gap-3 rounded-3xl bg-gold px-4 py-4 text-on-gold shadow-[var(--shadow-card)] active:brightness-95"
           >
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pine-950">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-deep">
               <ClipboardCheck className="h-6 w-6 text-gold" aria-hidden />
             </span>
             <span className="min-w-0 flex-1">
@@ -268,7 +268,7 @@ function Heading({ title, right }: { title: string; right?: React.ReactNode }) {
 
 function NextUp({ e, label }: { e: CalItem; label: string | null }) {
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-pine-950 p-5 text-white shadow-[var(--shadow-float)]">
+    <section className="relative overflow-hidden rounded-3xl bg-deep p-5 text-white shadow-[var(--shadow-float)]">
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-gold">
           <Timer className="h-3.5 w-3.5" aria-hidden /> Next up · {daysUntil(e.starts_at, e.ends_at)}
@@ -324,7 +324,7 @@ function Volunteers({ jobs }: { jobs: Awaited<ReturnType<typeof getOpenJobs>> })
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-ink">
                   {j.role_title}
-                  {j.is_urgent && <span className="badge ml-2 bg-gold text-pine-950">Needed</span>}
+                  {j.is_urgent && <span className="badge ml-2 bg-gold text-on-gold">Needed</span>}
                 </span>
                 <span className="block truncate text-xs text-muted">
                   {j.event.title} · {daysUntil(j.event.starts_at).toLowerCase()} · {j.open} open

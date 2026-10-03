@@ -108,7 +108,7 @@ export default async function PackPage() {
     <>
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack</h1>
-        {leader && <span className="badge bg-pine text-white normal-case tracking-normal">Leader mode</span>}
+        {leader && <span className="badge bg-brand text-white normal-case tracking-normal">Leader mode</span>}
       </div>
       {canLead(me) && (
         <div className="lg:hidden">
@@ -130,7 +130,7 @@ export default async function PackPage() {
             ))}
           </div>
           {admin && (
-            <Link href="/admin" className="flex min-h-12 items-center gap-3 rounded-2xl bg-pine-950 px-4 py-3 text-white">
+            <Link href="/admin" className="flex min-h-12 items-center gap-3 rounded-2xl bg-deep px-4 py-3 text-white">
               <ShieldCheck className="h-5 w-5 text-gold" aria-hidden />
               <span className="flex-1 font-extrabold">Pack admin</span>
               {joins > 0 && (

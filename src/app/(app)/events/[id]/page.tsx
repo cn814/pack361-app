@@ -48,7 +48,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <section className="card space-y-2 border-t-4 border-t-gold">
         <div className="flex flex-wrap gap-2">
           <span className="badge bg-gold-50 text-gold-700">{event.category}</span>
-          {audience && <span className="badge bg-navy text-white">For {audience}</span>}
+          {audience && <span className="badge bg-deep-navy text-white">For {audience}</span>}
           {event.leaders_only && <span className="badge bg-surface text-navy">Leaders</span>}
           {event.source === "council" && <span className="badge bg-surface text-navy">Council event</span>}
         </div>

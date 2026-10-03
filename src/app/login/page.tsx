@@ -24,7 +24,7 @@ export default function LoginPage() {
       <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-4 px-4 py-8">
         <ServiceWorkerSetup mode="clear" />
         <section className="card overflow-hidden p-0 text-center">
-          <div className="h-1.5 bg-pine" />
+          <div className="h-1.5 bg-brand" />
           <div className="p-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

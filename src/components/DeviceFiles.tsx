@@ -701,14 +701,14 @@ export default function DeviceFiles({
                       {viewing?.id === f.id &&
                         (viewing.pdf ? (
                           <div className="space-y-1">
-                            <iframe src={viewing.url} title={f.title} className="h-[70vh] w-full rounded-xl border border-line bg-white" />
+                            <iframe src={viewing.url} title={f.title} className="h-[70vh] w-full rounded-xl border border-line bg-card" />
                             <p className="text-[11px] text-muted">
                               Only seeing part of it? Tap <b>{canShare ? "Share or save to Files" : "Download"}</b> to open the whole PDF.
                             </p>
                           </div>
                         ) : (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={viewing.url} alt={f.title} className="w-full rounded-xl border border-line bg-white" />
+                          <img src={viewing.url} alt={f.title} className="w-full rounded-xl border border-line bg-card" />
                         ))}
 
                       {confirmDelete === f.id && (
@@ -717,7 +717,7 @@ export default function DeviceFiles({
                             Delete <b>{f.title}</b> from this phone? This can&apos;t be undone.
                           </p>
                           <div className="flex gap-2">
-                            <button type="button" className="btn-primary flex-1 bg-danger py-2" onClick={() => onDelete(f.id)} disabled={busy}>
+                            <button type="button" className="btn-primary flex-1 bg-alarm py-2" onClick={() => onDelete(f.id)} disabled={busy}>
                               Yes, delete it
                             </button>
                             <button type="button" className="btn-ghost flex-1 py-2" onClick={() => setConfirmDelete(null)}>
@@ -832,7 +832,7 @@ export default function DeviceFiles({
                   Save backups with Share first if you want to keep them.
                 </p>
                 <div className="flex gap-2">
-                  <button type="button" className="btn-primary flex-1 bg-danger py-2" onClick={onDeleteAll} disabled={busy}>
+                  <button type="button" className="btn-primary flex-1 bg-alarm py-2" onClick={onDeleteAll} disabled={busy}>
                     Yes, remove them
                   </button>
                   <button type="button" className="btn-ghost flex-1 py-2" onClick={() => setConfirmAll(false)}>

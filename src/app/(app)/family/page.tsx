@@ -11,6 +11,7 @@ import { COURSE_BY_KEY, positionLabels, trainedStatus, trainingState } from "@/l
 import { fmtRegDate, needsRenewal, regStatus } from "@/lib/registration";
 import { ROLE_LABEL } from "@/lib/roster-data";
 import { viewableRoles } from "@/lib/view-as";
+import Appearance from "@/components/Appearance";
 
 export const metadata: Metadata = { title: "Me" };
 
@@ -84,7 +85,7 @@ export default async function MePage() {
   return (
     <>
       <div className="flex items-center gap-3">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold text-lg font-extrabold text-pine-950">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold text-lg font-extrabold text-on-gold">
           {(displayName(me)[0] + me.last_name[0]).toUpperCase()}
         </span>
         <div className="min-w-0">
@@ -114,6 +115,7 @@ export default async function MePage() {
         <Group title="My family" rows={family} />
         {leaderRows.length > 0 && <Group title="As a leader" rows={leaderRows} />}
         <Group title="Settings and help" rows={settings} />
+        <Appearance />
       </div>
 
       <div className="flex items-center justify-between gap-3">

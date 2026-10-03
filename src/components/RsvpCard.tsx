@@ -72,7 +72,7 @@ export default function RsvpCard({ eventId, open, deadline, mine, counts, defaul
               <label
                 key={s}
                 className={`cursor-pointer rounded-xl border p-2.5 text-center text-sm font-bold ${
-                  status === s ? "border-pine bg-pine text-white" : "border-line bg-white text-navy"
+                  status === s ? "border-pine bg-brand text-white" : "border-line bg-card text-navy"
                 }`}
               >
                 <input type="radio" name="status" value={s} checked={status === s} onChange={() => setStatus(s)} className="sr-only" required />

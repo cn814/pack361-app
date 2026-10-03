@@ -26,7 +26,7 @@ export default function PhotoPermission({ scouts }: { scouts: Scout[] }) {
               name="answer"
               value="yes"
               className={`rounded-xl border-[1.5px] px-3 py-2 text-sm font-bold ${
-                s.photo_permission === "yes" ? "border-pine bg-pine text-white" : "border-line bg-white text-pine"
+                s.photo_permission === "yes" ? "border-pine bg-brand text-white" : "border-line bg-card text-pine"
               }`}
             >
               Photos OK
@@ -35,7 +35,7 @@ export default function PhotoPermission({ scouts }: { scouts: Scout[] }) {
               name="answer"
               value="no"
               className={`rounded-xl border-[1.5px] px-3 py-2 text-sm font-bold ${
-                s.photo_permission === "no" ? "border-danger bg-danger text-white" : "border-line bg-white text-danger"
+                s.photo_permission === "no" ? "border-danger bg-alarm text-white" : "border-line bg-card text-danger"
               }`}
             >
               No photos

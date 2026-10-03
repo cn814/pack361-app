@@ -41,7 +41,7 @@ export default function DuesPayCard({ items, url }: { items: PayItem[]; url: str
           ))}
           <div className="grid grid-cols-3 gap-2 text-sm">
             {(["check", "cash", "other"] as const).map((h) => (
-              <label key={h} className="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-white p-2 font-semibold text-navy">
+              <label key={h} className="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-card p-2 font-semibold text-navy">
                 <input type="radio" name="how" value={h} defaultChecked={h === "check"} className="accent-pine" />
                 {h === "check" ? "Check" : h === "cash" ? "Cash" : "Other"}
               </label>

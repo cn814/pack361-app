@@ -83,12 +83,12 @@ export function TwoStepSetup({ next, startLabel = "Set up two-step sign-in" }: {
             Scan this with your phone&apos;s authenticator app (tap <b>+</b> or <b>Add</b>, then <b>Scan a QR code</b>).
           </p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={setup.qr} alt="QR code to add Pack 361 to an authenticator app" className="mx-auto hidden h-48 w-48 rounded-xl bg-white p-2 ring-1 ring-line lg:block" />
+          <img src={setup.qr} alt="QR code to add Pack 361 to an authenticator app" className="mx-auto hidden h-48 w-48 rounded-xl bg-card p-2 ring-1 ring-line lg:block" />
           <details className="text-xs text-muted">
             <summary className="cursor-pointer font-bold text-pine">Other ways to add it</summary>
             <div className="mt-2 space-y-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={setup.qr} alt="QR code to add Pack 361 to an authenticator app" className="mx-auto h-40 w-40 rounded-xl bg-white p-2 ring-1 ring-line lg:hidden" />
+              <img src={setup.qr} alt="QR code to add Pack 361 to an authenticator app" className="mx-auto h-40 w-40 rounded-xl bg-card p-2 ring-1 ring-line lg:hidden" />
               <p>In the authenticator app, choose &ldquo;Enter a setup key&rdquo; and type this key (time-based):</p>
               <p className="select-all break-all rounded-lg bg-surface-low px-3 py-2 text-center font-mono text-sm tracking-wider text-navy">{grouped}</p>
             </div>

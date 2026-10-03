@@ -49,7 +49,7 @@ export default async function FlyerPage() {
           </section>
         )}
         <section className="flex items-center gap-6 rounded-2xl bg-mint p-5">
-          <div className="w-36 shrink-0 rounded-xl bg-white p-2" dangerouslySetInnerHTML={{ __html: qr }} role="img" aria-label="QR code" />
+          <div className="w-36 shrink-0 rounded-xl bg-card p-2" dangerouslySetInnerHTML={{ __html: qr }} role="img" aria-label="QR code" />
           <div className="space-y-1">
             <p className="text-lg font-extrabold text-pine-950">Scan to learn more and join</p>
             <p className="text-base font-bold text-pine">{shown}</p>

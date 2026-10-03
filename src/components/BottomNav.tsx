@@ -71,7 +71,7 @@ export default function BottomNav({
   return (
     <nav
       aria-label="Main"
-      className={`${focused ? "max-lg:hidden " : ""}print:hidden fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:inset-y-0 lg:right-auto lg:flex lg:w-64 lg:flex-col lg:overflow-y-auto lg:border-r lg:border-t-0 lg:bg-pine-950 lg:pb-0 lg:backdrop-blur-none`}
+      className={`${focused ? "max-lg:hidden " : ""}print:hidden fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:inset-y-0 lg:right-auto lg:flex lg:w-64 lg:flex-col lg:overflow-y-auto lg:border-r lg:border-t-0 lg:bg-deep lg:pb-0 lg:backdrop-blur-none`}
     >
       <Link href="/" className="hidden items-center gap-3 px-5 pb-6 pt-6 lg:flex">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -102,12 +102,12 @@ export default function BottomNav({
                 onClick={tap(href, match)}
                 className={`flex flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 transition active:scale-90 active:bg-mint lg:flex-row lg:gap-3 lg:px-3 lg:py-2.5 lg:text-[15px] lg:active:scale-100 lg:active:bg-white/15 ${
                   active
-                    ? "text-[11.5px] font-extrabold text-pine-950 lg:bg-gold lg:text-pine-950"
+                    ? "text-[11.5px] font-extrabold text-pine-950 lg:bg-gold lg:text-on-gold"
                     : "text-[11.5px] font-semibold text-muted lg:text-mint-200 lg:hover:bg-white/5 lg:hover:text-white"
                 }`}
               >
                 {/* The current tab's icon sits in a light green pill (phones), so it's clear where you are. */}
-                <span className={`flex h-7 w-14 items-center justify-center rounded-full lg:h-auto lg:w-auto ${active ? "bg-mint-200 lg:bg-transparent" : ""}`}>
+                <span className={`flex h-7 w-14 items-center justify-center rounded-full lg:h-auto lg:w-auto ${active ? "bg-mint lg:bg-transparent" : ""}`}>
                   <Icon className="h-[22px] w-[22px] lg:mx-1 lg:h-5 lg:w-5" strokeWidth={active ? 2.5 : 2} aria-hidden />
                 </span>
                 <span className="truncate">{label}</span>
@@ -144,14 +144,14 @@ export default function BottomNav({
             }`}
           >
             <Bell className="mx-1 h-5 w-5" aria-hidden /> Notifications
-            {inbox > 0 && <span className="ml-auto rounded-full bg-danger px-2 py-0.5 text-[11px] font-extrabold text-white">{inbox > 9 ? "9+" : inbox}</span>}
+            {inbox > 0 && <span className="ml-auto rounded-full bg-alarm px-2 py-0.5 text-[11px] font-extrabold text-white">{inbox > 9 ? "9+" : inbox}</span>}
           </Link>
         </li>
       </ul>
       <div className="mt-auto hidden space-y-3 p-3 lg:block">
         {modeSwitch}
         <Link href="/family" className="flex items-center gap-3 rounded-xl p-2 hover:bg-white/5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold text-xs font-extrabold text-pine-950">{me.initials}</span>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold text-xs font-extrabold text-on-gold">{me.initials}</span>
           <span className="min-w-0 truncate text-sm font-semibold text-white">{me.name}</span>
         </Link>
       </div>

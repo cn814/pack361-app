@@ -7,7 +7,7 @@ import type { Todo } from "@/lib/inbox";
 const TONE: Record<Todo["tone"], string> = { gold: "border-l-gold", pine: "border-l-pine", danger: "border-l-danger" };
 const small = "rounded-lg px-3 py-1.5 text-xs font-bold";
 // All three answers look the same until someone picks one: nothing is chosen for them.
-const answer = `${small} border border-pine/40 bg-white text-pine`;
+const answer = `${small} border border-pine/40 bg-card text-pine`;
 
 /** One to-do on Home or in the bell: RSVPs can be answered right here; polls can wait ("Not now"). */
 export default function TodoCard({ t }: { t: Todo }) {

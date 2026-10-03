@@ -25,7 +25,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <ServiceWorkerSetup mode="register" />
       <BetaBanner />
       {/* Full-width green bar; the content inside lines up with the page column. */}
-      <header className="print:hidden sticky top-0 z-40 bg-pine pt-[env(safe-area-inset-top)] text-white shadow-md lg:hidden">
+      <header className="print:hidden sticky top-0 z-40 bg-brand pt-[env(safe-area-inset-top)] text-white shadow-md lg:hidden">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -51,7 +51,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             >
               <Bell className="h-6 w-6" aria-hidden />
               {inbox > 0 && (
-                <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[11px] font-extrabold leading-none text-white ring-2 ring-pine">
+                <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-alarm px-1 text-[11px] font-extrabold leading-none text-white ring-2 ring-brand">
                   {inbox > 9 ? "9+" : inbox}
                 </span>
               )}

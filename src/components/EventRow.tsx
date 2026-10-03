@@ -6,7 +6,7 @@ import { eventOver, fmtRange } from "@/lib/format";
 
 const CATEGORY_STYLE: Record<string, string> = {
   Campout: "bg-mint text-pine",
-  "Den Meeting": "bg-navy text-white",
+  "Den Meeting": "bg-deep-navy text-white",
   "Pack Meeting": "bg-gold-50 text-gold-700",
   Pack: "bg-gold-50 text-gold-700",
 };

@@ -52,10 +52,10 @@ export default async function InboxPage() {
           <article key={p.id} className={`card space-y-1.5 border-t-4 ${p.den_id ? "border-t-navy" : "border-t-pine"}`}>
             <div className="flex items-center justify-between gap-2 text-xs">
               <span className="flex flex-wrap items-center gap-1.5">
-                {isNew(p.created_at, p.author_id) && <span className="badge bg-danger text-white">New</span>}
+                {isNew(p.created_at, p.author_id) && <span className="badge bg-alarm text-white">New</span>}
                 {p.is_pinned && <Pin className="h-3.5 w-3.5 text-gold-700" aria-label="Pinned" />}
                 {p.den ? (
-                  <span className="badge bg-navy text-white">
+                  <span className="badge bg-deep-navy text-white">
                     <Users className="h-3 w-3" aria-hidden /> {p.den.name}
                   </span>
                 ) : (

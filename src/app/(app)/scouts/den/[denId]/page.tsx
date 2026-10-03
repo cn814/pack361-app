@@ -114,7 +114,7 @@ export default async function DenGridPage({ params }: PageProps<"/scouts/den/[de
             <tbody className="divide-y divide-line">
               {rows.map(({ scout, p }) => (
                 <tr key={scout.id}>
-                  <td className="sticky left-0 z-10 bg-white px-3 py-2">
+                  <td className="sticky left-0 z-10 bg-card px-3 py-2">
                     <Link href={`/scouts/${scout.id}`} className="font-semibold text-ink underline-offset-2 hover:underline">
                       {scout.first_name} {scout.last_name[0]}.
                     </Link>
@@ -124,7 +124,7 @@ export default async function DenGridPage({ params }: PageProps<"/scouts/den/[de
                       {a.done ? (
                         <span
                           className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-bold ${
-                            a.approved ? "bg-pine text-white" : "bg-gold-100 text-gold-800"
+                            a.approved ? "bg-brand text-white" : "bg-gold-100 text-gold-800"
                           }`}
                           title={a.approved ? "Done" : "Done, waiting for approval"}
                         >

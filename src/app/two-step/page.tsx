@@ -33,7 +33,7 @@ export default async function TwoStepPage() {
       <BetaBanner />
       <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-3 px-4 py-8">
         <section className="card space-y-4 overflow-hidden p-0">
-          <div className="h-1.5 bg-pine" />
+          <div className="h-1.5 bg-brand" />
           <div className="space-y-4 px-5 pb-5 text-center">
             <ShieldCheck className="mx-auto h-10 w-10 text-pine" aria-hidden />
             {me.twoStep === "verify" ? (

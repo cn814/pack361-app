@@ -135,7 +135,7 @@ export default function MeetingForm({
                 <label
                   key={r}
                   className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border-[1.5px] text-sm font-bold ${
-                    on ? "border-pine bg-pine text-white" : "border-line bg-white text-navy"
+                    on ? "border-pine bg-brand text-white" : "border-line bg-card text-navy"
                   }`}
                 >
                   <input

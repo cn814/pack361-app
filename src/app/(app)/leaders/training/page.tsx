@@ -68,7 +68,7 @@ export default async function TrainingPage({ searchParams }: PageProps<"/leaders
     .sort((a, b) => rank(a) - rank(b) || a.last_name.localeCompare(b.last_name));
 
   const chip = (active: boolean) =>
-    `rounded-full px-3 py-1 text-xs font-bold ${active ? "bg-pine text-white" : "bg-white text-pine ring-1 ring-line"}`;
+    `rounded-full px-3 py-1 text-xs font-bold ${active ? "bg-brand text-white" : "bg-card text-pine ring-1 ring-line"}`;
 
   return (
     <>
