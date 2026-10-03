@@ -259,3 +259,91 @@ export async function fetchMyScoutingTraining(): Promise<SyncResult> {
     return { rows: [], steps, error: msg };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Advancement: connection test (step 1 of the automatic Scoutbook import)
+// ---------------------------------------------------------------------------
+// Scoutbook Plus reads advancement one scout at a time (seen in its own pages, 2026-10-02):
+//   GET /organizations/v2/units/{unit}/youths
+//   GET /advancements/v2/youth/{userId}/ranks | adventures | awards
+//   GET /advancements/v2/youth/{userId}/adventures/{adventureId}/requirements (ranks/... likewise)
+// Their answers aren't documented, so this test reports only their SHAPE (field names and kinds
+// of values, list lengths) for one scout, never names, dates or other values. That's what the
+// real import is then written against.
+
+type Shape = string | Shape[] | { [k: string]: Shape };
+
+const LOOKS_LIKE_DATA_KEY = /^[0-9a-f-]{8,}$|^\d+$|\s/i;
+
+/** Field names and value kinds only. Maps keyed by IDs or names are summarized, not listed. */
+function shapeOf(v: unknown, depth = 0): Shape {
+  if (v === null || v === undefined) return "null";
+  if (Array.isArray(v)) return v.length ? [`list of ${v.length}`, shapeOf(v[0], depth + 1)] : "empty list";
+  if (typeof v === "object") {
+    if (depth > 4) return "object";
+    const entries = Object.entries(v as Json);
+    if (entries.length > 40 || entries.some(([k]) => LOOKS_LIKE_DATA_KEY.test(k))) return `map of ${entries.length} entries`;
+    return Object.fromEntries(entries.map(([k, x]) => [k, shapeOf(x, depth + 1)]));
+  }
+  if (typeof v === "string") return /^\d{4}-\d{2}-\d{2}/.test(v) || /^\d{1,2}\/\d{1,2}\/\d{4}/.test(v) ? "date" : v === "" ? "empty text" : "text";
+  return typeof v;
+}
+
+function firstList(data: unknown): Json[] {
+  if (Array.isArray(data)) return data.filter((x) => x && typeof x === "object") as Json[];
+  return objectArrays(data)[0] ?? [];
+}
+
+export interface ProbeResult {
+  steps: string[];
+  shapes: Record<string, Shape>;
+  error?: string;
+}
+
+/** Sign in, read the youth roster and one scout's advancement, and report only the shapes. */
+export async function probeMyScoutingAdvancement(): Promise<ProbeResult> {
+  const steps: string[] = [];
+  const shapes: Record<string, Shape> = {};
+  if (!myScoutingConfigured()) return { steps, shapes, error: "Not set up: MYSCOUTING_USERNAME and MYSCOUTING_PASSWORD aren't set in Vercel." };
+  try {
+    const s = await signIn();
+    steps.push("Signed in to my.scouting.");
+    const get = api(s.token);
+    const unit = await findUnit(get, s.userId, s.personGuid);
+    steps.push(`Found ${unit.name}.`);
+
+    const ys = await get(`/organizations/v2/units/${unit.guid}/youths`);
+    if (ys.status !== 200) throw new StepError(`Reading the youth roster answered ${ys.status}. The account may need Key 3 or advancement access.`);
+    const youths = firstList(ys.data);
+    steps.push(`Youth roster: ${youths.length} scouts.`);
+    shapes.youths = shapeOf(ys.data);
+    const one = youths.find((y) => str(pick(y, /^userId$/i)));
+    const uid = one ? str(pick(one, /^userId$/i)) : "";
+    if (!uid) throw new StepError("The youth roster has no userId field this app recognizes (see the shape below).");
+
+    for (const kind of ["ranks", "adventures", "awards"] as const) {
+      const r = await get(`/advancements/v2/youth/${uid}/${kind}`);
+      steps.push(`One scout's ${kind}: answered ${r.status}.`);
+      shapes[kind] = r.status === 200 ? shapeOf(r.data) : `answered ${r.status}`;
+      if (r.status !== 200) continue;
+      // Requirements for the first item that has an id.
+      const items = objectArrays(r.data).flat();
+      const item = items.find((x) => str(pick(x, /^(id|adventureId|rankId|awardId)$/i)));
+      const id = item ? str(pick(item, /^(id|adventureId|rankId|awardId)$/i)) : "";
+      if (kind !== "awards" && id) {
+        const q = await get(`/advancements/v2/youth/${uid}/${kind}/${id}/requirements`);
+        steps.push(`Requirements for one of those ${kind}: answered ${q.status}.`);
+        shapes[`${kind}_requirements`] = q.status === 200 ? shapeOf(q.data) : `answered ${q.status}`;
+      }
+    }
+    return { steps, shapes };
+  } catch (e) {
+    const msg =
+      e instanceof StepError
+        ? e.message
+        : e instanceof Error && e.name === "AbortError"
+          ? "my.scouting didn't answer in time."
+          : "Couldn't reach my.scouting.";
+    return { steps, shapes, error: msg };
+  }
+}

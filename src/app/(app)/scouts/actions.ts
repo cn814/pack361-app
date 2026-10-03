@@ -8,6 +8,7 @@ import { getCatalog, getScout, isAdmin } from "@/lib/advancement-data";
 import { parseScoutbookExport, RANKS } from "@/lib/advancement";
 import type { DenRank } from "@/lib/types";
 import type { ImportChanges } from "@/lib/import-changes";
+import { probeMyScoutingAdvancement, type ProbeResult } from "@/lib/myscouting";
 
 export type FormState = { ok?: boolean; error?: string; message?: string };
 
@@ -125,4 +126,11 @@ export async function importScoutbook(_prev: ImportState, form: FormData): Promi
     recorded: Math.max(0, (before ?? 0) - (after ?? 0)),
     changes: log.changes ?? null,
   };
+}
+
+/** Admin: test the automatic Scoutbook connection (reports field names only, no scout data). */
+export async function testScoutbookConnection(): Promise<ProbeResult> {
+  const me = await requireMember();
+  if (!isAdmin(me)) return { steps: [], shapes: {}, error: "Only pack admins can do this." };
+  return probeMyScoutingAdvancement();
 }
