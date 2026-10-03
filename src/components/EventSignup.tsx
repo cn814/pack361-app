@@ -26,17 +26,28 @@ export default function EventSignup({
         <h2 className="section-title">Sign-ups</h2>
         <span className="text-[11px] text-muted">Givebutter, updated {timeAgo(campaign.synced_at)}</span>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      {/* A sign-up form (not tickets) reports 0 tickets: show leaders what came in instead. */}
+      <div className={`grid gap-2 ${campaign.tickets_sold > 0 || leader ? "grid-cols-2" : "grid-cols-1"}`}>
         <div className="rounded-xl bg-surface-low p-3">
           <Users className="h-4 w-4 text-pine" aria-hidden />
           <p className="text-2xl font-extrabold text-pine-950">{campaign.families_registered}</p>
           <p className="text-xs text-muted">families signed up</p>
         </div>
-        <div className="rounded-xl bg-surface-low p-3">
-          <Ticket className="h-4 w-4 text-pine" aria-hidden />
-          <p className="text-2xl font-extrabold text-pine-950">{campaign.tickets_sold}</p>
-          <p className="text-xs text-muted">people / tickets</p>
-        </div>
+        {campaign.tickets_sold > 0 ? (
+          <div className="rounded-xl bg-surface-low p-3">
+            <Ticket className="h-4 w-4 text-pine" aria-hidden />
+            <p className="text-2xl font-extrabold text-pine-950">{campaign.tickets_sold}</p>
+            <p className="text-xs text-muted">people / tickets</p>
+          </div>
+        ) : (
+          leader && (
+            <div className="rounded-xl bg-surface-low p-3">
+              <Ticket className="h-4 w-4 text-pine" aria-hidden />
+              <p className="text-2xl font-extrabold text-pine-950">{money(paid.reduce((n, o) => n + (o.amount ?? 0), 0))}</p>
+              <p className="text-xs text-muted">paid so far</p>
+            </div>
+          )
+        )}
       </div>
       {mine.length > 0 ? (
         <p className="flex items-center gap-2 rounded-xl bg-mint p-3 text-sm font-semibold text-pine">
