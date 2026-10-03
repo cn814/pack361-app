@@ -125,6 +125,17 @@
   }
 }
 
+/* Opening animation (src/components/Splash.tsx): hidden unless its head script says to show it. */
+#splash {
+  display: none;
+}
+html[data-splash="show"] #splash {
+  display: flex;
+}
+html[data-splash="show"] body {
+  overflow: hidden;
+}
+
 html,
 body {
   background: var(--color-canvas);
