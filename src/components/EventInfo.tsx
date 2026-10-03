@@ -1,5 +1,6 @@
 import { ExternalLink, Info, TriangleAlert } from "lucide-react";
 import type { EventLink, EventSection } from "@/lib/types";
+import SectionChecklist from "@/components/SectionChecklist";
 
 export function EventLinks({ links }: { links: EventLink[] }) {
   if (!links.length) return null;
@@ -23,7 +24,7 @@ export function EventLinks({ links }: { links: EventLink[] }) {
   );
 }
 
-export function EventSections({ sections }: { sections: EventSection[] }) {
+export function EventSections({ eventId, sections }: { eventId: string; sections: EventSection[] }) {
   if (!sections.length) return null;
   return (
     <>
@@ -42,7 +43,10 @@ export function EventSections({ sections }: { sections: EventSection[] }) {
               {s.title}
             </h2>
             {s.body && <p className="text-sm text-navy">{s.body}</p>}
-            {s.items && s.items.length > 0 && (
+            {s.check && s.items?.length ? (
+              <SectionChecklist eventId={eventId} title={s.title} items={s.items} />
+            ) : null}
+            {!s.check && s.items && s.items.length > 0 && (
               <ul className="list-disc space-y-1 pl-5 text-sm text-ink marker:text-sage">
                 {s.items.map((i) => (
                   <li key={i}>{i}</li>

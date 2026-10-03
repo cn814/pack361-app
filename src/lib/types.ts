@@ -85,6 +85,8 @@ export interface EventSection {
   tone?: "warn" | "info" | null;
   body?: string | null;
   items?: string[];
+  /** Items are a tap-to-check list kept on the phone (a scavenger hunt, say). */
+  check?: boolean;
 }
 
 export interface Announcement {

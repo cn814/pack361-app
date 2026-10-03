@@ -113,7 +113,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <PermissionSlips e={event} me={me} />
       <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={isLeader(me)} />
       <EventLinks links={event.links ?? []} />
-      <EventSections sections={event.sections ?? []} />
+      <EventSections eventId={id} sections={event.sections ?? []} />
       <EventPhotosLink eventId={id} startsAt={event.starts_at} />
       <EditEventLink e={event} me={me} />
       <ArchiveControl e={event} leader={isLeader(me)} back={`/events/${id}`} part="button" />

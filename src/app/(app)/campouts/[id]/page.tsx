@@ -130,7 +130,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
           </section>
         </div>
         <div className="order-9 empty:hidden">
-          <EventSections sections={event.sections ?? []} />
+          <EventSections eventId={id} sections={event.sections ?? []} />
         </div>
         </div>
         <div className="contents lg:block lg:space-y-4">
