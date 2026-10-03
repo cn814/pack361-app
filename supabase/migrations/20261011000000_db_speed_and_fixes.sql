@@ -18,6 +18,8 @@
 --   8. private.going_to_event() is no longer callable by signed-out visitors.
 --   9. volunteer_roster() returns nothing for a leaders-only event the caller can't see.
 -- Safe to run once on the live database; nothing here deletes data.
+-- All or nothing: if any statement fails, nothing changes.
+begin;
 
 -- -----------------------------------------------------------------------------
 -- 2. Set-returning helpers: each runs once per query, as the table owner (like the helpers
@@ -522,3 +524,5 @@ language sql stable set search_path = '' as $$
 $$;
 revoke execute on function public.attendance_summary(date, date, uuid) from public, anon;
 grant execute on function public.attendance_summary(date, date, uuid) to authenticated;
+
+commit;
