@@ -7,6 +7,7 @@ import { requireMember } from "@/lib/data";
 import { getCatalog, getScout, isAdmin } from "@/lib/advancement-data";
 import { parseScoutbookExport, RANKS } from "@/lib/advancement";
 import type { DenRank } from "@/lib/types";
+import type { ImportChanges } from "@/lib/import-changes";
 
 export type FormState = { ok?: boolean; error?: string; message?: string };
 
@@ -80,6 +81,7 @@ export type ImportState = FormState & {
   scouts?: number;
   unmatched?: { member_id: string; name: string }[];
   recorded?: number;
+  changes?: ImportChanges | null;
 };
 
 /** Admin uploads Scoutbook Plus -> Reports -> Quick Export -> Advancements. */
@@ -113,7 +115,7 @@ export async function importScoutbook(_prev: ImportState, form: FormData): Promi
     .select("id", { count: "exact", head: true })
     .eq("status", "approved");
 
-  const log = data as { row_count: number; scout_count: number; unmatched: { member_id: string; name: string }[] };
+  const log = data as { row_count: number; scout_count: number; unmatched: { member_id: string; name: string }[]; changes?: ImportChanges | null };
   revalidatePath("/scouts", "layout");
   return {
     ok: true,
@@ -121,5 +123,6 @@ export async function importScoutbook(_prev: ImportState, form: FormData): Promi
     scouts: log.scout_count,
     unmatched: log.unmatched,
     recorded: Math.max(0, (before ?? 0) - (after ?? 0)),
+    changes: log.changes ?? null,
   };
 }

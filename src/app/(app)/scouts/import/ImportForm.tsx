@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { CircleCheck, FileUp } from "lucide-react";
 import { importScoutbook, type ImportState } from "../actions";
+import { changesText } from "@/lib/import-changes";
 
 export default function ImportForm() {
   const [state, action, pending] = useActionState<ImportState, FormData>(importScoutbook, {});
@@ -18,6 +19,7 @@ export default function ImportForm() {
           <p className="flex items-center gap-1.5 font-bold">
             <CircleCheck className="h-4 w-4" aria-hidden /> Imported {state.rows?.toLocaleString()} records for {state.scouts} scouts.
           </p>
+          {changesText(state.changes) && <p className="font-semibold">{changesText(state.changes)}</p>}
           {!!state.recorded && <p>{state.recorded} approved report(s) were found in Scoutbook and marked entered.</p>}
           {!!state.unmatched?.length && (
             <div className="text-navy">

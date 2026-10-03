@@ -4,6 +4,7 @@ import { createClient } from "./supabase/server";
 import { requireMember } from "./data";
 import type { AdvancementRecord, CatalogAdventure } from "./advancement";
 import type { Adult, DenRank, Scout } from "./types";
+import type { ImportChanges } from "./import-changes";
 
 export type SubmissionStatus = "submitted" | "approved" | "returned" | "recorded";
 
@@ -35,6 +36,8 @@ export interface ImportLog {
   row_count: number;
   scout_count: number;
   unmatched: { member_id: string; name: string }[];
+  /** What the import changed; null for imports before this was recorded. */
+  changes: ImportChanges | null;
 }
 
 const SCOUT_COLS = "id, first_name, last_name, family_id, den:dens(id, rank, number, name)";
@@ -143,7 +146,7 @@ export async function getLastImport(): Promise<ImportLog | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("advancement_imports")
-    .select("id, imported_at, file_name, row_count, scout_count, unmatched")
+    .select("id, imported_at, file_name, row_count, scout_count, unmatched, changes")
     .order("imported_at", { ascending: false })
     .limit(1)
     .maybeSingle();

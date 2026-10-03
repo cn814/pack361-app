@@ -6,6 +6,7 @@ import { requireMember } from "@/lib/data";
 import { getLastImport, isAdmin } from "@/lib/advancement-data";
 import { fmtDay, fmtTime } from "@/lib/format";
 import ImportForm from "./ImportForm";
+import { changesText } from "@/lib/import-changes";
 
 export const metadata: Metadata = { title: "Import from Scoutbook" };
 
@@ -41,7 +42,7 @@ export default async function ImportPage() {
       {last && (
         <p className="text-xs text-muted">
           Last import {fmtDay(last.imported_at)} at {fmtTime(last.imported_at)}: {last.row_count.toLocaleString()} records for{" "}
-          {last.scout_count} scouts.
+          {last.scout_count} scouts. {changesText(last.changes)}
         </p>
       )}
 
