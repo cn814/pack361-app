@@ -339,8 +339,9 @@ const EXPORT_NAMES: Record<string, string> = {
   "Tiger Roar": "Tiger's Roar",
   "Tiger Circles: Duty to God": "My Family\u2019s Duty to God",
 };
-/** An adventure name as the export writes it: commas become semicolons. */
-const exportName = (name: string) => (EXPORT_NAMES[name.trim()] ?? name.trim()).replace(/,/g, ";");
+/** An adventure's name as the export writes it. Its own line uses semicolons for commas
+ * ("Stronger; Faster; Higher Adventure"); its requirements keep the commas. */
+const exportName = (name: string) => EXPORT_NAMES[name.trim()] ?? name.trim();
 
 /** Requirement numbers as the export writes them: "3." is "3", and a lone "a" under "3" is "3a". */
 function requirementNumbers(list: Json[]): Map<Json, string> {
@@ -452,7 +453,7 @@ export async function fetchScoutbookAdvancement(): Promise<AdvancementSync> {
           const advReqs = adventures.map(async (a) => {
             const aname = exportName(str(a.adventureName));
             const version = str(a.version);
-            add("Adventure", `${aname} Adventure`, version, a, done(a, /^dateCompleted$/i));
+            add("Adventure", `${aname.replace(/,/g, ";")} Adventure`, version, a, done(a, /^dateCompleted$/i));
             const progress = Number(a.percentCompleted ?? 0) > 0 || done(a, /^dateCompleted$/i);
             if (!progress) return;
             const q = await get(`/advancements/v2/youth/${uid}/adventures/${str(a.adventureId)}/requirements`);
