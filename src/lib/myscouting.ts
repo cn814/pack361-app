@@ -310,13 +310,42 @@ function shapeOf(v: unknown, depth = 0): Shape {
   if (v === null || v === undefined) return "null";
   if (Array.isArray(v)) return v.length ? [`list of ${v.length}`, shapeOf(v[0], depth + 1)] : "empty list";
   if (typeof v === "object") {
-    if (depth > 4) return "object";
+    if (depth > 5) return "object";
     const entries = Object.entries(v as Json);
-    if (entries.length > 40 || entries.some(([k]) => LOOKS_LIKE_DATA_KEY.test(k))) return `map of ${entries.length} entries`;
+    if (entries.length > 150 || entries.some(([k]) => LOOKS_LIKE_DATA_KEY.test(k))) return `map of ${entries.length} entries`;
     return Object.fromEntries(entries.map(([k, x]) => [k, shapeOf(x, depth + 1)]));
   }
   if (typeof v === "string") return /^\d{4}-\d{2}-\d{2}/.test(v) || /^\d{1,2}\/\d{1,2}\/\d{4}/.test(v) ? "date" : v === "" ? "empty text" : "text";
   return typeof v;
+}
+
+// Catalog fields (adventure, rank and requirement names, versions, status words): their values
+// are the same for every scout, so the test may show a few. Nothing about a person is listed.
+const CATALOG_KEY =
+  /^(status|version|rankVersion|versionId|program|programId|rankName|adventureName|shortName|name|short|requirementNumber|number|listNumber|level|advancementType|awardName|isRequired|percentCompleted|unitType|programType)$/i;
+const PERSON_KEY = /first|last|full|person|member|birth|address|city|zip|phone|email|picture|user|marked|approvedFirst|approvedLast|awardedFirst|awardedLast/i;
+
+/** A few example values of catalog fields, by field name, gathered across the whole response. */
+function catalogSamples(v: unknown, out: Record<string, Set<string>> = {}, depth = 0, parentIsPerson = false): Record<string, Set<string>> {
+  if (depth > 6 || !v || typeof v !== "object") return out;
+  if (Array.isArray(v)) {
+    for (const x of v.slice(0, 200)) catalogSamples(x, out, depth + 1, parentIsPerson);
+    return out;
+  }
+  const o = v as Json;
+  const isPerson = parentIsPerson || "firstName" in o || "personGuid" in o || "dateOfBirth" in o;
+  for (const [k, x] of Object.entries(o)) {
+    if (x && typeof x === "object") {
+      catalogSamples(x, out, depth + 1, isPerson && !/^(positions|ranks|adventures|requirements)$/i.test(k));
+      continue;
+    }
+    if (isPerson || PERSON_KEY.test(k) || !CATALOG_KEY.test(k)) continue;
+    const val = typeof x === "string" ? x.trim() : typeof x === "number" || typeof x === "boolean" ? String(x) : "";
+    if (!val || val.length > 70 || /^\d{4}-\d{2}-\d{2}/.test(val)) continue;
+    const set = (out[k] ??= new Set());
+    if (set.size < 12) set.add(val);
+  }
+  return out;
 }
 
 function firstList(data: unknown): Json[] {
@@ -327,6 +356,8 @@ function firstList(data: unknown): Json[] {
 export interface ProbeResult {
   steps: string[];
   shapes: Record<string, Shape>;
+  /** Example values of catalog fields only (names, versions, status words). */
+  examples?: Record<string, Record<string, string[]>>;
   error?: string;
 }
 
@@ -334,6 +365,7 @@ export interface ProbeResult {
 export async function probeMyScoutingAdvancement(): Promise<ProbeResult> {
   const steps: string[] = [];
   const shapes: Record<string, Shape> = {};
+  const examples: Record<string, Record<string, string[]>> = {};
   if (!myScoutingConfigured()) return { steps, shapes, error: "Not set up: MYSCOUTING_USERNAME and MYSCOUTING_PASSWORD aren't set in Vercel." };
   try {
     const s = await signIn();
@@ -356,6 +388,7 @@ export async function probeMyScoutingAdvancement(): Promise<ProbeResult> {
       steps.push(`One scout's ${kind}: answered ${r.status}.`);
       shapes[kind] = r.status === 200 ? shapeOf(r.data) : `answered ${r.status}`;
       if (r.status !== 200) continue;
+      examples[kind] = Object.fromEntries(Object.entries(catalogSamples(r.data)).map(([k, v]) => [k, [...v]]));
       // Requirements for the first item that has an id.
       const items = objectArrays(r.data).flat();
       const item = items.find((x) => str(pick(x, /^(id|adventureId|rankId|awardId)$/i)));
@@ -364,9 +397,10 @@ export async function probeMyScoutingAdvancement(): Promise<ProbeResult> {
         const q = await get(`/advancements/v2/youth/${uid}/${kind}/${id}/requirements`);
         steps.push(`Requirements for one of those ${kind}: answered ${q.status}.`);
         shapes[`${kind}_requirements`] = q.status === 200 ? shapeOf(q.data) : `answered ${q.status}`;
+        if (q.status === 200) examples[`${kind}_requirements`] = Object.fromEntries(Object.entries(catalogSamples(q.data)).map(([k, v]) => [k, [...v]]));
       }
     }
-    return { steps, shapes };
+    return { steps, shapes, examples };
   } catch (e) {
     const msg =
       e instanceof StepError

@@ -9,7 +9,7 @@ import type { ProbeResult } from "@/lib/myscouting";
 export default function ConnectionTest({ configured }: { configured: boolean }) {
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<ProbeResult | null>(null);
-  const text = res ? JSON.stringify({ steps: res.steps, error: res.error, shapes: res.shapes }, null, 1) : "";
+  const text = res ? JSON.stringify({ steps: res.steps, error: res.error, shapes: res.shapes, examples: res.examples }, null, 1) : "";
 
   return (
     <section className="card space-y-2 text-sm text-navy">
