@@ -19,6 +19,7 @@ export default function PostAnnouncement({
   packEmail = false,
   startOpen = false,
   doneHref,
+  event,
 }: {
   dens: { id: string; name: string }[];
   canPostPack?: boolean;
@@ -29,6 +30,8 @@ export default function PostAnnouncement({
   startOpen?: boolean;
   /** Where to go once it's posted (the Announce page goes to Notifications). */
   doneHref?: string;
+  /** Message the families going to this event (RSVP yes, optionally maybe) instead. */
+  event?: { id: string; title: string; yes: number; maybe: number };
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(startOpen);
@@ -43,6 +46,43 @@ export default function PostAnnouncement({
   }, {});
   const keep = useSubmitKeepingValues(action);
   const denName = dens.find((d) => d.id === den)?.name;
+  const [maybe, setMaybe] = useState(false);
+
+  if (event) {
+    const n = event.yes + (maybe ? event.maybe : 0);
+    const families = `${n} ${n === 1 ? "family" : "families"}`;
+    return (
+      <form action={action} onSubmit={keep} className="card space-y-3">
+        <h2 className="font-bold text-pine-950">Message to families going</h2>
+        <input type="hidden" name="event_id" value={event.id} />
+        <input name="title" required maxLength={140} placeholder="Rained out: moved to Sunday" className="input" />
+        <textarea name="body" required rows={4} maxLength={4000} placeholder={`Message for families going to ${event.title}`} className="input" />
+        {event.maybe > 0 && (
+          <label className="flex items-center gap-2 text-sm text-navy">
+            <input type="checkbox" name="maybe" checked={maybe} onChange={(e) => setMaybe(e.target.checked)} className="h-4 w-4 accent-pine" /> Also the{" "}
+            {event.maybe} {event.maybe === 1 ? "family" : "families"} who said maybe
+          </label>
+        )}
+        <label className="flex items-center gap-2 text-sm text-navy">
+          <input type="hidden" name="notify" value="off" />
+          <input type="checkbox" name="notify" value="on" defaultChecked className="h-4 w-4 accent-pine" /> Send a phone alert to the {families}{" "}
+          going (those with alerts on)
+        </label>
+        <label className="flex items-start gap-2 text-sm text-navy">
+          <input type="hidden" name="email" value="off" />
+          <input type="checkbox" name="email" value="on" className="mt-0.5 h-4 w-4 accent-pine" />
+          <span>
+            Also email them. Replies come to you.
+            <span className="block text-[11px] text-muted">It also shows in the app&apos;s news, linked to the event, for anyone who looks.</span>
+          </span>
+        </label>
+        {state.error && <p className="text-sm text-danger">{state.error}</p>}
+        <button type="submit" className="btn-primary w-full" disabled={pending || n === 0}>
+          {pending ? "Sending…" : n === 0 ? "Nobody has said yes yet" : `Send to ${families}`}
+        </button>
+      </form>
+    );
+  }
 
   if (!open) {
     return (

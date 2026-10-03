@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import BackLink from "@/components/BackLink";
 import PostAnnouncement from "@/components/PostAnnouncement";
 import { isLeader, requireMember } from "@/lib/data";
-import { getMessageableDens } from "@/lib/audience";
+import { eventRsvpCounts, getMessageableDens } from "@/lib/audience";
+import { getEvent } from "@/lib/data";
 import { packEmailConfigured } from "@/lib/bulk-email";
 
 export const metadata: Metadata = { title: "Announce" };
@@ -12,7 +13,30 @@ export const metadata: Metadata = { title: "Announce" };
 export default async function AnnouncePage({ searchParams }: PageProps<"/announce">) {
   const me = await requireMember();
   if (!isLeader(me)) redirect("/");
-  const { den } = await searchParams;
+  const { den, event: eventId } = await searchParams;
+  const event = typeof eventId === "string" && /^[0-9a-f-]{36}$/i.test(eventId) ? await getEvent(eventId) : null;
+  if (event) {
+    const counts = await eventRsvpCounts(event.id);
+    const back = event.category === "Campout" ? `/campouts/${event.id}` : `/events/${event.id}`;
+    return (
+      <>
+        <BackLink href={back} label={event.title} />
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Message families going</h1>
+          <p className="text-sm text-muted">
+            {event.title}: {counts.yes} {counts.yes === 1 ? "family" : "families"} said yes
+            {counts.maybe ? `, ${counts.maybe} maybe` : ""}. They get a phone alert (and email if you tick it).
+          </p>
+        </div>
+        <PostAnnouncement
+          dens={[]}
+          event={{ id: event.id, title: event.title, yes: counts.yes, maybe: counts.maybe }}
+          startOpen
+          doneHref={back}
+        />
+      </>
+    );
+  }
   const dens = await getMessageableDens(me);
   const chosen = typeof den === "string" ? dens.find((d) => d.id === den) : undefined;
   const toDen = den === "pick" || Boolean(chosen);

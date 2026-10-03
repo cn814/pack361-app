@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { sendPushTo, sendPushToAll } from "@/lib/push";
 import { packEmailConfigured, sendBulk } from "@/lib/bulk-email";
-import { denAudience } from "@/lib/audience";
+import { denAudience, eventAudience } from "@/lib/audience";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyAdmins } from "@/lib/notify";
 import { APP_URL } from "@/lib/email";
@@ -19,10 +19,13 @@ export async function postAnnouncement(_prev: PostState, form: FormData): Promis
   const title = String(form.get("title") ?? "").trim();
   const body = String(form.get("body") ?? "").trim();
   const denId = String(form.get("den_id") ?? "");
-  const den = /^[0-9a-f-]{36}$/i.test(denId) ? denId : null;
+  const eventId = String(form.get("event_id") ?? "");
+  const eventMsg = /^[0-9a-f-]{36}$/i.test(eventId) ? eventId : null;
+  const den = !eventMsg && /^[0-9a-f-]{36}$/i.test(denId) ? denId : null;
   const category = String(form.get("category") ?? (den ? "Den" : "General"));
-  const email = form.getAll("email").includes("on") && (den !== null || packEmailConfigured());
+  const email = form.getAll("email").includes("on") && (den !== null || eventMsg !== null || packEmailConfigured());
   if (!title || !body) return { error: "Add a title and a message." };
+  if (eventMsg) return postEventMessage(me, eventMsg, title, body, form.getAll("notify").includes("on"), email, form.get("maybe") === "on");
   const supabase = await createClient();
   // RLS: den leaders can only message the dens they lead; committee members any den.
   const { data: post, error } = await supabase
@@ -84,6 +87,56 @@ export async function postAnnouncement(_prev: PostState, form: FormData): Promis
       }
     });
   }
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/**
+ * A message to the families going to an event (RSVP yes, and maybe if ticked): a phone alert
+ * and optional email to them. It's also posted in the app's news, linked to the event, so
+ * anyone looking can see the change.
+ */
+async function postEventMessage(
+  me: Awaited<ReturnType<typeof requireMember>>,
+  eventId: string,
+  title: string,
+  body: string,
+  notify: boolean,
+  email: boolean,
+  withMaybe: boolean,
+): Promise<PostState> {
+  const supabase = await createClient();
+  const { data: ev } = await supabase.from("events").select("id, title, category").eq("id", eventId).maybeSingle();
+  if (!ev) return { error: "That event wasn't found." };
+  const { data: post, error } = await supabase
+    .from("announcements")
+    .insert({ author_id: me.id, title: title.slice(0, 140), body: body.slice(0, 4000), category: "General", event_id: eventId, is_pinned: false })
+    .select("id")
+    .single();
+  if (error || !post) return { error: "Couldn't send that. Try again." };
+  const eventTitle = String(ev.title).slice(0, 60);
+  const url = ev.category === "Campout" ? `/campouts/${eventId}` : `/events/${eventId}`;
+  after(async () => {
+    const people = (await eventAudience(eventId, withMaybe)).filter((p) => p.id !== me.id);
+    if (notify && people.length) {
+      await sendPushTo(
+        people.map((p) => p.id),
+        { title: `${eventTitle}: ${title.slice(0, 80)}`, body: body.slice(0, 180), url, tag: `event-${eventId}` },
+      );
+    }
+    if (email && people.length) {
+      const from = `${me.preferred_name || me.first_name} ${me.last_name}`;
+      const r = await sendBulk(
+        people.map((p) => ({ email: p.email, name: p.preferred_name || p.first_name })),
+        {
+          subject: `${eventTitle}: ${title.slice(0, 100)}`,
+          replyTo: me.email,
+          paragraphs: [`Hi ${eventTitle} families,`, body, `From ${from}. Reply to this email to reach them.`, `${APP_URL}${url}`],
+        },
+      );
+      await createAdminClient().from("announcements").update({ emailed_count: r.sent }).eq("id", post.id);
+    }
+  });
   revalidatePath("/", "layout");
   return { ok: true };
 }

@@ -52,3 +52,35 @@ export async function denAudience(denId: string): Promise<Recipient[]> {
   for (const a of [...(parents ?? []), ...(leadAdults ?? [])] as Recipient[]) byId.set(a.id, a);
   return [...byId.values()];
 }
+
+/** How many families (or single adults) answered yes and maybe for an event. */
+export async function eventRsvpCounts(eventId: string): Promise<{ yes: number; maybe: number }> {
+  if (!adminConfigured()) return { yes: 0, maybe: 0 };
+  const { data } = await createAdminClient().from("event_rsvps").select("status").eq("event_id", eventId).in("status", ["yes", "maybe"]);
+  const rows = (data ?? []) as { status: string }[];
+  return { yes: rows.filter((r) => r.status === "yes").length, maybe: rows.filter((r) => r.status === "maybe").length };
+}
+
+/**
+ * The adults an event message goes to: every active adult in a family that answered yes (and
+ * maybe, if asked) to the event's RSVP, plus adults who answered for themselves.
+ */
+export async function eventAudience(eventId: string, withMaybe: boolean): Promise<Recipient[]> {
+  if (!adminConfigured()) return [];
+  const db = createAdminClient();
+  const { data: rsvps } = await db
+    .from("event_rsvps")
+    .select("family_id, adult_id")
+    .eq("event_id", eventId)
+    .in("status", withMaybe ? ["yes", "maybe"] : ["yes"]);
+  const families = [...new Set((rsvps ?? []).map((r) => r.family_id as string | null).filter(Boolean))] as string[];
+  const solo = [...new Set((rsvps ?? []).filter((r) => !r.family_id).map((r) => r.adult_id as string | null).filter(Boolean))] as string[];
+  const cols = "id, email, first_name, preferred_name";
+  const [{ data: parents }, { data: adults }] = await Promise.all([
+    families.length ? db.from("adults").select(cols).in("family_id", families).eq("is_active", true) : Promise.resolve({ data: [] }),
+    solo.length ? db.from("adults").select(cols).in("id", solo).eq("is_active", true) : Promise.resolve({ data: [] }),
+  ]);
+  const byId = new Map<string, Recipient>();
+  for (const a of [...(parents ?? []), ...(adults ?? [])] as Recipient[]) byId.set(a.id, a);
+  return [...byId.values()];
+}

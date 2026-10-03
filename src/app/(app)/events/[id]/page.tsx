@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { CalendarDays, MapPin, Navigation, Ticket } from "lucide-react";
+import { CalendarDays, MapPin, Megaphone, Navigation, Ticket } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import VolunteerJobs from "@/components/VolunteerJobs";
 import RsvpLink from "@/components/RsvpLink";
@@ -73,6 +73,11 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
             <a href={event.signup_url} target="_blank" rel="noopener noreferrer" className="btn-gold py-2">
               <Ticket className="h-4 w-4" aria-hidden /> {event.source === "council" ? "Register with the council" : "Sign up / pay"}
             </a>
+          )}
+          {isLeader(me) && event.rsvp_enabled && (
+            <Link href={`/announce?event=${id}`} className="btn-ghost py-2">
+              <Megaphone className="h-4 w-4" aria-hidden /> Message families going
+            </Link>
           )}
         </div>
       </section>
