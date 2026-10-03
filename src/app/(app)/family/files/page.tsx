@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TriangleAlert } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import DeviceFiles from "@/components/DeviceFiles";
 import { requireMember } from "@/lib/data";
@@ -20,6 +21,13 @@ export default async function DeviceFilesPage({ searchParams }: PageProps<"/fami
     <>
       <BackLink href="/family" label="Me" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Saved on this phone</h1>
+      <p className="flex items-start gap-2 rounded-2xl border border-gold-100 bg-gold-50 p-3 text-sm text-gold-800">
+        <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+        <span>
+          <b>Using a shared phone, tablet or computer?</b> Signing out doesn&rsquo;t remove these files. Delete them here first, or
+          someone else using this device could open them.
+        </span>
+      </p>
       <DeviceFiles ownerUserKey={me.id} familyKey={me.family_id ?? me.id} people={family} initialPerson={wanted} />
     </>
   );
