@@ -32,7 +32,7 @@ export default async function PhotoPage({ params }: PageProps<"/photos/[id]">) {
       )}
       <figure className="space-y-2">
         {photo.full_url && (
-          <PhotoPager prev={nav.prev} next={nav.next} index={nav.index} total={nav.total}>
+          <PhotoPager key={photo.id} prev={nav.prev} next={nav.next} index={nav.index} total={nav.total}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={photo.full_url} alt={photo.caption ?? "Pack photo"} draggable={false} className="w-full rounded-2xl bg-surface" />
           </PhotoPager>
