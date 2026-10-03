@@ -1,5 +1,6 @@
 import "server-only";
 import { courseFromText, type ReportRow } from "./training-import";
+import type { ScoutbookLine } from "./advancement";
 
 // EXPERIMENTAL: reads the pack's adult training straight from my.scouting, using the same
 // unofficial web API that Scoutbook Plus uses. Scouting America doesn't offer an official API, so
@@ -291,123 +292,176 @@ export async function fetchMyScoutingTraining(): Promise<SyncResult> {
 }
 
 // ---------------------------------------------------------------------------
-// Advancement: connection test (step 1 of the automatic Scoutbook import)
+// Advancement: every scout's completed ranks, adventures, requirements and awards
 // ---------------------------------------------------------------------------
-// Scoutbook Plus reads advancement one scout at a time (seen in its own pages, 2026-10-02):
-//   GET /organizations/v2/units/{unit}/youths
-//   GET /advancements/v2/youth/{userId}/ranks | adventures | awards
-//   GET /advancements/v2/youth/{userId}/adventures/{adventureId}/requirements (ranks/... likewise)
-// Their answers aren't documented, so this test reports only their SHAPE (field names and kinds
-// of values, list lengths) for one scout, never names, dates or other values. That's what the
-// real import is then written against.
+// Scoutbook Plus reads advancement one scout at a time (its own pages, checked 2026-10-02):
+//   GET /organizations/v2/units/{unit}/youths                   -> users[]: userId, memberId, names
+//   GET /advancements/v2/youth/{userId}/ranks                   -> program[].ranks[]: name, version, dateEarned...
+//   GET /advancements/v2/youth/{userId}/ranks/{id}/requirements -> requirements[]: requirementNumber, dateCompleted...
+//   GET /advancements/v2/youth/{userId}/adventures              -> []: adventureName, version, dateCompleted...
+//   GET /advancements/v2/youth/{userId}/adventures/{id}/requirements
+//   GET /advancements/v2/youth/{userId}/awards
+// The result is turned into the same lines as Scoutbook's "Quick Export -> Advancements" CSV
+// (completed items only, labelled the same way), so it goes through the same import.
 
-type Shape = string | Shape[] | { [k: string]: Shape };
+const PARALLEL = 8;
+const TIME_BUDGET_MS = 240_000;
 
-const LOOKS_LIKE_DATA_KEY = /^[0-9a-f-]{8,}$|^\d+$|\s/i;
-
-/** Field names and value kinds only. Maps keyed by IDs or names are summarized, not listed. */
-function shapeOf(v: unknown, depth = 0): Shape {
-  if (v === null || v === undefined) return "null";
-  if (Array.isArray(v)) return v.length ? [`list of ${v.length}`, shapeOf(v[0], depth + 1)] : "empty list";
-  if (typeof v === "object") {
-    if (depth > 5) return "object";
-    const entries = Object.entries(v as Json);
-    if (entries.length > 150 || entries.some(([k]) => LOOKS_LIKE_DATA_KEY.test(k))) return `map of ${entries.length} entries`;
-    return Object.fromEntries(entries.map(([k, x]) => [k, shapeOf(x, depth + 1)]));
-  }
-  if (typeof v === "string") return /^\d{4}-\d{2}-\d{2}/.test(v) || /^\d{1,2}\/\d{1,2}\/\d{4}/.test(v) ? "date" : v === "" ? "empty text" : "text";
-  return typeof v;
-}
-
-// Catalog fields (adventure, rank and requirement names, versions, status words): their values
-// are the same for every scout, so the test may show a few. Nothing about a person is listed.
-const CATALOG_KEY =
-  /^(status|version|rankVersion|versionId|program|programId|rankName|adventureName|shortName|name|short|requirementNumber|number|listNumber|level|advancementType|awardName|isRequired|percentCompleted|unitType|programType)$/i;
-const PERSON_KEY = /first|last|full|person|member|birth|address|city|zip|phone|email|picture|user|marked|approvedFirst|approvedLast|awardedFirst|awardedLast/i;
-
-/** A few example values of catalog fields, by field name, gathered across the whole response. */
-function catalogSamples(v: unknown, out: Record<string, Set<string>> = {}, depth = 0, parentIsPerson = false): Record<string, Set<string>> {
-  if (depth > 6 || !v || typeof v !== "object") return out;
-  if (Array.isArray(v)) {
-    for (const x of v.slice(0, 200)) catalogSamples(x, out, depth + 1, parentIsPerson);
-    return out;
-  }
-  const o = v as Json;
-  const isPerson = parentIsPerson || "firstName" in o || "personGuid" in o || "dateOfBirth" in o;
-  for (const [k, x] of Object.entries(o)) {
-    if (x && typeof x === "object") {
-      catalogSamples(x, out, depth + 1, isPerson && !/^(positions|ranks|adventures|requirements)$/i.test(k));
-      continue;
-    }
-    if (isPerson || PERSON_KEY.test(k) || !CATALOG_KEY.test(k)) continue;
-    const val = typeof x === "string" ? x.trim() : typeof x === "number" || typeof x === "boolean" ? String(x) : "";
-    if (!val || val.length > 70 || /^\d{4}-\d{2}-\d{2}/.test(val)) continue;
-    const set = (out[k] ??= new Set());
-    if (set.size < 12) set.add(val);
-  }
-  return out;
-}
-
-function firstList(data: unknown): Json[] {
-  if (Array.isArray(data)) return data.filter((x) => x && typeof x === "object") as Json[];
-  return objectArrays(data)[0] ?? [];
-}
-
-export interface ProbeResult {
+export interface AdvancementSync {
+  lines: ScoutbookLine[];
   steps: string[];
-  shapes: Record<string, Shape>;
-  /** Example values of catalog fields only (names, versions, status words). */
-  examples?: Record<string, Record<string, string[]>>;
+  scoutsRead: number;
+  /** Scouts left out because Scoutbook didn't answer for them (their records stay as they are). */
+  skipped: { name: string; reason: string }[];
   error?: string;
 }
 
-/** Sign in, read the youth roster and one scout's advancement, and report only the shapes. */
-export async function probeMyScoutingAdvancement(): Promise<ProbeResult> {
+/** Run at most `n` requests at a time. */
+function limiter(n: number) {
+  let active = 0;
+  const queue: (() => void)[] = [];
+  return async <T>(fn: () => Promise<T>): Promise<T> => {
+    if (active >= n) await new Promise<void>((r) => queue.push(r));
+    active++;
+    try {
+      return await fn();
+    } finally {
+      active--;
+      queue.shift()?.();
+    }
+  };
+}
+
+const done = (o: Json, re: RegExp) => isoDate(pick(o, re));
+/** The requirements list of a requirements answer (only its own items, not nested lists). */
+const reqList = (data: unknown): Json[] => {
+  const r = data && typeof data === "object" ? (data as Json).requirements : null;
+  return Array.isArray(r) ? (r.filter((x) => x && typeof x === "object") as Json[]) : [];
+};
+const flag = (v: unknown) => v === true || /^(true|yes|1)$/i.test(str(v));
+
+/** Read every scout's advancement from Scoutbook, as export lines. Read-only. */
+export async function fetchScoutbookAdvancement(): Promise<AdvancementSync> {
   const steps: string[] = [];
-  const shapes: Record<string, Shape> = {};
-  const examples: Record<string, Record<string, string[]>> = {};
-  if (!myScoutingConfigured()) return { steps, shapes, error: "Not set up: MYSCOUTING_USERNAME and MYSCOUTING_PASSWORD aren't set in Vercel." };
+  const lines: ScoutbookLine[] = [];
+  const skipped: AdvancementSync["skipped"] = [];
+  if (!myScoutingConfigured()) {
+    return { lines, steps, scoutsRead: 0, skipped, error: "Not set up: MYSCOUTING_USERNAME and MYSCOUTING_PASSWORD aren't set in Vercel." };
+  }
+  const started = Date.now();
   try {
     const s = await signIn();
-    steps.push("Signed in to my.scouting.");
-    const get = api(s.token);
-    const unit = await findUnit(get, s.userId, s.personGuid);
+    steps.push("Signed in to Scoutbook.");
+    const raw = api(s.token);
+    const run = limiter(PARALLEL);
+    let requests = 0;
+    const get = (path: string) => {
+      requests++;
+      return run(() => raw(path));
+    };
+    const unit = await findUnit(raw, s.userId, s.personGuid);
     steps.push(`Found ${unit.name}.`);
 
     const ys = await get(`/organizations/v2/units/${unit.guid}/youths`);
     if (ys.status !== 200) throw new StepError(`Reading the youth roster answered ${ys.status}. The account may need Key 3 or advancement access.`);
-    const youths = firstList(ys.data);
+    const youths = (objectArrays(ys.data).find((l) => l.some((y) => "userId" in y && "memberId" in y)) ?? []).filter(
+      (y) => str(y.userId) && str(y.memberId),
+    );
+    if (!youths.length) throw new StepError("The youth roster came back empty, or in a shape this app doesn't recognize.");
     steps.push(`Youth roster: ${youths.length} scouts.`);
-    shapes.youths = shapeOf(ys.data);
-    const one = youths.find((y) => str(pick(y, /^userId$/i)));
-    const uid = one ? str(pick(one, /^userId$/i)) : "";
-    if (!uid) throw new StepError("The youth roster has no userId field this app recognizes (see the shape below).");
 
-    for (const kind of ["ranks", "adventures", "awards"] as const) {
-      const r = await get(`/advancements/v2/youth/${uid}/${kind}`);
-      steps.push(`One scout's ${kind}: answered ${r.status}.`);
-      shapes[kind] = r.status === 200 ? shapeOf(r.data) : `answered ${r.status}`;
-      if (r.status !== 200) continue;
-      examples[kind] = Object.fromEntries(Object.entries(catalogSamples(r.data)).map(([k, v]) => [k, [...v]]));
-      // Requirements for the first item that has an id.
-      const items = objectArrays(r.data).flat();
-      const item = items.find((x) => str(pick(x, /^(id|adventureId|rankId|awardId)$/i)));
-      const id = item ? str(pick(item, /^(id|adventureId|rankId|awardId)$/i)) : "";
-      if (kind !== "awards" && id) {
-        const q = await get(`/advancements/v2/youth/${uid}/${kind}/${id}/requirements`);
-        steps.push(`Requirements for one of those ${kind}: answered ${q.status}.`);
-        shapes[`${kind}_requirements`] = q.status === 200 ? shapeOf(q.data) : `answered ${q.status}`;
-        if (q.status === 200) examples[`${kind}_requirements`] = Object.fromEntries(Object.entries(catalogSamples(q.data)).map(([k, v]) => [k, [...v]]));
-      }
-    }
-    return { steps, shapes, examples };
+    let read = 0;
+    await Promise.all(
+      youths.map(async (y) => {
+        const uid = str(y.userId);
+        const memberId = str(y.memberId).replace(/^0+(?=\d)/, "");
+        const name = `${str(y.firstName)} ${str(y.lastName)}`.trim();
+        const mine: ScoutbookLine[] = [];
+        const add = (type: string, adv: string, version: string, o: Json, completed: string | null) => {
+          if (!completed || !adv) return;
+          mine.push({
+            member_id: memberId,
+            name,
+            type,
+            adv,
+            version,
+            completed_on: completed,
+            approved: Boolean(done(o, /^leaderApprovedDate$/i)),
+            awarded: flag(o.awarded) || Boolean(done(o, /^awardedDate$/i)),
+            awarded_on: done(o, /^awardedDate$/i),
+          });
+        };
+        const fail = (what: string, status: number) => {
+          throw new StepError(`${what} answered ${status}`);
+        };
+        try {
+          if (Date.now() - started > TIME_BUDGET_MS) throw new StepError("ran out of time");
+          const [rk, ad, aw] = await Promise.all([
+            get(`/advancements/v2/youth/${uid}/ranks`),
+            get(`/advancements/v2/youth/${uid}/adventures`),
+            get(`/advancements/v2/youth/${uid}/awards`),
+          ]);
+          if (rk.status !== 200) fail("ranks", rk.status);
+          if (ad.status !== 200) fail("adventures", ad.status);
+          if (aw.status !== 200 && aw.status !== 404) fail("awards", aw.status);
+
+          // Ranks, and the requirements of any rank with progress.
+          const ranks = objectArrays(rk.data).flat().filter((r) => str(r.name) && "versionId" in r && !("requirementNumber" in r));
+          const rankReqs = ranks.map(async (r) => {
+            const rname = str(r.name);
+            const version = str(r.version);
+            add("Rank", `${rname} Rank`, version, r, done(r, /^dateEarned$/i));
+            const progress = Number(r.percentCompleted ?? 0) > 0 || done(r, /^dateEarned$/i);
+            if (!progress || !str(r.id)) return;
+            const q = await get(`/advancements/v2/youth/${uid}/ranks/${str(r.id)}/requirements`);
+            if (q.status !== 200) fail("rank requirements", q.status);
+            for (const x of reqList(q.data)) {
+              const num = str(x.requirementNumber) || str(x.listNumber).replace(/[()]/g, "");
+              add(`${rname} Rank Requirements`, num, version, x, done(x, /^dateCompleted$/i));
+            }
+          });
+
+          // Adventures, and the requirements of any adventure with progress.
+          const adventures = objectArrays(ad.data).flat().filter((a) => str(a.adventureName) && str(a.adventureId));
+          const advReqs = adventures.map(async (a) => {
+            const aname = str(a.adventureName);
+            const version = str(a.version);
+            add("Adventure", `${aname} Adventure`, version, a, done(a, /^dateCompleted$/i));
+            const progress = Number(a.percentCompleted ?? 0) > 0 || done(a, /^dateCompleted$/i);
+            if (!progress) return;
+            const q = await get(`/advancements/v2/youth/${uid}/adventures/${str(a.adventureId)}/requirements`);
+            if (q.status !== 200) fail("adventure requirements", q.status);
+            for (const x of reqList(q.data)) {
+              const num = str(x.requirementNumber) || str(x.listNumber).replace(/[()]/g, "");
+              add(`${aname} Adventure Requirements`, num, version, x, done(x, /^dateCompleted$/i));
+            }
+          });
+
+          // Awards (Totin' Chip, Whittling Chip...).
+          if (aw.status === 200) {
+            for (const w of objectArrays(aw.data).flat()) {
+              const wname = str(pick(w, /^(awardName|name|short)$/i));
+              add("Awards", wname, str(w.version), w, done(w, /^(dateEarned|dateCompleted)$/i));
+            }
+          }
+          await Promise.all([...rankReqs, ...advReqs]);
+          lines.push(...mine);
+          read++;
+        } catch (e) {
+          skipped.push({ name, reason: e instanceof StepError ? e.message : e instanceof Error && e.name === "AbortError" ? "timed out" : "couldn't be read" });
+        }
+      }),
+    );
+    steps.push(`Read ${read} scout${read === 1 ? "" : "s"} (${requests} requests, ${Math.round((Date.now() - started) / 1000)} seconds).`);
+    if (skipped.length) steps.push(`${skipped.length} scout${skipped.length === 1 ? "" : "s"} skipped; their records stay as they are.`);
+    return { lines, steps, scoutsRead: read, skipped };
   } catch (e) {
     const msg =
       e instanceof StepError
         ? e.message
         : e instanceof Error && e.name === "AbortError"
-          ? "my.scouting didn't answer in time."
-          : "Couldn't reach my.scouting.";
-    return { steps, shapes, error: msg };
+          ? "Scoutbook didn't answer in time."
+          : "Couldn't reach Scoutbook.";
+    return { lines, steps, scoutsRead: 0, skipped, error: msg };
   }
 }

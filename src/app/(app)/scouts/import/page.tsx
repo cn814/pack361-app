@@ -6,11 +6,13 @@ import { requireMember } from "@/lib/data";
 import { getLastImport, isAdmin } from "@/lib/advancement-data";
 import { fmtDay, fmtTime } from "@/lib/format";
 import ImportForm from "./ImportForm";
-import ConnectionTest from "./ConnectionTest";
+import ScoutbookSync from "./ScoutbookSync";
 import { myScoutingConfigured } from "@/lib/myscouting";
 import { changesText } from "@/lib/import-changes";
 
 export const metadata: Metadata = { title: "Import from Scoutbook" };
+// Reading every scout from Scoutbook can take a few minutes.
+export const maxDuration = 300;
 
 export default async function ImportPage() {
   const me = await requireMember();
@@ -49,7 +51,7 @@ export default async function ImportPage() {
       )}
 
       <ImportForm />
-      <ConnectionTest configured={myScoutingConfigured()} />
+      <ScoutbookSync configured={myScoutingConfigured()} />
     </>
   );
 }

@@ -156,6 +156,68 @@ export interface ParsedExport {
   scouts: number;
 }
 
+/** One Scoutbook advancement line, from the CSV export or read straight from Scoutbook. */
+export interface ScoutbookLine {
+  member_id: string;
+  name: string;
+  /** Scoutbook's "Advancement Type": Rank, Adventure, "Bear Strong Adventure Requirements"... */
+  type: string;
+  /** Scoutbook's "Advancement": "Wolf Rank", "Bear Strong Adventure", "2a"... */
+  adv: string;
+  version: string;
+  completed_on: string | null;
+  approved: boolean;
+  awarded: boolean;
+  awarded_on: string | null;
+}
+
+/** Lines to rows for import_scout_advancement(); repeats of the same record are dropped. */
+export function rowsFromLines(lines: ScoutbookLine[], catalog: CatalogAdventure[]): { rows: ImportRow[]; skipped: number } {
+  const index = new CatalogIndex(catalog);
+  const rows: ImportRow[] = [];
+  const seen = new Set<string>();
+  let skipped = 0;
+  for (const l of lines) {
+    const type = l.type.trim();
+    const name = l.adv.trim();
+    if (!l.member_id || !type || !name) {
+      skipped++;
+      continue;
+    }
+    const dedupe = [l.member_id, type, name, l.version].join("|");
+    if (seen.has(dedupe)) {
+      skipped++;
+      continue;
+    }
+    seen.add(dedupe);
+    const base = {
+      member_id: l.member_id,
+      name: l.name,
+      version: l.version,
+      completed_on: l.completed_on,
+      approved: l.approved,
+      awarded: l.awarded,
+      awarded_on: l.awarded_on,
+      source_type: type,
+      source_name: name,
+    };
+    if (type === "Adventure") {
+      const { adventure, rank } = index.resolve(name);
+      rows.push({ ...base, kind: "adventure", rank, adventure, item: adventure });
+    } else if (type === "Rank") {
+      rows.push({ ...base, kind: "rank", rank: rankFromLabel(name), adventure: null, item: name });
+    } else if (/ Adventure Requirements$/i.test(type)) {
+      const { adventure, rank } = index.resolve(type);
+      rows.push({ ...base, kind: "requirement", rank, adventure, item: name });
+    } else if (/ Rank Requirements$/i.test(type)) {
+      rows.push({ ...base, kind: "requirement", rank: rankFromLabel(type), adventure: null, item: name });
+    } else {
+      rows.push({ ...base, kind: "award", rank: null, adventure: null, item: name });
+    }
+  }
+  return { rows, skipped };
+}
+
 export function parseScoutbookExport(text: string, catalog: CatalogAdventure[]): ParsedExport {
   const table = parseCsv(text.replace(/^﻿/, ""));
   if (!table.length) throw new Error("The file is empty.");
@@ -177,54 +239,21 @@ export function parseScoutbookExport(text: string, catalog: CatalogAdventure[]):
     awarded: col("Awarded"),
     awardedOn: header.indexOf("awarded date"),
   };
-  const index = new CatalogIndex(catalog);
-  const rows: ImportRow[] = [];
-  const seen = new Set<string>();
-  let skipped = 0;
-
-  for (const r of table.slice(1)) {
+  const lines: ScoutbookLine[] = table.slice(1).map((r) => {
     const get = (i: number) => (i >= 0 ? (r[i] ?? "").trim() : "");
-    const member_id = get(c.id);
-    const type = get(c.type);
-    const name = get(c.adv);
-    const version = get(c.version);
-    if (!member_id || !type || !name) {
-      skipped++;
-      continue;
-    }
-    const dedupe = [member_id, type, name, version].join("|");
-    if (seen.has(dedupe)) {
-      skipped++;
-      continue;
-    }
-    seen.add(dedupe);
-
-    const base = {
-      member_id,
+    return {
+      member_id: get(c.id),
       name: `${get(c.first)} ${get(c.last)}`.trim(),
-      version,
+      type: get(c.type),
+      adv: get(c.adv),
+      version: get(c.version),
       completed_on: isoDate(get(c.done)),
       approved: get(c.approved).toLowerCase() === "true",
       awarded: get(c.awarded).toLowerCase() === "true",
       awarded_on: isoDate(get(c.awardedOn)),
-      source_type: type,
-      source_name: name,
     };
-
-    if (type === "Adventure") {
-      const { adventure, rank } = index.resolve(name);
-      rows.push({ ...base, kind: "adventure", rank, adventure, item: adventure });
-    } else if (type === "Rank") {
-      rows.push({ ...base, kind: "rank", rank: rankFromLabel(name), adventure: null, item: name });
-    } else if (/ Adventure Requirements$/i.test(type)) {
-      const { adventure, rank } = index.resolve(type);
-      rows.push({ ...base, kind: "requirement", rank, adventure, item: name });
-    } else if (/ Rank Requirements$/i.test(type)) {
-      rows.push({ ...base, kind: "requirement", rank: rankFromLabel(type), adventure: null, item: name });
-    } else {
-      rows.push({ ...base, kind: "award", rank: null, adventure: null, item: name });
-    }
-  }
+  });
+  const { rows, skipped } = rowsFromLines(lines, catalog);
   return { rows, skipped, scouts: new Set(rows.map((r) => r.member_id)).size };
 }
 

@@ -5,10 +5,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/data";
 import { getCatalog, getScout, isAdmin } from "@/lib/advancement-data";
-import { parseScoutbookExport, RANKS } from "@/lib/advancement";
+import { parseScoutbookExport, rowsFromLines, RANKS, type ImportRow } from "@/lib/advancement";
 import type { DenRank } from "@/lib/types";
 import type { ImportChanges } from "@/lib/import-changes";
-import { probeMyScoutingAdvancement, type ProbeResult } from "@/lib/myscouting";
+import { fetchScoutbookAdvancement } from "@/lib/myscouting";
+import { compareAdvancement, type CompareResult } from "@/lib/scoutbook-compare";
 
 export type FormState = { ok?: boolean; error?: string; message?: string };
 
@@ -100,15 +101,19 @@ export async function importScoutbook(_prev: ImportState, form: FormData): Promi
     return { error: e instanceof Error ? e.message : "Couldn't read that file." };
   }
   if (!parsed.rows.length) return { error: "No advancement rows found in that file." };
+  return runImport(file.name.slice(0, 200), parsed.rows);
+}
 
+/** Save advancement rows (from the CSV or read from Scoutbook) and report what changed. */
+async function runImport(fileName: string, rows: ImportRow[]): Promise<ImportState> {
   const supabase = await createClient();
   const { count: before } = await supabase
     .from("advancement_submissions")
     .select("id", { count: "exact", head: true })
     .eq("status", "approved");
   const { data, error } = await supabase.rpc("import_scout_advancement", {
-    p_file_name: file.name.slice(0, 200),
-    p_rows: parsed.rows,
+    p_file_name: fileName,
+    p_rows: rows,
   });
   if (error) return { error: `Import failed: ${error.message}` };
   const { count: after } = await supabase
@@ -128,9 +133,31 @@ export async function importScoutbook(_prev: ImportState, form: FormData): Promi
   };
 }
 
-/** Admin: test the automatic Scoutbook connection (reports field names only, no scout data). */
-export async function testScoutbookConnection(): Promise<ProbeResult> {
+export type ScoutbookCompareState = {
+  error?: string;
+  steps: string[];
+  skipped: { name: string; reason: string }[];
+  compare?: CompareResult;
+};
+
+/** Admin: read everyone's advancement from Scoutbook and show what would change. Saves nothing. */
+export async function compareScoutbook(): Promise<ScoutbookCompareState> {
   const me = await requireMember();
-  if (!isAdmin(me)) return { steps: [], shapes: {}, error: "Only pack admins can do this." };
-  return probeMyScoutingAdvancement();
+  if (!isAdmin(me)) return { error: "Only pack admins can do this.", steps: [], skipped: [] };
+  const sync = await fetchScoutbookAdvancement();
+  if (sync.error) return { error: sync.error, steps: sync.steps, skipped: sync.skipped };
+  const { rows } = rowsFromLines(sync.lines, await getCatalog());
+  return { steps: sync.steps, skipped: sync.skipped, compare: await compareAdvancement(rows) };
+}
+
+/** Admin: read everyone's advancement from Scoutbook and save it, like uploading the export. */
+export async function importFromScoutbook(): Promise<ImportState & { steps?: string[]; skipped?: { name: string; reason: string }[] }> {
+  const me = await requireMember();
+  if (!isAdmin(me)) return { error: "Only pack admins can import." };
+  const sync = await fetchScoutbookAdvancement();
+  if (sync.error) return { error: sync.error, steps: sync.steps, skipped: sync.skipped };
+  const { rows } = rowsFromLines(sync.lines, await getCatalog());
+  if (!rows.length) return { error: "Scoutbook didn't return any completed advancement.", steps: sync.steps, skipped: sync.skipped };
+  const res = await runImport("Scoutbook (read automatically)", rows);
+  return { ...res, steps: sync.steps, skipped: sync.skipped };
 }
