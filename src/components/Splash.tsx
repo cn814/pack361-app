@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { SPLASH_KEY } from "@/lib/splash";
+import { SPLASH_COOKIE } from "@/lib/splash";
 
 const LONGEST_MS = 12000; // never hold anyone up longer than this
 
-/** The opening animation. Its <head> script (src/lib/splash.ts) decides whether it shows. */
+/** The opening animation after signing in. Its <head> script (src/lib/splash.ts) decides whether it shows. */
 export default function Splash() {
   const video = useRef<HTMLVideoElement>(null);
   const [leaving, setLeaving] = useState(false);
@@ -13,11 +13,8 @@ export default function Splash() {
   useEffect(() => {
     const root = document.documentElement;
     if (root.getAttribute("data-splash") !== "show") return;
-    try {
-      sessionStorage.setItem(SPLASH_KEY, "1");
-    } catch {
-      // Private browsing: it may show again next time, that's all.
-    }
+    // Shown once per sign-in: clear the marker the sign-in left.
+    document.cookie = `${SPLASH_COOKIE}=; Max-Age=0; path=/`;
     let done = false;
     const finish = () => {
       if (done) return;

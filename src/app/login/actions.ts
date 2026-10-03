@@ -1,7 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { SPLASH_COOKIE, SPLASH_COOKIE_OPTIONS } from "@/lib/splash";
 import { createClient } from "@/lib/supabase/server";
 
 const HELP = "info@pack361.org";
@@ -56,5 +57,6 @@ export async function verifyLoginCode(_prev: LoginState, form: FormData): Promis
         : "That code didn't work or has expired. Request a new one below.",
     };
   }
+  (await cookies()).set(SPLASH_COOKIE, "1", SPLASH_COOKIE_OPTIONS); // the welcome animation
   redirect("/");
 }
