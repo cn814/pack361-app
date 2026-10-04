@@ -47,7 +47,7 @@ export async function cancelDocumentUpload(path: string) {
 
 /**
  * Remove a file no document uses any more. The person's own key works for their own files
- * and for committee; when a leader replaces a file that someone else uploaded (committee
+ * and for pack leadership; when a leader replaces a file that someone else uploaded (pack leadership
  * did an earlier replacement), the secret key tidies up instead.
  */
 async function removeOldFile(path: string) {
@@ -140,7 +140,7 @@ export async function setDocumentArchived(form: FormData) {
   redirect(archive ? "/documents?view=archived&done=archived" : "/documents?done=restored");
 }
 
-/** Committee: delete a document and its file for good. */
+/** Pack leadership: delete a document and its file for good. */
 export async function deleteDocument(form: FormData) {
   const me = await requireMember();
   const id = String(form.get("id") ?? "");

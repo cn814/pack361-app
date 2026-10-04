@@ -28,7 +28,7 @@ async function runCheck(): Promise<ActionResult> {
   }
 }
 
-/** Committee: save the council calendar link, then check it. */
+/** Pack leadership: save the council calendar link, then check it. */
 export async function saveCouncilLink(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
   if (!isCommittee(me)) return { error: "Only pack leadership can change the council calendar link." };
@@ -45,7 +45,7 @@ export async function saveCouncilLink(_prev: ActionResult, form: FormData): Prom
   return checked.error ? { error: `Link saved, but the check didn't work. ${checked.error}` } : checked;
 }
 
-/** Committee: check the council calendar now. */
+/** Pack leadership: check the council calendar now. */
 export async function checkCouncilNow(): Promise<ActionResult> {
   const me = await requireMember();
   if (!isCommittee(me)) return { error: "Only pack leadership can check the council calendar." };
@@ -65,7 +65,7 @@ interface Staged {
   event_id: string | null;
 }
 
-/** Committee: put a council event on the pack calendar. */
+/** Pack leadership: put a council event on the pack calendar. */
 export async function addCouncilEvent(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
   if (!isCommittee(me)) return { error: "Only pack leadership can add council events." };
@@ -129,7 +129,7 @@ export async function addCouncilEvent(_prev: ActionResult, form: FormData): Prom
   return { ok: true, message: "Added to our calendar." };
 }
 
-/** Committee: skip a council event, or undo a skip. */
+/** Pack leadership: skip a council event, or undo a skip. */
 export async function setCouncilSkipped(form: FormData) {
   const me = await requireMember();
   if (!isCommittee(me)) return;
@@ -145,7 +145,7 @@ export async function setCouncilSkipped(form: FormData) {
 }
 
 /**
- * Committee: undo an add. With "also take it off our calendar" the pack event moves to the
+ * Pack leadership: undo an add. With "also take it off our calendar" the pack event moves to the
  * archive (the same as a leader's "Take off the calendar"); adding it again brings it back.
  * Without, the pack event stays and is no longer linked to the council event.
  */

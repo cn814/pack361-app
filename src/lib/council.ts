@@ -7,15 +7,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseIcs, type FeedEvent } from "./twh";
 import { easternDate, easternParts, easternWallToIso, startOfEasternDay } from "./tz";
 
-// Baltimore Area Council calendar (Black Pug Software's ScoutingEvent). The committee saves the
+// Baltimore Area Council calendar (Black Pug Software's ScoutingEvent). Pack leadership saves the
 // calendar's subscription link in pack_settings.council_calendar_url. Every day (and from the
-// "Check now" button) the sync copies the feed into council_events, where the committee picks
+// "Check now" button) the sync copies the feed into council_events, where pack leadership picks
 // which events go on the pack calendar (/events/council). It never deletes and never puts
 // anything on the pack calendar by itself: it only
 //   - adds and refreshes council_events rows, and marks the ones that left the feed (removed_at);
 //   - keeps the title, time and place of pack events made from a council event in step with
 //     the council, as long as nobody edited them in the app (events.source stays 'council').
-// It writes with the secret-key client: committee members can't insert council_events rows,
+// It writes with the secret-key client: pack leadership can't insert council_events rows,
 // and not everyone who presses "Check now" can write pack_settings.
 //
 // The link is typed in by a person, so the download only goes to public https addresses:
@@ -46,7 +46,7 @@ export const NOT_A_CALENDAR =
 const NOT_ALLOWED = "The council calendar link points to an address the app won't connect to. Use the public webcal:// or https:// link from the council calendar.";
 const TOO_LARGE = "The council calendar file is too large.";
 
-/** A problem worth showing to the committee as is. Messages never include server details. */
+/** A problem worth showing to pack leadership as is. Messages never include server details. */
 export class FeedError extends Error {}
 
 /** https:// form of a calendar link (webcal:// → https://), or null if it isn't a public https address. */
@@ -506,7 +506,7 @@ export async function syncCouncil(db: SupabaseClient, transport?: FeedTransport)
       const moved = !sameTime(old.starts_at, row.starts_at) || !sameTime(old.ends_at, row.ends_at) || old.all_day !== row.all_day;
       if (old.title !== row.title || moved || old.location !== row.location || old.url !== row.url) result.changed++;
       // Pass the council's changes on to the pack event. Only what changed in the feed, so a
-      // title the committee shortened when adding it stays until the council renames the event.
+      // title pack leadership shortened when adding it stays until the council renames the event.
       if (old.status === "added" && old.event_id) {
         const patch: Record<string, unknown> = {};
         if (old.title !== row.title) patch.title = row.title.slice(0, 200);
@@ -575,7 +575,7 @@ export async function syncCouncil(db: SupabaseClient, transport?: FeedTransport)
   }
 }
 
-/** One line about a check, for the committee. */
+/** One line about a check, for pack leadership. */
 export function councilSummary(r: CouncilSyncResult): string {
   if (r.off) return "Add the council calendar link first.";
   if (r.error) return r.error;

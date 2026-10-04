@@ -68,7 +68,7 @@ After changing anything in Vercel, **Redeploy** (Deployments → ⋯ → Redeplo
 6. Change or delete the keys you made (section 2), especially `TWH_CALENDAR_URL` and any key tied to
    your own account.
 7. Update the **Owner today** column above and the contact line in CONTRIBUTING.md, and commit.
-8. Tell the committee who to ask now.
+8. Tell pack leadership who to ask now.
 
 ## 4. When you're taking it over (incoming)
 

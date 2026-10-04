@@ -10,7 +10,7 @@ schema (dump, fresh database, migrations, data-only load, row counts match).
   links them to their roster row by email.
 - **Photos, pack documents and receipts.** The files live in Supabase Storage (`pack-photos`,
   `pack-docs`, `receipts`). Their rows are in the backup, but the files are not. Keep a copy of
-  important pack documents somewhere else too (the committee's shared drive), and the treasurer
+  important pack documents somewhere else too (pack leadership's shared drive), and the treasurer
   should keep receipts with the pack's records as well (Money → Reports → Every transaction is a
   good index).
 - **Files families saved on their phones** ("Saved on this phone"). These never reach the server,

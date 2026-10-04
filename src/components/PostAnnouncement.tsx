@@ -13,7 +13,7 @@ const CATEGORIES = ["General", "Campout", "Pack Meeting", "Den", "Derby", "Servi
 
 /**
  * Leaders post to the whole pack, or message one den's families (den leaders: their own dens;
- * committee members: any den). Den messages can also go out by email.
+ * pack leadership: any den). Den messages can also go out by email.
  */
 export default function PostAnnouncement({
   dens,

@@ -13,7 +13,7 @@ const slugify = (s: string) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
 
-/** Committee: create or update a guide page. */
+/** Pack leadership: create or update a guide page. */
 export async function saveGuidePage(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
   if (!isCommittee(me)) return { error: "Only pack leadership can edit the guide." };
@@ -44,7 +44,7 @@ export async function saveGuidePage(_prev: ActionResult, form: FormData): Promis
   redirect(`/guide/${slug}`);
 }
 
-/** Committee: remove a guide page. */
+/** Pack leadership: remove a guide page. */
 export async function deleteGuidePage(form: FormData) {
   const me = await requireMember();
   if (!isCommittee(me)) return;

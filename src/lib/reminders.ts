@@ -64,7 +64,7 @@ interface Reminder {
 }
 
 const EVENT_COLS = "id, title, category, starts_at, ends_at, all_day, location_name, address, den_id, ranks, leaders_only, rsvp_enabled, rsvp_by";
-/** Their own flow (den meetings) or not for families (committee). */
+/** Their own flow (den meetings) or not for families (committee meetings). */
 const NO_NUDGE = new Set(["Den Meeting", "Committee"]);
 const NO_DAY_BEFORE = new Set(["Den Meeting"]);
 

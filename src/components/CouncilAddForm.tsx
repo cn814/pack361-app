@@ -14,7 +14,7 @@ const RANKS = [
   ["aol", "AOL"],
 ] as const;
 
-/** Committee: the small form that puts a council event on the pack calendar. */
+/** Pack leadership: the small form that puts a council event on the pack calendar. */
 export default function CouncilAddForm({
   uid,
   title,

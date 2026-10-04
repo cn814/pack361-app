@@ -89,8 +89,8 @@ npm run dev
 
 ## Givebutter, calendar, alerts
 - **Givebutter**: a daily Vercel Cron (`vercel.json`, 10:00 UTC = 6 AM EDT / 5 AM EST) and a "Sync now" button (admins on
-  the Pack store page, the committee on Leaders → Money → Settings) copy campaigns and orders. Admins choose which campaigns the store lists (pack attire). Campaigns link to calendar events by Givebutter id or sign-up
-  link; families are matched by email. Families see their own orders; the committee sees everyone's; other leaders see
+  the Pack store page, pack leadership on Leaders → Money → Settings) copy campaigns and orders. Admins choose which campaigns the store lists (pack attire). Campaigns link to calendar events by Givebutter id or sign-up
+  link; families are matched by email. Families see their own orders; pack leadership sees everyone's; other leaders see
   everyone's except dues payments.
 - **Calendar**: each adult gets a private feed, `/api/calendar/<token>.ics` (Events page -> "Add the
   pack calendar"). It follows the den-aware rules below (pack events plus their dens' events and
@@ -165,8 +165,8 @@ npm run dev
 - **Documents** (`/documents`): the pack's non-sensitive papers (minutes, budget, blank forms,
   packing lists, den leader guide, bylaws). Private bucket `pack-docs`: 10 MB max; PDF, Word,
   Excel, PowerPoint, text, CSV, JPEG, PNG, WebP. Each document is for everyone, leaders or
-  committee, optionally one den. Leaders upload straight from the browser through a signed upload
-  address; committee or the uploader edits, archives or replaces the file; only committee
+  pack leadership, optionally one den. Leaders upload straight from the browser through a signed upload
+  address; pack leadership or the uploader edits, archives or replaces the file; only pack leadership
   deletes. Files open only through `/documents/<id>`, which checks access and redirects to a link
   that lasts 60 seconds; paste `[Title](/documents/<id>)` into a guide page to link one. Never for
   medical forms, insurance cards or personal details. Pack admin shows storage per bucket
@@ -202,9 +202,9 @@ npm run dev
 - **Events in the app**: leaders add events (Events → Add an event) and edit any event from its
   page. Editing a TroopWebHost event detaches it from the sync (`source = 'manual'`), so the app is
   the calendar of record and TroopWebHost can be dropped. Removing `TWH_CALENDAR_URL` stops the sync.
-- **Council events** (Events → Council events; committee picks, den leaders can look): the daily
+- **Council events** (Events → Council events; pack leadership picks, den leaders can look): the daily
   job and a "Check now" button copy the Baltimore Area Council calendar (ScoutingEvent feed) into
-  `council_events`. The committee filters out meetings, holidays and other districts' events (word
+  `council_events`. Pack leadership filters out meetings, holidays and other districts' events (word
   lists in `src/lib/council-filters.ts`), then adds events to the pack calendar or skips them; both
   can be undone. Added events follow the council's title, time and place until someone edits them in
   the app. Events that leave the council calendar are flagged, never deleted. The feed link is
@@ -241,7 +241,7 @@ npm run dev
   campout, money due, the photo permission question, and for leaders photos to review, forms turned in
   and messages from families. The badge counts new posts and polls since the list was last opened
   (`inbox_reads`) plus open to-dos. Home shows the top three to-dos.
-- **Den messages**: a leader posts to one den (den leaders: their own dens; committee, Cubmaster
+- **Den messages**: a leader posts to one den (den leaders: their own dens; pack leadership, Cubmaster
   and admins: any den) from Home, Notifications or the den's page. Only that den's families and
   leaders see it (RLS). It goes out as a phone alert and, optionally, an email whose replies go to
   the leader.
@@ -249,7 +249,7 @@ npm run dev
   (pack-wide and den) goes through Brevo's free plan (300 a day, `BREVO_API_KEY`,
   `src/lib/bulk-email.ts`), so it doesn't use up the Resend quota the sign-in codes need. Without
   Brevo, den emails of 60 or fewer go through Resend and the pack-wide option is hidden. Parents never message each other or scouts.
-- **Pack guide** (`/guide`, `guide_pages`): searchable pages about how the pack works. Committee,
+- **Pack guide** (`/guide`, `guide_pages`): searchable pages about how the pack works. Pack leadership,
   Cubmaster and admins edit them in the app with a small Markdown subset (`src/components/GuideBody.tsx`).
   Drafts are visible to leaders only; `[Leaders: …]` placeholders are highlighted.
 - **Paperwork**: each scout and adult's medical form (Parts A and B) status on My family and on
@@ -265,7 +265,7 @@ npm run dev
   leader to confirm. A captured order
   is recorded by `record_paypal_capture()` (secret key only, safe to run twice); the daily cron
   finishes checkouts a browser didn't. Events can have a cost per family, scout and adult, and an RSVP
-  "yes" keeps the family's event charge up to date (paid charges never change). The committee adds
+  "yes" keeps the family's event charge up to date (paid charges never change). Pack leadership adds
   fees, confirms payments, sets amounts and "other ways to pay", and downloads a CSV. Registration is
   tracked by expiration date (see **Registration**); the pack doesn't bill it unless
   `registration_billing` is turned on in Money → Settings, which brings back the national and
@@ -310,13 +310,13 @@ npm run dev
     never touched. Scout names, phone numbers and addresses from Givebutter are used only during the
     sync and never stored; the order keeps the matched scout ids and a short note without names.
   - Money → Givebutter dues lists the payments. "Needs review" ones get "Match to…" (pick the family,
-    tick its scouts; `match_givebutter_dues()`, committee only) or "Not dues" for donations.
+    tick its scouts; `match_givebutter_dues()`, pack leadership only) or "Not dues" for donations.
   - A leader can reopen a Givebutter-paid charge (refund it in Givebutter); the sync won't mark it
     paid again.
 - **Registration** (Money → Registration): families renew and pay Scouting America and council
   registration themselves at my.scouting.org; the pack doesn't collect it. The tab tracks each active
   scout's and registered adult's expiration date (Current, Expires in N days, Expired, Unknown), with
-  an inline date per person and one date for everyone ticked (`set_registration_expiry()`, committee
+  an inline date per person and one date for everyone ticked (`set_registration_expiry()`, pack leadership
   only; a new date restarts the reminders). My family shows the dates with a "Renew at my.scouting.org"
   link within 30 days, Notifications adds a to-do, and the daily cron reminds families 30, 7 and 0
   days before (push, or email when push didn't reach anyone). The old per-person national/council fee

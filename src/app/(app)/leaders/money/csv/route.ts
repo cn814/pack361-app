@@ -5,7 +5,7 @@ import { getAllCharges, inSeason } from "@/lib/money-data";
 import { CHARGE_KINDS, CHARGE_STATUSES, chargeFor, KIND_LABEL, ownerName, type ChargeKind, type ChargeStatus } from "@/lib/money";
 import { easternDate } from "@/lib/tz";
 
-// Committee: the charges list as a spreadsheet for the treasurer's records (same filters as the page).
+// Pack leadership: the charges list as a spreadsheet for the treasurer's records (same filters as the page).
 
 /** Quote a cell; a leading = + - @ is neutralised so a spreadsheet won't run it as a formula. */
 function cell(v: string | number | null | undefined): string {

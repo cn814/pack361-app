@@ -50,7 +50,7 @@ export async function withdrawOffer(form: FormData) {
   refresh();
 }
 
-/** Committee: add or change a role. */
+/** Pack leadership: add or change a role. */
 export async function saveRole(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
   if (!isCommittee(me)) return { error: "Only pack leadership can change these jobs." };
@@ -75,7 +75,7 @@ export async function saveRole(_prev: ActionResult, form: FormData): Promise<Act
   return { ok: true, message: id ? "Saved" : "Added. Families can see it now." };
 }
 
-/** Committee: close a role (optionally saying who's doing it) or open it again. */
+/** Pack leadership: close a role (optionally saying who's doing it) or open it again. */
 export async function setRoleOpen(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
   if (!isCommittee(me)) return { error: "Only pack leadership can change these jobs." };
@@ -95,7 +95,7 @@ export async function setRoleOpen(_prev: ActionResult, form: FormData): Promise<
   return { ok: true, message: open ? "Open again" : "Closed" };
 }
 
-/** Committee: delete a role and its offers for good. */
+/** Pack leadership: delete a role and its offers for good. */
 export async function deleteRole(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
   if (!isCommittee(me)) return { error: "Only pack leadership can change these jobs." };
