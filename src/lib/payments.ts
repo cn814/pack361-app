@@ -13,7 +13,7 @@ export function onlinePaymentsReady(): boolean {
   return paypalConfigured() && adminConfigured();
 }
 
-/** Is this charge the signed-in person's to pay? (Pack leadership can read everyone's.) */
+/** Is this charge the signed-in person's to pay? (Key leaders can read everyone's.) */
 export function isMine(c: { family_id: string | null; adult_id: string | null }, me: Pick<Adult, "id" | "family_id">): boolean {
   return me.family_id ? c.family_id === me.family_id : c.family_id === null && c.adult_id === me.id;
 }

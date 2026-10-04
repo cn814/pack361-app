@@ -23,7 +23,7 @@ export async function remindFamilies(_prev: ActionResult, form: FormData): Promi
   const eventId = String(form.get("event_id") ?? "");
   const kind = String(form.get("kind") ?? "") as ReadyKind;
   if (!UUID.test(eventId) || !READY_KINDS.includes(kind)) return { error: "That reminder wasn't found." };
-  if (kind === "pay" && !canSeeMoney(me)) return { error: "Only pack leadership can send payment reminders." };
+  if (kind === "pay" && !canSeeMoney(me)) return { error: "Only key leaders can send payment reminders." };
   const e = await getEvent(eventId);
   if (!e) return { error: "That event wasn't found." };
   const email = form.getAll("email").includes("on");

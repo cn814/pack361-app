@@ -27,8 +27,8 @@ export default async function HelpWantedPage() {
       <BackLink href="/pack" label="Pack" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Help wanted</h1>
       <p className="-mt-1 text-sm text-muted">
-        Grown-up jobs that keep the pack running this year. Many hands make each one small. Tap &ldquo;I can help&rdquo; and someone from pack
-        leadership will reach out.
+        Grown-up jobs that keep the pack running this year. Many hands make each one small. Tap &ldquo;I can help&rdquo; and a key leader will reach
+        out.
       </p>
 
       {roles.length === 0 ? (
@@ -81,7 +81,7 @@ function Leadership({ roles, leaders, load }: { roles: PackRole[]; leaders: Lead
   return (
     <>
       <h2 className="mt-2 flex items-center gap-1.5 px-1 text-base font-extrabold text-pine-950">
-        <HandHeart className="h-4 w-4 text-pine" aria-hidden /> For pack leadership
+        <HandHeart className="h-4 w-4 text-pine" aria-hidden /> For key leaders
       </h2>
 
       <details className="card">
@@ -168,7 +168,7 @@ function Leadership({ roles, leaders, load }: { roles: PackRole[]; leaders: Lead
         <div>
           <h3 className="text-[15px] font-extrabold text-ink">Volunteer jobs this season ({season.label})</h3>
           <p className="text-xs text-muted">
-            Sign-ups for event volunteer jobs since July 1, per family. Only pack leadership sees this; use it to ask families who haven&apos;t had a turn.
+            Sign-ups for event volunteer jobs since July 1, per family. Only key leaders see this; use it to ask families who haven&apos;t had a turn.
           </p>
         </div>
         {helped.length === 0 ? (

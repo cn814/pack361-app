@@ -11,7 +11,7 @@ import type { Adult, PackEvent } from "@/lib/types";
  * Leaders: "Ready to go?" for an event that takes RSVPs. What the families going still need
  * (medical forms, permission slips, payment, volunteer jobs, trained adults for overnights),
  * with a button to remind just those families. Renders nothing for families. The payment row
- * is built only for pack leadership (see canSeeMoney in lib/ready).
+ * is built only for key leaders (see canSeeMoney in lib/ready).
  */
 export default async function ReadyToGo({ e, me }: { e: PackEvent; me: Adult }) {
   const report = await getReadiness(e, me);

@@ -5,7 +5,7 @@ import type { AppRole } from "@/lib/types";
 const ROLES: { value: AppRole; label: string; help: string }[] = [
   { value: "parent", label: "Parent", help: "their own family" },
   { value: "den_leader", label: "Den leader", help: "roster, approvals for their den, announcements" },
-  { value: "committee", label: "Leadership", help: "den-leader access for the whole pack, plus Money, the Pack guide and council events" },
+  { value: "committee", label: "Key leader", help: "den-leader access for the whole pack, plus Money, the Pack guide and council events" },
   { value: "cubmaster", label: "Cubmaster", help: "everything, including roster changes" },
   { value: "admin", label: "Pack admin", help: "everything, including roster changes" },
 ];

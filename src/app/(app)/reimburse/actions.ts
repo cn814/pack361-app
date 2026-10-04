@@ -79,7 +79,7 @@ export async function saveMyRequest(_prev: ActionResult, form: FormData): Promis
   } else {
     const { data: old } = await supabase.from("expenses").select("receipt_path, status").eq("id", id).maybeSingle();
     if (!old) return fail("Request not found.");
-    if (old.status !== "submitted") return fail("Leadership is already handling this request, so it can't be changed. Talk to the treasurer.");
+    if (old.status !== "submitted") return fail("A key leader is already handling this request, so it can't be changed. Talk to the treasurer.");
     const { data, error } = await supabase.from("expenses").update(row).eq("id", id).select("id").maybeSingle();
     if (error || !data) return fail("Couldn't save your changes. Try again.");
     if (newPath && old.receipt_path && old.receipt_path !== newPath) await removeReceipts([old.receipt_path as string]);

@@ -31,7 +31,7 @@ export async function postAnnouncement(_prev: PostState, form: FormData): Promis
     return postEventMessage(me, eventMsg, title, body, form.getAll("notify").includes("on"), email, audience);
   }
   const supabase = await createClient();
-  // RLS: den leaders can only message the dens they lead; pack leadership any den.
+  // RLS: den leaders can only message the dens they lead; key leaders any den.
   const { data: post, error } = await supabase
     .from("announcements")
     .insert({

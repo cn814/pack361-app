@@ -69,7 +69,7 @@ export default async function ReimbursePage({ searchParams }: PageProps<"/reimbu
                   {e.status === "submitted" && e.pay_me_by && (
                     <span className="block text-xs text-muted">You asked for: {PAY_ME_BY_LABEL[e.pay_me_by].replace(/ \(.*\)$/, "")}</span>
                   )}
-                  {e.review_note && <span className="block text-xs text-navy">From pack leadership: “{e.review_note}”</span>}
+                  {e.review_note && <span className="block text-xs text-navy">From a key leader: “{e.review_note}”</span>}
                 </span>
                 <span className="shrink-0 text-right">
                   <span className="block text-sm font-extrabold text-ink">{fmtMoney(e.amount_cents)}</span>

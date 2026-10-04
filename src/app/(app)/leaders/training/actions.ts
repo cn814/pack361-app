@@ -67,7 +67,7 @@ export type ImportResult = ActionResult & { trainings?: number; adults?: number;
  */
 export async function applyTrainingImport(payload: ImportPayload): Promise<ImportResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { error: "Only pack leadership can import training." };
+  if (!isCommittee(me)) return { error: "Only key leaders can import training." };
   const rows = Array.isArray(payload?.rows) ? payload.rows : [];
   const ids = Array.isArray(payload?.memberIds) ? payload.memberIds : [];
   if (rows.length > IMPORT_MAX || ids.length > IMPORT_MAX) return { error: `Import at most ${IMPORT_MAX} rows at a time.` };
@@ -127,6 +127,6 @@ export async function saveMyMemberId(_prev: ActionResult, form: FormData): Promi
  */
 export async function fetchFromMyScouting(): Promise<SyncResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { rows: [], steps: [], error: "Only pack leadership can do this." };
+  if (!isCommittee(me)) return { rows: [], steps: [], error: "Only key leaders can do this." };
   return fetchMyScoutingTraining();
 }

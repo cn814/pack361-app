@@ -1,4 +1,4 @@
-// "View as": leaders can see the app the way a parent, den leader or pack leadership sees it.
+// "View as": leaders can see the app the way a parent, den leader or key leader sees it.
 // It only changes what the pages show; the database still checks the person's real permissions.
 import type { AppRole } from "./types";
 
@@ -9,7 +9,7 @@ const RANK: Record<AppRole, number> = { parent: 0, den_leader: 1, committee: 2, 
 export const VIEW_AS_LABEL: Partial<Record<AppRole, string>> = {
   parent: "a parent",
   den_leader: "a den leader",
-  committee: "pack leadership",
+  committee: "a key leader",
 };
 
 /** The roles someone can preview: those below their own. */

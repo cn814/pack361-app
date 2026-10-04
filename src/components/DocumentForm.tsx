@@ -31,7 +31,7 @@ export default function DocumentForm({
   doc?: DocumentFormValues;
   folders: string[];
   dens: { id: string; name: string }[];
-  /** Pack leadership can make leadership-only documents. */
+  /** Key leaders can make key-leaders-only documents. */
   committee: boolean;
 }) {
   const [state, formAction, saving] = useActionState<ActionResult, FormData>(guardAction(saveDocument), {});

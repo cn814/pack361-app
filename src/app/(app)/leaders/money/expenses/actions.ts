@@ -158,7 +158,7 @@ export async function saveExpense(_prev: ActionResult, form: FormData): Promise<
     } else {
       if (!UUID.test(who)) return fail("Choose who paid.");
       const already = form.get("already_paid") === "on";
-      if (who === me.id && already) return fail("Another leadership member has to record paying you back.");
+      if (who === me.id && already) return fail("Another key leader has to record paying you back.");
       Object.assign(row, { paid_by: "member", adult_id: who, status: who === me.id ? "submitted" : already ? "paid" : "approved" });
       if (already) {
         const paid = readPaid(form);

@@ -56,7 +56,7 @@ export interface TrainingCheck {
 export interface ReadyReport {
   eventId: string;
   going: number;
-  /** Whether payments were checked (pack leadership only). */
+  /** Whether payments were checked (key leaders only). */
   money: boolean;
   rows: ReadyRow[];
   /** Training checks, for overnight events only. */
@@ -111,7 +111,7 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 const first = (p: { first_name: string; preferred_name?: string | null }) => p.preferred_name || p.first_name;
 
 /**
- * Who may see (and remind about) the "Not paid yet" row: pack leadership only, checked on the
+ * Who may see (and remind about) the "Not paid yet" row: key leaders only, checked on the
  * real role as well as the shown one, so "View as" can only take it away, never grant it.
  */
 export function canSeeMoney(me: Adult): boolean {
@@ -238,7 +238,7 @@ function build(e: PackEvent, d: Loaded, now = Date.now()): ReadyReport {
   }
 
   // Unpaid: open event charges (the RSVP's and any a leader added) of families going. Only
-  // loaded for pack leadership (see canSeeMoney); den leaders get no money row at all.
+  // loaded for key leaders (see canSeeMoney); den leaders get no money row at all.
   const pay: ReadyFamily[] = [];
   let unpaid = 0;
   for (const g of d.going) {

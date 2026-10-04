@@ -60,7 +60,7 @@ export interface Course {
 
 export const COURSES: Course[] = [
   { key: "ypt", label: "Safeguarding Youth (YPT)", short: "YPT", years: 1, who: "Every registered adult. Renew every year.", required: true, where: "my.scouting" },
-  { key: "position", label: "Position-specific training", short: "Position", years: null, who: "Cubmaster, den leaders and pack leadership (for their position)", required: true, where: "my.scouting" },
+  { key: "position", label: "Position-specific training", short: "Position", years: null, who: "Cubmaster, den leaders and key leaders (for their position)", required: true, where: "my.scouting" },
   { key: "cor", label: "Chartered Organization Representative training", short: "COR", years: null, who: "The Chartered Organization Representative", required: true, where: "my.scouting" },
   { key: "hazardous_weather", label: "Hazardous Weather", short: "Weather", years: 2, who: "Required for Cubmasters and den leaders; at least one adult on every outing", required: true, where: "my.scouting" },
   { key: "baloo", label: "BALOO (pack overnighters)", short: "BALOO", years: null, who: "At least one adult at every pack campout", required: false, where: "my.scouting" },
@@ -314,7 +314,7 @@ export function trainingImportDue(lastImport: string | null | undefined, now = D
 }
 
 /**
- * Who gets the "update everyone's training" reminder: pack leadership whose position is the
+ * Who gets the "update everyone's training" reminder: key leaders whose position is the
  * Committee Chair or a training role; if nobody holds one, the admins and Cubmaster.
  */
 export function trainingKeeperIds(people: { id: string; role: string; position_title: string | null }[]): string[] {

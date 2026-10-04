@@ -11,7 +11,7 @@ import { startOfTodayEastern } from "./email";
 export const ROLE_LABEL: Record<AppRole, string> = {
   parent: "Parent",
   den_leader: "Den leader",
-  committee: "Leadership",
+  committee: "Key leader",
   cubmaster: "Cubmaster",
   admin: "Pack admin",
 };

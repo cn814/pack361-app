@@ -32,7 +32,7 @@ export default function ExpenseReview({
   const [mode, setMode] = useState<"" | "pay" | "decline">("");
 
   if (self) {
-    return <p className="text-xs font-semibold text-muted">This is your own request, so another leadership member approves and pays it.</p>;
+    return <p className="text-xs font-semibold text-muted">This is your own request, so another key leader approves and pays it.</p>;
   }
   if (state.ok && !pending) {
     return (

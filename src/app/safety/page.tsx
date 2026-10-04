@@ -57,13 +57,13 @@ export default function SafetyPage() {
         items={[
           "No family information is public. The only public pages are the pack's welcome pages at pack361.org, with general information about joining, and this safety page. Everything else requires signing in, and search engines are told not to list it.",
           "Families see only their own scouts' information and advancement.",
-          "Den leaders see their own den; pack leadership sees the whole pack for approvals and awards.",
+          "Den leaders see their own den; key leaders see the whole pack for approvals and awards.",
           "Parents' phone numbers and emails aren't shown to other parents. The leader directory lists only leaders.",
           "Your calendar subscription link is private to you and contains pack events plus your scouts' den meetings.",
           "Volunteer sign-ups show other families only your first name and last initial.",
           "Pack photos are visible only to signed-in pack families. A leader approves every photo a parent uploads, and scouts whose families opted out aren't shown.",
           "Pack documents (forms, minutes, packing lists) are visible only to signed-in pack families, and some only to leaders or one den. Files open through links that expire after a minute.",
-          "Only Leadership, the Cubmaster and admins see what families owe and pay for dues; den leaders see event sign-ups and store orders. Other parents don't see any of it.",
+          "Only key leaders, the Cubmaster and admins see what families owe and pay for dues; den leaders see event sign-ups and store orders. Other parents don't see any of it.",
         ]}
       />
 

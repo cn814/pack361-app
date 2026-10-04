@@ -47,7 +47,7 @@ export async function cancelDocumentUpload(path: string) {
 
 /**
  * Remove a file no document uses any more. The person's own key works for their own files
- * and for pack leadership; when a leader replaces a file that someone else uploaded (pack leadership
+ * and for key leaders; when a leader replaces a file that someone else uploaded (a key leader
  * did an earlier replacement), the secret key tidies up instead.
  */
 async function removeOldFile(path: string) {
@@ -79,7 +79,7 @@ export async function saveDocument(_prev: ActionResult, form: FormData): Promise
   if (id && !UUID.test(id)) return fail("Document not found.");
   if (!title) return fail("Give the document a title.");
   if (!AUDIENCES.includes(audience)) return fail("Choose who can see it.");
-  if (audience === "committee" && !isCommittee(me)) return fail("Only pack leadership can add leadership-only documents.");
+  if (audience === "committee" && !isCommittee(me)) return fail("Only key leaders can add documents just for key leaders.");
   if (denId && !UUID.test(denId)) return fail("Choose a den, or the whole pack.");
   if (!id && !newPath) return fail("Choose a file to upload.");
 
@@ -140,7 +140,7 @@ export async function setDocumentArchived(form: FormData) {
   redirect(archive ? "/documents?view=archived&done=archived" : "/documents?done=restored");
 }
 
-/** Pack leadership: delete a document and its file for good. */
+/** Key leaders: delete a document and its file for good. */
 export async function deleteDocument(form: FormData) {
   const me = await requireMember();
   const id = String(form.get("id") ?? "");

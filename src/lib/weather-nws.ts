@@ -335,7 +335,7 @@ export function alertWorthPush(event: string): boolean {
 }
 
 /**
- * Leaders who hear about an event's weather (by adult id): pack leadership, the Cubmaster and
+ * Leaders who hear about an event's weather (by adult id): key leaders, the Cubmaster and
  * admins for every event; den leaders for pack-wide events and for their own den's or rank's.
  * `leaders` are active adults with a leader role; `denLeaders` say which den each leads.
  */

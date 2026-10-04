@@ -13,7 +13,7 @@ import { startOfEasternDay } from "./tz";
 import { FEATURE_DAYS_AFTER, FEATURE_DAYS_BEFORE, featuredKind, type FeaturedTab } from "./featured";
 
 /**
- * Two-step sign-in for every leader (den leaders, pack leadership, the Cubmaster and admins):
+ * Two-step sign-in for every leader (den leaders, key leaders, the Cubmaster and admins):
  * "ok" = not needed, or the code was entered this session; "verify" = enter the code from the
  * authenticator app; "setup" = no authenticator app added yet.
  */
@@ -77,7 +77,7 @@ export function isLeader(a: Adult) {
   return LEADER_ROLES.includes(a.role);
 }
 
-/** Pack leadership, the Cubmaster and admins (they keep the Pack guide up to date). */
+/** Key leaders, the Cubmaster and admins (they keep the Pack guide up to date). */
 export function isCommittee(a: Adult) {
   return a.role === "committee" || a.role === "cubmaster" || a.role === "admin";
 }

@@ -17,7 +17,7 @@ export default function CopyEventForm({ eventId, costDropped }: { eventId: strin
           volunteer jobs. Times and deadlines move with it. RSVPs, sign-ups and the Signal group start fresh.
         </p>
         {costDropped && (
-          <p className="rounded-xl bg-gold-50 p-2 text-xs text-gold-800">The cost isn&apos;t copied: only pack leadership sets prices.</p>
+          <p className="rounded-xl bg-gold-50 p-2 text-xs text-gold-800">The cost isn&apos;t copied: only key leaders set prices.</p>
         )}
         <ActionForm action={copyEvent} submit="Make the copy" busy="Copying…" resetOnSuccess={false}>
           <input type="hidden" name="event_id" value={eventId} />

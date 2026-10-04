@@ -55,7 +55,7 @@ export default async function TwoStepPage() {
                 <div className="space-y-1">
                   <h1 className="text-xl font-extrabold text-pine-950">Protect your leader account</h1>
                   <p className="text-sm text-muted">
-                    Pack leadership and admins can see every family&apos;s details and the pack&apos;s money, so the app asks for a
+                    Leaders can see every family&apos;s details and every scout, so the app asks for a
                     second step: a code from an authenticator app on your phone, as well as the email code.
                   </p>
                 </div>

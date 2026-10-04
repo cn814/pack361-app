@@ -53,7 +53,7 @@ export const SETTING_DEFAULTS: Record<SettingKey, string> = {
 };
 const DEFAULTS = SETTING_DEFAULTS;
 
-/** Pack-wide settings (members read; admins change, and pack leadership changes the payment ones). */
+/** Pack-wide settings (members read; admins change, and key leaders change the payment ones). */
 export const getSettings = cache(async (): Promise<Record<SettingKey, string>> => {
   const supabase = await createClient();
   const { data } = await supabase.from("pack_settings").select("key, value");

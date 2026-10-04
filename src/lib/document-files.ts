@@ -69,7 +69,7 @@ export function cleanFileName(name: string): string {
 export const DOC_AUDIENCES = {
   everyone: "All pack families",
   leaders: "Leaders only",
-  committee: "Pack leadership only",
+  committee: "Key leaders only",
 } as const;
 export type DocAudience = keyof typeof DOC_AUDIENCES;
 

@@ -12,7 +12,7 @@ const longDate = (d: string) =>
 type Person = { id: string; email: string; first_name: string; preferred_name: string | null };
 
 /**
- * Who hears about new reimbursement requests: pack leadership whose position mentions
+ * Who hears about new reimbursement requests: key leaders whose position mentions
  * "treasurer". With no treasurer on the roster, the pack admins and Cubmaster.
  */
 async function treasurers(): Promise<Person[]> {
@@ -83,7 +83,7 @@ export async function notifyDecision(r: {
           ]
         : [
             `Hi ${name},`,
-            `Your request to be paid back ${what} was declined.${r.reason ? ` The note from pack leadership: “${r.reason}”` : ""}`,
+            `Your request to be paid back ${what} was declined.${r.reason ? ` The note from a key leader: “${r.reason}”` : ""}`,
             "Questions? Reply to this email or talk to the pack treasurer.",
             `${APP_URL}/reimburse`,
           ];

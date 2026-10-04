@@ -17,7 +17,7 @@ function refresh() {
   revalidatePath("/");
 }
 
-/** "I can help": records the offer and lets pack leadership know. */
+/** "I can help": records the offer and lets key leaders know. */
 export async function offerHelp(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
   const roleId = String(form.get("role_id") ?? "");
@@ -37,7 +37,7 @@ export async function offerHelp(_prev: ActionResult, form: FormData): Promise<Ac
     after(() => notifyRoleInterest({ roleId, who, adultId: me.id }));
   }
   refresh();
-  return { ok: true, message: "Thank you! Someone from pack leadership will reach out." };
+  return { ok: true, message: "Thank you! A key leader will reach out." };
 }
 
 /** Take back your own offer. */
@@ -50,10 +50,10 @@ export async function withdrawOffer(form: FormData) {
   refresh();
 }
 
-/** Pack leadership: add or change a role. */
+/** Key leaders: add or change a role. */
 export async function saveRole(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { error: "Only pack leadership can change these jobs." };
+  if (!isCommittee(me)) return { error: "Only key leaders can change these jobs." };
   const id = String(form.get("id") ?? "");
   if (id && !UUID.test(id)) return { error: "That job wasn't found." };
   const title = text(form, "title", 100);
@@ -75,10 +75,10 @@ export async function saveRole(_prev: ActionResult, form: FormData): Promise<Act
   return { ok: true, message: id ? "Saved" : "Added. Families can see it now." };
 }
 
-/** Pack leadership: close a role (optionally saying who's doing it) or open it again. */
+/** Key leaders: close a role (optionally saying who's doing it) or open it again. */
 export async function setRoleOpen(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { error: "Only pack leadership can change these jobs." };
+  if (!isCommittee(me)) return { error: "Only key leaders can change these jobs." };
   const id = String(form.get("id") ?? "");
   if (!UUID.test(id)) return { error: "That job wasn't found." };
   const open = form.get("open") === "1";
@@ -95,10 +95,10 @@ export async function setRoleOpen(_prev: ActionResult, form: FormData): Promise<
   return { ok: true, message: open ? "Open again" : "Closed" };
 }
 
-/** Pack leadership: delete a role and its offers for good. */
+/** Key leaders: delete a role and its offers for good. */
 export async function deleteRole(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { error: "Only pack leadership can change these jobs." };
+  if (!isCommittee(me)) return { error: "Only key leaders can change these jobs." };
   const id = String(form.get("id") ?? "");
   if (!UUID.test(id)) return { error: "That job wasn't found." };
   const supabase = await createClient();

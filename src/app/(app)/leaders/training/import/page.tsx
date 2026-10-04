@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Import training" };
 
 export default async function ImportTrainingPage() {
   const me = await requireMember();
-  // Pack leadership (the Committee Chair usually does it), the Cubmaster and admins.
+  // Key leaders (the Committee Chair usually does it), the Cubmaster and admins.
   if (!isCommittee(me)) redirect("/leaders/training");
   const roster = await getImportRoster();
 

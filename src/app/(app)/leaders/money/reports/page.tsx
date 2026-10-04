@@ -248,7 +248,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/leaders/
 
       <p className="px-1 text-[11px] text-muted">
         Money in counts payments the app recorded (PayPal, check, cash), Givebutter orders, and income entered by hand. Money out counts
-        expenses leadership approved or paid, by the date on the receipt.{" "}
+        expenses key leaders approved or paid, by the date on the receipt.{" "}
         <Link href="/leaders/money/expenses" className="inline-flex items-center gap-1 font-bold text-pine underline print:hidden">
           <Receipt className="h-3 w-3" aria-hidden /> Expenses
         </Link>

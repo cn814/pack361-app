@@ -6,7 +6,7 @@ import { sendPushTo } from "./push";
 import { easternDate } from "./tz";
 
 // Help wanted: season jobs the pack needs filled (popcorn kernel, Blue and Gold chair...).
-// Everyone sees the open ones and can say "I can help"; pack leadership adds, edits and closes them
+// Everyone sees the open ones and can say "I can help"; key leaders add, edit and close them
 // and sees who offered (/help-wanted).
 
 export interface OpenRole {
@@ -51,7 +51,7 @@ export async function getOpenRolesForMe(): Promise<OpenRole[]> {
   return (data ?? []) as OpenRole[];
 }
 
-/** For pack leadership: every role, open first, with who offered. */
+/** For key leaders: every role, open first, with who offered. */
 export async function getAllRoles(): Promise<PackRole[]> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -85,7 +85,7 @@ export function currentSeason(now = Date.now()): { from: string; to: string; lab
   return { from: `${start}-07-01`, to: `${start + 1}-06-30`, label: `${start}–${String(start + 1).slice(2)}` };
 }
 
-/** Per family, volunteer job sign-ups this season (pack leadership only; others get nothing). */
+/** Per family, volunteer job sign-ups this season (key leaders only; others get nothing). */
 export async function getVolunteerLoad(): Promise<VolunteerLoad[]> {
   const { from, to } = currentSeason();
   const supabase = await createClient();
@@ -94,8 +94,8 @@ export async function getVolunteerLoad(): Promise<VolunteerLoad[]> {
 }
 
 /**
- * Someone said "I can help": a phone alert for the role's contact, or pack leadership
- * (pack leadership, Cubmaster, admins) when the role has none. Best effort.
+ * Someone said "I can help": a phone alert for the role's contact, or key leaders
+ * (key leaders, Cubmaster, admins) when the role has none. Best effort.
  */
 export async function notifyRoleInterest(r: { roleId: string; who: string; adultId: string }) {
   try {

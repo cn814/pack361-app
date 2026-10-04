@@ -10,7 +10,7 @@ import { easternDate } from "@/lib/tz";
 // budget, months, events, dens) or type=transactions (every dollar in and out).
 export async function GET(request: NextRequest) {
   const me = await getMe();
-  if (!me?.adult || !isCommittee(me.adult)) return NextResponse.json({ error: "Pack leadership only" }, { status: 403 });
+  if (!me?.adult || !isCommittee(me.adult)) return NextResponse.json({ error: "Key leaders only" }, { status: 403 });
   const p = request.nextUrl.searchParams;
   const settings = await getSettings();
   const period = resolvePeriod(

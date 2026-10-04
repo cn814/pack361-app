@@ -26,7 +26,7 @@ export default async function GuidePage() {
       {isLeader(me) && drafts > 0 && (
         <p className="rounded-2xl border border-gold-100 bg-gold-50 p-3 text-xs text-gold-800">
           {drafts} draft page{drafts === 1 ? "" : "s"} need pack details before families can see them.
-          {isCommittee(me) ? " Open one, tap Edit, fill in the highlighted parts and publish." : " Someone in pack leadership can finish them."}
+          {isCommittee(me) ? " Open one, tap Edit, fill in the highlighted parts and publish." : " A key leader can finish them."}
         </p>
       )}
       {isCommittee(me) && (

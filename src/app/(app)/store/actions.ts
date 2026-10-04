@@ -11,8 +11,8 @@ export type ActionState = { ok?: boolean; error?: string; message?: string };
 
 export async function syncGivebutterNow(): Promise<ActionState> {
   const me = await requireMember();
-  // Admins (Store page) and pack leadership (Money page, for dues).
-  if (!isAdmin(me) && !isCommittee(me)) return { error: "Only pack admins and pack leadership can sync." };
+  // Admins (Store page) and key leaders (Money page, for dues).
+  if (!isAdmin(me) && !isCommittee(me)) return { error: "Only pack admins and key leaders can sync." };
   if (!adminConfigured() || !givebutterConfigured()) {
     return { error: "Add GIVEBUTTER_API_KEY and SUPABASE_SECRET_KEY in Vercel first." };
   }

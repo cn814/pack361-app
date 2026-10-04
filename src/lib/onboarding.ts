@@ -159,7 +159,7 @@ export interface NewFamilyRow {
   missing: string[];
 }
 
-/** New families (last 90 days) and which steps the app can see are still to do. Pack leadership only (RLS). */
+/** New families (last 90 days) and which steps the app can see are still to do. Key leaders only (RLS). */
 export async function getNewFamilies(): Promise<NewFamilyRow[]> {
   const supabase = await createClient();
   const { data } = await supabase.rpc("new_family_checklist");
@@ -174,7 +174,7 @@ export async function getNewFamilies(): Promise<NewFamilyRow[]> {
   }));
 }
 
-/** Adults with phone alerts on (any phone or browser saved). Pack leadership only. */
+/** Adults with phone alerts on (any phone or browser saved). Key leaders only. */
 export async function getAdultsWithAlerts(): Promise<Set<string>> {
   const supabase = await createClient();
   const { data } = await supabase.rpc("adults_with_alerts");

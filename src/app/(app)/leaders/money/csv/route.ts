@@ -5,7 +5,7 @@ import { getAllCharges, inSeason } from "@/lib/money-data";
 import { CHARGE_KINDS, CHARGE_STATUSES, chargeFor, KIND_LABEL, ownerName, type ChargeKind, type ChargeStatus } from "@/lib/money";
 import { easternDate } from "@/lib/tz";
 
-// Pack leadership: the charges list as a spreadsheet for the treasurer's records (same filters as the page).
+// Key leaders: the charges list as a spreadsheet for the treasurer's records (same filters as the page).
 
 /** Quote a cell; a leading = + - @ is neutralised so a spreadsheet won't run it as a formula. */
 function cell(v: string | number | null | undefined): string {
@@ -19,7 +19,7 @@ const dollars = (c: number | null) => (c === null ? "" : (c / 100).toFixed(2));
 
 export async function GET(request: NextRequest) {
   const me = await getMe();
-  if (!me?.adult || !isCommittee(me.adult)) return NextResponse.json({ error: "Pack leadership only" }, { status: 403 });
+  if (!me?.adult || !isCommittee(me.adult)) return NextResponse.json({ error: "Key leaders only" }, { status: 403 });
   const p = request.nextUrl.searchParams;
   const kind = p.get("kind") as ChargeKind | null;
   const status = p.get("status") as ChargeStatus | null;

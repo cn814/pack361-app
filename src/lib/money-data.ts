@@ -5,7 +5,7 @@ import { CHARGE_COLUMNS, eventCost, type ChargeRow, type EventFees } from "./mon
 import { easternDate } from "./tz";
 import type { SettingKey } from "./settings";
 
-// Leaders' Money page (pack leadership only; Row Level Security hides everyone else's money anyway).
+// Leaders' Money page (key leaders only; Row Level Security hides everyone else's money anyway).
 
 export interface LeaderCharge extends ChargeRow {
   paypal_capture_id: string | null;

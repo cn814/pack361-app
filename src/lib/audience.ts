@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { isCommittee } from "./data";
 import { LEADER_ROLES, type Adult, type DenRank } from "./types";
 
-/** Dens this person may message or poll: every den for pack leadership, else the dens they lead. */
+/** Dens this person may message or poll: every den for key leaders, else the dens they lead. */
 export async function getMessageableDens(me: Adult): Promise<{ id: string; name: string }[]> {
   const supabase = await createClient();
   const order = ["lion", "tiger", "wolf", "bear", "webelos", "aol"];

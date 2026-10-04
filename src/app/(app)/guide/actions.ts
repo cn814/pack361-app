@@ -13,10 +13,10 @@ const slugify = (s: string) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
 
-/** Pack leadership: create or update a guide page. */
+/** Key leaders: create or update a guide page. */
 export async function saveGuidePage(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { error: "Only pack leadership can edit the guide." };
+  if (!isCommittee(me)) return { error: "Only key leaders can edit the guide." };
   const id = String(form.get("id") ?? "");
   const title = String(form.get("title") ?? "").trim().slice(0, 120);
   const section = String(form.get("section") ?? "").trim().slice(0, 60) || "Getting started";
@@ -44,7 +44,7 @@ export async function saveGuidePage(_prev: ActionResult, form: FormData): Promis
   redirect(`/guide/${slug}`);
 }
 
-/** Pack leadership: remove a guide page. */
+/** Key leaders: remove a guide page. */
 export async function deleteGuidePage(form: FormData) {
   const me = await requireMember();
   if (!isCommittee(me)) return;
