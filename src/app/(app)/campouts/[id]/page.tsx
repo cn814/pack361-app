@@ -14,6 +14,7 @@ import ArchiveControl from "@/components/ArchiveControl";
 import EventAttendance from "@/components/EventAttendance";
 import PermissionSlips from "@/components/PermissionSlips";
 import EventSignal from "@/components/EventSignal";
+import EventCarpool from "@/components/EventCarpool";
 import ReadyToGo from "@/components/ReadyToGo";
 import EventWeather from "@/components/EventWeather";
 import AddToCalendar from "@/components/AddToCalendar";
@@ -152,6 +153,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
           <EventRsvp e={event} me={me} />
           <ReadyToGo e={event} me={me} />
           <EventSignal e={event} me={me} />
+          <EventCarpool e={event} me={me} />
           <PermissionSlips e={event} me={me} />
         </div>
         <div className="order-4 empty:hidden">

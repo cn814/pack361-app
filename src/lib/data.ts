@@ -173,7 +173,7 @@ export async function getEvent(id: string): Promise<PackEvent | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("events")
-    .select("id, title, category, starts_at, ends_at, location_name, address, details, signup_url, den_id, ranks, all_day, leaders_only, twh_uid, twh_url, archived_at, archived_reason, rsvp_enabled, rsvp_by, fee_family_cents, fee_scout_cents, fee_adult_cents, source, links, sections, camping_nights, attendance_taken_at, public_on_join, public_blurb, slip_required, slip_text, slip_document_id, slip_due")
+    .select("id, title, category, starts_at, ends_at, location_name, address, details, signup_url, den_id, ranks, all_day, leaders_only, twh_uid, twh_url, archived_at, archived_reason, rsvp_enabled, rsvp_by, fee_family_cents, fee_scout_cents, fee_adult_cents, source, links, sections, camping_nights, attendance_taken_at, public_on_join, public_blurb, slip_required, slip_text, slip_document_id, slip_due, carpool")
     .eq("id", id)
     .maybeSingle();
   return (data as PackEvent | null) ?? null;

@@ -11,6 +11,7 @@ import ArchiveControl from "@/components/ArchiveControl";
 import EventAttendance from "@/components/EventAttendance";
 import PermissionSlips from "@/components/PermissionSlips";
 import EventSignal from "@/components/EventSignal";
+import EventCarpool from "@/components/EventCarpool";
 import ReadyToGo from "@/components/ReadyToGo";
 import EventWeather from "@/components/EventWeather";
 import EventPlan from "@/components/EventPlan";
@@ -124,6 +125,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <EventRsvp e={event} me={me} />
       <ReadyToGo e={event} me={me} />
       <EventSignal e={event} me={me} />
+      <EventCarpool e={event} me={me} />
       <PermissionSlips e={event} me={me} />
       <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={isLeader(me)} />
       <EventPlan eventId={id} />

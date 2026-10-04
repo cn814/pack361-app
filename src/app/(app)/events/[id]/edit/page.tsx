@@ -62,6 +62,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps<
             from_twh: e.source === "troopwebhost",
             from_council: e.source === "council",
             rsvp_limit: extras.rsvp_limit,
+            carpool: e.carpool ?? null,
             series_upcoming: extras.series_upcoming,
             copied: copied === "1",
           }}

@@ -62,6 +62,7 @@ export interface EventFormValues {
   from_council?: boolean;
   /** Most people (scouts and adults) who can come; null = no limit. */
   rsvp_limit?: number | null;
+  carpool?: boolean | null;
   /** Other upcoming events in the same repeating series (editing only). */
   series_upcoming?: number;
   /** Just made with "Copy this event". */
@@ -255,6 +256,14 @@ export default function EventForm({
           </>
         )}
       </fieldset>
+
+      <Field label="Carpool board" hint="Families post seats to share or ask for a ride on the event page. Automatic: on when the event has a place, off for regular meetings.">
+        <select className="input" name="carpool" defaultValue={v.carpool === true ? "on" : v.carpool === false ? "off" : "auto"}>
+          <option value="auto">Automatic</option>
+          <option value="on">On</option>
+          <option value="off">Off</option>
+        </select>
+      </Field>
 
       <fieldset className="space-y-2 rounded-xl border border-line p-3">
         <legend className="px-1 text-xs font-bold text-navy">Permission slip</legend>

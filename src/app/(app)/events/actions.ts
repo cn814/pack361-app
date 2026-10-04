@@ -158,6 +158,7 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
     slip_document_id: slipRequired && UUID.test(slipDoc) ? slipDoc : null,
     slip_due: slipRequired && DATE.test(slipDue) ? slipDue : null,
     rsvp_limit: form.get("rsvp_enabled") === "on" ? rsvpLimit : null,
+    carpool: form.get("carpool") === "on" ? true : form.get("carpool") === "off" ? false : null,
     ...fees,
   };
   const supabase = await createClient();
