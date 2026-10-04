@@ -1,5 +1,7 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "./supabase/server";
+import { getMe } from "./data";
 import { easternDate } from "./tz";
 import { eventOver } from "./format";
 import type { PackEvent } from "./types";
@@ -99,3 +101,25 @@ export async function getRsvp(eventId: string, me: { id: string; family_id: stri
     rows: [...rows.filter((r) => !r.waitlisted), ...waiting],
   };
 }
+
+export interface MyAnswer {
+  status: MyRsvp["status"];
+  waitlisted: boolean;
+}
+
+/**
+ * The signed-in family's RSVP answer for every event they've answered, by event id. Read once per
+ * page (cached), so every RSVP button on a list can show the family's answer.
+ */
+export const getMyAnswers = cache(async (): Promise<Map<string, MyAnswer>> => {
+  const me = (await getMe())?.adult;
+  const out = new Map<string, MyAnswer>();
+  if (!me) return out;
+  const supabase = await createClient();
+  const q = supabase.from("event_rsvps").select("event_id, status, waitlisted").limit(2000);
+  const { data } = await (me.family_id ? q.eq("family_id", me.family_id) : q.is("family_id", null).eq("adult_id", me.id));
+  for (const r of (data ?? []) as { event_id: string; status: MyRsvp["status"]; waitlisted: boolean | null }[]) {
+    out.set(r.event_id, { status: r.status, waitlisted: Boolean(r.waitlisted) });
+  }
+  return out;
+});
