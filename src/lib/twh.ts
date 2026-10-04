@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DenRank } from "./types";
 import { twhEventUrl } from "./twh-link";
 import { addDays, daysBetween, easternDate, easternParts, easternWallToIso } from "./tz";
+import { isVideoCall } from "./event-link";
 
 // TroopWebHost calendar sync. TroopWebHost gives each user a private iCalendar subscription
 // link (My Stuff -> Subscribe to Calendar); TWH_CALENDAR_URL holds an admin's link. The sync
@@ -291,8 +292,11 @@ function similarity(a: string, b: string): number {
   if (small === 1 ? !(A.size === B.size && same === 1) : same < 2) return 0;
   return same / (A.size + B.size - same);
 }
-const firstUrl = (s: string | null) =>
-  (s?.match(/https?:\/\/[^\s<>"')]+/g) ?? []).find((u) => !/troopwebhost|ourgrouponline/i.test(u)) ?? null;
+/** The event's link from its description: a sign-up page if there is one, else a video call. */
+const firstUrl = (s: string | null) => {
+  const urls = (s?.match(/https?:\/\/[^\s<>"')]+/g) ?? []).filter((u) => !/troopwebhost|ourgrouponline/i.test(u));
+  return urls.find((u) => !isVideoCall(u)) ?? urls[0] ?? null;
+};
 
 export interface SyncResult {
   added: number;

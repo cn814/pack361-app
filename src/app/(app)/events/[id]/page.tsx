@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { CalendarDays, MapPin, Megaphone, Navigation, Ticket } from "lucide-react";
+import { CalendarDays, MapPin, Megaphone, Navigation, Ticket, Video } from "lucide-react";
+import { eventLinkLabel, isVideoCall } from "@/lib/event-link";
 import BackLink from "@/components/BackLink";
 import VolunteerJobs from "@/components/VolunteerJobs";
 import RsvpLink from "@/components/RsvpLink";
@@ -81,7 +82,8 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           )}
           {event.signup_url && (
             <a href={event.signup_url} target="_blank" rel="noopener noreferrer" className="btn-gold py-2">
-              <Ticket className="h-4 w-4" aria-hidden /> {event.source === "council" ? "Register with the council" : "Sign up / pay"}
+              {isVideoCall(event.signup_url) ? <Video className="h-4 w-4" aria-hidden /> : <Ticket className="h-4 w-4" aria-hidden />}{" "}
+              {eventLinkLabel(event.signup_url, event.source)}
             </a>
           )}
           {isLeader(me) && event.rsvp_enabled && (

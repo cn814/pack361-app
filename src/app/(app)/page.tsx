@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { eventHref, getOpenJobs, jobComesBack } from "@/lib/volunteer";
 import EventRow from "@/components/EventRow";
+import { eventLinkLabel } from "@/lib/event-link";
 import RsvpLink from "@/components/RsvpLink";
 import ModeSwitch from "@/components/ModeSwitch";
 import { ProgressBar } from "@/components/RankProgress";
@@ -299,7 +300,7 @@ function NextUp({ e, label }: { e: CalItem; label: string | null }) {
         </Link>
         {e.signup_url && (
           <a href={e.signup_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold">
-            {e.source === "council" ? "Register with the council" : "Sign up / pay"}
+            {eventLinkLabel(e.signup_url, e.source)}
           </a>
         )}
       </div>

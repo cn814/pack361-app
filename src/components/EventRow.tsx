@@ -3,6 +3,7 @@ import { CircleCheck, MapPin, Users } from "lucide-react";
 import type { PackEvent } from "@/lib/types";
 import RsvpLink from "@/components/RsvpLink";
 import { eventOver, fmtRange } from "@/lib/format";
+import { eventLinkLabel } from "@/lib/event-link";
 
 const CATEGORY_STYLE: Record<string, string> = {
   Campout: "bg-mint text-pine",
@@ -88,7 +89,7 @@ export default function EventRow({
           <RsvpLink e={e} variant="link" />
           {signupLink && (
             <a href={signupLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-pine underline">
-              {/givebutter/i.test(signupLink) ? "Pay / order on Givebutter" : e.source === "council" ? "Register with the council" : "Sign up"}
+              {eventLinkLabel(signupLink, e.source, true)}
             </a>
           )}
         </div>

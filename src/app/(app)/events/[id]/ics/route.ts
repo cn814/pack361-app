@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 import { getEvent, requireMember } from "@/lib/data";
 import { buildIcs } from "@/lib/ics";
 import { eventPath } from "@/lib/featured";
+import { eventLinkCalendarLine } from "@/lib/event-link";
 
 // "Add to my calendar": one event as an .ics file (/events/<id>/ics, campouts too). Signed-in
 // members only, and only events they can see (the database decides, as on the event page).
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/events/[id]/
       starts_at: e.starts_at,
       ends_at: e.ends_at,
       location: [e.location_name, e.address].filter(Boolean).join(", ") || null,
-      description: [e.details, e.signup_url ? `Sign up: ${e.signup_url}` : null, url].filter(Boolean).join("\n\n"),
+      description: [e.details, e.signup_url ? eventLinkCalendarLine(e.signup_url) : null, url].filter(Boolean).join("\n\n"),
       url,
       allDay: e.all_day,
     },
