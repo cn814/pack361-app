@@ -21,6 +21,8 @@ interface Row {
   note?: string;
   alert?: boolean;
   ok?: boolean;
+  /** A file (the app guide PDF): opens in a new window, outside the app's page changes. */
+  file?: boolean;
 }
 
 /** Me: short groups that open one focused page each (what used to be one long My family page). */
@@ -79,6 +81,7 @@ export default async function MePage() {
   const settings: Row[] = [
     { href: "/family/alerts", label: "Phone alerts and the app" },
     { href: "/family/contact", label: "My contact info" },
+    { href: "/app-guide", label: "How to use this app (guide)", file: true },
     { href: "/family/help", label: "Report a problem or send a note" },
   ];
 
@@ -140,13 +143,23 @@ function Group({ title, rows }: { title: string; rows: Row[] }) {
       <ul className="card divide-y divide-line p-0">
         {rows.map((r) => (
           <li key={r.href}>
-            <Link href={r.href} className="flex min-h-[3.25rem] items-center gap-3 px-4 py-2.5">
-              <span className="flex-1 text-[15px] font-bold text-ink">{r.label}</span>
-              {r.note && (
-                <span className={`text-xs ${r.alert ? "font-extrabold text-gold-800" : r.ok ? "font-bold text-pine" : "text-muted"}`}>{r.note}</span>
-              )}
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-            </Link>
+            {r.file ? (
+              <a href={r.href} target="_blank" rel="noopener" className="flex min-h-[3.25rem] items-center gap-3 px-4 py-2.5">
+                <span className="flex-1 text-[15px] font-bold text-ink">{r.label}</span>
+                {r.note && (
+                  <span className={`text-xs ${r.alert ? "font-extrabold text-gold-800" : r.ok ? "font-bold text-pine" : "text-muted"}`}>{r.note}</span>
+                )}
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+              </a>
+            ) : (
+              <Link href={r.href} className="flex min-h-[3.25rem] items-center gap-3 px-4 py-2.5">
+                <span className="flex-1 text-[15px] font-bold text-ink">{r.label}</span>
+                {r.note && (
+                  <span className={`text-xs ${r.alert ? "font-extrabold text-gold-800" : r.ok ? "font-bold text-pine" : "text-muted"}`}>{r.note}</span>
+                )}
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+              </Link>
+            )}
           </li>
         ))}
       </ul>

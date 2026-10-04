@@ -43,6 +43,8 @@ interface Item {
   note?: string;
   /** Gold note: something needs doing. */
   alert?: boolean;
+  /** A file (the app guide PDF): opens in a new window, outside the app's page changes. */
+  file?: boolean;
 }
 
 /** One menu for everything that isn't Home, Calendar, Scouts or Me. */
@@ -72,6 +74,7 @@ export default async function PackPage() {
   ];
   const info: Item[] = [
     { href: "/guide", label: "Pack guide", icon: BookOpen },
+    { href: "/app-guide", label: "How to use this app", icon: BookOpen, note: "The app guide (PDF), always the latest", file: true },
     { href: "/documents", label: "Documents", icon: FolderOpen },
     { href: "/gear", label: "Gear closet", icon: Tent, note: "Borrow tents and camp gear" },
     { href: "/photos", label: "Photos", icon: Images },
@@ -167,7 +170,7 @@ function Group({ title, items }: { title: string; items: Item[] }) {
       <ul className="card divide-y divide-line p-0">
         {items.map((i) => (
           <li key={i.label}>
-            <Link href={i.href} className="flex min-h-[3.25rem] items-center gap-3 px-4 py-2.5">
+            <MaybeFile href={i.href} file={i.file} className="flex min-h-[3.25rem] items-center gap-3 px-4 py-2.5">
               <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${i.alert ? "bg-gold-50" : "bg-mint"}`}>
                 <i.icon className={`h-[18px] w-[18px] ${i.alert ? "text-gold-800" : "text-pine"}`} aria-hidden />
               </span>
@@ -180,10 +183,23 @@ function Group({ title, items }: { title: string; items: Item[] }) {
               ) : (
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
               )}
-            </Link>
+            </MaybeFile>
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+/** A page link, or for a file a plain link that opens in a new window. */
+function MaybeFile({ href, file, className, children }: { href: string; file?: boolean; className: string; children: React.ReactNode }) {
+  return file ? (
+    <a href={href} target="_blank" rel="noopener" className={className}>
+      {children}
+    </a>
+  ) : (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
   );
 }

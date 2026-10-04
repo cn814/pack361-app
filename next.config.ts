@@ -27,6 +27,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // The app guide PDF (served at /app-guide from docs/guide).
+  outputFileTracingIncludes: {
+    "/app-guide": ["./docs/guide/Pack361-App-Guide.pdf"],
+  },
   experimental: {
     // Going back to a page you opened in the last 30 seconds shows it right away instead of
     // asking the server again. Saving anything (server actions revalidate) clears this.
