@@ -1,7 +1,8 @@
-import { Car, Phone, ShieldCheck } from "lucide-react";
+import { Car, Mail, MessageSquare, ShieldCheck } from "lucide-react";
 import ActionForm, { Field } from "@/components/ActionForm";
 import { removeCarpool, saveCarpool } from "@/app/(app)/events/carpool-actions";
-import { carpoolOn, contactHref, getCarpoolBoard, type CarpoolPost } from "@/lib/carpool";
+import { carpoolOn, getCarpoolBoard, type CarpoolPost } from "@/lib/carpool";
+import { contactHref } from "@/lib/carpool-contact";
 import { isLeader } from "@/lib/data";
 import { eventOver } from "@/lib/format";
 import type { Adult, PackEvent } from "@/lib/types";
@@ -32,8 +33,8 @@ export default async function EventCarpool({ e, me }: { e: PackEvent; me: Adult 
           : "Have seats to share, or need a ride? Post it here and families can reach each other."}
       </p>
 
-      {offers.length > 0 && <Board title="Have seats" posts={offers} eventId={e.id} leader={leader} />}
-      {needs.length > 0 && <Board title="Need a ride" posts={needs} eventId={e.id} leader={leader} />}
+      {offers.length > 0 && <Board title="Have seats" posts={offers} eventId={e.id} eventTitle={e.title} leader={leader} />}
+      {needs.length > 0 && <Board title="Need a ride" posts={needs} eventId={e.id} eventTitle={e.title} leader={leader} />}
 
       {mine ? (
         <details className="rounded-xl bg-surface-low p-3">
@@ -62,13 +63,13 @@ export default async function EventCarpool({ e, me }: { e: PackEvent; me: Adult 
   );
 }
 
-function Board({ title, posts, eventId, leader }: { title: string; posts: CarpoolPost[]; eventId: string; leader: boolean }) {
+function Board({ title, posts, eventId, eventTitle, leader }: { title: string; posts: CarpoolPost[]; eventId: string; eventTitle: string; leader: boolean }) {
   return (
     <div className="space-y-1.5">
       <h3 className="text-xs font-extrabold uppercase tracking-[0.1em] text-muted">{title}</h3>
       <ul className="divide-y divide-line rounded-xl ring-1 ring-line">
         {posts.map((p) => {
-          const href = p.contact ? contactHref(p.contact) : null;
+          const link = p.contact ? contactHref(p.contact, eventTitle) : null;
           return (
             <li key={p.id} className="space-y-0.5 px-3 py-2.5">
               <p className="flex flex-wrap items-baseline justify-between gap-x-2">
@@ -84,9 +85,10 @@ function Board({ title, posts, eventId, leader }: { title: string; posts: Carpoo
               {p.leaving_from && <p className="text-xs text-muted">From {p.leaving_from}</p>}
               {p.note && <p className="text-sm text-ink">{p.note}</p>}
               {p.contact &&
-                (href ? (
-                  <a href={href} className="inline-flex items-center gap-1 text-sm font-bold text-pine underline">
-                    <Phone className="h-3.5 w-3.5" aria-hidden /> {p.contact}
+                (link ? (
+                  <a href={link.href} className="inline-flex items-center gap-1 text-sm font-bold text-pine underline">
+                    {link.kind === "text" ? <MessageSquare className="h-3.5 w-3.5" aria-hidden /> : <Mail className="h-3.5 w-3.5" aria-hidden />}
+                    {link.kind === "text" ? `Text ${p.contact}` : p.contact}
                   </a>
                 ) : (
                   <p className="text-sm text-ink">{p.contact}</p>
@@ -128,7 +130,7 @@ function PostForm({ eventId, post }: { eventId: string; post: CarpoolPost | null
           <input className="input" name="leaving_from" maxLength={80} defaultValue={post?.leaving_from ?? ""} placeholder="e.g. Ellicott City, Friday 5 pm" />
         </Field>
       </div>
-      <Field label="Contact (optional)" hint="A phone number or email for families to reach you. Leave it blank and they can reach you in the event's Signal group.">
+      <Field label="Contact (optional)" hint="A cell number families can text, or an email. Leave it blank and they can reach you in the event's Signal group.">
         <input className="input" name="contact" maxLength={120} defaultValue={post?.contact ?? ""} autoComplete="tel" />
       </Field>
       <Field label="Note (optional)">

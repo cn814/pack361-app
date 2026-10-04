@@ -33,12 +33,3 @@ export async function getCarpoolBoard(eventId: string): Promise<CarpoolPost[]> {
   const { data } = await supabase.rpc("event_carpool_board", { p_event_id: eventId });
   return ((data ?? []) as CarpoolPost[]).map((p) => ({ ...p, seats: Number(p.seats) }));
 }
-
-/** A contact someone typed: a tel: or mailto: link when it looks like a phone number or email. */
-export function contactHref(contact: string): string | null {
-  const c = contact.trim();
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) return `mailto:${c}`;
-  const digits = c.replace(/[^\d+]/g, "");
-  if (/^\+?\d{10,15}$/.test(digits) && !/[a-z]/i.test(c)) return `tel:${digits}`;
-  return null;
-}
