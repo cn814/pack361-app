@@ -145,10 +145,15 @@
 #splash {
   display: none;
 }
-html[data-splash="show"] #splash {
+html[data-splash="show"] #splash,
+html[data-splash="leaving"] #splash {
   display: flex;
 }
-html[data-splash="show"] body {
+html[data-splash="leaving"] #splash {
+  opacity: 0;
+}
+html[data-splash="show"] body,
+html[data-splash="leaving"] body {
   overflow: hidden;
 }
 

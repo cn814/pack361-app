@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { SPLASH_COOKIE, SPLASH_COOKIE_OPTIONS } from "@/lib/splash";
 import { createClient } from "@/lib/supabase/server";
 import { getMe, needsTwoStep } from "@/lib/data";
 import type { ActionResult } from "@/components/ActionForm";
@@ -75,7 +77,11 @@ export async function finishTwoStepSetup(_prev: ActionResult, form: FormData): P
     };
   }
   revalidatePath("/", "layout");
-  if (form.get("next") === "home") redirect("/");
+  if (form.get("next") === "home") {
+    // First setup at sign-in: they're all the way in now, so play the welcome animation.
+    (await cookies()).set(SPLASH_COOKIE, "1", SPLASH_COOKIE_OPTIONS);
+    redirect("/");
+  }
   return { ok: true, message: "Added. Either app's code now works." };
 }
 
@@ -92,6 +98,9 @@ export async function verifyTwoStep(_prev: ActionResult, form: FormData): Promis
     const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: f.id, code });
     if (!error) {
       revalidatePath("/", "layout");
+      // All the way in: the welcome animation plays on the home page (fresh, in case the
+      // email code's marker ran out while they found their authenticator app).
+      (await cookies()).set(SPLASH_COOKIE, "1", SPLASH_COOKIE_OPTIONS);
       redirect("/");
     }
     lastError = error.message;
