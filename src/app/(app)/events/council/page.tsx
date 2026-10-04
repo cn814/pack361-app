@@ -6,7 +6,7 @@ import BackLink from "@/components/BackLink";
 import ActionForm, { Field } from "@/components/ActionForm";
 import SubmitButton from "@/components/SubmitButton";
 import CouncilAddForm from "@/components/CouncilAddForm";
-import { isCommittee, isLeader, requireMember } from "@/lib/data";
+import { isLeader, requireMember } from "@/lib/data";
 import { getDens } from "@/lib/roster-data";
 import { createClient } from "@/lib/supabase/server";
 import { COUNCIL_CALENDAR_PAGE, COUNCIL_STATUS_KEY, COUNCIL_URL_KEY, NOT_A_CALENDAR, readCouncilStatus } from "@/lib/council";
@@ -52,7 +52,7 @@ const short = (s: string | null, n = 220) => (s && s.length > n ? `${s.slice(0, 
 export default async function CouncilEventsPage({ searchParams }: PageProps<"/events/council">) {
   const me = await requireMember();
   if (!isLeader(me)) redirect("/events");
-  const committee = isCommittee(me);
+  const canPick = isLeader(me);
   const sp = await searchParams;
   const one = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
   const tab = (["new", "added", "skipped", "all"].includes(one("status")) ? one("status") : "new") as Status | "all";
@@ -87,7 +87,7 @@ export default async function CouncilEventsPage({ searchParams }: PageProps<"/ev
       .order("starts_at")
       .limit(2000),
     supabase.from("pack_settings").select("key, value").in("key", [COUNCIL_URL_KEY, COUNCIL_STATUS_KEY]),
-    committee ? getDens(false) : Promise.resolve([]),
+    canPick ? getDens(false) : Promise.resolve([]),
   ]);
   const link = (settingRows?.find((r) => r.key === COUNCIL_URL_KEY)?.value as string | undefined) ?? "";
   const status = readCouncilStatus(settingRows?.find((r) => r.key === COUNCIL_STATUS_KEY)?.value as string | undefined);
@@ -131,7 +131,7 @@ export default async function CouncilEventsPage({ searchParams }: PageProps<"/ev
         <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Council events</h1>
         <p className="text-sm text-muted">
           Baltimore Area Council and National Pike District events.{" "}
-          {committee ? "Pick the ones to put on the pack calendar." : "Key leaders pick which ones go on the pack calendar."}
+          {canPick ? "Pick the ones to put on the pack calendar." : "Leaders pick which ones go on the pack calendar."}
         </p>
       </div>
 
@@ -151,7 +151,7 @@ export default async function CouncilEventsPage({ searchParams }: PageProps<"/ev
       <section className="card space-y-3">
         <h2 className="section-title">Council calendar link</h2>
         <CheckStatus link={link} status={status} />
-        {committee ? (
+        {canPick ? (
           <>
             <ActionForm action={saveCouncilLink} submit="Save and check" busy="Checking…" buttonClass="btn-primary w-full py-2.5">
               <Field
@@ -164,7 +164,7 @@ export default async function CouncilEventsPage({ searchParams }: PageProps<"/ev
             {link && <ActionForm action={checkCouncilNow} submit="Check now" busy="Checking…" buttonClass="btn-ghost w-full" />}
           </>
         ) : (
-          <p className="text-xs text-muted">Key leaders set the link. The app checks the council calendar every afternoon.</p>
+          <p className="text-xs text-muted">Leaders set the link. The app checks the council calendar every afternoon.</p>
         )}
         <a href={COUNCIL_CALENDAR_PAGE} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-pine underline">
           <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Open the council calendar
@@ -221,7 +221,7 @@ export default async function CouncilEventsPage({ searchParams }: PageProps<"/ev
         <section key={month} className="space-y-3">
           <h2 className="section-title">{month}</h2>
           {list.map((r) => (
-            <CouncilCard key={r.uid} r={r} committee={committee} dens={denOptions} />
+            <CouncilCard key={r.uid} r={r} canPick={canPick} dens={denOptions} />
           ))}
         </section>
       ))}
@@ -264,7 +264,7 @@ function CheckStatus({ link, status }: { link: string; status: ReturnType<typeof
   );
 }
 
-function CouncilCard({ r, committee, dens }: { r: Row; committee: boolean; dens: { id: string; name: string }[] }) {
+function CouncilCard({ r, canPick, dens }: { r: Row; canPick: boolean; dens: { id: string; name: string }[] }) {
   const cub = isCubEvent(r.title, r.categories);
   const district = otherDistrict(r.title);
   const meeting = isMeetingOrHoliday(r.title, r.categories);
@@ -314,7 +314,7 @@ function CouncilCard({ r, committee, dens }: { r: Row; committee: boolean; dens:
       )}
       {r.status === "skipped" && who && <p className="pt-1 text-xs text-muted">Skipped by {who}</p>}
 
-      {committee && r.status === "new" && (
+      {canPick && r.status === "new" && (
         <div className="flex flex-wrap items-start gap-2 pt-2">
           <details className="w-full">
             <summary className="btn-primary w-full cursor-pointer list-none py-2 [&::-webkit-details-marker]:hidden">Add to our calendar</summary>
@@ -327,7 +327,7 @@ function CouncilCard({ r, committee, dens }: { r: Row; committee: boolean; dens:
           </form>
         </div>
       )}
-      {committee && r.status === "skipped" && (
+      {canPick && r.status === "skipped" && (
         <form action={setCouncilSkipped} className="pt-2">
           <input type="hidden" name="uid" value={r.uid} />
           <input type="hidden" name="skip" value="0" />
@@ -336,7 +336,7 @@ function CouncilCard({ r, committee, dens }: { r: Row; committee: boolean; dens:
           </SubmitButton>
         </form>
       )}
-      {committee && r.status === "added" && (
+      {canPick && r.status === "added" && (
         <details className="pt-2">
           <summary className="btn-ghost w-full cursor-pointer list-none py-2 [&::-webkit-details-marker]:hidden">
             <Undo2 className="h-4 w-4" aria-hidden /> Undo add

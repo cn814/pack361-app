@@ -100,7 +100,7 @@ begin;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.guide_pages where not is_published') > 0, 'leaders see draft guide pages');
-select test.expect_rows($$update public.guide_pages set title = 'Edited'$$, 0, 'den leaders do not edit the guide');
+select test.expect_rows($$update public.guide_pages set title = 'Edited' where slug = (select min(slug) from public.guide_pages)$$, 1, 'den leaders edit the guide');
 select test.check(test.count('select * from public.health_forms') = 2, 'leaders see every family''s forms');
 select test.expect_rows($$update public.health_forms set status = 'on_file' where scout_id = '40000000-0000-0000-0000-000000000002'$$, 1,
                         'leaders mark a form received');

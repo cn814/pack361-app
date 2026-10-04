@@ -182,9 +182,9 @@ commit;
 begin;
 set local role authenticated;
 select test.as_user('00000000-0000-0000-0000-000000003604');
-select test.expect_error($$insert into public.pack_roles (title) values ('Popcorn kernel')$$, '42501',
-                         'den leaders cannot add roles');
-commit;
+select test.expect_rows($$insert into public.pack_roles (title) values ('Popcorn kernel')$$, 1,
+                        'den leaders add roles');
+rollback;
 
 begin;
 set local role authenticated;
@@ -281,8 +281,8 @@ commit;
 begin;
 set local role authenticated;
 select test.as_user('00000000-0000-0000-0000-000000003604');
-select test.check(test.count($$select * from public.volunteer_load(current_date - 30, current_date + 300)$$) = 0,
-                  'den leaders do not see the volunteer summary');
+select test.check(test.count($$select * from public.volunteer_load(current_date - 30, current_date + 300)$$) > 0,
+                  'den leaders see the volunteer summary (Help wanted)');
 commit;
 
 begin;

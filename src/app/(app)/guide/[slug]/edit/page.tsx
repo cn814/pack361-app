@@ -4,7 +4,7 @@ import { Trash2 } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import GuideEditor from "@/components/GuideEditor";
 import SubmitButton from "@/components/SubmitButton";
-import { isCommittee, requireMember } from "@/lib/data";
+import { isLeader, requireMember } from "@/lib/data";
 import { getGuidePage, getGuidePages } from "@/lib/guide";
 import { deleteGuidePage } from "../../actions";
 
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Edit guide page" };
 export default async function EditGuidePage({ params }: PageProps<"/guide/[slug]/edit">) {
   const me = await requireMember();
   const { slug } = await params;
-  if (!isCommittee(me)) redirect(`/guide/${slug}`);
+  if (!isLeader(me)) redirect(`/guide/${slug}`);
   const [page, pages] = await Promise.all([getGuidePage(slug), getGuidePages()]);
   if (!page) notFound();
   return (

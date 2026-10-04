@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { isCommittee, requireMember } from "@/lib/data";
+import { isLeader, requireMember } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
 import { COUNCIL_URL_KEY, FeedError, councilSummary, normalizeFeedUrl, syncCouncil } from "@/lib/council";
@@ -28,10 +28,10 @@ async function runCheck(): Promise<ActionResult> {
   }
 }
 
-/** Key leaders: save the council calendar link, then check it. */
+/** Leaders: save the council calendar link, then check it. */
 export async function saveCouncilLink(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { error: "Only key leaders can change the council calendar link." };
+  if (!isLeader(me)) return { error: "Only leaders can change the council calendar link." };
   const raw = String(form.get("url") ?? "").trim().slice(0, 1000);
   if (raw && !normalizeFeedUrl(raw)) return { error: "That isn't a secure web address. Paste the link that starts with webcal:// or https://." };
   const supabase = await createClient();
@@ -45,10 +45,10 @@ export async function saveCouncilLink(_prev: ActionResult, form: FormData): Prom
   return checked.error ? { error: `Link saved, but the check didn't work. ${checked.error}` } : checked;
 }
 
-/** Key leaders: check the council calendar now. */
+/** Leaders: check the council calendar now. */
 export async function checkCouncilNow(): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { error: "Only key leaders can check the council calendar." };
+  if (!isLeader(me)) return { error: "Only leaders can check the council calendar." };
   return runCheck();
 }
 
@@ -65,10 +65,10 @@ interface Staged {
   event_id: string | null;
 }
 
-/** Key leaders: put a council event on the pack calendar. */
+/** Leaders: put a council event on the pack calendar. */
 export async function addCouncilEvent(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isCommittee(me)) return { error: "Only key leaders can add council events." };
+  if (!isLeader(me)) return { error: "Only leaders can add council events." };
   const uid = String(form.get("uid") ?? "");
   const supabase = await createClient();
   const { data } = await supabase
@@ -129,10 +129,10 @@ export async function addCouncilEvent(_prev: ActionResult, form: FormData): Prom
   return { ok: true, message: "Added to our calendar." };
 }
 
-/** Key leaders: skip a council event, or undo a skip. */
+/** Leaders: skip a council event, or undo a skip. */
 export async function setCouncilSkipped(form: FormData) {
   const me = await requireMember();
-  if (!isCommittee(me)) return;
+  if (!isLeader(me)) return;
   const uid = String(form.get("uid") ?? "");
   const skip = form.get("skip") === "1";
   const supabase = await createClient();
@@ -145,13 +145,13 @@ export async function setCouncilSkipped(form: FormData) {
 }
 
 /**
- * Key leaders: undo an add. With "also take it off our calendar" the pack event moves to the
+ * Leaders: undo an add. With "also take it off our calendar" the pack event moves to the
  * archive (the same as a leader's "Take off the calendar"); adding it again brings it back.
  * Without, the pack event stays and is no longer linked to the council event.
  */
 export async function undoCouncilAdd(form: FormData) {
   const me = await requireMember();
-  if (!isCommittee(me)) return;
+  if (!isLeader(me)) return;
   const uid = String(form.get("uid") ?? "");
   const takeOff = form.get("take_off") === "on";
   const supabase = await createClient();

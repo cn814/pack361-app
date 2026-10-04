@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import BackLink from "@/components/BackLink";
 import GuideEditor from "@/components/GuideEditor";
-import { isCommittee, requireMember } from "@/lib/data";
+import { isLeader, requireMember } from "@/lib/data";
 import { getGuidePages } from "@/lib/guide";
 
 export const metadata: Metadata = { title: "New guide page" };
 
 export default async function NewGuidePage() {
   const me = await requireMember();
-  if (!isCommittee(me)) redirect("/guide");
+  if (!isLeader(me)) redirect("/guide");
   const pages = await getGuidePages();
   return (
     <>

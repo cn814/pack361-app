@@ -202,9 +202,9 @@ npm run dev
 - **Events in the app**: leaders add events (Events → Add an event) and edit any event from its
   page. Editing a TroopWebHost event detaches it from the sync (`source = 'manual'`), so the app is
   the calendar of record and TroopWebHost can be dropped. Removing `TWH_CALENDAR_URL` stops the sync.
-- **Council events** (Events → Council events; key leaders pick, den leaders can look): the daily
+- **Council events** (Events → Council events; leaders pick): the daily
   job and a "Check now" button copy the Baltimore Area Council calendar (ScoutingEvent feed) into
-  `council_events`. Key leaders filter out meetings, holidays and other districts' events (word
+  `council_events`. Leaders filter out meetings, holidays and other districts' events (word
   lists in `src/lib/council-filters.ts`), then adds events to the pack calendar or skips them; both
   can be undone. Added events follow the council's title, time and place until someone edits them in
   the app. Events that leave the council calendar are flagged, never deleted. The feed link is
@@ -249,8 +249,8 @@ npm run dev
   (pack-wide and den) goes through Brevo's free plan (300 a day, `BREVO_API_KEY`,
   `src/lib/bulk-email.ts`), so it doesn't use up the Resend quota the sign-in codes need. Without
   Brevo, den emails of 60 or fewer go through Resend and the pack-wide option is hidden. Parents never message each other or scouts.
-- **Pack guide** (`/guide`, `guide_pages`): searchable pages about how the pack works. Key leaders,
-  Cubmaster and admins edit them in the app with a small Markdown subset (`src/components/GuideBody.tsx`).
+- **Pack guide** (`/guide`, `guide_pages`): searchable pages about how the pack works. Leaders
+  edit them in the app with a small Markdown subset (`src/components/GuideBody.tsx`).
   Drafts are visible to leaders only; `[Leaders: …]` placeholders are highlighted.
 - **Paperwork**: each scout and adult's medical form (Parts A and B) status on My family and on
   Leaders → Paperwork. Families tap "I turned it in"; a leader marks it received; it expires a

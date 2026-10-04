@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import GuideBody from "@/components/GuideBody";
-import { isCommittee, requireMember } from "@/lib/data";
+import { isLeader, requireMember } from "@/lib/data";
 import { getGuidePage } from "@/lib/guide";
 import { fmtDay } from "@/lib/format";
 
@@ -30,7 +30,7 @@ export default async function GuideArticle({ params }: PageProps<"/guide/[slug]"
         <GuideBody body={page.body} />
         <p className="border-t border-line pt-2 text-[11px] text-muted">Updated {fmtDay(page.updated_at)}</p>
       </article>
-      {isCommittee(me) && (
+      {isLeader(me) && (
         <Link href={`/guide/${page.slug}/edit`} className="btn-ghost py-2">
           <Pencil className="h-4 w-4" aria-hidden /> Edit this page
         </Link>

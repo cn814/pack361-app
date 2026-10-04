@@ -57,12 +57,13 @@ begin;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.council_events') = 2, 'den leaders read council events');
-select test.expect_rows($$update public.council_events set status = 'skipped'$$, 0, 'den leaders cannot change council events');
+select test.expect_rows($$update public.council_events set status = 'skipped'$$, 2, 'den leaders pick and skip council events');
 select test.expect_error($$insert into public.council_events (uid, title, starts_at) values ('c-9', 'x', now())$$, '42501',
-                         'den leaders cannot add council events');
-select test.expect_rows($$update public.pack_settings set value = 'https://example.com/x.ics' where key = 'council_calendar_url'$$, 0,
-                        'den leaders cannot change the council calendar link');
-commit;
+                         'den leaders cannot add council events (only the sync does)');
+select test.expect_rows($$insert into public.pack_settings (key, value) values ('council_calendar_url', 'https://example.com/x.ics')
+                          on conflict (key) do update set value = excluded.value$$, 1,
+                        'den leaders set the council calendar link');
+rollback;
 
 \echo '== Council events: committee member (K)'
 begin;

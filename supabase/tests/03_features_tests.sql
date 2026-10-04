@@ -66,7 +66,7 @@ begin;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.check(test.count('select * from public.givebutter_orders') = 3, 'leaders see all orders');
-select test.expect_rows($$update public.pack_settings set value = '2020-01-01'$$, 0, 'den leader cannot change settings');
+select test.expect_rows($$update public.pack_settings set value = '2020-01-01' where key <> 'council_calendar_url'$$, 0, 'den leader cannot change settings (other than the council calendar link)');
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.expect_rows($$update public.pack_settings set value = '150' where key = 'popcorn_scout_goal'$$, 1, 'admin changes a setting');
 select test.expect_rows($$insert into public.popcorn_sales (scout_id, amount) values ('40000000-0000-0000-0000-000000000002', 120)$$, 1, 'admin enters popcorn sales');

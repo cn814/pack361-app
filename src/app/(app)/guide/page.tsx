@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, FolderOpen, Plus } from "lucide-react";
-import { isCommittee, isLeader, requireMember } from "@/lib/data";
+import { isLeader, requireMember } from "@/lib/data";
 import { getGuidePages, plainText } from "@/lib/guide";
 import GuideSearch from "./GuideSearch";
 
@@ -26,10 +26,10 @@ export default async function GuidePage() {
       {isLeader(me) && drafts > 0 && (
         <p className="rounded-2xl border border-gold-100 bg-gold-50 p-3 text-xs text-gold-800">
           {drafts} draft page{drafts === 1 ? "" : "s"} need pack details before families can see them.
-          {isCommittee(me) ? " Open one, tap Edit, fill in the highlighted parts and publish." : " A key leader can finish them."}
+          {isLeader(me) ? " Open one, tap Edit, fill in the highlighted parts and publish." : " A leader can finish them."}
         </p>
       )}
-      {isCommittee(me) && (
+      {isLeader(me) && (
         <Link href="/guide/new" className="btn-ghost py-2">
           <Plus className="h-4 w-4" aria-hidden /> Add a page
         </Link>
