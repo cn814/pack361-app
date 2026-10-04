@@ -1,5 +1,5 @@
--- Two-step sign-in: pack leadership, the Cubmaster and admins get their extra access only after
--- entering their authenticator code (session "aal2"). Den leaders are unchanged.
+-- Two-step sign-in: den leaders, pack leadership, the Cubmaster and admins get their extra access
+-- only after entering their authenticator code (session "aal2").
 \set QUIET on
 set client_min_messages = notice;
 
@@ -35,9 +35,23 @@ rollback;
 begin;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal1"}', true);
-select test.check(private.is_leader(), 'den leaders don''t need the second step');
-select test.check(private.leads_den('10000000-0000-0000-0000-000000000002'), 'and still run their own den');
+select test.check(not private.is_leader(), 'a den leader without their code is not a leader');
+select test.check(not private.leads_den('10000000-0000-0000-0000-000000000002'), 'and can''t run their own den yet');
+select test.check(not exists (select private.my_led_den_ids()), 'no led dens');
+select test.check(not exists (select private.led_meeting_ids()), 'no den meetings');
+select test.check(not exists (select private.reviewable_scout_ids()), 'no scouts to review');
+select test.check(test.count('select * from public.scouts') = 0, 'sees no other family''s scouts');
+select test.check(test.count('select * from public.adults') = 1, 'sees only their own roster row');
+rollback;
+
+\echo '== Den leader with their code (aal2)'
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
+select test.check(private.is_leader(), 'with the code, a leader');
+select test.check(private.leads_den('10000000-0000-0000-0000-000000000002'), 'runs their own den');
 select test.check(not private.leads_den('10000000-0000-0000-0000-000000000001'), 'but not other dens');
+select test.check(exists (select private.my_led_den_ids()), 'has their led den');
 rollback;
 
 \echo '== Pack leadership (committee) who also leads a den, email code only'
@@ -46,8 +60,8 @@ begin;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal1"}', true);
 select test.check(not private.is_committee(), 'leadership access waits for the code');
-select test.check(private.leads_den('10000000-0000-0000-0000-000000000002'), 'their own den still works (as its den leader)');
-select test.check(not private.leads_den('10000000-0000-0000-0000-000000000001'), 'other dens wait for the code');
+select test.check(not private.leads_den('10000000-0000-0000-0000-000000000002'), 'their own den waits for the code too');
+select test.check(not private.leads_den('10000000-0000-0000-0000-000000000001'), 'as do other dens');
 rollback;
 begin;
 set local role authenticated;
@@ -55,3 +69,7 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000
 select test.check(private.is_committee() and private.leads_den('10000000-0000-0000-0000-000000000001'), 'with the code, every den');
 rollback;
 update public.adults set role = 'den_leader' where id = '30000000-0000-0000-0000-00000000000c';
+
+\echo '== Anyone leading a den has at least the den-leader role (so the app asks for the code)'
+select test.check(not exists (select 1 from public.adults a join public.den_leaders dl on dl.adult_id = a.id where a.role = 'parent'),
+    'no parent-role den leaders after the two-step migration');

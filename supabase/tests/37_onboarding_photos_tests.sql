@@ -86,7 +86,7 @@ select test.check(exists (select 1 from public.adults_with_alerts() a where a.ad
 reset role;
 update public.charges set status = 'paid', paid_via = 'cash', paid_at = now()
  where family_id = '37200000-0000-0000-0000-000000000001' and kind = 'dues';
-update public.health_forms set expires_on = current_date - 1 where scout_id = '37400000-0000-0000-0000-000000000001';
+update public.health_forms set expires_on = (now() at time zone 'America/New_York')::date - 1 where scout_id = '37400000-0000-0000-0000-000000000001';
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);
 select test.check((select dues_paid and not forms_in from public.new_family_checklist() where family_id = '37200000-0000-0000-0000-000000000001'),

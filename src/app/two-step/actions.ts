@@ -16,7 +16,7 @@ function tooMany(message: string) {
   return /rate|too many|seconds/i.test(message);
 }
 
-/** Who may add an authenticator app: pack leadership, the Cubmaster and admins. */
+/** Who may add an authenticator app: every leader. */
 async function eligible() {
   const me = await getMe();
   if (!me?.adult || !needsTwoStep(me.role)) return null;
@@ -28,7 +28,7 @@ export type SetupStart = { factorId: string; qr: string; secret: string; uri: st
 /** Step 1 of adding an authenticator app: a new key, shown as a QR code and as text. */
 export async function startTwoStepSetup(): Promise<SetupStart> {
   const me = await eligible();
-  if (!me) return { error: "Two-step sign-in is for pack leadership and admins." };
+  if (!me) return { error: "Two-step sign-in is for leaders." };
   const supabase = await createClient();
   // Clear any half-finished setup first (scanned but never confirmed).
   const { data: list } = await supabase.auth.mfa.listFactors();
@@ -61,7 +61,7 @@ export async function startTwoStepSetup(): Promise<SetupStart> {
 /** Step 2: the first code from the app proves it's set up; the session is then fully signed in. */
 export async function finishTwoStepSetup(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await eligible();
-  if (!me) return { error: "Two-step sign-in is for pack leadership and admins." };
+  if (!me) return { error: "Two-step sign-in is for leaders." };
   const factorId = String(form.get("factorId") ?? "");
   const code = cleanCode(form.get("code"));
   if (code.length !== 6) return { error: "Enter the 6-digit code your authenticator app shows for Pack 361." };

@@ -131,4 +131,4 @@ export interface ItineraryItem {
 
 export const LEADER_ROLES: AppRole[] = ["den_leader", "committee", "cubmaster", "admin"];
 /** Roles that must use two-step sign-in (an authenticator app as well as the email code). */
-export const TWO_STEP_ROLES: AppRole[] = ["committee", "cubmaster", "admin"];
+export const TWO_STEP_ROLES: AppRole[] = ["den_leader", "committee", "cubmaster", "admin"];

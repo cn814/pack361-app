@@ -222,7 +222,7 @@ export default async function AdminPage() {
       <section className="card space-y-3" id="two-step">
         <h2 className="section-title">Two-step sign-in</h2>
         <p className="text-sm text-muted">
-          Pack leadership, the Cubmaster and admins sign in with their email code <b>and</b> a code from an authenticator app.
+          Every leader (den leaders, pack leadership, the Cubmaster and admins) signs in with their email code <b>and</b> a code from an authenticator app.
           Anyone who hasn&apos;t set it up is walked through it the next time they open the app; until then they get only a
           parent&apos;s access. Someone lost their phone? Reset them: they&apos;re signed out and set up their app again.
         </p>

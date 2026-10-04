@@ -13,7 +13,7 @@ import { startOfEasternDay } from "./tz";
 import { FEATURE_DAYS_AFTER, FEATURE_DAYS_BEFORE, featuredKind, type FeaturedTab } from "./featured";
 
 /**
- * Two-step sign-in for pack leadership and admins:
+ * Two-step sign-in for every leader (den leaders, pack leadership, the Cubmaster and admins):
  * "ok" = not needed, or the code was entered this session; "verify" = enter the code from the
  * authenticator app; "setup" = no authenticator app added yet.
  */
@@ -57,7 +57,7 @@ export const getMe = cache(async (): Promise<Me | null> => {
   return { email: String(claims?.claims?.email ?? ""), adult, twoStep, role };
 });
 
-/** Pack leadership, the Cubmaster and admins sign in with an authenticator app as well as email. */
+/** Every leader signs in with an authenticator app as well as email. */
 export function needsTwoStep(role: AppRole | null | undefined) {
   return !!role && TWO_STEP_ROLES.includes(role);
 }

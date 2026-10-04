@@ -7,7 +7,7 @@ import { removeTwoStepDevice } from "@/app/two-step/actions";
 const shortDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
 
-/** My family, for pack leadership and admins: their authenticator apps, add a backup, remove one. */
+/** My family, for leaders: their authenticator apps, add a backup, remove one. */
 export default async function TwoStepCard() {
   const supabase = await createClient();
   const { data } = await supabase.auth.mfa.listFactors();

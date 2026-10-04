@@ -66,7 +66,7 @@ rollback;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal1"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select test.expect_rows($$insert into public.itinerary_items (event_id, starts_at, title, location)
                           values ('32100000-0000-0000-0000-000000000002', '2027-05-07 19:00-04', 'Campfire', 'Fire ring')$$, 1,
                         'a den leader adds a schedule item');
@@ -91,7 +91,7 @@ rollback;
 \echo '== Campout builder: start from a past event'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal1"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select public.copy_event_plan('32100000-0000-0000-0000-000000000001', '32100000-0000-0000-0000-000000000002',
                               array['schedule', 'packing', 'sections', 'links']);
 select test.check(test.count($$select * from public.itinerary_items where event_id = '32100000-0000-0000-0000-000000000002'$$) = 3,
@@ -128,7 +128,7 @@ rollback;
 \echo '== Campout builder: packing list order'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal1"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 select public.set_packing_order('32100000-0000-0000-0000-000000000001',
        array['32200000-0000-0000-0000-000000000002', '32200000-0000-0000-0000-000000000001',
              '32200000-0000-0000-0000-000000000003', '32200000-0000-0000-0000-000000000009']::uuid[]);
@@ -143,7 +143,7 @@ rollback;
 \echo '== Campout builder: copy an event'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal1"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 create temp table copied on commit drop as
   select public.copy_event('32100000-0000-0000-0000-000000000001', '2027-10-29') as id;
 select test.check((select title = 'Fall Campout' and category = 'Campout' and location_name = 'Broad Creek'
@@ -193,7 +193,7 @@ begin
     if exists (select 1 from information_schema.columns
                 where table_schema = 'public' and table_name = 'events' and column_name = 'rsvp_limit') then
         execute 'update public.events set rsvp_limit = 40 where id = $1' using '32100000-0000-0000-0000-000000000001'::uuid;
-        perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal1"}', true);
+        perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
         v := public.copy_event('32100000-0000-0000-0000-000000000001', '2028-10-27');
         execute 'select test.check((select rsvp_limit = 40 from public.events where id = $1), ''the RSVP limit is copied'')' using v;
         delete from public.events where id = v;
@@ -215,7 +215,7 @@ insert into public.events (id, title, category, starts_at, ends_at, location_nam
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal1"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 update public.events set title = 'Bear den night', location_name = 'Library', details = 'Bring your handbook',
                          starts_at = '2027-01-05 19:00-05', ends_at = '2027-01-05 20:30-05'
  where id = '32400000-0000-0000-0000-000000000002';
