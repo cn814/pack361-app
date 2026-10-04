@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CalendarDays, ClipboardList, Clock, MapPin, Navigation } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import DenMeetingRsvp from "@/components/DenMeetingRsvp";
+import { CarpoolSection } from "@/components/EventCarpool";
 import { getMyScouts, requireMember } from "@/lib/data";
 import { fmtMeetingDate, fmtMeetingTime, getMeeting, leadsDen, meetingAdventures, myMeetingRsvps, todayEastern } from "@/lib/meetings";
 import { createClient } from "@/lib/supabase/server";
@@ -82,6 +83,8 @@ export default async function MeetingInfoPage({ params }: PageProps<"/meetings/[
         </div>
       </section>
       <DenMeetingRsvp meetingId={meeting.id} scouts={rsvps} />
+      {/* Off-site meetings (they have an address): families can share rides. */}
+      {upcoming && meeting.address?.trim() && <CarpoolSection target={{ kind: "meeting", id: meeting.id }} title={meeting.title} me={me} />}
     </>
   );
 }
