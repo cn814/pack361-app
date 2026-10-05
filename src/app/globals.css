@@ -157,6 +157,115 @@ html[data-splash="leaving"] body {
   overflow: hidden;
 }
 
+/* Loading screen while the app opens (src/components/BootLoader.tsx, src/lib/boot.ts). Shown from
+   the first paint until the head script marks the page booted, then fades out. */
+#boot {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 8vh;
+  background: var(--color-canvas);
+  color: var(--color-pine);
+  animation: boot-in 0.3s ease 0.12s both; /* a quick page never flashes it */
+}
+html:not([data-booted]) #boot,
+html[data-booted="leaving"] #boot {
+  display: flex;
+}
+html[data-booted="leaving"] #boot {
+  pointer-events: none;
+  animation: boot-out 0.35s ease forwards;
+}
+.boot-wolf {
+  animation: boot-bob 0.9s ease-in-out infinite;
+}
+.boot-wolf img {
+  width: 120px;
+  height: 120px;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 4px var(--color-gold), 0 10px 24px rgb(27 67 50 / 0.18);
+}
+.boot-shadow {
+  width: 96px;
+  height: 14px;
+  margin-top: 10px;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, rgb(27 67 50 / 0.22), transparent);
+  animation: boot-shadow 0.9s ease-in-out infinite;
+}
+.boot-trail {
+  width: 240px;
+  height: 48px;
+  margin-top: 14px;
+  fill: currentColor;
+}
+.boot-paw {
+  opacity: 0;
+  animation: boot-paw 2.4s linear infinite;
+}
+.boot-name {
+  margin-top: 18px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-navy);
+}
+.boot-lines {
+  position: relative;
+  height: 1.5rem;
+  width: 100%;
+  margin-top: 2px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+.boot-lines span {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  opacity: 0;
+  animation: boot-line 8s ease infinite;
+}
+@keyframes boot-in {
+  from { opacity: 0; }
+}
+@keyframes boot-out {
+  to { opacity: 0; }
+}
+@keyframes boot-bob {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-10px) rotate(3deg); }
+}
+@keyframes boot-shadow {
+  0%, 100% { transform: scaleX(1); opacity: 1; }
+  50% { transform: scaleX(0.75); opacity: 0.6; }
+}
+@keyframes boot-paw {
+  0% { opacity: 0; }
+  6%, 55% { opacity: 0.85; }
+  75%, 100% { opacity: 0; }
+}
+@keyframes boot-line {
+  0% { opacity: 0; transform: translateY(6px); }
+  4%, 21% { opacity: 1; transform: none; }
+  25%, 100% { opacity: 0; transform: translateY(-6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .boot-wolf,
+  .boot-shadow,
+  .boot-paw,
+  .boot-lines span {
+    animation: none;
+  }
+  .boot-paw,
+  .boot-lines span:first-child {
+    opacity: 0.85;
+  }
+}
+
 html,
 body {
   background: var(--color-canvas);

@@ -1,7 +1,10 @@
-/** Placeholder shown the moment a page is tapped, while its data loads. */
+/**
+ * Placeholder shown the moment a page is tapped, while its data loads. data-boot-wait: when the
+ * app is first opening, the loading screen stays up until this is replaced (src/lib/boot.ts).
+ */
 export default function PageSkeleton() {
   return (
-    <div className="space-y-4" aria-busy="true" aria-label="Loading">
+    <div className="space-y-4" aria-busy="true" aria-label="Loading" data-boot-wait>
       <div className="card space-y-3 border-t-4 border-t-pine/40">
         <div className="skeleton h-7 w-2/3" />
         <div className="skeleton h-4 w-1/3" />
