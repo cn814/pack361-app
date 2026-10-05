@@ -117,3 +117,31 @@ export function speciesUrl(p: { lat: number; lon: number }, group: "Aves" | "Pla
   });
   return `https://api.inaturalist.org/v1/observations/species_counts?${q}`;
 }
+
+export interface TaxonPhoto {
+  photo: string | null;
+  credit: string | null;
+  /** The species page on iNaturalist. */
+  url: string | null;
+}
+
+/** The iNaturalist species search for a scientific name (for a bird heard by sound ID). */
+export function taxonUrl(scientific: string): string {
+  const q = new URLSearchParams({ q: scientific, rank: "species", per_page: "5", locale: "en" });
+  return `https://api.inaturalist.org/v1/taxa?${q}`;
+}
+
+/** /v1/taxa → the photo of the species whose scientific name matches exactly. */
+export function parseTaxonPhoto(json: unknown, scientific: string): TaxonPhoto {
+  const results = obj(json)?.results;
+  const want = scientific.trim().toLowerCase();
+  if (Array.isArray(results)) {
+    for (const r of results) {
+      const t = obj(r);
+      if (str(t?.name)?.toLowerCase() !== want || typeof t?.id !== "number") continue;
+      const p = obj(t.default_photo);
+      return { photo: photoUrl(p?.medium_url) ?? photoUrl(p?.square_url), credit: str(p?.attribution), url: `https://www.inaturalist.org/taxa/${t.id}` };
+    }
+  }
+  return { photo: null, credit: null, url: null };
+}

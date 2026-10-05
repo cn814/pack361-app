@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Bird, LoaderCircle, Mic, Square, TriangleAlert } from "lucide-react";
 import { POOL, addHeard, birdnetWeek, hearingNow, pool, type Detection, type Heard } from "@/lib/bird-id";
+import type { TaxonPhoto } from "@/lib/nature";
 
 // Bird sound ID with BirdNET, entirely on the phone: the microphone's sound is analyzed in the
 // browser and never sent anywhere. The model (about 56 MB) downloads the first time and is then
@@ -33,6 +34,9 @@ export default function BirdSoundId({ lat, lon }: { lat: number; lon: number }) 
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState<Detection[]>([]);
   const [heard, setHeard] = useState<Heard[]>([]);
+  // Photos of the birds heard (from iNaturalist, needs signal), by scientific name.
+  const [photos, setPhotos] = useState<Record<string, TaxonPhoto>>({});
+  const asked = useRef<Map<string, number>>(new Map());
 
   const worker = useRef<Worker | null>(null);
   const ready = useRef(false);
@@ -60,6 +64,22 @@ export default function BirdSoundId({ lat, lon }: { lat: number; lon: number }) 
     wake.current = null;
     setPhase(next);
   }
+
+  // Look up a photo for each new bird, once (again after 30 s if there was no signal).
+  useEffect(() => {
+    for (const sci of new Set([...now.map((d) => d.scientificName), ...heard.map((h) => h.scientific)])) {
+      if (photos[sci]) continue;
+      const last = asked.current.get(sci);
+      if (last !== undefined && Date.now() - last < 30000) continue;
+      asked.current.set(sci, Date.now());
+      fetch(`/api/nature/bird-photo?name=${encodeURIComponent(sci)}`)
+        .then((r) => (r.ok ? (r.json() as Promise<TaxonPhoto>) : null))
+        .then((p) => {
+          if (p) setPhotos((all) => ({ ...all, [sci]: p }));
+        })
+        .catch(() => {});
+    }
+  }, [now, heard, photos]);
 
   // Leaving the page: stop the microphone and the model.
   useEffect(
@@ -230,10 +250,11 @@ export default function BirdSoundId({ lat, lon }: { lat: number; lon: number }) 
             Hearing now
           </p>
           {now.length ? (
-            <ul className="mt-1.5 space-y-1">
-              {now.map((d) => (
-                <li key={d.index} className="flex items-baseline justify-between gap-2">
-                  <span className="font-bold text-ink">{d.commonName}</span>
+            <ul className="mt-2 space-y-2">
+              {now.map((d, i) => (
+                <li key={d.index} className="flex items-center gap-3">
+                  <BirdPhoto p={photos[d.scientificName]} name={d.commonName} size={i === 0 ? "h-16 w-16" : "h-11 w-11"} />
+                  <span className={`min-w-0 flex-1 font-bold text-ink ${i === 0 ? "text-lg" : ""}`}>{d.commonName}</span>
                   <span className="text-xs font-bold text-pine">{Math.round(d.confidence * 100)}%</span>
                 </li>
               ))}
@@ -250,10 +271,10 @@ export default function BirdSoundId({ lat, lon }: { lat: number; lon: number }) 
           <ul className="divide-y divide-line rounded-xl ring-1 ring-line">
             {sorted.map((h) => (
               <li key={h.index} className="flex items-center gap-2.5 px-3 py-2">
-                <Bird className="h-4 w-4 shrink-0 text-pine" aria-hidden />
+                <BirdPhoto p={photos[h.scientific]} name={h.name} size="h-11 w-11" />
                 <div className="min-w-0 flex-1">
                   <a
-                    href={`https://www.allaboutbirds.org/guide/${encodeURIComponent(h.name.replace(/[’']/g, "").replace(/\s+/g, "_"))}`}
+                    href={photos[h.scientific]?.url ?? `https://www.allaboutbirds.org/guide/${encodeURIComponent(h.name.replace(/[’']/g, "").replace(/\s+/g, "_"))}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block truncate font-bold text-ink underline-offset-2 hover:underline"
@@ -271,6 +292,20 @@ export default function BirdSoundId({ lat, lon }: { lat: number; lon: number }) 
           </ul>
         </div>
       )}
+      {sorted.some((h) => photos[h.scientific]?.credit) && (
+        <details className="text-[11px] text-muted">
+          <summary className="cursor-pointer font-bold">Photo credits (iNaturalist)</summary>
+          <ul className="list-disc pl-4 pt-1">
+            {sorted
+              .filter((h) => photos[h.scientific]?.credit)
+              .map((h) => (
+                <li key={h.index}>
+                  {h.name}: {photos[h.scientific]!.credit}
+                </li>
+              ))}
+          </ul>
+        </details>
+      )}
       <p className="text-[11px] text-muted">
         Bird sound ID by{" "}
         <a href="https://birdnet.cornell.edu" target="_blank" rel="noopener noreferrer" className="font-bold text-pine underline">
@@ -280,5 +315,17 @@ export default function BirdSoundId({ lat, lon }: { lat: number; lon: number }) 
         times is a better bet.
       </p>
     </div>
+  );
+}
+
+/** A bird's photo (from iNaturalist), or a bird icon while there's none (yet, or no signal). */
+function BirdPhoto({ p, name, size }: { p: TaxonPhoto | undefined; name: string; size: string }) {
+  return p?.photo ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={p.photo} alt={name} title={p.credit ?? undefined} className={`${size} shrink-0 rounded-xl bg-surface-low object-cover`} />
+  ) : (
+    <span className={`${size} flex shrink-0 items-center justify-center rounded-xl bg-surface-low text-pine`}>
+      <Bird className="h-5 w-5" aria-hidden />
+    </span>
   );
 }

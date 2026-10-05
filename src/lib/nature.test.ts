@@ -39,3 +39,20 @@ test("reading iNaturalist's species counts", () => {
   assert.equal(list[1].photo, null, "photos only from iNaturalist");
   assert.deepEqual(parseSpeciesCounts({}), []);
 });
+
+test("a heard bird's photo: only an exact name match", async () => {
+  const { parseTaxonPhoto, taxonUrl } = await import("./nature");
+  assert.match(taxonUrl("Cardinalis cardinalis"), /taxa\?q=Cardinalis\+cardinalis&rank=species/);
+  const json = {
+    results: [
+      { id: 1, name: "Cardinalis sinuatus", default_photo: { medium_url: "https://inaturalist-open-data.s3.amazonaws.com/photos/9/medium.jpg" } },
+      { id: 9083, name: "Cardinalis cardinalis", default_photo: { medium_url: "https://inaturalist-open-data.s3.amazonaws.com/photos/1/medium.jpg", attribution: "(c) A (CC BY-NC)" } },
+    ],
+  };
+  assert.deepEqual(parseTaxonPhoto(json, "Cardinalis cardinalis"), {
+    photo: "https://inaturalist-open-data.s3.amazonaws.com/photos/1/medium.jpg",
+    credit: "(c) A (CC BY-NC)",
+    url: "https://www.inaturalist.org/taxa/9083",
+  });
+  assert.deepEqual(parseTaxonPhoto({ results: [] }, "Nope nope"), { photo: null, credit: null, url: null });
+});
