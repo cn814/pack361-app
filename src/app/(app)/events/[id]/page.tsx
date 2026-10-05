@@ -5,7 +5,10 @@ import { eventLinkLabel, isVideoCall } from "@/lib/event-link";
 import BackLink from "@/components/BackLink";
 import VolunteerJobs from "@/components/VolunteerJobs";
 import RsvpLink from "@/components/RsvpLink";
-import JumpLinks from "@/components/JumpLinks";
+import EventTabs from "@/components/EventTabs";
+import EventSchedule from "@/components/EventSchedule";
+import ClampText from "@/components/ClampText";
+import PackingChecklist from "@/components/PackingChecklist";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
 import EventAttendance from "@/components/EventAttendance";
@@ -15,12 +18,12 @@ import EventCarpool from "@/components/EventCarpool";
 import ReadyToGo from "@/components/ReadyToGo";
 import EventWeather from "@/components/EventWeather";
 import EventTrailGuide from "@/components/EventTrailGuide";
-import EventPlan from "@/components/EventPlan";
 import AddToCalendar from "@/components/AddToCalendar";
 import { BuildEventLink, CopyEventButton } from "@/components/EventBuildButtons";
 import { EditEventLink, EventRsvp } from "@/components/EventRsvp";
 import { EventLinks, EventSections } from "@/components/EventInfo";
-import { getEvent, isLeader, requireMember } from "@/lib/data";
+import { getEvent, getItinerary, isLeader, requireMember } from "@/lib/data";
+import { getOwnPackingList } from "@/lib/event-builder-data";
 import { getSlots } from "@/lib/volunteer";
 import { easternDate, ranksLabel } from "@/lib/calendar";
 import { fmtMeetingTime } from "@/lib/meetings";
@@ -38,8 +41,8 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const me = await requireMember();
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  // The volunteer jobs don't depend on the event row: read both at once.
-  const [event, slots] = await Promise.all([getEvent(id), getSlots(id)]);
+  // Nothing here depends on the event row: read it all at once.
+  const [event, slots, itinerary, packing] = await Promise.all([getEvent(id), getSlots(id), getItinerary(id), getOwnPackingList(id)]);
   if (!event) notFound();
   if (event.category === "Campout") redirect(`/campouts/${id}`);
   // On a pack-wide den-meeting night, list the dens that meet somewhere else.
@@ -55,9 +58,10 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const audience = ranksLabel(event.ranks);
   const place = [event.location_name, event.address].filter(Boolean).join(", ");
 
-  return (
+  const leader = isLeader(me);
+
+  const overview = (
     <>
-      <BackLink href={event.archived_at ? "/events/archive" : "/events"} label={event.archived_at ? "Archive" : "Calendar"} />
       <section className="card space-y-2 border-t-4 border-t-gold">
         <div className="flex flex-wrap gap-2">
           <span className="badge bg-gold-50 text-gold-700">{event.category}</span>
@@ -74,7 +78,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
             <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {place}
           </p>
         )}
-        {event.details && <p className="whitespace-pre-line pt-1 text-sm text-ink">{event.details}</p>}
+        {event.details && <ClampText text={event.details} className="pt-1" />}
         <div className="flex flex-wrap gap-2 pt-2">
           <RsvpLink e={event} />
           {place && (
@@ -88,7 +92,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
               {eventLinkLabel(event.signup_url, event.source)}
             </a>
           )}
-          {isLeader(me) && event.rsvp_enabled && (
+          {leader && event.rsvp_enabled && (
             <Link href={`/announce?event=${id}`} className="btn-ghost py-2">
               <Megaphone className="h-4 w-4" aria-hidden /> Message families
             </Link>
@@ -97,15 +101,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         {!event.archived_at && <AddToCalendar eventId={id} className="btn-ghost w-full py-2" />}
       </section>
       {event.archived_at && <ArchiveControl e={event} leader={false} back={`/events/${id}`} part="note" />}
-      <JumpLinks
-        links={[
-          ...(event.rsvp_enabled ? [{ href: "#rsvp", label: "RSVP" }] : []),
-          ...(event.slip_required ? [{ href: "#slip", label: "Permission slip" }] : []),
-          ...(slots.length ? [{ href: "#volunteer", label: "Volunteer" }] : []),
-        ]}
-      />
       <EventAttendance e={event} me={me} />
-      <EventWeather e={event} />
       {elsewhere.length > 0 && (
         <section className="card space-y-2 border-l-4 border-l-gold">
           <h2 className="section-title">Meeting somewhere else tonight</h2>
@@ -115,9 +111,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
                 <Link href={`/meetings/${m.id}`} className="font-bold text-pine underline-offset-2 hover:underline">
                   {m.den?.name}: {m.title}
                 </Link>
-                <span className="block text-xs text-muted">
-                  {[m.location, fmtMeetingTime(m)].filter(Boolean).join(" · ")}
-                </span>
+                <span className="block text-xs text-muted">{[m.location, fmtMeetingTime(m)].filter(Boolean).join(" · ")}</span>
               </li>
             ))}
           </ul>
@@ -125,19 +119,48 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       )}
       <EventRsvp e={event} me={me} />
       <ReadyToGo e={event} me={me} />
-      <EventSignal e={event} me={me} />
-      <EventCarpool e={event} me={me} />
       <PermissionSlips e={event} me={me} />
-      <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={isLeader(me)} />
-      <EventPlan eventId={id} />
-      <EventLinks links={event.links ?? []} />
-      <EventSections eventId={id} sections={event.sections ?? []} />
-      <EventTrailGuide e={event} extraText={(event.sections ?? []).map((s) => JSON.stringify(s))} />
-      <EventPhotosLink eventId={id} startsAt={event.starts_at} />
+      <EventSignal e={event} me={me} />
       <EditEventLink e={event} me={me} />
       <BuildEventLink e={event} me={me} />
       <CopyEventButton e={event} me={me} />
-      <ArchiveControl e={event} leader={isLeader(me)} back={`/events/${id}`} part="button" />
+      <ArchiveControl e={event} leader={leader} back={`/events/${id}`} part="button" />
+    </>
+  );
+
+  return (
+    <>
+      <BackLink href={event.archived_at ? "/events/archive" : "/events"} label={event.archived_at ? "Archive" : "Calendar"} />
+      <EventTabs
+        tabs={[
+          { id: "overview", label: "Overview", content: overview },
+          { id: "schedule", label: "Schedule", content: <EventSchedule items={itinerary} /> },
+          {
+            id: "packing",
+            label: "What to bring",
+            content: packing.length ? <PackingChecklist eventId={id} items={packing} /> : null,
+          },
+          { id: "weather", label: "Weather", content: <EventWeather e={event} /> },
+          {
+            id: "info",
+            label: "Info",
+            content: (
+              <>
+                <EventSections eventId={id} sections={event.sections ?? []} />
+                <EventLinks links={event.links ?? []} />
+                <EventPhotosLink eventId={id} startsAt={event.starts_at} />
+              </>
+            ),
+          },
+          { id: "carpool", label: "Carpool", content: <EventCarpool e={event} me={me} /> },
+          { id: "volunteer", label: "Volunteer", content: <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={leader} /> },
+          {
+            id: "nature",
+            label: "Trail guide",
+            content: <EventTrailGuide e={event} extraText={(event.sections ?? []).map((s) => JSON.stringify(s))} />,
+          },
+        ]}
+      />
     </>
   );
 }
