@@ -17,6 +17,7 @@ import EventSignal from "@/components/EventSignal";
 import EventCarpool from "@/components/EventCarpool";
 import ReadyToGo from "@/components/ReadyToGo";
 import EventWeather from "@/components/EventWeather";
+import EventTrailGuide from "@/components/EventTrailGuide";
 import AddToCalendar from "@/components/AddToCalendar";
 import { BuildEventLink, CopyEventButton } from "@/components/EventBuildButtons";
 import { EditEventLink, EventRsvp } from "@/components/EventRsvp";
@@ -143,8 +144,9 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
             )}
           </section>
         </div>
-        <div className="order-9 empty:hidden">
+        <div className="order-9 space-y-4 empty:hidden">
           <EventSections eventId={id} sections={event.sections ?? []} />
+          <EventTrailGuide e={event} />
         </div>
         </div>
         <div className="contents lg:block lg:space-y-4">

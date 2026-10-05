@@ -26,6 +26,10 @@ import {
   placeText,
   pointsUrl,
   showWeather,
+  happeningNow,
+  parseObservation,
+  parseStations,
+  type CurrentConditions,
   type ForecastPeriod,
   type WeatherAlert,
   type WeatherEvent,
@@ -42,7 +46,7 @@ import {
 const TIMEOUT_MS = 5000;
 
 /** Seconds a Weather Service answer is kept and reused (Next's data cache). */
-const CACHE = { points: 86400, forecast: 1800, alerts: 600 } as const;
+const CACHE = { points: 86400, forecast: 1800, alerts: 600, stations: 86400, latest: 600 } as const;
 
 /**
  * GET some JSON. Null on any failure (offline, slow, an error page, not JSON): the weather is a
@@ -120,10 +124,31 @@ async function fetchForecast(p: WeatherPoint): Promise<ForecastPeriod[] | null> 
   return json === null ? null : parseForecast(json);
 }
 
+/** The latest reading at the nearest station: /points, its stations, the first one's latest. */
+async function fetchNow(p: WeatherPoint): Promise<CurrentConditions | null> {
+  const point = parsePoint(await getJson(pointsUrl(p), CACHE.points));
+  if (!point?.stationsUrl) return null;
+  const station = parseStations(await getJson(point.stationsUrl, CACHE.stations));
+  if (!station) return null;
+  return parseObservation(await getJson(station.latestUrl, CACHE.latest), station.name);
+}
+
 /** Alerts in force at the spot. Null when the Weather Service couldn't be reached. */
 async function fetchAlerts(p: WeatherPoint, fresh = false): Promise<WeatherAlert[] | null> {
   const json = await getJson(alertsUrl(p), fresh ? 0 : CACHE.alerts);
   return json === null ? null : parseAlerts(json);
+}
+
+/** The event's coordinates (saved from an earlier lookup, or looked up now). Null if none. Never throws. */
+export async function eventPoint(e: WeatherEvent): Promise<WeatherPoint | null> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from("events").select("lat, lon, geocoded_address").eq("id", e.id).maybeSingle();
+    if (error) return null;
+    return await pointFor(e, (data as Located | null) ?? null);
+  } catch {
+    return null;
+  }
 }
 
 export interface EventWeatherData {
@@ -134,6 +159,8 @@ export interface EventWeatherData {
   alerts: WeatherAlert[];
   /** The forecast doesn't reach the end of the event yet. */
   moreLater: boolean;
+  /** While the event is under way: the latest reading at the nearest station. */
+  now: CurrentConditions | null;
 }
 
 /**
@@ -149,11 +176,11 @@ export async function loadEventWeather(e: WeatherEvent & { archived_at?: string 
     if (error) return null;
     const point = await pointFor(e, (data as Located | null) ?? null);
     if (!point) return null;
-    const [forecast, alerts] = await Promise.all([fetchForecast(point), fetchAlerts(point)]);
+    const [forecast, alerts, now] = await Promise.all([fetchForecast(point), fetchAlerts(point), happeningNow(e) ? fetchNow(point) : null]);
     const periods = periodsForEvent(forecast ?? [], e);
     const mine = alertsForEvent(alerts ?? [], e);
-    if (!periods.length && !mine.length) return null;
-    return { point, periods, alerts: mine, moreLater: forecastEndsEarly(forecast ?? [], e) };
+    if (!periods.length && !mine.length && !now) return null;
+    return { point, periods, alerts: mine, moreLater: forecastEndsEarly(forecast ?? [], e), now };
   } catch {
     return null;
   }

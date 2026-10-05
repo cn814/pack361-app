@@ -14,6 +14,7 @@ import EventSignal from "@/components/EventSignal";
 import EventCarpool from "@/components/EventCarpool";
 import ReadyToGo from "@/components/ReadyToGo";
 import EventWeather from "@/components/EventWeather";
+import EventTrailGuide from "@/components/EventTrailGuide";
 import EventPlan from "@/components/EventPlan";
 import AddToCalendar from "@/components/AddToCalendar";
 import { BuildEventLink, CopyEventButton } from "@/components/EventBuildButtons";
@@ -131,6 +132,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <EventPlan eventId={id} />
       <EventLinks links={event.links ?? []} />
       <EventSections eventId={id} sections={event.sections ?? []} />
+      <EventTrailGuide e={event} extraText={(event.sections ?? []).map((s) => JSON.stringify(s))} />
       <EventPhotosLink eventId={id} startsAt={event.starts_at} />
       <EditEventLink e={event} me={me} />
       <BuildEventLink e={event} me={me} />

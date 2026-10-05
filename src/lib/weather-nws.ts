@@ -24,6 +24,20 @@ export interface WeatherPoint {
 export interface NwsPoint {
   forecastUrl: string;
   hourlyUrl: string | null;
+  /** The weather stations near the spot, nearest first (for "right now"). */
+  stationsUrl: string | null;
+}
+
+/** The latest reading at the nearest weather station. */
+export interface CurrentConditions {
+  /** Degrees Fahrenheit, rounded. */
+  tempF: number;
+  /** "Light Rain", "Mostly Cloudy"; null when the station doesn't say. */
+  text: string | null;
+  /** When it was measured (ISO). */
+  at: string;
+  /** The station's name, e.g. "Baltimore-Washington International Airport". */
+  station: string | null;
 }
 
 export interface ForecastPeriod {
@@ -99,7 +113,37 @@ export function parsePoint(json: unknown): NwsPoint | null {
   const p = obj(obj(json)?.properties);
   const forecastUrl = nwsUrl(p?.forecast);
   if (!forecastUrl) return null;
-  return { forecastUrl, hourlyUrl: nwsUrl(p?.forecastHourly) };
+  return { forecastUrl, hourlyUrl: nwsUrl(p?.forecastHourly), stationsUrl: nwsUrl(p?.observationStations) };
+}
+
+/** The stations list → the nearest station's latest-observation address and name. */
+export function parseStations(json: unknown): { latestUrl: string; name: string | null } | null {
+  const features = obj(json)?.features;
+  if (!Array.isArray(features)) return null;
+  for (const f of features) {
+    const props = obj(obj(f)?.properties);
+    const id = str(props?.stationIdentifier);
+    if (id && /^[A-Z0-9]{3,8}$/i.test(id)) {
+      return { latestUrl: `https://api.weather.gov/stations/${id}/observations/latest`, name: str(props?.name) };
+    }
+  }
+  return null;
+}
+
+/** How old a reading can be and still show as "right now". */
+const NOW_MAX_AGE_MS = 2 * 3600000;
+
+/** The latest observation → current conditions, or null if it's missing, stale or has no temperature. */
+export function parseObservation(json: unknown, station: string | null, now = Date.now()): CurrentConditions | null {
+  const p = obj(obj(json)?.properties);
+  const at = str(p?.timestamp);
+  const t = obj(p?.temperature);
+  const value = num(t?.value);
+  if (!at || value === null || !Number.isFinite(Date.parse(at))) return null;
+  if (now - Date.parse(at) > NOW_MAX_AGE_MS) return null;
+  const unit = str(t?.unitCode) ?? "wmoUnit:degC";
+  const f = /degF/i.test(unit) ? value : value * 1.8 + 32;
+  return { tempF: Math.round(f), text: str(p?.textDescription), at, station };
 }
 
 /** A number, or a { value } (the API can send quantities either way). */
@@ -275,6 +319,12 @@ export function eventWindow(e: { starts_at: string; ends_at: string | null; all_
   const start = Date.parse(e.starts_at);
   const end = e.ends_at ? Date.parse(e.ends_at) : start + DEFAULT_HOURS * 3600000;
   return { start, end: Math.max(start, end) };
+}
+
+/** Is the event under way (or starting within the hour)? Then the weather shows "right now". */
+export function happeningNow(e: { starts_at: string; ends_at: string | null; all_day?: boolean | null }, now = Date.now()): boolean {
+  const w = eventWindow(e);
+  return now >= w.start - 3600000 && now < w.end;
 }
 
 /** Show the weather on the event page? From a week before it starts until it ends. */

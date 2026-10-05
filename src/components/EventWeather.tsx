@@ -20,7 +20,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { loadEventWeather, type EventWeatherData } from "@/lib/weather";
-import { alertWhen, alertWorthPush, forecastPageUrl, weatherKind, type ForecastPeriod, type WeatherAlert, type WeatherKind } from "@/lib/weather-nws";
+import { alertWhen, alertWorthPush, forecastPageUrl, weatherKind, type CurrentConditions, type ForecastPeriod, type WeatherAlert, type WeatherKind } from "@/lib/weather-nws";
 import { TZ } from "@/lib/tz";
 import type { PackEvent } from "@/lib/types";
 
@@ -60,7 +60,7 @@ const ICON: Record<WeatherKind, { day: LucideIcon; night: LucideIcon }> = {
 };
 
 export function EventWeatherView({ data }: { data: EventWeatherData }) {
-  const { periods, alerts, point, moreLater } = data;
+  const { periods, alerts, point, moreLater, now } = data;
   const source = (
     <p className="text-[11px] text-muted">
       Forecast from the National Weather Service.{" "}
@@ -77,9 +77,10 @@ export function EventWeatherView({ data }: { data: EventWeatherData }) {
       {alerts.map((a) => (
         <AlertCard key={a.id} a={a} />
       ))}
-      {periods.length > 0 ? (
+      {periods.length > 0 || now ? (
         <div className="card space-y-3">
-          <ul className="divide-y divide-line">
+          {now && <NowRow now={now} />}
+          <ul className="divide-y divide-line empty:hidden">
             {periods.map((p) => (
               <PeriodRow key={p.startTime} p={p} />
             ))}
@@ -91,6 +92,26 @@ export function EventWeatherView({ data }: { data: EventWeatherData }) {
         source
       )}
     </section>
+  );
+}
+
+const timeFmt = new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", minute: "2-digit" });
+
+/** While the event is happening: the latest reading at the nearest weather station, one line. */
+function NowRow({ now }: { now: CurrentConditions }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl bg-surface-low px-3 py-2">
+      <div className="min-w-0">
+        <p className="text-sm font-bold text-ink">
+          Right now{now.text ? <span className="font-normal text-navy"> · {now.text}</span> : null}
+        </p>
+        <p className="truncate text-[11px] text-muted">
+          {now.station ? `${now.station}, ` : ""}
+          {timeFmt.format(new Date(now.at))}
+        </p>
+      </div>
+      <span className="shrink-0 text-xl font-extrabold text-pine-950">{now.tempF}°</span>
+    </div>
   );
 }
 
