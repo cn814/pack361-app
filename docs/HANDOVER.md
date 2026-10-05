@@ -26,6 +26,7 @@ least **two people** on every account so nobody is ever the only way in.
 | **Email forwarding** (`info@pack361.org`) | Where replies and questions go. Squarespace's forwarding (the Mailgun MX records). | Included with domain | *Check* | Change who it forwards to in Squarespace → Domains → Email forwarding. |
 | **Resend** | Sends sign-in codes (through Supabase's SMTP settings), reminders, welcome emails and alerts. 100 emails a day. | Free | Chris Nealen | Invite a teammate, or make a new account, verify `pack361.org`, and replace `RESEND_API_KEY` in Vercel **and** the SMTP password in Supabase → Authentication → Emails → SMTP. |
 | **Brevo** | Pack-wide and den emails, and the Sunday newsletter. 300 emails a day. **API keys expire after one year.** | Free | Chris Nealen | Add a user, or make a new account, authenticate `pack361.org` (adds DNS records), and replace `BREVO_API_KEY` in Vercel. |
+| **Pl@ntNet** | Plant ID in the app (Trail guide and Pack → Nature ID). 500 identifications a day, non-commercial use. | Free | Chris Nealen | Make a free account at my.plantnet.org, create an API key, and replace `PLANTNET_API_KEY` in Vercel. Without a key the app points families to the Seek app instead. |
 | **Givebutter** | The pack's fundraising and dues account. The app reads campaigns and orders with an API key. | Pack account | Annie (admin); Chris (being added) | Any Givebutter admin can make a new key (Settings → Developers → API) and replace `GIVEBUTTER_API_KEY` in Vercel. |
 | **PayPal** (optional) | Pay buttons for fees other than dues. | Pack's PayPal Business | Pack treasurer | The treasurer makes the REST app keys; see the "Connect PayPal to the App" guide. |
 | **TroopWebHost** | Calendar sync only, until the pack cancels it. | Paid yearly | Pack | Remove `TWH_CALENDAR_URL` from Vercel when cancelled. |
@@ -46,6 +47,7 @@ what each is for.
 | `RESEND_API_KEY` | Resend → API Keys | New key in Vercel **and** Supabase SMTP; delete the old one. |
 | `BREVO_API_KEY` | Brevo → SMTP & API | New key in Vercel; delete the old one. **Expires after one year:** the live key (Production) was made about Sept 30, 2026 and the beta key (Preview, branch `beta`) on Oct 1, 2026, so replace both by late September 2027. |
 | `GIVEBUTTER_API_KEY` | Givebutter → Settings → Developers | New key in Vercel; delete the old one. |
+| `PLANTNET_API_KEY` | my.plantnet.org → your account → API key | New key in Vercel; delete the old one. |
 | `VAPID_PRIVATE_KEY` / `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | `npx web-push generate-vapid-keys` | Changing them means everyone turns phone alerts on again; only if it leaked. |
 | `PAYPAL_CLIENT_SECRET` | PayPal developer site (treasurer) | Treasurer makes a new secret. |
 | `TWH_CALENDAR_URL` | TroopWebHost → My Stuff → Subscribe | Signs in as that person: replace it when they leave, or remove it. |

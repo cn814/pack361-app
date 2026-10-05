@@ -4,7 +4,8 @@ import { AUTH_COOKIE_OPTIONS } from "./lib/supabase/env";
 
 // Paths anyone can open without signing in
 // (the calendar feed and cron job check their own token/secret)
-const PUBLIC_PATHS = ["/login", "/get", "/safety", "/join", "/auth", "/manifest.webmanifest", "/sw.js", "/api/calendar", "/api/cron"];
+// /birdnet: the bird sound ID model files (public, no pack data).
+const PUBLIC_PATHS = ["/login", "/get", "/safety", "/join", "/auth", "/manifest.webmanifest", "/sw.js", "/api/calendar", "/api/cron", "/birdnet"];
 
 // The pack's public website (pack361.org, www.pack361.org) shows only the public join pages.
 // Everything else there goes to the members' app at APP_ORIGIN.

@@ -249,6 +249,10 @@ npm run dev
   (pack-wide and den) goes through Brevo's free plan (300 a day, `BREVO_API_KEY`,
   `src/lib/bulk-email.ts`), so it doesn't use up the Resend quota the sign-in codes need. Without
   Brevo, den emails of 60 or fewer go through Resend and the pack-wide option is hidden. Parents never message each other or scouts.
+- **Nature ID** (`/nature`, and in each campout or hike's Trail guide): bird sound ID with BirdNET
+  run in the browser (`public/birdnet/v2.4`: model CC BY-SA 4.0, worker MIT, TensorFlow.js; cached
+  by `public/sw.js` for use offline; audio never leaves the phone) and plant ID from a photo with the
+  Pl@ntNet API (`/api/nature/plant`, `PLANTNET_API_KEY`, 25 a day per adult via `claim_plant_id()`).
 - **Pack guide** (`/guide`, `guide_pages`): searchable pages about how the pack works. Leaders
   edit them in the app with a small Markdown subset (`src/components/GuideBody.tsx`).
   Drafts are visible to leaders only; `[Leaders: …]` placeholders are highlighted.

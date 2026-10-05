@@ -23,7 +23,15 @@ async function getSpecies(url: string): Promise<Species[]> {
   }
 }
 
+/** Where to listen for birds when there's no event address: Ellicott City. */
+export const PACK_HOME = { lat: 39.27, lon: -76.83 };
+
+/** Plant ID is set up (the pack's Pl@ntNet key is in place). */
+export const plantIdReady = () => Boolean(process.env.PLANTNET_API_KEY);
+
 export interface TrailGuide {
+  /** Where the event is (or the pack's home area): bird sound ID leaves out birds unlikely there. */
+  point: { lat: number; lon: number };
   birds: Species[];
   plants: Species[];
   /** Month names the lists cover ("October", "October and November"). */
@@ -37,7 +45,7 @@ export async function loadTrailGuide(e: WeatherEvent): Promise<TrailGuide> {
   const months = eventMonths(e);
   const label = months.map((m) => MONTH[m - 1]).join(" and ");
   const point = await eventPoint(e);
-  if (!point) return { birds: [], plants: [], months: label };
+  if (!point) return { point: PACK_HOME, birds: [], plants: [], months: label };
   const [birds, plants] = await Promise.all([getSpecies(speciesUrl(point, "Aves", months)), getSpecies(speciesUrl(point, "Plantae", months))]);
-  return { birds, plants, months: label };
+  return { point, birds, plants, months: label };
 }

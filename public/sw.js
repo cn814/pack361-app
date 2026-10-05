@@ -9,6 +9,10 @@ const CACHE = "pack361-offline-v3"; // v3: navigation preload, small header badg
 const OFFLINE_PAGES = /^\/(?:campouts\/[0-9a-f-]{36}|family\/files)\/?$/i;
 // The opening video itself isn't cached here: phones ask for video in ranges, which a cached
 // whole file can't answer (Safari then won't play it). The browser's own cache keeps it.
+// Bird sound ID model files: kept in their own cache, so they work on the trail and survive
+// sign-out (they hold no pack data). Each model version has its own folder and cache.
+const BIRDNET = /^\/birdnet\/v2\.4\//;
+const BIRDNET_CACHE = "birdnet-v2.4";
 const STATIC = /^\/(_next\/static\/|icon-|splash-poster|badge\.png|badge-96\.png|notification-badge\.png|apple-icon|icon\.png|favicon\.ico)/;
 
 self.addEventListener("install", () => self.skipWaiting());
@@ -24,6 +28,7 @@ self.addEventListener("activate", (event) =>
         }
       }
       for (const key of await caches.keys()) if (key.startsWith("pack361-") && key !== CACHE) await caches.delete(key);
+      for (const key of await caches.keys()) if (key.startsWith("birdnet-") && key !== BIRDNET_CACHE) await caches.delete(key);
       await self.clients.claim();
     })(),
   ),
@@ -48,6 +53,16 @@ async function cacheFirst(event) {
     const copy = res.clone();
     event.waitUntil(cache.put(request, copy).then(() => trimStatic(cache)).catch(() => {}));
   }
+  return res;
+}
+
+// Bird model files: from the phone once saved, else downloaded and saved.
+async function birdnetFirst(event) {
+  const cache = await caches.open(BIRDNET_CACHE);
+  const hit = await cache.match(event.request, { ignoreSearch: true });
+  if (hit) return hit;
+  const res = await fetch(event.request);
+  if (res.ok && res.status === 200) event.waitUntil(cache.put(event.request, res.clone()).catch(() => {}));
   return res;
 }
 
@@ -85,7 +100,9 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
-  if (STATIC.test(url.pathname)) {
+  if (BIRDNET.test(url.pathname)) {
+    event.respondWith(birdnetFirst(event));
+  } else if (STATIC.test(url.pathname)) {
     event.respondWith(cacheFirst(event));
   } else if (req.mode === "navigate" && OFFLINE_PAGES.test(url.pathname)) {
     event.respondWith(networkFirst(event));

@@ -1,16 +1,13 @@
 import { Suspense } from "react";
-import { Bird, ExternalLink, Leaf, Search } from "lucide-react";
+import { ExternalLink, Leaf } from "lucide-react";
+import NatureTools from "@/components/NatureTools";
 import { involvesHiking, showNature, type Species } from "@/lib/nature";
-import { loadTrailGuide } from "@/lib/nature-data";
+import { loadTrailGuide, plantIdReady } from "@/lib/nature-data";
 import type { PackEvent } from "@/lib/types";
 
-const MERLIN = "https://merlin.allaboutbirds.org/download/";
-const SEEK = "https://www.inaturalist.org/pages/seek_app";
-
 /**
- * Trail guide on campouts and events with a hike: the birds and plants people have recorded near
- * the event in that month (from iNaturalist), and the two free apps for identifying what scouts
- * find on the trail. From a month before the event until it ends. `extraText` = the page's
+ * Trail guide on campouts and events with a hike: bird sound ID and plant ID right in the app, and
+ * the birds and plants people have recorded near the event in that month (from iNaturalist). From a month before the event until it ends. `extraText` = the page's
  * sections and schedule, which can mention a hike when the event's name doesn't.
  */
 export default function EventTrailGuide({ e, extraText = [] }: { e: PackEvent; extraText?: string[] }) {
@@ -30,24 +27,8 @@ async function Loaded({ e }: { e: PackEvent }) {
       <h2 className="section-title flex items-center gap-1.5">
         <Leaf className="h-4 w-4" aria-hidden /> Trail guide
       </h2>
-      <p className="text-sm text-ink">Spot something on the trail? Snap it or listen, and these free apps tell you what it is.</p>
-      <div className="grid grid-cols-2 gap-2">
-        <a href={MERLIN} target="_blank" rel="noopener noreferrer" className="btn-ghost flex-col gap-0.5 py-2.5 text-center">
-          <span className="inline-flex items-center gap-1.5">
-            <Bird className="h-4 w-4" aria-hidden /> Identify a bird
-          </span>
-          <span className="text-[11px] font-semibold text-muted">Merlin: by sound or photo</span>
-        </a>
-        <a href={SEEK} target="_blank" rel="noopener noreferrer" className="btn-ghost flex-col gap-0.5 py-2.5 text-center">
-          <span className="inline-flex items-center gap-1.5">
-            <Search className="h-4 w-4" aria-hidden /> Identify a plant
-          </span>
-          <span className="text-[11px] font-semibold text-muted">Seek: plants, bugs, more</span>
-        </a>
-      </div>
-      <p className="text-[11px] text-muted">
-        Install them before you go: there may be no signal on the trail. Seek needs no account and keeps your exact location private.
-      </p>
+      <p className="text-sm text-ink">Hear a bird or spot a plant on the trail? Find out what it is, right here.</p>
+      <NatureTools point={g.point} plantReady={plantIdReady()} />
 
       {g.birds.length > 0 && <Strip title={`Birds seen near here in ${g.months}`} list={g.birds} />}
       {g.plants.length > 0 && <Strip title={`Plants seen near here in ${g.months}`} list={g.plants} />}

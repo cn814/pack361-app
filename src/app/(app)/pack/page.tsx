@@ -1,29 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  Award,
-  BookOpen,
-  ChevronRight,
-  ClipboardCheck,
-  FileText,
-  FolderOpen,
-  HandCoins,
-  HandHeart,
-  Images,
-  Landmark,
-  Megaphone,
-  Phone,
-  Popcorn,
-  Receipt,
-  ShieldCheck,
-  Shirt,
-  ShoppingBag,
-  Stamp,
-  Tent,
-  UserPlus,
-  Vote,
-  type LucideIcon,
-} from "lucide-react";
+import { Award, Bird, BookOpen, ChevronRight, ClipboardCheck, FileText, FolderOpen, HandCoins, HandHeart, Images, Landmark, Megaphone, Phone, Popcorn, Receipt, ShieldCheck, Shirt, ShoppingBag, Stamp, Tent, type LucideIcon, UserPlus, Vote } from "lucide-react";
 import ModeSwitch from "@/components/ModeSwitch";
 import { isCommittee, requireMember } from "@/lib/data";
 import { isAdmin } from "@/lib/advancement-data";
@@ -77,6 +54,7 @@ export default async function PackPage() {
     { href: "/app-guide", label: "How to use this app", icon: BookOpen, note: "The app guide (PDF), always the latest", file: true },
     { href: "/documents", label: "Documents", icon: FolderOpen },
     { href: "/gear", label: "Gear closet", icon: Tent, note: "Borrow tents and camp gear" },
+    { href: "/nature", label: "Nature ID", icon: Bird, note: "Name a bird by its song, or a plant from a photo" },
     { href: "/photos", label: "Photos", icon: Images },
     { href: "/polls", label: "Polls", icon: Vote },
     { href: "/inbox", label: "News and messages", icon: Megaphone },

@@ -13,9 +13,15 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           // payment: PayPal's checkout (its buttons run in www.paypal.com frames on /pay).
-          { key: "Permissions-Policy", value: 'camera=(self), microphone=(), geolocation=(), payment=(self "https://www.paypal.com" "https://www.sandbox.paypal.com")' },
+          // microphone: bird sound ID (the audio is analyzed on the phone and never sent anywhere).
+          { key: "Permissions-Policy", value: 'camera=(self), microphone=(self), geolocation=(), payment=(self "https://www.paypal.com" "https://www.sandbox.paypal.com")' },
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
         ],
+      },
+      {
+        // The bird sound ID model (about 56 MB). Each version has its own folder, so it never changes.
+        source: "/birdnet/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
       {
         source: "/sw.js",

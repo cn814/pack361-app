@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // BirdNET and TensorFlow.js, copied in as-is (public/birdnet/v2.4/LICENSE.txt)
+    "public/birdnet/**",
     // Local tool folders (not part of the app)
     ".claude/**",
   ]),
