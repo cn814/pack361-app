@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarDays, ClipboardList, Clock, MapPin, Navigation } from "lucide-react";
+import { CalendarDays, ClipboardList, Clock, MapPin } from "lucide-react";
 import BackLink from "@/components/BackLink";
+import NavigateLink from "@/components/NavigateLink";
+import { navDestination } from "@/lib/navigate";
 import DenMeetingRsvp from "@/components/DenMeetingRsvp";
 import { CarpoolSection } from "@/components/EventCarpool";
 import { getMyScouts, requireMember } from "@/lib/data";
 import { fmtMeetingDate, fmtMeetingTime, getMeeting, leadsDen, meetingAdventures, myMeetingRsvps, todayEastern } from "@/lib/meetings";
 import { createClient } from "@/lib/supabase/server";
-import { mapsLink } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Den meeting" };
 
@@ -23,6 +24,7 @@ export default async function MeetingInfoPage({ params }: PageProps<"/meetings/[
   const { data: den } = await supabase.from("dens").select("name, meeting_info").eq("id", meeting.den_id).maybeSingle();
   const time = fmtMeetingTime(meeting);
   const place = [meeting.location, meeting.address].filter(Boolean).join(", ");
+  const navTo = navDestination({ address: meeting.address, location_name: meeting.location });
   const [manage, myScouts] = await Promise.all([leadsDen(me, meeting.den_id), getMyScouts()]);
   const upcoming = meeting.meets_on >= todayEastern();
   const rsvps = upcoming ? await myMeetingRsvps(meeting, myScouts) : [];
@@ -63,11 +65,7 @@ export default async function MeetingInfoPage({ params }: PageProps<"/meetings/[
         )}
         {meeting.family_note && <p className="whitespace-pre-line rounded-xl bg-gold-50 p-3 text-sm text-gold-800">{meeting.family_note}</p>}
         <div className="flex flex-wrap gap-2 pt-1">
-          {place && (
-            <a href={mapsLink(place)} target="_blank" rel="noopener noreferrer" className="btn-ghost py-2">
-              <Navigation className="h-4 w-4" aria-hidden /> Directions
-            </a>
-          )}
+          {navTo && <NavigateLink to={navTo} className="btn-ghost py-2" />}
           {manage && (
             <Link
               href={

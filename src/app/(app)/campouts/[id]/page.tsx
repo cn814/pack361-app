@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CalendarDays, MapPin, Megaphone, Navigation, Ticket, Video } from "lucide-react";
+import { CalendarDays, MapPin, Megaphone, Ticket, Video } from "lucide-react";
 import { eventLinkLabel, isVideoCall } from "@/lib/event-link";
 import Link from "next/link";
 import PackingChecklist from "@/components/PackingChecklist";
 import BackLink from "@/components/BackLink";
+import NavigateLink from "@/components/NavigateLink";
+import { navDestination } from "@/lib/navigate";
 import EventSignup from "@/components/EventSignup";
 import VolunteerJobs from "@/components/VolunteerJobs";
 import RsvpLink from "@/components/RsvpLink";
@@ -29,7 +31,7 @@ import { getSlots } from "@/lib/volunteer";
 import { EventLinks, EventSections } from "@/components/EventInfo";
 import { getEvent, getItinerary, getPackingList, isLeader, requireMember } from "@/lib/data";
 import { getEventCampaign, getOrders } from "@/lib/fundraising-data";
-import { fmtRange, mapsLink } from "@/lib/format";
+import { fmtRange } from "@/lib/format";
 
 export async function generateMetadata({ params }: PageProps<"/campouts/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -55,6 +57,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
   if (!event) notFound();
 
   const place = [event.location_name, event.address].filter(Boolean).join(", ");
+  const navTo = navDestination({ address: event.address, location_name: event.location_name });
   const leader = isLeader(me);
 
   const overview = (
@@ -73,11 +76,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
         {event.details && <ClampText text={event.details} className="pt-1" />}
         <div className="flex flex-wrap gap-2 pt-2">
           <RsvpLink e={event} />
-          {place && (
-            <a href={mapsLink(place)} target="_blank" rel="noopener noreferrer" className="btn-ghost py-2">
-              <Navigation className="h-4 w-4" aria-hidden /> Directions
-            </a>
-          )}
+          {navTo && <NavigateLink to={navTo} className="btn-ghost py-2" />}
           {event.signup_url && (
             <a href={event.signup_url} target="_blank" rel="noopener noreferrer" className="btn-gold py-2">
               {isVideoCall(event.signup_url) ? <Video className="h-4 w-4" aria-hidden /> : <Ticket className="h-4 w-4" aria-hidden />}{" "}

@@ -8,6 +8,8 @@ import { eventHref, getOpenJobs, jobComesBack } from "@/lib/volunteer";
 import EventRow from "@/components/EventRow";
 import { eventLinkLabel } from "@/lib/event-link";
 import RsvpLink from "@/components/RsvpLink";
+import NavigateLink from "@/components/NavigateLink";
+import { navDestination } from "@/lib/navigate";
 import { ProgressBar } from "@/components/RankProgress";
 import { displayName, getAnnouncements, getBigEvent, getMyScouts, getUpcomingEvents, requireMember } from "@/lib/data";
 import { getHidden, getTodos } from "@/lib/inbox";
@@ -142,6 +144,7 @@ function Heading({ title, right }: { title: string; right?: React.ReactNode }) {
 }
 
 function NextUp({ e, label }: { e: CalItem; label: string | null }) {
+  const navTo = navDestination(e);
   return (
     <section className="relative overflow-hidden rounded-3xl bg-deep p-5 text-white shadow-[var(--shadow-float)]">
       <div className="flex items-center justify-between gap-2">
@@ -162,6 +165,7 @@ function NextUp({ e, label }: { e: CalItem; label: string | null }) {
         <Link href={e.href} className="inline-flex items-center gap-1 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold">
           Details <ChevronRight className="h-4 w-4" aria-hidden />
         </Link>
+        {navTo && <NavigateLink to={navTo} className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold" />}
         {e.signup_url && (
           <a href={e.signup_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold">
             {eventLinkLabel(e.signup_url, e.source)}

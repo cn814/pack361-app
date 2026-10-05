@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { CircleCheck, MapPin, Users } from "lucide-react";
+import { CircleCheck, MapPin, Navigation, Users } from "lucide-react";
 import type { PackEvent } from "@/lib/types";
 import RsvpLink from "@/components/RsvpLink";
 import { eventOver, fmtRange } from "@/lib/format";
 import { eventLinkLabel } from "@/lib/event-link";
+import NavigateLink from "@/components/NavigateLink";
+import { navDestination } from "@/lib/navigate";
 
 const CATEGORY_STYLE: Record<string, string> = {
   Campout: "bg-mint text-pine",
@@ -29,6 +31,13 @@ export default function EventRow({
   const over = Boolean(e.archived_at) || eventOver(e);
   const signupLink = !signup?.mine && !over ? e.signup_url : null;
   const href = e.href ?? (isCampout ? `/campouts/${e.id}` : `/events/${e.id}`);
+  // Navigate: straight to the map app, for anything still coming up with a place to drive to.
+  const navTo = over ? null : navDestination(e);
+  const nav = navTo && (
+    <NavigateLink to={navTo} className="inline-flex items-center gap-1 text-xs font-bold text-pine underline">
+      <Navigation className="h-3.5 w-3.5" aria-hidden /> Navigate
+    </NavigateLink>
+  );
   const body = (
     <div className="flex items-start gap-3">
       <div className="w-12 shrink-0 rounded-xl bg-surface-low py-1.5 text-center">
@@ -73,9 +82,10 @@ export default function EventRow({
       <Link href={href} className="block">
         {body}
       </Link>
-      {e.rsvp_enabled && !over && (
-        <div className="mt-2">
-          <RsvpLink e={e} variant="link" />
+      {((e.rsvp_enabled && !over) || nav) && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+          {e.rsvp_enabled && !over && <RsvpLink e={e} variant="link" />}
+          {nav}
         </div>
       )}
     </div>
@@ -84,14 +94,15 @@ export default function EventRow({
       <Link href={href} className="block">
         {body}
       </Link>
-      {((e.rsvp_enabled && !over) || signupLink) && (
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-          <RsvpLink e={e} variant="link" />
+      {((e.rsvp_enabled && !over) || signupLink || nav) && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+          {e.rsvp_enabled && !over && <RsvpLink e={e} variant="link" />}
           {signupLink && (
             <a href={signupLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-pine underline">
               {eventLinkLabel(signupLink, e.source, true)}
             </a>
           )}
+          {nav}
         </div>
       )}
     </div>

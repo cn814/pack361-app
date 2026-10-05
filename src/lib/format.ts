@@ -35,10 +35,6 @@ export function daysUntil(iso: string, endIso?: string | null) {
   return `In ${d} days`;
 }
 
-export function mapsLink(q: string) {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
-}
-
 export function timeAgo(iso: string) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000;
   if (s < 3600) return `${Math.max(1, Math.round(s / 60))}m ago`;
