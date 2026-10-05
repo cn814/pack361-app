@@ -80,7 +80,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/leaders/mo
 
   return (
     <>
-      <BackLink href="/leaders" label="Leaders" />
+      <BackLink href="/lead" label="Leaders" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Money</h1>
       <p className="-mt-1 text-sm text-muted">
         Dues, registration and event fees for {settings.dues_season}

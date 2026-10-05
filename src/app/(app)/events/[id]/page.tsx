@@ -12,6 +12,7 @@ import PackingChecklist from "@/components/PackingChecklist";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
 import EventAttendance from "@/components/EventAttendance";
+import MeetingNotes from "@/components/MeetingNotes";
 import PermissionSlips from "@/components/PermissionSlips";
 import EventSignal from "@/components/EventSignal";
 import EventCarpool from "@/components/EventCarpool";
@@ -92,16 +93,10 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
               {eventLinkLabel(event.signup_url, event.source)}
             </a>
           )}
-          {leader && event.rsvp_enabled && (
-            <Link href={`/announce?event=${id}`} className="btn-ghost py-2">
-              <Megaphone className="h-4 w-4" aria-hidden /> Message families
-            </Link>
-          )}
         </div>
         {!event.archived_at && <AddToCalendar eventId={id} className="btn-ghost w-full py-2" />}
       </section>
       {event.archived_at && <ArchiveControl e={event} leader={false} back={`/events/${id}`} part="note" />}
-      <EventAttendance e={event} me={me} />
       {elsewhere.length > 0 && (
         <section className="card space-y-2 border-l-4 border-l-gold">
           <h2 className="section-title">Meeting somewhere else tonight</h2>
@@ -121,12 +116,25 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <ReadyToGo e={event} me={me} />
       <PermissionSlips e={event} me={me} />
       <EventSignal e={event} me={me} />
+    </>
+  );
+
+  // Leaders only: attendance (from the day of), notes, messaging families, and editing.
+  const leaderTab = leader ? (
+    <>
+      <EventAttendance e={event} me={me} />
+      <MeetingNotes target={{ eventId: id }} />
+      {event.rsvp_enabled && (
+        <Link href={`/announce?event=${id}`} className="btn-ghost w-full py-2.5">
+          <Megaphone className="h-4 w-4" aria-hidden /> Message families
+        </Link>
+      )}
       <EditEventLink e={event} me={me} />
       <BuildEventLink e={event} me={me} />
       <CopyEventButton e={event} me={me} />
       <ArchiveControl e={event} leader={leader} back={`/events/${id}`} part="button" />
     </>
-  );
+  ) : null;
 
   return (
     <>
@@ -134,6 +142,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <EventTabs
         tabs={[
           { id: "overview", label: "Overview", content: overview },
+          { id: "leaders", label: "Leaders", content: leaderTab },
           { id: "schedule", label: "Schedule", content: <EventSchedule items={itinerary} /> },
           {
             id: "packing",

@@ -18,11 +18,16 @@ export default async function LeadersPage() {
     <>
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Leader contacts</h1>
       <p className="-mt-2 text-sm text-muted">
-        Call or email any of the pack&apos;s leaders. Leader tools are under{" "}
-        <Link href="/pack" className="font-semibold text-pine underline">
-          Pack
-        </Link>
-        {isLeader(me) ? " in Leader mode." : "."}
+        Call or email any of the pack&apos;s leaders.
+        {isLeader(me) && (
+          <>
+            {" "}Leader tools are on the{" "}
+            <Link href="/lead" className="font-semibold text-pine underline">
+              Leaders
+            </Link>{" "}
+            tab.
+          </>
+        )}
       </p>
       <ul className="space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0">
         {leaders.map((l) => (

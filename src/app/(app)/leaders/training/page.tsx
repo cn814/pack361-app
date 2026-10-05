@@ -72,7 +72,7 @@ export default async function TrainingPage({ searchParams }: PageProps<"/leaders
 
   return (
     <>
-      <BackLink href={admin ? "/admin" : "/leaders"} label={admin ? "Pack admin" : "Leaders"} />
+      <BackLink href={admin ? "/admin" : "/lead"} label={admin ? "Pack admin" : "Leaders"} />
       <div className="space-y-2">
         <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Leader training</h1>
         <p className="text-sm text-muted">

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import BackLink from "@/components/BackLink";
 import RecordMeeting from "@/components/RecordMeeting";
+import MeetingNotes from "@/components/MeetingNotes";
 import { requireMember } from "@/lib/data";
 import { denAdventures, fmtMeetingDate, getMeeting, getMeetingOn, goingScouts, leadsDen, todayEastern } from "@/lib/meetings";
 import { createClient } from "@/lib/supabase/server";
@@ -64,7 +65,7 @@ export default async function RecordMeetingPage({ params, searchParams }: PagePr
   const dayLabel = day === today ? `Today, ${fmtMeetingDate(day)}` : fmtMeetingDate(day);
   return (
     <>
-      <BackLink href={`/scouts/den/${denId}`} label={den.name} />
+      <BackLink href="/lead" label="Leaders" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">{den.name} meeting</h1>
       {/* Keyed on the day, not the meeting: the first Save of a new meeting must keep its "Saved" screen. */}
       <RecordMeeting
@@ -81,6 +82,7 @@ export default async function RecordMeetingPage({ params, searchParams }: PagePr
         adventures={adventures}
         work={(meeting?.work ?? []).map((w) => ({ adventure: w.adventure, requirements: w.requirements, skip: w.skip ?? {} }))}
       />
+      <MeetingNotes key={`notes-${day}`} target={{ denId, day }} />
     </>
   );
 }

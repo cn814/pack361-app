@@ -3,50 +3,24 @@ import { Suspense } from "react";
 import GettingStarted from "@/components/GettingStarted";
 import HelpWantedCard from "@/components/HelpWantedCard";
 import SubmitButton from "@/components/SubmitButton";
-import {
-  CalendarPlus,
-  ChevronRight,
-  CircleCheck,
-  ClipboardCheck,
-  HandHelping,
-  MapPin,
-  Megaphone,
-  MessageSquare,
-  Timer,
-  Vote,
-  type LucideIcon,
-} from "lucide-react";
+import { ChevronRight, HandHelping, MapPin, Timer } from "lucide-react";
 import { eventHref, getOpenJobs, jobComesBack } from "@/lib/volunteer";
 import EventRow from "@/components/EventRow";
 import { eventLinkLabel } from "@/lib/event-link";
 import RsvpLink from "@/components/RsvpLink";
-import ModeSwitch from "@/components/ModeSwitch";
 import { ProgressBar } from "@/components/RankProgress";
 import { displayName, getAnnouncements, getBigEvent, getMyScouts, getUpcomingEvents, requireMember } from "@/lib/data";
-import { getMessageableDens } from "@/lib/audience";
 import { getHidden, getTodos } from "@/lib/inbox";
 import TodoCard from "@/components/TodoCard";
 import { hideTodo } from "./todo-actions";
-import { myDenMeetingButtons } from "@/lib/meetings";
-import { countReviewSubmissions, getCatalog, getRecords, recordsByScout } from "@/lib/advancement-data";
+import { getCatalog, getRecords, recordsByScout } from "@/lib/advancement-data";
 import { RANK_LABEL, rankProgress } from "@/lib/advancement";
-import { canLead, getMode } from "@/lib/mode";
+import { LEADER_TODOS } from "@/lib/leader-todos";
 import { daysUntil, eventOver, fmtRange, timeAgo } from "@/lib/format";
 import type { CalItem } from "@/lib/calendar";
 
-/** To-dos that are a leader's job (the rest are their own family's). */
-const LEADER_TODOS = new Set(["join-requests", "photos", "forms-waiting", "payments-reported", "notes", "training-import"]);
-const WAITING_LABEL: Record<string, string> = {
-  "join-requests": "asking to join",
-  photos: "photos to review",
-  "forms-waiting": "medical forms turned in",
-  "payments-reported": "payments to confirm",
-  notes: "messages from families",
-};
-
 export default async function Home() {
   const me = await requireMember();
-  const mode = await getMode(me);
   const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", hour12: false }).format(new Date()));
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
@@ -58,18 +32,13 @@ export default async function Home() {
           <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">{displayName(me)}</h1>
         </div>
       </div>
-      {canLead(me) && (
-        <div className="lg:hidden">
-          <ModeSwitch mode={mode} />
-        </div>
-      )}
-      {mode === "leader" ? <LeaderHome /> : <FamilyHome />}
+      <FamilyHome />
     </>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Family: what's next, what needs you, your scouts, pack news
+// What's next, what needs you, your scouts, pack news. (Leader jobs are on the Leaders tab.)
 // ---------------------------------------------------------------------------
 async function FamilyHome() {
   // Records only need the scouts, not everything else: start them as soon as the scouts arrive.
@@ -155,111 +124,6 @@ async function FamilyHome() {
             ))}
           </section>
         )}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Leader: tonight's meeting, what's waiting on you, quick actions
-// ---------------------------------------------------------------------------
-async function LeaderHome() {
-  const me = await requireMember();
-  const [todos, denButtons, dens, events, posts, toApprove] = await Promise.all([
-    getTodos(),
-    myDenMeetingButtons(),
-    getMessageableDens(me),
-    getUpcomingEvents(10, { near: true }).then((l) => l.filter((e) => !eventOver(e)).slice(0, 6)),
-    getAnnouncements(2),
-    // Reports from this leader's dens (or the whole pack) waiting for approval: just the number.
-    countReviewSubmissions("submitted"),
-  ]);
-  const leaderTodos = todos.filter((t) => LEADER_TODOS.has(t.key));
-  const familyCount = todos.length - leaderTodos.length;
-
-  const waiting: { href: string; count: number | null; label: string }[] = [];
-  if (toApprove) waiting.push({ href: "/scouts/review", count: toApprove, label: "reports to approve" });
-  for (const t of leaderTodos) {
-    const n = Number(t.title.match(/^\d+/)?.[0] ?? NaN);
-    waiting.push({ href: t.href, count: Number.isNaN(n) ? null : n, label: Number.isNaN(n) ? t.title : (WAITING_LABEL[t.key] ?? t.title) });
-  }
-  const myDen = dens.length === 1 ? dens[0] : null;
-
-  return (
-    <div className="page-wide flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-7">
-      <div className="space-y-5">
-        {denButtons.map((d) => (
-          <Link
-            key={d.denId}
-            href={`/scouts/den/${d.denId}/today`}
-            className="flex min-h-16 items-center gap-3 rounded-3xl bg-gold px-4 py-4 text-on-gold shadow-[var(--shadow-card)] active:brightness-95"
-          >
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-deep">
-              <ClipboardCheck className="h-6 w-6 text-gold" aria-hidden />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-xs font-extrabold uppercase tracking-wider">{d.today ? "Tonight" : "Den meeting"}</span>
-              <span className="block text-lg font-extrabold leading-tight">Record the {d.name} meeting</span>
-              <span className="flex items-center gap-1 text-sm">
-                {d.saved ? (
-                  <>
-                    <CircleCheck className="h-4 w-4" aria-hidden /> Saved. Tap to change it.
-                  </>
-                ) : (
-                  "Who's here and what you did"
-                )}
-              </span>
-            </span>
-            <ChevronRight className="h-5 w-5 shrink-0" aria-hidden />
-          </Link>
-        ))}
-
-        <section className="space-y-2">
-          <Heading title="Waiting on you" />
-          {waiting.length ? (
-            <div className="grid grid-cols-2 gap-2">
-              {waiting.map((w) => (
-                <Link key={w.href + w.label} href={w.href} className="card py-3">
-                  {w.count !== null && <span className="block text-2xl font-extrabold text-pine-950">{w.count}</span>}
-                  <span className="block text-[13px] font-semibold text-ink first-letter:uppercase">{w.label}</span>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="card flex items-center gap-2 text-sm text-muted">
-              <CircleCheck className="h-4 w-4 text-pine" aria-hidden /> Nothing waiting on you.
-            </p>
-          )}
-          {familyCount > 0 && (
-            <Link href="/inbox" prefetch={false} className="block px-1 text-sm font-semibold text-pine">
-              Your family has {familyCount} to-do{familyCount === 1 ? "" : "s"} →
-            </Link>
-          )}
-        </section>
-
-        <section className="space-y-2">
-          <Heading title="Quick actions" />
-          <div className="grid grid-cols-4 gap-2">
-            <Action href="/events/new" icon={CalendarPlus} label="Add event" />
-            <Action href="/announce" icon={Megaphone} label="Announce" sub="Whole pack" />
-            {dens.length > 0 && (
-              <Action href={myDen ? `/announce?den=${myDen.id}` : "/announce?den=pick"} icon={MessageSquare} label="Message den" sub={myDen?.name} />
-            )}
-            <Action href="/polls/new" icon={Vote} label="New poll" />
-          </div>
-        </section>
-      </div>
-
-      <div className="space-y-5">
-        {events.length > 0 && (
-          <section className="space-y-2">
-            <Heading title="Coming up" right={<Link href="/events" className="text-sm font-bold text-pine">Calendar</Link>} />
-            {events.slice(0, 4).map((e) => (
-              <EventRow key={e.id} e={e} />
-            ))}
-          </section>
-        )}
-        <PackNews posts={posts} />
       </div>
     </div>
   );
@@ -368,18 +232,3 @@ function PackNews({ posts }: { posts: Awaited<ReturnType<typeof getAnnouncements
     </section>
   );
 }
-
-function Action({ href, icon: Icon, label, sub }: { href: string; icon: LucideIcon; label: string; sub?: string }) {
-  return (
-    <Link href={href} className="flex flex-col items-center gap-1.5 rounded-2xl py-1 text-center active:bg-mint">
-      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-mint">
-        <Icon className="h-6 w-6 text-pine" aria-hidden />
-      </span>
-      <span className="text-xs font-bold leading-tight text-ink">
-        {label}
-        {sub && <span className="block text-[11px] font-semibold text-muted">{sub}</span>}
-      </span>
-    </Link>
-  );
-}
-

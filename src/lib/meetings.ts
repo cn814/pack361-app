@@ -159,7 +159,7 @@ export async function myMeetingRsvps(
  * The dens this adult is listed as a leader of, with whether there's a meeting today (planned in
  * the app or a "Den Meeting" on the calendar), for the Home page's "Record a den meeting" buttons.
  */
-export async function myDenMeetingButtons(): Promise<{ denId: string; name: string; today: boolean; saved: boolean }[]> {
+export async function myDenMeetingButtons(): Promise<{ denId: string; name: string; rank: DenRank; today: boolean; saved: boolean }[]> {
   const denIds = await getMyDenIds();
   if (!denIds.length) return [];
   const supabase = await createClient();
@@ -172,7 +172,7 @@ export async function myDenMeetingButtons(): Promise<{ denId: string; name: stri
   return ((dens ?? []) as { id: string; name: string; rank: DenRank }[]).map((d) => {
     const m = ((meetings ?? []) as { den_id: string; recorded_at: string | null }[]).filter((x) => x.den_id === d.id);
     const today = m.length > 0 || events.some((e) => includesDen(e, d.id, d.rank));
-    return { denId: d.id, name: d.name, today, saved: m.some((x) => x.recorded_at) };
+    return { denId: d.id, name: d.name, rank: d.rank, today, saved: m.some((x) => x.recorded_at) };
   });
 }
 

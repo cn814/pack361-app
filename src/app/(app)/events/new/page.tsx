@@ -14,7 +14,7 @@ export default async function NewEventPage() {
   const [dens, docs] = await Promise.all([getDens(false), getDocuments()]);
   return (
     <>
-      <BackLink href="/events" label="Calendar" />
+      <BackLink href="/lead#events" label="Leaders" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">New event</h1>
       <section className="card">
         <EventForm

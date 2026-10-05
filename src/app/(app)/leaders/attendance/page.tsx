@@ -26,7 +26,7 @@ export default async function AttendanceReportPage({ searchParams }: PageProps<"
 
   return (
     <>
-      <BackLink href="/leaders" label="Leaders" />
+      <BackLink href="/lead" label="Leaders" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Attendance</h1>
       <p className="-mt-1 text-sm text-muted">
         {r.season} season (July to June) · {total} scout{total === 1 ? "" : "s"}

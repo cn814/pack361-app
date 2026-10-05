@@ -14,6 +14,7 @@ import ClampText from "@/components/ClampText";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
 import EventAttendance from "@/components/EventAttendance";
+import MeetingNotes from "@/components/MeetingNotes";
 import PermissionSlips from "@/components/PermissionSlips";
 import EventSignal from "@/components/EventSignal";
 import EventCarpool from "@/components/EventCarpool";
@@ -83,27 +84,34 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
               {eventLinkLabel(event.signup_url, event.source)}
             </a>
           )}
-          {leader && event.rsvp_enabled && (
-            <Link href={`/announce?event=${id}`} className="btn-ghost py-2">
-              <Megaphone className="h-4 w-4" aria-hidden /> Message families
-            </Link>
-          )}
         </div>
         {!event.archived_at && <AddToCalendar eventId={id} className="btn-ghost w-full py-2" />}
       </section>
-      <EventAttendance e={event} me={me} />
       {campaign && <EventSignup campaign={campaign} orders={orders} myFamilyId={me.family_id} leader={leader} signupUrl={event.signup_url} />}
       <EventRsvp e={event} me={me} />
       <ReadyToGo e={event} me={me} />
       <PermissionSlips e={event} me={me} />
       <EventSignal e={event} me={me} />
       <SaveOffline />
+    </>
+  );
+
+  // Leaders only: attendance (from the day of), notes, messaging families, and editing.
+  const leaderTab = leader ? (
+    <>
+      <EventAttendance e={event} me={me} />
+      <MeetingNotes target={{ eventId: id }} />
+      {event.rsvp_enabled && (
+        <Link href={`/announce?event=${id}`} className="btn-ghost w-full py-2.5">
+          <Megaphone className="h-4 w-4" aria-hidden /> Message families
+        </Link>
+      )}
       <EditEventLink e={event} me={me} />
       <BuildEventLink e={event} me={me} />
       <CopyEventButton e={event} me={me} />
       <ArchiveControl e={event} leader={leader} back={`/campouts/${id}`} part="button" />
     </>
-  );
+  ) : null;
 
   return (
     <>
@@ -112,6 +120,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
       <EventTabs
         tabs={[
           { id: "overview", label: "Overview", content: overview },
+          { id: "leaders", label: "Leaders", content: leaderTab },
           {
             id: "schedule",
             label: "Schedule",

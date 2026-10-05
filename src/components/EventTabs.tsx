@@ -9,13 +9,13 @@ export interface EventTab {
 }
 
 /**
- * An event page split into tabs: the first (Overview) holds the essentials, the rest (Schedule,
+ * A page split into tabs (events and campouts; also the Leaders and Pack pages): the first (Overview) holds the essentials, the rest (Schedule,
  * Packing list, Weather…) one tap away. All tabs are on the page already, so switching is instant
  * and works offline (campout pages are saved on the phone). A tab with nothing in it hides its
  * button. Links to a section (#rsvp, #carpool, #packing…) open the tab it's in; printing prints
  * every tab.
  */
-export default function EventTabs({ tabs }: { tabs: EventTab[] }) {
+export default function EventTabs({ tabs, label = "Event sections" }: { tabs: EventTab[]; label?: string }) {
   const first = tabs[0]?.id ?? "";
   const [active, setActive] = useState(first);
   const [empty, setEmpty] = useState<Set<string>>(new Set());
@@ -81,7 +81,7 @@ export default function EventTabs({ tabs }: { tabs: EventTab[] }) {
   return (
     <>
       {visible.length > 1 && (
-        <nav ref={nav} aria-label="Event sections" className="-mx-4 flex scroll-mt-16 gap-2 overflow-x-auto px-4 pb-1 print:hidden lg:mx-0 lg:flex-wrap lg:px-0" role="tablist">
+        <nav ref={nav} aria-label={label} className="-mx-4 flex scroll-mt-16 gap-2 overflow-x-auto px-4 pb-1 print:hidden lg:mx-0 lg:flex-wrap lg:px-0" role="tablist">
           {visible.map((t) => (
             <button
               key={t.id}

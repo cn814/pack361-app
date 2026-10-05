@@ -5,18 +5,17 @@ import Toast from "@/components/Toast";
 import { Suspense } from "react";
 import ServiceWorkerSetup from "@/components/ServiceWorkerSetup";
 import { Bell, Search } from "lucide-react";
-import { displayName, requireMember } from "@/lib/data";
-import { canLead, getMode } from "@/lib/mode";
-import ModeSwitch from "@/components/ModeSwitch";
+import { displayName, isLeader, requireMember } from "@/lib/data";
 import InboxBadge from "@/components/InboxBadge";
 import ViewAsBanner from "@/components/ViewAsBanner";
-import LeaderModeBanner from "@/components/LeaderModeBanner";
+import MeetingNow from "@/components/MeetingNow";
 import BetaBanner from "@/components/BetaBanner";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const me = await requireMember();
-  // The bell's number streams in on its own (InboxBadge), so pages don't wait for it.
-  const mode = await getMode(me);
+  // The bell's number (InboxBadge) and the meeting bar (MeetingNow) stream in on their own, so
+  // pages don't wait for them.
+  const leader = isLeader(me);
   const initials = (displayName(me)[0] + me.last_name[0]).toUpperCase();
   return (
     <div className="min-h-dvh w-full lg:pl-64 print:pl-0">
@@ -56,10 +55,24 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                 <InboxBadge variant="header" />
               </Suspense>
             </Link>
+            {/* Me: your family, settings (dark mode, phone alerts), help and sign out. */}
+            <Link
+              href="/family"
+              aria-label="Me: my family, settings and sign out"
+              className="ml-1 flex h-10 w-10 items-center justify-center rounded-full active:bg-white/15"
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gold text-xs font-extrabold text-on-gold ring-2 ring-white/25">
+                {initials}
+              </span>
+            </Link>
           </div>
         </div>
       </header>
-      {canLead(me) && mode === "leader" && <LeaderModeBanner />}
+      {leader && (
+        <Suspense fallback={null}>
+          <MeetingNow />
+        </Suspense>
+      )}
       <ViewAsBanner me={me} />
       <main className="mx-auto w-full max-w-md space-y-4 px-4 pb-28 pt-4 lg:max-w-3xl lg:px-8 lg:pb-12 lg:pt-8 lg:has-[.page-wide]:max-w-6xl print:max-w-none print:pb-0">
         {children}
@@ -71,8 +84,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             <InboxBadge variant="sidebar" />
           </Suspense>
         }
-        leaderMode={mode === "leader"}
-        modeSwitch={canLead(me) ? <ModeSwitch mode={mode} dark /> : undefined}
+        leaders={leader}
       />
     </div>
   );

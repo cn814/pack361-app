@@ -66,7 +66,7 @@ export default async function AnnouncePage({ searchParams }: PageProps<"/announc
 
   return (
     <>
-      <BackLink href="/" label="Home" />
+      <BackLink href="/lead" label="Leaders" />
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">{heading}</h1>
         <p className="text-sm text-muted">{sub}</p>

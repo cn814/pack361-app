@@ -26,7 +26,7 @@ export default async function ReimbursePage({ searchParams }: PageProps<"/reimbu
 
   return (
     <>
-      <BackLink href="/leaders" label="Leaders" />
+      <BackLink href="/pack" label="Pack" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Get paid back</h1>
       <p className="-mt-1 text-sm text-muted">
         Bought something for the pack or your den? Send the receipt within {RECEIPT_DAYS} days and the treasurer will pay you back.

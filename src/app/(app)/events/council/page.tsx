@@ -126,7 +126,7 @@ export default async function CouncilEventsPage({ searchParams }: PageProps<"/ev
 
   return (
     <>
-      <BackLink href="/events" label="Calendar" />
+      <BackLink href="/lead#events" label="Leaders" />
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Council events</h1>
         <p className="text-sm text-muted">

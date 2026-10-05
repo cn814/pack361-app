@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { Award, Bell, CalendarDays, House, LayoutGrid, Search, UserRound, type LucideIcon } from "lucide-react";
+import { Award, Bell, CalendarDays, House, LayoutGrid, Search, ShieldCheck, type LucideIcon } from "lucide-react";
 
 interface Tab {
   href: string;
@@ -13,7 +13,25 @@ interface Tab {
 }
 
 /** Pages that belong to the Pack tab (its menu leads to them). */
-const PACK_PATHS = ["/pack", "/pay", "/reimburse", "/store", "/guide", "/documents", "/photos", "/polls", "/recruit", "/leaders", "/admin", "/inbox", "/announce"];
+const PACK_PATHS = ["/pack", "/pay", "/reimburse", "/store", "/guide", "/documents", "/photos", "/polls", "/recruit", "/leaders", "/inbox", "/nature", "/gear", "/help-wanted"];
+/** Pages that belong to the Leaders tab (leader tools), even when they sit under another tab's address. */
+const LEADER_PATHS = [
+  "/lead",
+  "/admin",
+  "/announce",
+  "/leaders/money",
+  "/leaders/training",
+  "/leaders/attendance",
+  "/leaders/paperwork",
+  "/scouts/review",
+  "/scouts/awards",
+  "/scouts/den",
+  "/scouts/import",
+  "/events/new",
+  "/events/council",
+  "/gear/manage",
+  "/polls/new",
+];
 const under = (p: string, prefixes: string[]) => prefixes.some((x) => p === x || p.startsWith(x + "/"));
 
 /** The Pack menu's main links, repeated under "Pack" in the computer sidebar. */
@@ -27,22 +45,21 @@ const PACK_LINKS = [
 ];
 
 /**
- * Main navigation: five tabs that never move. Phones: a bottom tab bar. Computers (lg and up):
- * a left sidebar with the same tabs, the Pack menu's main links, notifications and, for
- * leaders, the Family / Leader switch.
+ * Main navigation: tabs that never move. Home, Calendar, Scouts and Pack for everyone, and
+ * Leaders for leaders only (what's in the app depends on which tabs you have). Me is the initials
+ * at the top right on phones (src/app/(app)/layout.tsx). Phones: a bottom tab bar. Computers (lg
+ * and up): a left sidebar with the same tabs, the Pack menu's main links, notifications and Me.
  */
 export default function BottomNav({
   me,
   inboxBadge,
-  leaderMode = false,
-  modeSwitch,
+  leaders = false,
 }: {
   me: { initials: string; name: string };
   /** The number on Notifications (computer sidebar), streamed in from the server. */
   inboxBadge?: ReactNode;
-  leaderMode?: boolean;
-  /** The Family / Leader switch (leaders only), shown at the bottom of the sidebar. */
-  modeSwitch?: ReactNode;
+  /** Show the Leaders tab. */
+  leaders?: boolean;
 }) {
   const path = usePathname();
   // Highlight the tapped tab right away instead of waiting for the page to load.
@@ -53,12 +70,13 @@ export default function BottomNav({
   // Step-by-step screens (uploading photos) hide the phone tab bar: after the photo picker
   // closes, iPhone Safari can draw the fixed bar in the middle of the page, over the form.
   const focused = path.startsWith("/photos/upload");
+  const lead = (p: string) => leaders && under(p, LEADER_PATHS);
   const tabs: Tab[] = [
     { href: "/", label: "Home", icon: House, match: (p) => p === "/" },
-    { href: "/events", label: "Calendar", icon: CalendarDays, match: (p) => under(p, ["/events", "/campouts", "/meetings"]) },
-    { href: "/scouts", label: leaderMode ? "Dens" : "Scouts", icon: Award, match: (p) => under(p, ["/scouts"]) },
-    { href: "/pack", label: "Pack", icon: LayoutGrid, match: (p) => under(p, PACK_PATHS) },
-    { href: "/family", label: "Me", icon: UserRound, match: (p) => under(p, ["/family"]) },
+    { href: "/events", label: "Calendar", icon: CalendarDays, match: (p) => under(p, ["/events", "/campouts", "/meetings"]) && !lead(p) },
+    { href: "/scouts", label: "Scouts", icon: Award, match: (p) => under(p, ["/scouts"]) && !lead(p) },
+    { href: "/pack", label: "Pack", icon: LayoutGrid, match: (p) => under(p, PACK_PATHS) && !lead(p) },
+    ...(leaders ? [{ href: "/lead", label: "Leaders", icon: ShieldCheck, match: lead }] : []),
   ];
 
   const tap = (href: string, match: (p: string) => boolean) => () => {
@@ -92,7 +110,7 @@ export default function BottomNav({
           className="h-10 min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-mint-200/70 outline-none"
         />
       </form>
-      <ul className="mx-auto grid max-w-md grid-cols-5 px-1 lg:mx-0 lg:flex lg:max-w-none lg:flex-col lg:gap-1 lg:px-3">
+      <ul className={`mx-auto grid max-w-md ${leaders ? "grid-cols-5" : "grid-cols-4"} px-1 lg:mx-0 lg:flex lg:max-w-none lg:flex-col lg:gap-1 lg:px-3`}>
         {tabs.map(({ href, label, icon: Icon, match }) => {
           const active = pending ? pending === href : match(path);
           return (
@@ -150,7 +168,6 @@ export default function BottomNav({
         </li>
       </ul>
       <div className="mt-auto hidden space-y-3 p-3 lg:block">
-        {modeSwitch}
         <Link href="/family" className="flex items-center gap-3 rounded-xl p-2 hover:bg-white/5">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold text-xs font-extrabold text-on-gold">{me.initials}</span>
           <span className="min-w-0 truncate text-sm font-semibold text-white">{me.name}</span>

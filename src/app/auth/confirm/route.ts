@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { SPLASH_COOKIE, SPLASH_COOKIE_OPTIONS } from "@/lib/splash";
-import { MODE_COOKIE } from "@/lib/mode";
 
 // Target of the sign-in email link. The Supabase email template must point here:
 //   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email
@@ -23,7 +22,6 @@ async function verify(request: NextRequest, token_hash: string | null, type: Ema
   else if (code) ok = !(await supabase.auth.exchangeCodeForSession(code)).error; // default template fallback
   const res = NextResponse.redirect(new URL(ok ? "/" : "/login?error=link", request.nextUrl.origin), 303);
   if (ok) res.cookies.set(SPLASH_COOKIE, "1", SPLASH_COOKIE_OPTIONS); // the welcome animation
-  if (ok) res.cookies.delete(MODE_COOKIE); // leaders start in Leader mode
   return res;
 }
 

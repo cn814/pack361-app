@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CarFront, ChevronRight, Fish, Footprints, Landmark, PartyPopper, Plus, Rocket, Sailboat, Tent } from "lucide-react";
+import { CarFront, ChevronRight, Fish, Footprints, PartyPopper, Rocket, Sailboat, Tent } from "lucide-react";
 import { featuredKind, type FeaturedKind } from "@/lib/featured";
 import { headers } from "next/headers";
 import EventRow from "@/components/EventRow";
 import CalendarSubscribe from "@/components/CalendarSubscribe";
 import { getBigEvent, getCalendarToken, getUpcomingEvents, isLeader, preloadCalendar, requireMember } from "@/lib/data";
 import { getSignupSummaries } from "@/lib/signups";
-import { getMode } from "@/lib/mode";
 import { daysUntil, eventOver, fmtMonth, fmtRange } from "@/lib/format";
 import { daysBetween, easternDate, startOfEasternDay } from "@/lib/tz";
 import type { CalItem } from "@/lib/calendar";
@@ -56,13 +55,12 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
   // The list reads the full calendar; the pinned big event (and the bell) reuse it when it's
   // the same family calendar instead of reading their own.
   preloadCalendar(show === "mine" || !leader ? "family" : "all");
-  const [all, signups, token, h, big, mode] = await Promise.all([
+  const [all, signups, token, h, big] = await Promise.all([
     getUpcomingEvents(150, { mine: show === "mine" }),
     getSignupSummaries(me.family_id),
     getCalendarToken(),
     headers(),
     getBigEvent(),
-    getMode(me),
   ]);
   const host = h.get("x-forwarded-host") ?? h.get("host");
   const proto = h.get("x-forwarded-proto") ?? "https";
@@ -108,17 +106,6 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
           </Link>
         ))}
       </nav>
-
-      {leader && mode === "leader" && (
-        <div className="flex gap-2">
-          <Link href="/events/new" className="btn-primary flex-1 py-2">
-            <Plus className="h-4 w-4" aria-hidden /> Add an event
-          </Link>
-          <Link href="/events/council" className="btn-ghost flex-1 py-2">
-            <Landmark className="h-4 w-4" aria-hidden /> Council events
-          </Link>
-        </div>
-      )}
 
       {pinned && (
         <Link href={pinned.event.href} className="flex items-center gap-3 rounded-2xl bg-deep p-4 text-white shadow-[var(--shadow-float)]">

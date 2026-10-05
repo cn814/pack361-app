@@ -88,7 +88,7 @@ export default async function AdminPage() {
   const runProblem = lastRun && (cutOff || (!lastRun.running && !lastRun.ok)) ? [...lastRun.failed.map((f) => (lastRun.reasons?.[f] ? `${f} (${lastRun.reasons[f]})` : f)), ...(cutOff ? [`${cutOff} (didn't finish)`] : [])] : null;
   return (
     <>
-      <BackLink href="/leaders" label="Leaders" />
+      <BackLink href="/lead" label="Leaders" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack admin</h1>
       {lastRun && runProblem && (
         <p className="rounded-xl bg-danger-50 p-3 text-sm text-danger">
