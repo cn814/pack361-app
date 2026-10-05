@@ -176,6 +176,9 @@ html:not([data-booted]) #boot,
 html[data-booted="leaving"] #boot {
   display: flex;
 }
+html[data-boot-instant] #boot {
+  animation: none; /* carrying on from the service worker's copy (src/lib/boot.ts) */
+}
 html[data-booted="leaving"] #boot {
   pointer-events: none;
   animation: boot-out 0.35s ease forwards;
@@ -228,6 +231,24 @@ html[data-booted="leaving"] #boot {
   text-align: center;
   opacity: 0;
   animation: boot-line 8s ease infinite;
+}
+.wolf-wait {
+  position: absolute;
+  inset: -1rem -1rem auto;
+  min-height: calc(100dvh - 9rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 6vh;
+  background: var(--color-canvas);
+  color: var(--color-pine);
+  opacity: 0;
+  pointer-events: none;
+  animation: wolf-wait-in 0.4s ease 1.2s forwards;
+}
+@keyframes wolf-wait-in {
+  to { opacity: 1; }
 }
 @keyframes boot-in {
   from { opacity: 0; }

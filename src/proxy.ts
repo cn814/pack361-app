@@ -36,6 +36,13 @@ export async function proxy(request: NextRequest) {
   const site = siteRoute(request);
   if (site) return site;
 
+  // The service worker's opening screen goes on to the page with ?_b=1 and answers that itself
+  // with the page request already under way (public/sw.js), so the browser's automatic early copy
+  // of that request isn't needed: answer it empty instead of building the page twice.
+  if (request.nextUrl.searchParams.get("_b") === "1" && request.headers.has("service-worker-navigation-preload")) {
+    return new NextResponse(null, { status: 204 });
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return NextResponse.next(); // not configured yet: pages show a setup notice
