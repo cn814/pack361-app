@@ -75,7 +75,7 @@ export default async function MeetingInfoPage({ params }: PageProps<"/meetings/[
               }
               className="btn-primary py-2"
             >
-              <ClipboardList className="h-4 w-4" aria-hidden /> {meeting.meets_on <= todayEastern() ? "Record this meeting" : "Edit plan"}
+              <ClipboardList className="h-4 w-4" aria-hidden /> {meeting.meets_on <= todayEastern() ? "Take attendance" : "Edit plan"}
             </Link>
           )}
         </div>

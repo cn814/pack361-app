@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { CalendarDays, MapPin, Megaphone, Ticket, Video } from "lucide-react";
+import { CalendarDays, ClipboardCheck, MapPin, Megaphone, Ticket, Video } from "lucide-react";
 import { eventLinkLabel, isVideoCall } from "@/lib/event-link";
 import BackLink from "@/components/BackLink";
 import NavigateLink from "@/components/NavigateLink";
@@ -29,7 +29,7 @@ import { getEvent, getItinerary, isLeader, requireMember } from "@/lib/data";
 import { getOwnPackingList } from "@/lib/event-builder-data";
 import { getSlots } from "@/lib/volunteer";
 import { easternDate, ranksLabel } from "@/lib/calendar";
-import { fmtMeetingTime } from "@/lib/meetings";
+import { fmtMeetingTime, todayEastern } from "@/lib/meetings";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { fmtRange } from "@/lib/format";
@@ -86,6 +86,11 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         <div className="flex flex-wrap gap-2 pt-2">
           <RsvpLink e={event} />
           {navTo && <NavigateLink to={navTo} className="btn-ghost py-2" />}
+          {leader && easternDate(event.starts_at) <= todayEastern() && easternDate(event.ends_at ?? event.starts_at) >= todayEastern() && !event.archived_at && (
+            <a href="#leaders" className="btn-primary py-2">
+              <ClipboardCheck className="h-4 w-4" aria-hidden /> Take attendance
+            </a>
+          )}
           {event.signup_url && (
             <a href={event.signup_url} target="_blank" rel="noopener noreferrer" className="btn-gold py-2">
               {isVideoCall(event.signup_url) ? <Video className="h-4 w-4" aria-hidden /> : <Ticket className="h-4 w-4" aria-hidden />}{" "}

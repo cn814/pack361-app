@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "./supabase/server";
 import { getCatalog, getMyDenIds, getRecords, reviewsWholePack } from "./advancement-data";
+import { getMyScouts, requireMember } from "./data";
 import { rankProgress } from "./advancement";
 import { easternToIso } from "./calendar";
 import type { AdventureOption } from "@/components/MeetingForm";
@@ -156,11 +157,14 @@ export async function myMeetingRsvps(
 }
 
 /**
- * The dens this adult is listed as a leader of, with whether there's a meeting today (planned in
- * the app or a "Den Meeting" on the calendar), for the Home page's "Record a den meeting" buttons.
+ * The dens this adult runs meetings for, with whether there's a meeting today (planned in the app
+ * or a "Den Meeting" on the calendar), for the Leaders tab and the meeting bar: the dens they're
+ * listed as a leader of, plus, for pack leadership (who can record any den), their own scouts' dens.
  */
 export async function myDenMeetingButtons(): Promise<{ denId: string; name: string; rank: DenRank; today: boolean; saved: boolean }[]> {
-  const denIds = await getMyDenIds();
+  const me = await requireMember();
+  const [led, mine] = await Promise.all([getMyDenIds(), reviewsWholePack(me) ? getMyScouts() : Promise.resolve([])]);
+  const denIds = [...new Set([...led, ...mine.map((s) => s.den?.id).filter((x): x is string => Boolean(x))])];
   if (!denIds.length) return [];
   const supabase = await createClient();
   const day = todayEastern();
