@@ -472,3 +472,67 @@ export async function remindTrainingImport(db: SupabaseClient, budget: EmailBudg
   }
   return { due: true, pushed: push.sent, emailed, every: TRAINING_IMPORT_DAYS, ...(errors.length ? { errors } : {}) };
 }
+
+/** Anyone whose position title names advancement (the Advancement Chair). Pure, for testing. */
+export function advancementChairIds(people: { id: string; position_title: string | null }[]): string[] {
+  return people.filter((p) => /advancement/i.test(p.position_title ?? "")).map((p) => p.id);
+}
+
+/**
+ * Saturdays (this job runs at 5 PM Eastern): remind the Advancement Chair to enter the week's
+ * approved advancement in Scoutbook tonight. The Scoutbook import runs early Sunday morning and the
+ * Sunday email goes out at 6 AM, so what's entered by then shows up in both. Only when something
+ * is waiting on the Enter in Scoutbook list, and once per Saturday.
+ */
+export async function remindScoutbookEntry(db: SupabaseClient, budget: EmailBudget = emailBudget()) {
+  const today = easternDate(Date.now());
+  const weekday = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "long" }).format(new Date());
+  if (weekday !== "Saturday") return { due: false };
+  const { data: last } = await db.from("pack_settings").select("value").eq("key", "scoutbook_entry_reminded").maybeSingle();
+  if ((last as { value?: string } | null)?.value === today) return { due: true, reminded: "already today" };
+
+  const { count, error: countErr } = await db
+    .from("advancement_submissions")
+    .select("id, scout:scouts!inner(id)", { count: "exact", head: true })
+    .eq("status", "approved")
+    .eq("scout.is_active", true);
+  if (countErr) throw new Error(countErr.message);
+  const waiting = count ?? 0;
+  if (!waiting) return { due: true, waiting: 0 };
+
+  const { data, error } = await db.from("adults").select("id, first_name, preferred_name, email, position_title").eq("is_active", true).not("position_title", "is", null);
+  if (error) throw new Error(error.message);
+  const people = (data ?? []) as { id: string; first_name: string; preferred_name: string | null; email: string; position_title: string | null }[];
+  const ids = new Set(advancementChairIds(people));
+  const to = people.filter((p) => ids.has(p.id));
+  if (!to.length) return { due: true, waiting, sent: 0, note: "Nobody's position title says Advancement" };
+
+  const items = `${waiting} approved item${waiting === 1 ? "" : "s"}`;
+  const push = await sendPushTo(to.map((p) => p.id), {
+    title: "Enter this week's advancement in Scoutbook",
+    body: `${items} waiting. Enter them tonight so they're in Sunday's email.`,
+    url: "/scouts/review#record",
+    tag: "scoutbook-entry",
+  });
+  const mail = await sendSome(
+    to.map((p) => ({
+      to: p.email,
+      subject: `${items} to enter in Scoutbook before Sunday's email`,
+      paragraphs: [
+        `Hi ${p.preferred_name || p.first_name},`,
+        `${items} from this week's den meetings and family reports are waiting on the Enter in Scoutbook list. Please enter them in Scoutbook tonight: the app reads Scoutbook early Sunday morning, and the Sunday email goes out at 6 AM, so anything entered by then shows on each scout's page and in their family's email.`,
+        "In the app: Leaders → Dens → Enter in Scoutbook. View it by requirement to mark one requirement for several scouts at once, and tap Entered as you go.",
+        `${APP_URL}/scouts/review#record`,
+      ],
+    })),
+    budget,
+  );
+  const errors: string[] = mail.error ? [mail.error] : [];
+  if (push.sent || mail.sent) {
+    const { error: saveErr } = await db
+      .from("pack_settings")
+      .upsert({ key: "scoutbook_entry_reminded", value: today, updated_at: new Date().toISOString() });
+    if (saveErr) errors.push(`Couldn't record the reminder: ${saveErr.message}`);
+  }
+  return { due: true, waiting, pushed: push.sent, emailed: mail.sent, ...(errors.length ? { errors } : {}) };
+}
