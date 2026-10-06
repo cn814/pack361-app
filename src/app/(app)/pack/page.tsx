@@ -59,12 +59,13 @@ export default async function PackPage() {
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack</h1>
       <EventTabs
         label="Pack sections"
+        backLabel="Pack"
         tabs={[
-          { id: "money", label: "Money", content: <Group items={money} /> },
-          { id: "fundraisers", label: "Fundraisers", content: <Group items={store} /> },
-          { id: "tools", label: "Tools", content: <Group items={tools} /> },
-          { id: "info", label: "Info", content: <Group items={info} /> },
-          { id: "people", label: "People", content: <Group items={people} /> },
+          { id: "money", label: "Money", hint: due > 0 ? `${fmtMoney(due)} due` : "Pay the pack, get paid back", icon: <HandCoins aria-hidden />, content: <Group items={money} /> },
+          { id: "fundraisers", label: "Fundraisers", hint: "Popcorn, apparel, uniforms", icon: <Popcorn aria-hidden />, content: <Group items={store} /> },
+          { id: "tools", label: "Tools", hint: "Nature ID, gear closet, polls, news", icon: <Bird aria-hidden />, content: <Group items={tools} /> },
+          { id: "info", label: "Info", hint: "Pack guide, app guide, documents, photos", icon: <BookOpen aria-hidden />, content: <Group items={info} /> },
+          { id: "people", label: "People", hint: "Leader contacts, invite a family, help wanted", icon: <Phone aria-hidden />, content: <Group items={people} /> },
         ]}
       />
     </>

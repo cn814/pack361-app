@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CalendarDays, ClipboardCheck, MapPin, Megaphone, Ticket, Video } from "lucide-react";
+import { Backpack, CalendarDays, Car, ClipboardCheck, Clock, CloudSun, HandHelping, Info, Leaf, MapPin, Megaphone, ShieldCheck, Ticket, Video } from "lucide-react";
 import { eventLinkLabel, isVideoCall } from "@/lib/event-link";
 import Link from "next/link";
 import PackingChecklist from "@/components/PackingChecklist";
@@ -93,6 +93,11 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
         </div>
         {!event.archived_at && <AddToCalendar eventId={id} className="btn-ghost w-full py-2" />}
       </section>
+    </>
+  );
+  // Under the tiles: what you might need to do for this campout.
+  const overviewRest = (
+    <>
       {campaign && <EventSignup campaign={campaign} orders={orders} myFamilyId={me.family_id} leader={leader} signupUrl={event.signup_url} />}
       <EventRsvp e={event} me={me} />
       <ReadyToGo e={event} me={me} />
@@ -124,23 +129,32 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
       <BackLink href={event.archived_at ? "/events/archive" : "/events"} label={event.archived_at ? "Archive" : "Calendar"} />
       {event.archived_at && <ArchiveControl e={event} leader={false} back={`/campouts/${id}`} part="note" />}
       <EventTabs
+        lead={overview}
+        rest={overviewRest}
+        label="More about this event"
+        backLabel="Event"
         tabs={[
-          { id: "overview", label: "Overview", content: overview },
-          { id: "leaders", label: "Leaders", content: leaderTab },
+          { id: "leaders", label: "Leaders", hint: "Attendance, notes, edit", icon: <ShieldCheck aria-hidden />, content: leaderTab },
           {
             id: "schedule",
             label: "Schedule",
+            hint: "What happens when",
+            icon: <Clock aria-hidden />,
             content: <EventSchedule items={itinerary} empty="The camping chair hasn't posted the schedule yet." />,
           },
           {
             id: "packing",
             label: "Packing list",
+            hint: "What to bring, with checkboxes",
+            icon: <Backpack aria-hidden />,
             content: packing.length ? <PackingChecklist eventId={event.id} items={packing} /> : null,
           },
-          { id: "weather", label: "Weather", content: <EventWeather e={event} /> },
+          { id: "weather", label: "Weather", hint: "Forecast and right now", icon: <CloudSun aria-hidden />, content: <EventWeather e={event} /> },
           {
             id: "info",
             label: "Info",
+            hint: "Details, links and photos",
+            icon: <Info aria-hidden />,
             content: (
               <>
                 <EventSections eventId={id} sections={event.sections ?? []} />
@@ -149,9 +163,9 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
               </>
             ),
           },
-          { id: "carpool", label: "Carpool", content: <EventCarpool e={event} me={me} /> },
-          { id: "volunteer", label: "Volunteer", content: <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={leader} /> },
-          { id: "nature", label: "Trail guide", content: <EventTrailGuide e={event} /> },
+          { id: "carpool", label: "Carpool", hint: "Offer or find a ride", icon: <Car aria-hidden />, content: <EventCarpool e={event} me={me} /> },
+          { id: "volunteer", label: "Volunteer", hint: "Jobs that need a grown-up", icon: <HandHelping aria-hidden />, content: <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={leader} /> },
+          { id: "nature", label: "Trail guide", hint: "Bird and plant ID", icon: <Leaf aria-hidden />, content: <EventTrailGuide e={event} /> },
         ]}
       />
     </>

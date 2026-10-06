@@ -26,11 +26,11 @@ export const metadata: Metadata = { title: "Calendar" };
 // Leaders start on their own family's dens; "All" is every den. (Families only ever see their
 // own dens, so they start on "All".)
 const SHOWS = [
-  { key: "mine", label: "My dens", leaderOnly: true },
-  { key: "all", label: "All" },
-  { key: "campouts", label: "Campouts" },
-  { key: "big", label: "Big events" },
-  { key: "meetings", label: "Den meetings" },
+  { key: "mine", label: "My dens", hint: "Your scouts' dens", leaderOnly: true },
+  { key: "all", label: "All", hint: "Everything coming up" },
+  { key: "campouts", label: "Campouts", hint: "Overnights" },
+  { key: "big", label: "Big events", hint: "Derby, Blue & Gold" },
+  { key: "meetings", label: "Den meetings", hint: "Week by week" },
 ] as const;
 type Show = (typeof SHOWS)[number]["key"];
 
@@ -92,17 +92,19 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
         6:30–7:30 PM, and pack meetings 6:30–8:00 PM, at First Presbyterian Church of Howard County unless noted.
       </p>
 
-      <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:px-0" aria-label="Show">
+      {/* Big tiles, three to a row, instead of small chips to slide through. */}
+      <nav className="grid grid-cols-3 gap-2 lg:grid-cols-5" aria-label="Show">
         {SHOWS.filter((s) => !("leaderOnly" in s) || leader).map((s) => (
           <Link
             key={s.key}
             href={s.key === start ? "/events" : `/events?show=${s.key}`}
             aria-current={show === s.key ? "page" : undefined}
-            className={`flex h-9 shrink-0 items-center rounded-full px-4 text-sm font-bold ${
-              show === s.key ? "bg-brand text-white" : "border border-line bg-card text-ink"
+            className={`flex min-h-14 flex-col justify-center rounded-2xl px-3 py-2 transition active:scale-[0.98] ${
+              show === s.key ? "bg-brand text-white shadow-[var(--shadow-card)]" : "border border-line bg-card text-ink"
             }`}
           >
-            {s.label}
+            <span className="text-sm font-extrabold leading-tight">{s.label}</span>
+            <span className={`text-[11px] leading-tight ${show === s.key ? "text-mint-200" : "text-muted"}`}>{s.hint}</span>
           </Link>
         ))}
       </nav>

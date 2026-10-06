@@ -221,13 +221,16 @@ export default async function LeadersHubPage() {
     <>
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Leaders</h1>
       <EventTabs
+        lead={today}
         label="Leader sections"
+        backLabel="Leaders"
         tabs={[
-          { id: "today", label: "Today", content: today },
-          { id: "dens", label: "Dens", content: denTab },
+          { id: "dens", label: "Dens", hint: toApprove ? `${toApprove} reports to approve` : "Rosters, approvals, awards", icon: <Award aria-hidden />, content: denTab },
           {
             id: "events",
             label: "Events",
+            hint: "Add events, council events, attendance, gear",
+            icon: <CalendarPlus aria-hidden />,
             content: (
               <Tiles
                 items={[
@@ -244,6 +247,8 @@ export default async function LeadersHubPage() {
           {
             id: "money",
             label: "Money",
+            hint: toHandle ? `${toHandle} expenses to handle` : "Dues, fees, expenses",
+            icon: <HandCoins aria-hidden />,
             content: committee ? (
               <Tiles
                 items={[
@@ -262,6 +267,8 @@ export default async function LeadersHubPage() {
           {
             id: "reports",
             label: "Reports",
+            hint: "Roster, training, forms, spreadsheets",
+            icon: <FileSpreadsheet aria-hidden />,
             content: (
               <>
                 <ul className="card divide-y divide-line p-0">
@@ -298,6 +305,8 @@ export default async function LeadersHubPage() {
           {
             id: "people",
             label: "People",
+            hint: admin ? "Training, forms, Pack admin" : "Training, medical forms, help wanted",
+            icon: <ShieldCheck aria-hidden />,
             content: (
               <>
                 <Tiles

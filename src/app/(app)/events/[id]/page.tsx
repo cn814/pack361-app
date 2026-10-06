@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { CalendarDays, ClipboardCheck, MapPin, Megaphone, Ticket, Video } from "lucide-react";
+import { Backpack, CalendarDays, Car, ClipboardCheck, Clock, CloudSun, HandHelping, Info, Leaf, MapPin, Megaphone, ShieldCheck, Ticket, Video } from "lucide-react";
 import { eventLinkLabel, isVideoCall } from "@/lib/event-link";
 import BackLink from "@/components/BackLink";
 import NavigateLink from "@/components/NavigateLink";
@@ -104,6 +104,11 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         {!event.archived_at && <AddToCalendar eventId={id} className="btn-ghost w-full py-2" />}
       </section>
       {event.archived_at && <ArchiveControl e={event} leader={false} back={`/events/${id}`} part="note" />}
+    </>
+  );
+  // Under the tiles: what you might need to do for this event.
+  const overviewRest = (
+    <>
       {elsewhere.length > 0 && (
         <section className="card space-y-2 border-l-4 border-l-gold">
           <h2 className="section-title">Meeting somewhere else tonight</h2>
@@ -147,19 +152,22 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
     <>
       <BackLink href={event.archived_at ? "/events/archive" : "/events"} label={event.archived_at ? "Archive" : "Calendar"} />
       <EventTabs
+        lead={overview}
+        rest={overviewRest}
+        label="More about this event"
+        backLabel="Event"
         tabs={[
-          { id: "overview", label: "Overview", content: overview },
-          { id: "leaders", label: "Leaders", content: leaderTab },
-          { id: "schedule", label: "Schedule", content: <EventSchedule items={itinerary} /> },
+          { id: "leaders", label: "Leaders", hint: "Attendance, notes, edit", icon: <ShieldCheck aria-hidden />, content: leaderTab },
+          { id: "schedule", label: "Schedule", hint: "What happens when", icon: <Clock aria-hidden />, content: <EventSchedule items={itinerary} /> },
           {
             id: "packing",
-            label: "What to bring",
+            label: "What to bring", hint: "The list for this event", icon: <Backpack aria-hidden />,
             content: packing.length ? <PackingChecklist eventId={id} items={packing} /> : null,
           },
-          { id: "weather", label: "Weather", content: <EventWeather e={event} /> },
+          { id: "weather", label: "Weather", hint: "Forecast and right now", icon: <CloudSun aria-hidden />, content: <EventWeather e={event} /> },
           {
             id: "info",
-            label: "Info",
+            label: "Info", hint: "Details, links and photos", icon: <Info aria-hidden />,
             content: (
               <>
                 <EventSections eventId={id} sections={event.sections ?? []} />
@@ -168,11 +176,11 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
               </>
             ),
           },
-          { id: "carpool", label: "Carpool", content: <EventCarpool e={event} me={me} /> },
-          { id: "volunteer", label: "Volunteer", content: <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={leader} /> },
+          { id: "carpool", label: "Carpool", hint: "Offer or find a ride", icon: <Car aria-hidden />, content: <EventCarpool e={event} me={me} /> },
+          { id: "volunteer", label: "Volunteer", hint: "Jobs that need a grown-up", icon: <HandHelping aria-hidden />, content: <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={leader} /> },
           {
             id: "nature",
-            label: "Trail guide",
+            label: "Trail guide", hint: "Bird and plant ID", icon: <Leaf aria-hidden />,
             content: <EventTrailGuide e={event} extraText={(event.sections ?? []).map((s) => JSON.stringify(s))} />,
           },
         ]}
