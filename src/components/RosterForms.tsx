@@ -104,6 +104,14 @@ export function ScoutFields({ scout, familyId, dens }: { scout?: RosterScout; fa
           <option value="no">No photos (family opted out)</option>
         </select>
       </Field>
+      <Field label="Face on the pack's Facebook page" hint="Families answer this themselves; set it here for a paper form">
+        <input type="hidden" name="social_ok_was" value={scout?.social_ok == null ? "" : scout.social_ok ? "yes" : "no"} />
+        <select className="input" name="social_ok" defaultValue={scout?.social_ok == null ? "" : scout.social_ok ? "yes" : "no"}>
+          <option value="">Not answered (no)</option>
+          <option value="yes">Yes, the family said OK</option>
+          <option value="no">No</option>
+        </select>
+      </Field>
       {scout && (
         <label className="flex items-center gap-2 text-sm font-semibold text-ink">
           <input type="checkbox" name="is_active" defaultChecked={scout.is_active} className="h-4 w-4 accent-pine" />

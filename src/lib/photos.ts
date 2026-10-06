@@ -76,6 +76,13 @@ export async function getAlbumPhotos(key: string): Promise<Photo[]> {
   return sign((data ?? []) as unknown as Photo[]);
 }
 
+/** The newest approved photos, every album (for the Facebook page list). */
+export async function getRecentPhotos(limit = 300): Promise<Photo[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("photos").select(COLS).eq("status", "approved").order("created_at", { ascending: false }).limit(limit);
+  return sign((data ?? []) as unknown as Photo[]);
+}
+
 export async function getPhoto(id: string): Promise<Photo | null> {
   const supabase = await createClient();
   const { data } = await supabase.from("photos").select(COLS).eq("id", id).maybeSingle();

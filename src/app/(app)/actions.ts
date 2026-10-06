@@ -6,7 +6,7 @@ import { sendPushTo, sendPushToAll } from "@/lib/push";
 import { packEmailConfigured, sendBulk } from "@/lib/bulk-email";
 import { EVENT_AUDIENCES, denAudience, eventAudience, type EventAudience } from "@/lib/audience";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { notifyAdmins, notifyPhotoOptOut } from "@/lib/notify";
+import { notifyAdmins, notifyFacebookOff, notifyPhotoOptOut } from "@/lib/notify";
 import { APP_URL } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
 import { isLeader, requireMember } from "@/lib/data";
@@ -190,17 +190,43 @@ export async function setPhotoPermission(form: FormData) {
   if (answer !== "yes" && answer !== "no") return;
   if (!/^[0-9a-f-]{36}$/i.test(scoutId)) return;
   const supabase = await createClient();
-  const { data: before } = await supabase.from("scouts").select("photo_permission").eq("id", scoutId).maybeSingle();
+  const { data: before } = await supabase.from("scouts").select("photo_permission, social_ok").eq("id", scoutId).maybeSingle();
   const { data: updated } = await supabase
     .from("scouts")
     .update({ photo_permission: answer })
     .eq("id", scoutId)
     .select("first_name")
     .maybeSingle();
-  // A new opt-out: photo reviewers check what's already in the album.
+  // A new opt-out: photo reviewers check what's already in the album. It turns Facebook off too
+  // (the database does that), so whoever posts there checks the pack's page.
   if (answer === "no" && updated && before?.photo_permission !== "no") {
     const name = String((updated as { first_name: string }).first_name);
     after(() => notifyPhotoOptOut(name));
+    if (before?.social_ok === true) after(() => notifyFacebookOff(name));
+  }
+  revalidatePath("/family", "layout");
+  revalidatePath("/");
+}
+
+/** Me → Family: OK to show this scout's face on the pack's public Facebook page (yes / no). */
+export async function setFacebookOk(form: FormData) {
+  await requireMember();
+  const scoutId = String(form.get("scout_id") ?? "");
+  const answer = String(form.get("answer") ?? "");
+  if (answer !== "yes" && answer !== "no") return;
+  if (!/^[0-9a-f-]{36}$/i.test(scoutId)) return;
+  const supabase = await createClient();
+  const { data: before } = await supabase.from("scouts").select("social_ok").eq("id", scoutId).maybeSingle();
+  const { data: updated } = await supabase
+    .from("scouts")
+    .update({ social_ok: answer === "yes" })
+    .eq("id", scoutId)
+    .select("first_name")
+    .maybeSingle();
+  // Yes changed to no: whoever posts to Facebook checks what's already there.
+  if (answer === "no" && updated && before?.social_ok === true) {
+    const name = String((updated as { first_name: string }).first_name);
+    after(() => notifyFacebookOff(name));
   }
   revalidatePath("/family", "layout");
   revalidatePath("/");

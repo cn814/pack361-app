@@ -69,6 +69,10 @@ export default async function HouseholdPage() {
             Scouts can be in the pack&apos;s private photo album unless their family opts out. Photos are visible only to signed-in
             pack families. Opt out any time, and leaders won&apos;t approve photos showing your scout.
           </p>
+          <p className="text-sm text-muted">
+            The pack also shares some photos on its public Facebook page. Your scout&apos;s face shows there only if you say yes; until then
+            it&apos;s covered or the photo stays off. Change your answer any time.
+          </p>
           <PhotoPermission scouts={scouts} />
         </section>
       )}

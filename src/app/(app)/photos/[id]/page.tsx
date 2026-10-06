@@ -9,6 +9,8 @@ import { getAlbumNeighbors, getPhoto } from "@/lib/photos";
 import PhotoPager from "@/components/PhotoPager";
 import { fmtDay } from "@/lib/format";
 import { flagPhoto } from "../actions";
+import FacebookCheck from "@/components/FacebookCheck";
+import { getPhotoPeople, getPhotoSocialStatus, getSocialAccess, getSocialScouts } from "@/lib/facebook";
 
 export const metadata: Metadata = { title: "Photo" };
 
@@ -18,7 +20,16 @@ export default async function PhotoPage({ params }: PageProps<"/photos/[id]">) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const photo = await getPhoto(id);
   if (!photo) notFound();
-  const nav = await getAlbumNeighbors(photo);
+  const [nav, social] = await Promise.all([getAlbumNeighbors(photo), getSocialAccess()]);
+  // Leaders and the pack's Facebook helpers: can this photo go on the pack's Facebook page?
+  const fb =
+    social && photo.status === "approved"
+      ? await Promise.all([getPhotoSocialStatus([photo.id]), getSocialScouts(), getPhotoPeople(photo.id)]).then(([st, scouts, inPhoto]) => ({
+          status: st.get(photo.id),
+          scouts,
+          inPhoto,
+        }))
+      : null;
   const album = photo.event_id ?? "other";
   const leader = isLeader(me);
   // Only leaders remove photos (from Photo review). Everyone else asks for removal.
@@ -57,7 +68,11 @@ export default async function PhotoPage({ params }: PageProps<"/photos/[id]">) {
           </Link>
         )}
       </div>
-      <p className="px-1 text-[11px] text-muted">Please keep pack photos within the pack. Don&apos;t post them on public social media.</p>
+      <p className="px-1 text-[11px] text-muted">
+        Please keep pack photos within the pack. Don&apos;t post them on public social media; the pack&apos;s Facebook page only uses
+        photos where every family said yes.
+      </p>
+      {fb && <FacebookCheck photoId={photo.id} status={fb.status} scouts={fb.scouts} inPhoto={fb.inPhoto} />}
 
       {canRequest && (
         <details className="card">

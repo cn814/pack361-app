@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CircleCheck, ClipboardCheck, ImagePlus, Lock } from "lucide-react";
+import { CircleCheck, ClipboardCheck, Globe, ImagePlus, Lock } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import { isLeader, requireMember } from "@/lib/data";
 import { countMyPending, countPendingPhotos, getAlbumPhotos, getAlbums } from "@/lib/photos";
 import { fmtDay } from "@/lib/format";
+import { getSocialAccess } from "@/lib/facebook";
 
 export const metadata: Metadata = { title: "Pack photos" };
 
@@ -52,10 +53,11 @@ export default async function PhotosPage({ searchParams }: PageProps<"/photos">)
     );
   }
 
-  const [albums, pending, mine] = await Promise.all([
+  const [albums, pending, mine, social] = await Promise.all([
     getAlbums(),
     leader ? countPendingPhotos() : Promise.resolve(0),
     countMyPending(me.id),
+    getSocialAccess(),
   ]);
 
   return (
@@ -83,6 +85,15 @@ export default async function PhotosPage({ searchParams }: PageProps<"/photos">)
           <ClipboardCheck className="h-5 w-5 text-gold-700" aria-hidden />
           <span className="flex-1 font-bold text-pine-950">
             {pending} photo{pending === 1 ? "" : "s"} to review
+          </span>
+        </Link>
+      )}
+      {social && (
+        <Link href="/photos/facebook" className="card flex items-center gap-3 py-3">
+          <Globe className="h-5 w-5 text-pine" aria-hidden />
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold text-pine-950">Facebook photos</span>
+            <span className="block text-xs text-muted">Which photos can go on the pack&apos;s public Facebook page, and who said yes</span>
           </span>
         </Link>
       )}

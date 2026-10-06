@@ -47,6 +47,7 @@ export interface RosterScout {
   last_name: string;
   bsa_member_id: string | null;
   photo_permission: "yes" | "no" | null;
+  social_ok: boolean | null;
   is_active: boolean;
   den: { name: string } | null;
 }
@@ -70,7 +71,7 @@ export interface RosterDen {
 
 const ADULT_COLS =
   "id, family_id, first_name, last_name, preferred_name, email, phone, relationship, role, position_title, bsa_member_id, is_active, user_id, welcomed_at";
-const SCOUT_COLS = "id, family_id, den_id, first_name, last_name, bsa_member_id, photo_permission, is_active, den:dens(name)";
+const SCOUT_COLS = "id, family_id, den_id, first_name, last_name, bsa_member_id, photo_permission, social_ok, is_active, den:dens(name)";
 
 export async function getFamilies(): Promise<RosterFamily[]> {
   const supabase = await createClient();

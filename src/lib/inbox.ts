@@ -9,6 +9,7 @@ import { getMyCharges, totalDue } from "./payments";
 import { fmtMoney } from "./money";
 import { getPolls, getVotedPollIds, isOpen } from "./polls";
 import { countPendingPhotos } from "./photos";
+import { facebookAnswered } from "./photo-permission";
 import { daysBetween, easternDate } from "./tz";
 import { fmtDay } from "./format";
 import { rsvpOpen } from "./rsvp";
@@ -205,7 +206,20 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
     });
   }
 
-  // No photo question: scouts are OK in pack photos unless the family opts out (Me → Family).
+  // No question for the private album: scouts are OK in it unless the family opts out (Me → Family).
+  // The public Facebook page needs a yes, so ask families who haven't answered.
+  const fbAsk = scouts.filter((s) => !facebookAnswered(s));
+  if (fbAsk.length && !hidden.has("facebook-photos")) {
+    const names = fbAsk.map((s) => s.first_name);
+    todos.push({
+      key: "facebook-photos",
+      title: `Pack Facebook page: OK to show ${names.length === 1 ? `${names[0]}'s face` : "your scouts' faces"}?`,
+      detail: `The private album doesn't change. ${names.length === 1 ? "" : `For ${namesList(names)}. `}Until you say yes, the pack covers faces or leaves the photo off.`,
+      href: "/family/household#photos",
+      tone: "pine",
+      hide: { key: "facebook-photos", until: new Date(Date.now() + 30 * 86400000).toISOString() },
+    });
+  }
 
   if (waitingJoins) {
     todos.push({

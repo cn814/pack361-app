@@ -17,6 +17,7 @@ export default async function PhotoRulesPage() {
     "Anyone can request that a photo be removed (Request removal on the photo). It's hidden right away, and a leader removes it. Only leaders delete photos, so nothing disappears by accident.",
     `Photos are deleted automatically after ${settings.photo_keep_months} months.`,
     "Please keep pack photos within the pack: don't repost them on public social media.",
+    "The pack's own public Facebook page is the one exception. A scout's face shows there only if their family said yes (Me → Family and registration → Photos); no answer means no. Before a photo goes up, a leader or the pack's social media helper marks every scout whose face shows, and the app calls it OK only when each of them has a yes. Otherwise faces are covered or the photo stays off.",
   ];
   return (
     <>

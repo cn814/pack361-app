@@ -181,3 +181,23 @@ export async function flagPhoto(_prev: ActionResult, form: FormData): Promise<Ac
   revalidatePath("/photos", "layout");
   redirect("/photos?flagged=1");
 }
+
+/**
+ * Who's in a photo, for the pack's Facebook page: the complete list of scouts whose faces show
+ * (or "no scout's face shows"). Leaders and the people a pack admin added (the database checks).
+ */
+export async function savePhotoPeople(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireMember();
+  const id = String(form.get("id") ?? "");
+  if (!UUID.test(id)) return { error: "Photo not found." };
+  const scouts = [...new Set(form.getAll("scout").map(String).filter((s) => UUID.test(s)))].slice(0, 60);
+  const none = form.get("none") === "on";
+  if (!scouts.length && !none) return { error: "Tick every scout whose face shows, or “No scout's face shows”." };
+  if (scouts.length && none) return { error: "You ticked scouts and “No scout's face shows”. Untick one." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_photo_people", { p_photo_id: id, p_scouts: scouts });
+  if (error) return { error: error.code === "42501" ? "Only leaders and the pack's Facebook helpers can do this." : "Couldn't save. Try again." };
+  revalidatePath(`/photos/${id}`);
+  revalidatePath("/photos/facebook");
+  return { ok: true, message: "Saved." };
+}

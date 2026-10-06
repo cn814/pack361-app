@@ -6,9 +6,9 @@ import { requireAdmin } from "@/lib/roster-data";
 import { createClient } from "@/lib/supabase/server";
 
 const UUID = /^[0-9a-f-]{36}$/i;
-const REPORTS = new Set(["roster", "membership"]);
+const REPORTS = new Set(["roster", "membership", "social"]);
 
-/** Pack admin: let a leader open the roster or membership report too (the database checks admins). */
+/** Pack admin: let someone open the roster or membership report, or help with Facebook photos (the database checks admins). */
 export async function addReportAccess(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireAdmin();
   const report = String(form.get("report") ?? "");
@@ -18,6 +18,7 @@ export async function addReportAccess(_prev: ActionResult, form: FormData): Prom
   const { error } = await supabase.from("report_access").insert({ report, adult_id: adultId, added_by: me.id });
   if (error && !/duplicate|pkey/i.test(error.message)) return { error: "Couldn't add them. Try again." };
   revalidatePath("/admin/reports");
+  revalidatePath("/photos", "layout");
   return { ok: true, message: "Added." };
 }
 

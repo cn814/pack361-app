@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, getSignIns, welcomeBudget } from "@/lib/roster-data";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
 import { resetTwoStepFor } from "@/lib/two-step";
-import { notifyPhotoOptOut } from "@/lib/notify";
+import { notifyFacebookOff, notifyPhotoOptOut } from "@/lib/notify";
 import { sendPreview } from "@/lib/newsletter";
 import { APP_URL, emailConfigured, sendEmails, type Email } from "@/lib/email";
 import type { SettingKey } from "@/lib/settings";
@@ -194,12 +194,18 @@ export async function saveScout(_prev: ActionResult, form: FormData): Promise<Ac
   // on, and otherwise leave the saved answer alone (null means OK too).
   const photo = str(form, "photo_permission");
   const photoChange = photo === "no" ? "no" : str(form, "photo_permission_was") === "no" ? "yes" : null;
+  // The pack's Facebook page: yes, no, or not answered (= no). Saved only when it changes, so
+  // the time the family answered is kept.
+  const fb = str(form, "social_ok");
+  const fbWas = str(form, "social_ok_was");
+  const fbChange = fb !== fbWas && ["yes", "no", ""].includes(fb) ? { social_ok: fb === "" ? null : fb === "yes" } : {};
   const row = {
     first_name: str(form, "first_name", 60),
     last_name: str(form, "last_name", 60),
     den_id: UUID.test(den) ? den : null,
     bsa_member_id: opt(form, "bsa_member_id", 20),
     ...(photoChange ? { photo_permission: photoChange } : {}),
+    ...fbChange,
   };
   if (!row.first_name || !row.last_name) return { error: "Add a first and last name." };
   if (row.bsa_member_id && !/^\d{5,12}$/.test(row.bsa_member_id)) return { error: "BSA member IDs are numbers only." };
@@ -220,6 +226,10 @@ export async function saveScout(_prev: ActionResult, form: FormData): Promise<Ac
   if (photoChange === "no" && str(form, "photo_permission_was") !== "no") {
     const name = row.first_name;
     after(() => notifyPhotoOptOut(name));
+  }
+  if (fbWas === "yes" && (fb !== "yes" || photoChange === "no")) {
+    const name = row.first_name;
+    after(() => notifyFacebookOff(name));
   }
   revalidateRoster(familyId || null);
   return { ok: true, message: id ? "Saved" : `${row.first_name} added.` };

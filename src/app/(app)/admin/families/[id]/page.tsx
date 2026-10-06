@@ -81,7 +81,7 @@ export default async function FamilyAdminPage({ params, searchParams }: PageProp
                 <span className="flex items-center gap-1 text-xs text-muted">
                   {s.den?.name ?? "No den"} ·
                   <Camera className="h-3 w-3" aria-hidden />
-                  {s.photo_permission === "no" ? "no photos (opted out)" : "photos OK"}
+                  {s.photo_permission === "no" ? "no photos (opted out)" : `photos OK · Facebook ${s.social_ok ? "yes" : s.social_ok === false ? "no" : "not answered"}`}
                 </span>
               </summary>
               <div className="pt-3">

@@ -31,6 +31,8 @@ export interface Scout {
   family_id: string;
   den: Den | null;
   photo_permission?: "yes" | "no" | null;
+  /** Face OK on the pack's public Facebook page: true = yes; false or null (not answered) = no. */
+  social_ok?: boolean | null;
   registration_expires_on?: string | null;
 }
 

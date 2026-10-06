@@ -93,7 +93,7 @@ export const getMyScouts = cache(async (): Promise<Scout[]> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("scouts")
-    .select("id, first_name, last_name, family_id, photo_permission, registration_expires_on, den:dens(id, rank, number, name)")
+    .select("id, first_name, last_name, family_id, photo_permission, social_ok, registration_expires_on, den:dens(id, rank, number, name)")
     .eq("family_id", me.family_id)
     .eq("is_active", true)
     .order("first_name");

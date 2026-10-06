@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { eventPath } from "@/lib/featured";
 
 const UUID = /^[0-9a-f-]{36}$/i;
-const HIDE_KEY = /^((poll|job)-[0-9a-f-]{36}|training-import)$/i;
+const HIDE_KEY = /^((poll|job)-[0-9a-f-]{36}|training-import|facebook-photos)$/i;
 
 /**
  * Answer an RSVP straight from a to-do. Going counts the family's scouts the event is for (all

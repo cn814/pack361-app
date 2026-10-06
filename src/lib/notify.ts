@@ -45,3 +45,44 @@ export async function notifyPhotoOptOut(scoutFirstName: string) {
     tag: "photo-opt-out",
   });
 }
+
+/**
+ * A family changed a scout's Facebook answer from yes to no: tell the people a pack admin added
+ * for Facebook photos (the social media coordinator) and the pack admins, so anything already
+ * posted comes down. First name only.
+ */
+export async function notifyFacebookOff(scoutFirstName: string) {
+  if (!adminConfigured()) return;
+  const db = createAdminClient();
+  const { data: grants } = await db.from("report_access").select("adult_id").eq("report", "social");
+  const grantIds = ((grants ?? []) as { adult_id: string }[]).map((g) => g.adult_id);
+  const { data: social } = grantIds.length
+    ? await db.from("adults").select("id, email, first_name").in("id", grantIds).eq("is_active", true)
+    : { data: [] };
+  const people = new Map([...(await admins()), ...((social ?? []) as { id: string; email: string; first_name: string }[])].map((a) => [a.id, a]));
+  if (!people.size) return;
+  const name = scoutFirstName.trim().slice(0, 40) || "A scout";
+  await sendPushTo([...people.keys()], {
+    title: "Facebook photos: a family said no",
+    body: `${name}'s face shouldn't be on the pack's Facebook page any more. Check what's posted.`,
+    url: "/photos/facebook",
+    tag: "facebook-off",
+  });
+  if (emailConfigured()) {
+    await sendEmails(
+      [...people.values()]
+        .filter((a) => a.email)
+        .map(
+          (a): Email => ({
+            to: a.email,
+            subject: `Facebook photos: ${name}'s family said no`,
+            paragraphs: [
+              `${name}'s family changed their answer in the pack app: ${name}'s face shouldn't show on the pack's public Facebook page.`,
+              `If a photo already posted shows ${name}'s face, please take it down or cover their face. Photos in the app's private album aren't affected.`,
+              `${process.env.NEXT_PUBLIC_APP_URL ?? "https://app.pack361.org"}/photos/facebook`,
+            ],
+          }),
+        ),
+    );
+  }
+}
