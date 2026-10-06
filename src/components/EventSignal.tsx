@@ -12,6 +12,7 @@ import type { Adult, PackEvent } from "@/lib/types";
  */
 export default async function EventSignal({ e, me }: { e: PackEvent; me: Adult }) {
   const leader = isLeader(me);
+  if (e.category === "Den Meeting") return null; // the den has its own ways to reach families
   if (!e.rsvp_enabled && !leader) return null;
   const { url, exists } = await getEventSignal(e.id);
   return <EventSignalView eventId={e.id} leader={leader} rsvp={Boolean(e.rsvp_enabled)} url={url} exists={exists} open={rsvpOpen(e)} />;

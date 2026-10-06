@@ -14,6 +14,7 @@ import type { Adult, PackEvent } from "@/lib/types";
  * is built only for key leaders (see canSeeMoney in lib/ready).
  */
 export default async function ReadyToGo({ e, me }: { e: PackEvent; me: Adult }) {
+  if (e.category === "Den Meeting") return null; // a regular den meeting needs no checklist
   const report = await getReadiness(e, me);
   if (!report) return null;
   return <ReadyCard report={report} canEmail={brevoConfigured() || emailConfigured()} />;
