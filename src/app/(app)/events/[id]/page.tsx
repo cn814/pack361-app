@@ -14,6 +14,7 @@ import PackingChecklist from "@/components/PackingChecklist";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
 import EventAttendance from "@/components/EventAttendance";
+import DenMeetingRecord from "@/components/DenMeetingRecord";
 import MeetingNotes from "@/components/MeetingNotes";
 import PermissionSlips from "@/components/PermissionSlips";
 import EventSignal from "@/components/EventSignal";
@@ -63,6 +64,8 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const navTo = navDestination({ address: event.address, location_name: event.location_name });
 
   const leader = isLeader(me);
+  // Den meetings are recorded on the den's meeting page (attendance and requirements together).
+  const denMeeting = event.category === "Den Meeting";
 
   const overview = (
     <>
@@ -91,7 +94,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           {navTo && <NavigateLink to={navTo} className="btn-ghost py-2" />}
           {leader && easternDate(event.starts_at) <= todayEastern() && easternDate(event.ends_at ?? event.starts_at) >= todayEastern() && !event.archived_at && (
             <a href="#leaders" className="btn-primary py-2">
-              <ClipboardCheck className="h-4 w-4" aria-hidden /> Take attendance
+              <ClipboardCheck className="h-4 w-4" aria-hidden /> {denMeeting ? "Record the meeting" : "Take attendance"}
             </a>
           )}
           {event.signup_url && (
@@ -134,7 +137,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   // Leaders only: attendance (from the day of), notes, messaging families, and editing.
   const leaderTab = leader ? (
     <>
-      <EventAttendance e={event} me={me} />
+      {denMeeting ? <DenMeetingRecord e={event} me={me} /> : <EventAttendance e={event} me={me} />}
       <MeetingNotes target={{ eventId: id }} />
       {event.rsvp_enabled && (
         <Link href={`/announce?event=${id}`} className="btn-ghost w-full py-2.5">
@@ -157,7 +160,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         label="More about this event"
         backLabel="Event"
         tabs={[
-          { id: "leaders", label: "Leaders", hint: "Attendance, notes, edit", icon: <ShieldCheck aria-hidden />, content: leaderTab },
+          { id: "leaders", label: "Leaders", hint: denMeeting ? "Record the meeting, notes, edit" : "Attendance, notes, edit", icon: <ShieldCheck aria-hidden />, content: leaderTab },
           { id: "schedule", label: "Schedule", hint: "What happens when", icon: <Clock aria-hidden />, content: <EventSchedule items={itinerary} /> },
           {
             id: "packing",
