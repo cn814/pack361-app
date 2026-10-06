@@ -11,6 +11,7 @@ import { notifyAdmins } from "@/lib/notify";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
 
 const UUID = /^[0-9a-f-]{36}$/i;
+const HASH = /^[0-9a-f]{64}$/;
 const MAX_FULL = 3_500_000;
 const MAX_THUMB = 400_000;
 
@@ -57,12 +58,15 @@ async function optOutCount(): Promise<number> {
  * photos, or when they tick "None of these scouts are in my photos"; otherwise, and for
  * everyone else, they wait for review. `fatal` errors are the same for every photo in a batch.
  */
-export async function uploadPhoto(form: FormData): Promise<{ error?: string; approved?: boolean; fatal?: boolean }> {
+export async function uploadPhoto(form: FormData): Promise<{ error?: string; approved?: boolean; fatal?: boolean; duplicate?: boolean }> {
   const me = await requireMember();
   const full = form.get("full");
   const thumb = form.get("thumb");
   const eventId = String(form.get("event_id") ?? "");
   const caption = String(form.get("caption") ?? "").trim().slice(0, 200) || null;
+  // Fingerprint of the original file (taken on the phone): the same person can't add it twice.
+  const hash = String(form.get("hash") ?? "").toLowerCase();
+  const sourceHash = HASH.test(hash) ? hash : null;
   if (!(full instanceof Blob) || !(thumb instanceof Blob)) return { error: "No photo received." };
   if (full.size > MAX_FULL || thumb.size > MAX_THUMB) return { error: "That photo is too large." };
   if (!(await isJpeg(full)) || !(await isJpeg(thumb))) return { error: "Only photos can be uploaded." };
@@ -85,13 +89,25 @@ export async function uploadPhoto(form: FormData): Promise<{ error?: string; app
         caption,
         event_id: UUID.test(eventId) ? eventId : null,
         status: leader ? "approved" : "pending_review",
+        source_hash: sourceHash,
       });
   if (error) {
     // Only leaders may delete photo files, so tidy up this failed upload with the server key.
     if (adminConfigured()) await createAdminClient().storage.from(PHOTO_BUCKET).remove([path, thumbPath]);
+    if ("code" in error && error.code === "23505") return { duplicate: true }; // already uploaded this one
     return { error: "Upload failed. Try again." };
   }
   return { approved: leader };
+}
+
+/** Before uploading: which of these photo files (by fingerprint) this person already uploaded. */
+export async function alreadyUploaded(hashes: string[]): Promise<string[]> {
+  const me = await requireMember();
+  const list = [...new Set(hashes.map((h) => String(h).toLowerCase()).filter((h) => HASH.test(h)))].slice(0, 50);
+  if (!list.length) return [];
+  const supabase = await createClient();
+  const { data } = await supabase.from("photos").select("source_hash").eq("uploader_id", me.id).in("source_hash", list);
+  return ((data ?? []) as { source_hash: string }[]).map((r) => r.source_hash);
 }
 
 /** After a batch of uploads: refresh the album once and, if any went to review, alert admins once. */
