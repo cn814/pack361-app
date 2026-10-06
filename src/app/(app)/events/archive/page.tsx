@@ -12,7 +12,12 @@ export default async function ArchivePage() {
   const me = await requireMember();
   const supabase = await createClient();
   const scope = await denScopeFor(supabase, me);
-  const events = await loadArchive(supabase, scope, new Date().toISOString());
+  const now = new Date().toISOString();
+  const all = await loadArchive(supabase, scope, now);
+  // Past events, newest first. Upcoming events taken off the calendar go in their own list at the
+  // bottom, so the most recent event is always at the top.
+  const events = all.filter((e) => e.starts_at < now);
+  const offCalendar = all.filter((e) => e.starts_at >= now).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   const byYear = new Map<string, typeof events>();
   for (const e of events) {
     const y = easternDate(e.starts_at).slice(0, 4);
@@ -23,10 +28,10 @@ export default async function ArchivePage() {
       <BackLink href="/events" label="Calendar" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Event archive</h1>
       <p className="-mt-2 text-sm text-muted">
-        Past events, newest first, plus events taken off the calendar.{" "}
+        Past events, newest first. Upcoming events taken off the calendar are at the bottom.{" "}
         {isLeader(me) ? "Open one to put it back." : "Photos from past events are in each event's album."}
       </p>
-      {events.length === 0 && <p className="card text-sm text-muted">Nothing here yet.</p>}
+      {all.length === 0 && <p className="card text-sm text-muted">Nothing here yet.</p>}
       {[...byYear.entries()].map(([year, list]) => (
         <details key={year} className="space-y-3" open={year === [...byYear.keys()][0]}>
           <summary className="section-title cursor-pointer list-none">
@@ -46,6 +51,23 @@ export default async function ArchivePage() {
           </div>
         </details>
       ))}
+      {offCalendar.length > 0 && (
+        <details className="space-y-3">
+          <summary className="section-title cursor-pointer list-none">
+            Taken off the calendar <span className="font-normal text-muted">· {offCalendar.length} upcoming</span>
+          </summary>
+          <div className="space-y-3 pt-2">
+            {offCalendar.map((e) => (
+              <div key={e.id} className="space-y-1">
+                <EventRow e={e} />
+                <p className="px-1 text-[11px] text-muted">
+                  {e.archived_reason === "removed_in_twh" ? "Removed from TroopWebHost" : "Taken off the calendar by a leader"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
     </>
   );
 }
