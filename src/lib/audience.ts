@@ -68,17 +68,22 @@ export interface EventAudienceCounts {
   noAnswer: number;
 }
 
-type AudienceEvent = { id: string; den_id: string | null; ranks?: DenRank[] | null; leaders_only?: boolean | null };
+type AudienceEvent = { id: string; den_id: string | null; ranks?: DenRank[] | null; only_scouts?: string[] | null; leaders_only?: boolean | null };
 
 /**
  * Families the event is for: every active family for a pack-wide event, or those with an active
- * scout in the event's den or ranks. Leader-only events are for leaders (as single adults:
+ * scout in the event's den or ranks, or (only for some scouts) those scouts' families. Leader-only events are for leaders (as single adults:
  * "a:<adult id>", or their family). Returns family ids and solo adult ids.
  */
 async function invitedFor(db: SupabaseClient, e: AudienceEvent): Promise<{ families: string[]; adults: { id: string; family_id: string | null }[] }> {
   if (e.leaders_only) {
     const { data } = await db.from("adults").select("id, family_id").in("role", LEADER_ROLES).eq("is_active", true);
     return { families: [], adults: (data ?? []) as { id: string; family_id: string | null }[] };
+  }
+  if (e.only_scouts?.length) {
+    // Only for some scouts: just their families.
+    const { data } = await db.from("scouts").select("family_id").in("id", e.only_scouts).eq("is_active", true);
+    return { families: [...new Set((data ?? []).map((s) => s.family_id as string).filter(Boolean))], adults: [] };
   }
   if (!e.den_id && !e.ranks?.length) {
     const { data } = await db.from("families").select("id").eq("is_active", true);
@@ -108,7 +113,7 @@ async function noAnswer(db: SupabaseClient, e: AudienceEvent): Promise<{ familie
 }
 
 async function audienceEvent(db: SupabaseClient, eventId: string): Promise<AudienceEvent | null> {
-  const { data } = await db.from("events").select("id, den_id, ranks, leaders_only").eq("id", eventId).maybeSingle();
+  const { data } = await db.from("events").select("id, den_id, ranks, only_scouts, leaders_only").eq("id", eventId).maybeSingle();
   return (data as AudienceEvent | null) ?? null;
 }
 

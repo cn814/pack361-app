@@ -14,27 +14,30 @@ export interface CalItem extends PackEvent {
   den_name: string | null;
 }
 
-/** "all" for leaders; otherwise the dens (and their ranks) of the family's active scouts. */
-export type DenScope = "all" | { dens: string[]; ranks: DenRank[] };
+/**
+ * "all" for leaders; otherwise the dens (and their ranks) of the family's active scouts, and the
+ * scouts themselves (for events only for some scouts).
+ */
+export type DenScope = "all" | { dens: string[]; ranks: DenRank[]; scouts: string[] };
 
 export async function denScopeFor(
   db: SupabaseClient,
   adult: { role: AppRole; family_id: string | null },
 ): Promise<DenScope> {
   if (LEADER_ROLES.includes(adult.role)) return "all";
-  if (!adult.family_id) return { dens: [], ranks: [] };
+  if (!adult.family_id) return { dens: [], ranks: [], scouts: [] };
   const { data } = await db
     .from("scouts")
-    .select("den:dens(id, rank)")
+    .select("id, den:dens(id, rank)")
     .eq("family_id", adult.family_id)
     .eq("is_active", true);
-  return denScopeFromScouts((data ?? []) as unknown as { den: { id: string; rank: DenRank } | null }[]);
+  return denScopeFromScouts((data ?? []) as unknown as { id: string; den: { id: string; rank: DenRank } | null }[]);
 }
 
 /** A family's dens and ranks from its active scouts (already read for the page). */
-export function denScopeFromScouts(scouts: { den?: { id: string; rank: DenRank } | null }[]): DenScope {
+export function denScopeFromScouts(scouts: { id: string; den?: { id: string; rank: DenRank } | null }[]): DenScope {
   const dens = scouts.map((s) => s.den).filter(Boolean) as { id: string; rank: DenRank }[];
-  return { dens: [...new Set(dens.map((d) => d.id))], ranks: [...new Set(dens.map((d) => d.rank))] };
+  return { dens: [...new Set(dens.map((d) => d.id))], ranks: [...new Set(dens.map((d) => d.rank))], scouts: scouts.map((s) => s.id) };
 }
 
 export { easternDate } from "./tz";
@@ -46,7 +49,7 @@ export function easternToIso(date: string, time: string): string {
 }
 
 const EVENT_COLS =
-  "id, title, category, starts_at, ends_at, location_name, address, details, signup_url, den_id, ranks, all_day, leaders_only, twh_uid, twh_url, rsvp_enabled, rsvp_by, source, fee_family_cents, fee_scout_cents, fee_adult_cents, slip_required, slip_due, den:dens(name)";
+  "id, title, category, starts_at, ends_at, location_name, address, details, signup_url, den_id, ranks, only_scouts, all_day, leaders_only, twh_uid, twh_url, rsvp_enabled, rsvp_by, source, fee_family_cents, fee_scout_cents, fee_adult_cents, slip_required, slip_due, den:dens(name)";
 
 const RANK_NAME: Record<DenRank, string> = { lion: "Lions", tiger: "Tigers", wolf: "Wolves", bear: "Bears", webelos: "Webelos", aol: "AOL" };
 export function ranksLabel(ranks: DenRank[] | null | undefined): string | null {
@@ -87,14 +90,16 @@ export async function loadCalendar(
   return merge(events, (meetings ?? []) as unknown as MeetingRow[], scope, limit);
 }
 
-/** Pack-wide events plus the family's dens and ranks; leader-only events only for leaders. */
+/** Pack-wide events plus the family's dens and ranks (and events for their scouts); leader-only events only for leaders. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function scoped<Q extends { or: (f: string) => any; eq: (c: string, v: unknown) => any }>(q: Q, scope: DenScope): Q {
   if (scope === "all") return q;
   const parts = ["and(den_id.is.null,ranks.is.null)"];
   if (scope.dens.length) parts.push(`den_id.in.(${scope.dens.join(",")})`);
   if (scope.ranks.length) parts.push(`ranks.ov.{${scope.ranks.join(",")}}`);
-  return q.or(parts.join(",")).eq("leaders_only", false);
+  // Events only for some scouts: just those scouts' families. (A second "or" is ANDed with the first.)
+  const only = scope.scouts.length ? `only_scouts.is.null,only_scouts.ov.{${scope.scouts.join(",")}}` : "only_scouts.is.null";
+  return q.or(parts.join(",")).or(only).eq("leaders_only", false);
 }
 
 /**

@@ -48,6 +48,8 @@ export interface PackEvent {
   ranks?: DenRank[] | null;
   all_day?: boolean;
   leaders_only?: boolean;
+  /** Only for these scouts (and their families); null = everyone the den or ranks cover. */
+  only_scouts?: string[] | null;
   /** Carpool board: true/false = a leader turned it on or off; null = automatic (src/lib/carpool.ts). */
   carpool?: boolean | null;
   twh_uid?: string | null;

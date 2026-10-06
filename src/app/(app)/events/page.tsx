@@ -135,7 +135,7 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
         </section>
       ))}
 
-      {token && host && <CalendarSubscribe feedUrl={`${proto}://${host}/api/calendar/${token}.ics`} />}
+      {token && host && <CalendarSubscribe feedUrl={`${proto}://${host}/api/calendar/${token}.ics`} open={sp.subscribe === "1"} />}
       <Link href="/events/archive" className="card flex items-center justify-between text-sm font-bold text-pine">
         Past events
         <ChevronRight className="h-4 w-4" aria-hidden />

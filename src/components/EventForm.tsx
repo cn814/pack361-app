@@ -46,6 +46,8 @@ export interface EventFormValues {
   signup_url?: string | null;
   den_id?: string | null;
   ranks?: string[] | null;
+  /** Only for these scouts (null = everyone the den or ranks cover). */
+  only_scouts?: string[] | null;
   rsvp_enabled?: boolean;
   rsvp_by?: string | null;
   fee_family_cents?: number | null;
@@ -73,10 +75,13 @@ export interface EventFormValues {
 export default function EventForm({
   v = {},
   dens,
+  scouts = [],
   documents = [],
 }: {
   v?: EventFormValues;
   dens: { id: string; name: string }[];
+  /** Active scouts, for "Only some scouts". */
+  scouts?: { id: string; name: string; den_id: string | null; den_name: string | null }[];
   /** Pack documents everyone can see, for attaching a printable permission slip. */
   documents?: { id: string; title: string }[];
 }) {
@@ -84,6 +89,8 @@ export default function EventForm({
   const [allDay, setAllDay] = useState(Boolean(v.all_day));
   const [rsvp, setRsvp] = useState(v.rsvp_enabled ?? true); // every event takes RSVPs unless a leader turns it off
   const [den, setDen] = useState(v.den_id ?? "");
+  const [onlySome, setOnlySome] = useState(Boolean(v.only_scouts?.length));
+  const [picked, setPicked] = useState<Set<string>>(new Set(v.only_scouts ?? []));
   const [cost, setCost] = useState(v.fee_family_cents != null || v.fee_scout_cents != null || v.fee_adult_cents != null);
   const [category, setCategory] = useState(v.category ?? "Pack");
   const [onJoin, setOnJoin] = useState(Boolean(v.public_on_join));
@@ -219,6 +226,53 @@ export default function EventForm({
               </label>
             ))}
             <p className="w-full text-[11px] text-muted">Tick ranks only if it&apos;s just for them (like a Webelos outing). None ticked = everyone.</p>
+          </div>
+        )}
+        {scouts.length > 0 && (
+          <div className="space-y-2 border-t border-line pt-2">
+            <label className="flex items-start gap-2 text-sm text-navy">
+              <input type="checkbox" checked={onlySome} onChange={(e) => setOnlySome(e.target.checked)} className="mt-0.5 h-4 w-4 accent-pine" />
+              <span>
+                Only some scouts
+                <span className="block text-[11px] text-muted">
+                  Like the scouts signed up for a workshop. Only their families see it in the app, the Sunday email and their calendar.
+                </span>
+              </span>
+            </label>
+            {onlySome && (
+              <div className="max-h-72 space-y-2 overflow-y-auto rounded-lg bg-surface-low p-2">
+                {[...new Map(scouts.filter((x) => !den || x.den_id === den).map((x) => [x.den_name ?? "No den", 0])).keys()].map((group) => (
+                  <div key={group}>
+                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-muted">{group}</p>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                      {scouts
+                        .filter((x) => (x.den_name ?? "No den") === group && (!den || x.den_id === den))
+                        .map((x) => (
+                          <label key={x.id} className="flex items-center gap-1.5 text-sm text-ink">
+                            <input
+                              type="checkbox"
+                              name="only_scouts"
+                              value={x.id}
+                              checked={picked.has(x.id)}
+                              onChange={(e) =>
+                                setPicked((old) => {
+                                  const next = new Set(old);
+                                  if (e.target.checked) next.add(x.id);
+                                  else next.delete(x.id);
+                                  return next;
+                                })
+                              }
+                              className="h-4 w-4 accent-pine"
+                            />
+                            {x.name}
+                          </label>
+                        ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {onlySome && <p className="text-[11px] font-semibold text-pine">{picked.size} picked</p>}
           </div>
         )}
       </fieldset>

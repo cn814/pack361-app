@@ -77,6 +77,9 @@ export default async function PaperworkPage({ searchParams }: PageProps<"/leader
         {scoutsOk} of {scoutRows.length} scouts have a current form. {waiting.length} turned in by families and waiting for you to
         confirm you have the paper copy.
       </p>
+      <a href="/leaders/paperwork/csv" download className="btn-ghost self-start py-2">
+        Download spreadsheet (CSV)
+      </a>
       <div className="flex flex-wrap gap-2 text-xs font-semibold">
         {(Object.keys(SHOW) as Show[]).map((k) => (
           <Link

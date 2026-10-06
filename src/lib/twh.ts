@@ -261,7 +261,9 @@ export function classify(title: string): { category: string; ranks: DenRank[] | 
   if (/\baols?\b|arrow of light/.test(t)) ranks.push("aol");
   return {
     category,
-    ranks: ranks.length && category !== "Pack Meeting" && category !== "Den Meeting" ? ranks : null,
+    // A den-meeting notice naming some ranks ("Bears-Only: No Den Meeting") is just for them; a
+    // pack meeting, or a den-meeting night listing every rank, is for everyone.
+    ranks: ranks.length && ranks.length < 6 && category !== "Pack Meeting" ? ranks : null,
     // Committee meetings and Roundtable are open to everyone: the pack wants more parents involved.
     leaders_only: false,
   };

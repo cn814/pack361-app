@@ -7,6 +7,7 @@ import {
   CalendarPlus,
   ChevronRight,
   CircleCheck,
+  FileSpreadsheet,
   ClipboardCheck,
   FileText,
   FileUp,
@@ -45,6 +46,7 @@ import { countWaitingRequests } from "@/lib/finance-data";
 import { countWaitingJoins } from "@/lib/roster-data";
 import { getTodos } from "@/lib/inbox";
 import { getSettings } from "@/lib/settings";
+import { REPORTS, myReports, type ReportKey } from "@/lib/reports";
 import { getLeaderMeetingsToday, type LeaderMeeting } from "@/lib/meeting-now";
 import { LEADER_TODOS, WAITING_LABEL } from "@/lib/leader-todos";
 import { fmtTime, timeAgo } from "@/lib/format";
@@ -64,7 +66,7 @@ export default async function LeadersHubPage() {
   if (!isLeader(me)) redirect("/");
   const committee = isCommittee(me);
   const admin = isAdmin(me);
-  const [meetings, todos, toApprove, toRecord, dens, reviewable, settings, lastImport, waiting, joins, catalog] = await Promise.all([
+  const [meetings, todos, toApprove, toRecord, dens, reviewable, settings, lastImport, waiting, joins, catalog, reports] = await Promise.all([
     getLeaderMeetingsToday(),
     getTodos(),
     countReviewSubmissions("submitted"),
@@ -76,6 +78,7 @@ export default async function LeadersHubPage() {
     committee ? countWaitingRequests() : Promise.resolve(null),
     admin ? countWaitingJoins() : Promise.resolve(0),
     getCatalog(),
+    myReports(),
   ]);
   const [recordList, awards] = await Promise.all([
     getRecords(reviewable.map((s) => s.id)),
@@ -255,6 +258,42 @@ export default async function LeadersHubPage() {
                 ]}
               />
             ) : null,
+          },
+          {
+            id: "reports",
+            label: "Reports",
+            content: (
+              <>
+                <ul className="card divide-y divide-line p-0">
+                  {([...reports, "training", "forms"] as ReportKey[]).map((k) => (
+                    <li key={k}>
+                      <Link href={REPORTS[k].href} className="flex items-center gap-3 px-4 py-3">
+                        <FileSpreadsheet className="h-5 w-5 shrink-0 text-pine" aria-hidden />
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-bold text-ink">{REPORTS[k].title}</span>
+                          <span className="block text-xs text-muted">{REPORTS[k].about}</span>
+                        </span>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+                      </Link>
+                    </li>
+                  ))}
+                  <li>
+                    <Link href="/leaders/attendance" className="flex items-center gap-3 px-4 py-3">
+                      <FileSpreadsheet className="h-5 w-5 shrink-0 text-pine" aria-hidden />
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-bold text-ink">Attendance</span>
+                        <span className="block text-xs text-muted">Den meetings, pack events and camping nights for each scout, by season.</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+                    </Link>
+                  </li>
+                </ul>
+                <p className="text-xs text-muted">
+                  Each report has a spreadsheet download.
+                  {admin ? " Pack admin → Report access chooses who else can open the roster and membership reports." : ""}
+                </p>
+              </>
+            ),
           },
           {
             id: "people",

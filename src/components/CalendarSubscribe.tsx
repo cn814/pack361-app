@@ -6,14 +6,14 @@ import { CalendarPlus, Check, Copy } from "lucide-react";
 import { resetCalendarLink } from "@/app/(app)/actions";
 
 /** Subscribe buttons for the private pack calendar feed. */
-export default function CalendarSubscribe({ feedUrl }: { feedUrl: string }) {
+export default function CalendarSubscribe({ feedUrl, open = false }: { feedUrl: string; open?: boolean }) {
   // Which link was copied: after "Get a new link" the old one's "Link copied" goes away.
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const copied = copiedUrl === feedUrl;
   const webcal = feedUrl.replace(/^https?:/, "webcal:");
   const google = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcal)}`;
   return (
-    <details className="card group">
+    <details id="subscribe" open={open} className="card group scroll-mt-20">
       <summary className="flex cursor-pointer list-none items-center gap-2 font-bold text-pine">
         <CalendarPlus className="h-5 w-5" aria-hidden /> Add the pack calendar to your phone
       </summary>

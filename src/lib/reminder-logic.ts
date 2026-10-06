@@ -32,10 +32,13 @@ export function tomorrowWindow(today: string): { from: string; to: string } {
 export interface AudienceEvent {
   den_id: string | null;
   ranks?: DenRank[] | null;
+  /** Only for these scouts. */
+  only_scouts?: string[] | null;
   leaders_only?: boolean | null;
 }
 
 export interface AudienceScout {
+  id: string;
   family_id: string;
   den_id: string | null;
   rank: DenRank | null;
@@ -44,10 +47,11 @@ export interface AudienceScout {
 /**
  * Families an event is for: pack-wide = every family with an active scout; a den's event = the
  * families with an active scout in that den; a rank event = families with an active scout of one
- * of those ranks. Leader-only events are for no family. `scouts` must be active scouts only.
+ * of those ranks; an event only for some scouts = those scouts' families. Leader-only events are for no family. `scouts` must be active scouts only.
  */
 export function familiesFor(e: AudienceEvent, scouts: AudienceScout[]): string[] {
   if (e.leaders_only) return [];
+  if (e.only_scouts?.length) return [...new Set(scouts.filter((s) => e.only_scouts!.includes(s.id)).map((s) => s.family_id))];
   const ranks = e.ranks ?? [];
   const fits = (s: AudienceScout) =>
     e.den_id ? s.den_id === e.den_id : ranks.length ? s.rank !== null && ranks.includes(s.rank) : true;

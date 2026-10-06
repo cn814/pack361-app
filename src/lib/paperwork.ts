@@ -17,6 +17,8 @@ export interface HealthForm {
   form_date: string | null;
   expires_on: string | null;
   updated_at: string;
+  /** Who last changed it (a leader checking it off, or the family saying they turned it in). */
+  updated_by?: string | null;
 }
 
 export type FormState = "missing" | "submitted" | "current" | "expiring" | "expired";
@@ -58,7 +60,7 @@ export interface Person {
   form?: HealthForm;
 }
 
-const FORM_COLS = "id, scout_id, adult_id, status, form_date, expires_on, updated_at";
+const FORM_COLS = "id, scout_id, adult_id, status, form_date, expires_on, updated_at, updated_by";
 
 /**
  * The signed-in family's people with their forms. `me` is the signed-in adult (the scouts come

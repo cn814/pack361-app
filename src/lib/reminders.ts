@@ -35,6 +35,7 @@ interface Ev {
   address: string | null;
   den_id: string | null;
   ranks: DenRank[] | null;
+  only_scouts: string[] | null;
   leaders_only: boolean;
   rsvp_enabled: boolean;
   rsvp_by: string | null;
@@ -63,7 +64,7 @@ interface Reminder {
   email: (a: AdultRow) => Email;
 }
 
-const EVENT_COLS = "id, title, category, starts_at, ends_at, all_day, location_name, address, den_id, ranks, leaders_only, rsvp_enabled, rsvp_by";
+const EVENT_COLS = "id, title, category, starts_at, ends_at, all_day, location_name, address, den_id, ranks, only_scouts, leaders_only, rsvp_enabled, rsvp_by";
 /** Their own flow (den meetings) or not for families (committee meetings). */
 const NO_NUDGE = new Set(["Den Meeting", "Committee"]);
 const NO_DAY_BEFORE = new Set(["Den Meeting"]);
@@ -109,15 +110,15 @@ export async function remindEvents(db: SupabaseClient, budget: EmailBudget = ema
   let scouts: AudienceScout[] = [];
   if (nudge.length) {
     const [{ data: s, error: sErr }, { data: fams, error: fErr }] = await Promise.all([
-      db.from("scouts").select("family_id, den_id, den:dens(rank)").eq("is_active", true),
+      db.from("scouts").select("id, family_id, den_id, den:dens(rank)").eq("is_active", true),
       db.from("families").select("id").eq("is_active", true),
     ]);
     if (sErr) throw new Error(sErr.message);
     if (fErr) throw new Error(fErr.message);
     const active = new Set(((fams ?? []) as { id: string }[]).map((f) => f.id));
-    scouts = ((s ?? []) as unknown as { family_id: string; den_id: string | null; den: { rank: DenRank } | null }[])
+    scouts = ((s ?? []) as unknown as { id: string; family_id: string; den_id: string | null; den: { rank: DenRank } | null }[])
       .filter((x) => active.has(x.family_id))
-      .map((x) => ({ family_id: x.family_id, den_id: x.den_id, rank: x.den?.rank ?? null }));
+      .map((x) => ({ id: x.id, family_id: x.family_id, den_id: x.den_id, rank: x.den?.rank ?? null }));
   }
 
   // Who's going tomorrow, and who each nudge is for.

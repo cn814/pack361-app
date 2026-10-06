@@ -23,6 +23,7 @@ const LEADER_PATHS = [
   "/leaders/training",
   "/leaders/attendance",
   "/leaders/paperwork",
+  "/leaders/reports",
   "/scouts/review",
   "/scouts/awards",
   "/scouts/den",

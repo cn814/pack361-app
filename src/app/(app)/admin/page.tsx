@@ -120,6 +120,7 @@ export default async function AdminPage() {
           sub={emailConfigured() ? `${budget.sentToday} of ${budget.limit} sent today` : "Needs the email key in Vercel"}
         />
         <Tile href="/leaders/training" icon={ShieldCheck} label="Leader training" sub="Youth Protection and other courses" />
+        <Tile href="/admin/reports" icon={ListChecks} label="Report access" sub="Who else can open the roster and membership reports" />
         <Tile
           href="/photos/review"
           icon={Images}

@@ -80,6 +80,7 @@ export default async function MePage() {
   ];
   const settings: Row[] = [
     { href: "/family/alerts", label: "Phone alerts and the app" },
+    { href: "/events?subscribe=1#subscribe", label: "Sync the pack calendar to my calendar" },
     { href: "/family/contact", label: "My contact info" },
     { href: "/app-guide", label: "How to use this app (guide)", file: true },
     { href: "/family/help", label: "Report a problem or send a note" },

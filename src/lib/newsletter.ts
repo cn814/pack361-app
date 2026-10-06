@@ -125,7 +125,7 @@ async function familyNews(db: SupabaseClient, r: Recipient, shared: Shared = { h
   const scouts = (scoutRows ?? []) as unknown as { id: string; first_name: string; den_id: string | null; registration_expires_on: string | null; den: { rank: DenRank } | null }[];
   const adults = (adultRows ?? []) as { id: string; first_name: string; preferred_name: string | null; registration_expires_on: string | null }[];
   const dens = [...new Set(scouts.map((s) => s.den_id).filter((d): d is string => Boolean(d)))];
-  const scope: DenScope = { dens, ranks: [...new Set(scouts.map((s) => s.den?.rank).filter((x): x is DenRank => Boolean(x)))] };
+  const scope: DenScope = { dens, ranks: [...new Set(scouts.map((s) => s.den?.rank).filter((x): x is DenRank => Boolean(x)))], scouts: scouts.map((s) => s.id) };
 
   // Six weeks of calendar: two for the list, the rest to spot a campout that needs forms.
   // From the start of today (Eastern), so today's all-day events and a campout that ends today

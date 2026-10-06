@@ -70,6 +70,9 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         <div className="flex flex-wrap gap-2">
           <span className="badge bg-gold-50 text-gold-700">{event.category}</span>
           {audience && <span className="badge bg-deep-navy text-white">For {audience}</span>}
+          {event.only_scouts?.length ? (
+            <span className="badge bg-gold-50 text-gold-800">{leader ? `Only for ${event.only_scouts.length} scout${event.only_scouts.length === 1 ? "" : "s"}` : "Just for some scouts"}</span>
+          ) : null}
           {event.leaders_only && <span className="badge bg-surface text-navy">Leaders</span>}
           {event.source === "council" && <span className="badge bg-surface text-navy">Council event</span>}
         </div>

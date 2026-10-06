@@ -4,6 +4,7 @@ import BackLink from "@/components/BackLink";
 import EventForm from "@/components/EventForm";
 import { getEvent, isLeader, requireMember } from "@/lib/data";
 import { getDens } from "@/lib/roster-data";
+import { getEventFormScouts } from "@/lib/event-scouts";
 import { getDocuments } from "@/lib/documents";
 import { easternDate, easternParts } from "@/lib/tz";
 import { getEventExtras } from "@/lib/event-builder-data";
@@ -21,7 +22,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps<
   const { copied } = await searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   if (!isLeader(me)) redirect(`/events/${id}`);
-  const [e, dens, docs, extras] = await Promise.all([getEvent(id), getDens(false), getDocuments(), getEventExtras(id)]);
+  const [e, dens, docs, extras, scouts] = await Promise.all([getEvent(id), getDens(false), getDocuments(), getEventExtras(id), getEventFormScouts()]);
   if (!e) notFound();
   const back = e.category === "Campout" ? `/campouts/${id}` : `/events/${id}`;
   return (
@@ -31,6 +32,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps<
       <section className="card">
         <EventForm
           dens={dens.map((d) => ({ id: d.id, name: d.name }))}
+          scouts={scouts}
           documents={docs.filter((d) => d.audience === "everyone" || d.id === e.slip_document_id).map((d) => ({ id: d.id, title: d.title }))}
           v={{
             id: e.id,
@@ -47,6 +49,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps<
             signup_url: e.signup_url,
             den_id: e.den_id,
             ranks: e.ranks ?? null,
+            only_scouts: e.only_scouts ?? null,
             rsvp_enabled: e.rsvp_enabled,
             rsvp_by: e.rsvp_by,
             fee_family_cents: e.fee_family_cents,

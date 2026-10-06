@@ -60,6 +60,8 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
   const endTime = String(form.get("end_time") ?? "");
   const denId = String(form.get("den_id") ?? "");
   const ranks = form.getAll("ranks").map(String).filter((r) => RANKS.includes(r));
+  // Only some scouts: their ids (none ticked = everyone the den or ranks cover).
+  const onlyScouts = [...new Set(form.getAll("only_scouts").map(String).filter((x) => UUID.test(x)))].slice(0, 300);
   const signup = text("signup_url", 500);
   const rsvpBy = String(form.get("rsvp_by") ?? "");
   const nightsRaw = String(form.get("camping_nights") ?? "").trim();
@@ -148,6 +150,7 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
     signup_url: signup,
     den_id: UUID.test(denId) ? denId : null,
     ranks: !UUID.test(denId) && ranks.length ? ranks : null,
+    only_scouts: onlyScouts.length ? onlyScouts : null,
     rsvp_enabled: form.get("rsvp_enabled") === "on",
     rsvp_by: rsvpBy || null,
     camping_nights: campingNights,
