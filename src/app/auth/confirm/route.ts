@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { SPLASH_COOKIE, SPLASH_COOKIE_OPTIONS } from "@/lib/splash";
+import { needsTwoStepAfterEmail } from "@/lib/two-step";
 
 // Target of the sign-in email link. The Supabase email template must point here:
 //   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email
@@ -18,10 +19,20 @@ import { SPLASH_COOKIE, SPLASH_COOKIE_OPTIONS } from "@/lib/splash";
 async function verify(request: NextRequest, token_hash: string | null, type: EmailOtpType, code: string | null) {
   const supabase = await createClient();
   let ok = false;
-  if (token_hash) ok = !(await supabase.auth.verifyOtp({ token_hash, type })).error;
-  else if (code) ok = !(await supabase.auth.exchangeCodeForSession(code)).error; // default template fallback
-  const res = NextResponse.redirect(new URL(ok ? "/" : "/login?error=link", request.nextUrl.origin), 303);
-  if (ok) res.cookies.set(SPLASH_COOKIE, "1", SPLASH_COOKIE_OPTIONS); // the welcome animation
+  let userId: string | undefined;
+  if (token_hash) {
+    const r = await supabase.auth.verifyOtp({ token_hash, type });
+    ok = !r.error;
+    userId = r.data.user?.id;
+  } else if (code) {
+    const r = await supabase.auth.exchangeCodeForSession(code); // default template fallback
+    ok = !r.error;
+    userId = r.data.user?.id;
+  }
+  // Leaders go on to their authenticator code; the welcome animation plays once they've entered it.
+  const twoStep = ok && (await needsTwoStepAfterEmail(supabase, userId));
+  const res = NextResponse.redirect(new URL(!ok ? "/login?error=link" : twoStep ? "/two-step" : "/", request.nextUrl.origin), 303);
+  if (ok && !twoStep) res.cookies.set(SPLASH_COOKIE, "1", SPLASH_COOKIE_OPTIONS); // the welcome animation
   return res;
 }
 

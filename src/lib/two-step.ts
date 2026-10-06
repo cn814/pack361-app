@@ -1,6 +1,7 @@
 import "server-only";
 import { adminConfigured, createAdminClient } from "./supabase/admin";
 import { TWO_STEP_ROLES, type AppRole } from "./types";
+import type { createClient } from "./supabase/server";
 
 export interface TwoStepPerson {
   id: string;
@@ -57,4 +58,20 @@ export async function resetTwoStepFor(adultId: string): Promise<string | null> {
     if (e) return "Couldn't remove one of their apps. Try again.";
   }
   return null;
+}
+
+/**
+ * Right after the email code or link: does this person still need their authenticator code?
+ * Leaders do (the email alone only gets them part way), so sign-in sends them straight to the
+ * two-step page, and the welcome animation waits until they're all the way in.
+ * `supabase` is the client that just signed them in.
+ */
+export async function needsTwoStepAfterEmail(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string | undefined,
+): Promise<boolean> {
+  if (!userId) return false;
+  const { data } = await supabase.from("adults").select("role").eq("user_id", userId).eq("is_active", true).maybeSingle();
+  const role = (data as { role?: AppRole } | null)?.role;
+  return !!role && TWO_STEP_ROLES.includes(role);
 }

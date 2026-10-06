@@ -1,6 +1,7 @@
 // The opening animation (public/splash.mp4) plays once, right after someone signs in. Signing in
-// (the 6-digit code, or the email link) sets a short-lived cookie, and leaders get a fresh one when
-// they enter their authenticator code, so it plays once they're all the way in. A tiny script in
+// (the 6-digit code, or the email link) sets a short-lived cookie. Leaders don't get it from the
+// email (they go straight on to the two-step page); they get it when they enter their
+// authenticator code, so it plays once, when they're all the way in. A tiny script in
 // <head> shows it on a full page load before anything draws; the Splash component also checks after
 // in-app page changes. The animation then clears the cookie. Never on the public pages or the
 // sign-in screens (the code box there brings up the keyboard), and never for people whose phone

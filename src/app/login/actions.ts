@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { SPLASH_COOKIE, SPLASH_COOKIE_OPTIONS } from "@/lib/splash";
 import { createClient } from "@/lib/supabase/server";
+import { needsTwoStepAfterEmail } from "@/lib/two-step";
 
 const HELP = "info@pack361.org";
 
@@ -46,7 +47,7 @@ export async function verifyLoginCode(_prev: LoginState, form: FormData): Promis
   const token = String(form.get("code") ?? "").replace(/\D/g, "");
   if (token.length < 6) return { step: "code", email, error: "Enter the code from the email." };
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
   if (error) {
     const wait = /rate|seconds|too many/i.test(error.message);
     return {
@@ -57,6 +58,8 @@ export async function verifyLoginCode(_prev: LoginState, form: FormData): Promis
         : "That code didn't work or has expired. Request a new one below.",
     };
   }
+  // Leaders go on to their authenticator code; the welcome animation plays once they've entered it.
+  if (await needsTwoStepAfterEmail(supabase, data.user?.id)) redirect("/two-step");
   (await cookies()).set(SPLASH_COOKIE, "1", SPLASH_COOKIE_OPTIONS); // the welcome animation
   redirect("/");
 }
