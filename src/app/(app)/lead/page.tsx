@@ -305,7 +305,7 @@ export default async function LeadersHubPage() {
           {
             id: "people",
             label: "People",
-            hint: admin ? "Training, forms, Pack admin" : "Training, medical forms, help wanted",
+            hint: "Training, medical forms, help wanted",
             icon: <ShieldCheck aria-hidden />,
             content: (
               <>
@@ -317,17 +317,21 @@ export default async function LeadersHubPage() {
                     { href: "/leaders", icon: Phone, label: "Leader contacts" },
                   ]}
                 />
-                {admin && (
-                  <Link href="/admin" className="flex min-h-12 items-center gap-3 rounded-2xl bg-deep px-4 py-3 text-white">
-                    <ShieldCheck className="h-5 w-5 text-gold" aria-hidden />
-                    <span className="flex-1 font-extrabold">Pack admin</span>
-                    {joins > 0 && <span className="text-xs font-bold text-gold">{joins} asking to join</span>}
-                    <ChevronRight className="h-4 w-4 text-mint-200" aria-hidden />
-                  </Link>
-                )}
               </>
             ),
           },
+          ...(admin
+            ? [
+                {
+                  id: "admin",
+                  label: "Pack admin",
+                  hint: joins > 0 ? `${joins} asking to join · roster, dens, welcome emails, settings` : "Roster, dens, welcome emails, report access, settings",
+                  icon: <ShieldCheck aria-hidden />,
+                  href: "/admin",
+                  wide: true,
+                },
+              ]
+            : []),
         ]}
       />
     </>

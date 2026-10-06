@@ -14,6 +14,8 @@ export interface EventTab {
   content?: ReactNode;
   /** A tile that goes straight to another page instead of opening a section (Pack → Photos). */
   href?: string;
+  /** A big tile, two tiles wide and twice as tall, in the pack's dark green (Leaders → Pack admin). */
+  wide?: boolean;
 }
 
 /**
@@ -140,8 +142,19 @@ export default function EventTabs({
           {visible.length > 0 && (
             <nav aria-label={label} className="grid grid-cols-2 gap-2 print:hidden sm:grid-cols-3">
               {visible.map((t) => {
-                const tile = "card flex min-h-[4.5rem] flex-col items-start gap-1 p-3 text-left transition active:scale-[0.98] active:bg-surface-low";
-                const inside = (
+                const tile = t.wide
+                  ? "col-span-2 flex min-h-[9rem] flex-col justify-center gap-2 rounded-3xl bg-deep p-5 text-left text-white shadow-[var(--shadow-card)] transition active:scale-[0.99] active:brightness-110"
+                  : "card flex min-h-[4.5rem] flex-col items-start gap-1 p-3 text-left transition active:scale-[0.98] active:bg-surface-low";
+                const inside = t.wide ? (
+                  <>
+                    <span className="flex w-full items-center gap-3">
+                      {t.icon && <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gold text-on-gold [&_svg]:h-6 [&_svg]:w-6">{t.icon}</span>}
+                      <span className="min-w-0 flex-1 text-xl font-extrabold leading-tight">{t.label}</span>
+                      <ChevronRight className="h-5 w-5 shrink-0 text-mint-200" aria-hidden />
+                    </span>
+                    {t.hint && <span className="text-sm leading-snug text-mint-200">{t.hint}</span>}
+                  </>
+                ) : (
                   <>
                     <span className="flex w-full items-center gap-2">
                       {t.icon && <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-mint text-pine [&_svg]:h-4 [&_svg]:w-4">{t.icon}</span>}
