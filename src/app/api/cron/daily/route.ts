@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isCronRequest } from "@/lib/cron-auth";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
-import { emailBudget, purgeJoinRequests, purgeOldPhotos, reconcilePayments, remindRegistration, remindScoutbookEntry, remindTraining, remindTrainingImport, remindVolunteers } from "@/lib/daily-jobs";
+import { emailBudget, purgeJoinRequests, purgeOldPhotos, reconcilePayments, remindRegistration, remindTraining, remindTrainingImport, remindVolunteers } from "@/lib/daily-jobs";
 import { paypalConfigured } from "@/lib/paypal";
 import { syncTwh, twhConfigured } from "@/lib/twh";
 import { syncCouncil } from "@/lib/council";
@@ -13,8 +13,7 @@ import { gearJob } from "@/lib/gear";
 //   1. volunteer reminders   1b. event reminders (the day before, to families going; an RSVP
 //      nudge two days before the RSVP-by date)   2. training expiry reminders
 //   3. Scouting America registration reminders
-//   3b. the monthly "update everyone's training" reminder to the Committee Chair; on Saturdays,
-//      the Advancement Chair's reminder to enter the week's advancement in Scoutbook
+//   3b. the monthly "update everyone's training" reminder to the Committee Chair
 //      (all of these share one reminder email budget, so sign-in codes keep room in the daily email quota)
 //   3c. weather alerts for upcoming events (to their leaders)   3d. overdue gear-loan reminders
 //      (both by push only)
@@ -44,7 +43,6 @@ export async function GET(request: NextRequest) {
     ["training", () => remindTraining(db, budget)],
     ["registration", () => remindRegistration(db, budget)],
     ["training-import", () => remindTrainingImport(db, budget)],
-    ["scoutbook-entry", () => remindScoutbookEntry(db, budget)],
     ["weather", () => weatherJob(db)],
     ["gear", () => gearJob(db)],
     ["photos", () => purgeOldPhotos(db)],

@@ -479,17 +479,33 @@ export function advancementChairIds(people: { id: string; position_title: string
 }
 
 /**
- * Saturdays (this job runs at 5 PM Eastern): remind the Advancement Chair to enter the week's
- * approved advancement in Scoutbook tonight. The Scoutbook import runs early Sunday morning and the
- * Sunday email goes out at 6 AM, so what's entered by then shows up in both. Only when something
- * is waiting on the Enter in Scoutbook list, and once per Saturday.
+ * Friday mornings (the morning job, 6 AM Eastern) before a pack meeting: remind the Advancement
+ * Chair to enter the approved advancement in Scoutbook, so it's in the record (and the awards are
+ * ready) for the pack meeting. Only when a Pack Meeting is on the calendar in the next 7 days, only
+ * when something is waiting on the Enter in Scoutbook list, and once per Friday.
  */
 export async function remindScoutbookEntry(db: SupabaseClient, budget: EmailBudget = emailBudget()) {
   const today = easternDate(Date.now());
   const weekday = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "long" }).format(new Date());
-  if (weekday !== "Saturday") return { due: false };
+  if (weekday !== "Friday") return { due: false };
   const { data: last } = await db.from("pack_settings").select("value").eq("key", "scoutbook_entry_reminded").maybeSingle();
   if ((last as { value?: string } | null)?.value === today) return { due: true, reminded: "already today" };
+
+  const now = Date.now();
+  const { data: meetings, error: meetErr } = await db
+    .from("events")
+    .select("starts_at")
+    .eq("category", "Pack Meeting")
+    .is("archived_at", null)
+    .gte("starts_at", new Date(now).toISOString())
+    .lte("starts_at", new Date(now + 7 * 86400000).toISOString())
+    .order("starts_at")
+    .limit(1);
+  if (meetErr) throw new Error(meetErr.message);
+  const next = ((meetings ?? []) as { starts_at: string }[])[0];
+  if (!next) return { due: false, note: "No pack meeting in the next 7 days" };
+  const word = whenWord(next.starts_at); // Tonight, Today, Tomorrow or a weekday
+  const when = /^(Tonight|Today|Tomorrow)$/.test(word) ? word.toLowerCase() : `on ${word}`;
 
   const { count, error: countErr } = await db
     .from("advancement_submissions")
@@ -509,18 +525,18 @@ export async function remindScoutbookEntry(db: SupabaseClient, budget: EmailBudg
 
   const items = `${waiting} approved item${waiting === 1 ? "" : "s"}`;
   const push = await sendPushTo(to.map((p) => p.id), {
-    title: "Enter this week's advancement in Scoutbook",
-    body: `${items} waiting. Enter them tonight so they're in Sunday's email.`,
+    title: "Enter advancement in Scoutbook before the pack meeting",
+    body: `${items} waiting. The pack meeting is ${when}.`,
     url: "/scouts/review#record",
     tag: "scoutbook-entry",
   });
   const mail = await sendSome(
     to.map((p) => ({
       to: p.email,
-      subject: `${items} to enter in Scoutbook before Sunday's email`,
+      subject: `${items} to enter in Scoutbook before the pack meeting ${when}`,
       paragraphs: [
         `Hi ${p.preferred_name || p.first_name},`,
-        `${items} from this week's den meetings and family reports are waiting on the Enter in Scoutbook list. Please enter them in Scoutbook tonight: the app reads Scoutbook early Sunday morning, and the Sunday email goes out at 6 AM, so anything entered by then shows on each scout's page and in their family's email.`,
+        `The pack meeting is ${when}, and ${items} from den meetings and family reports are waiting on the Enter in Scoutbook list. Please enter them in Scoutbook before then, so the record is up to date and the awards are ready to hand out. The app reads Scoutbook each Sunday morning, so it also shows on each scout's page and in their family's Sunday email.`,
         "In the app: Leaders → Dens → Enter in Scoutbook. View it by requirement to mark one requirement for several scouts at once, and tap Entered as you go.",
         `${APP_URL}/scouts/review#record`,
       ],

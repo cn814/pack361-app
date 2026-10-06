@@ -3,10 +3,12 @@ import { isCronRequest } from "@/lib/cron-auth";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
 import { givebutterConfigured, syncGivebutter } from "@/lib/givebutter";
 import { runWeeklyNewsletter } from "@/lib/newsletter";
+import { remindScoutbookEntry } from "@/lib/daily-jobs";
 
 // The morning Vercel Cron (vercel.json, 10:00 UTC = 6 AM EDT / 5 AM EST). Vercel sends
 // "Authorization: Bearer <CRON_SECRET>". Every day: the Givebutter sync. Sundays: the weekly
-// family newsletter (after the sync, so dues paid overnight don't show as owed).
+// family newsletter (after the sync, so dues paid overnight don't show as owed). Fridays before a
+// pack meeting: the Advancement Chair's reminder to enter advancement in Scoutbook.
 export const maxDuration = 300;
 
 export async function GET(request: NextRequest) {
@@ -38,6 +40,15 @@ export async function GET(request: NextRequest) {
   } catch (e) {
     failed = true;
     out.newsletter = { error: e instanceof Error ? e.message : "newsletter failed" };
+  }
+
+  try {
+    const r = await remindScoutbookEntry(db);
+    out.scoutbookEntry = r;
+    if ("errors" in r && r.errors?.length) failed = true;
+  } catch (e) {
+    failed = true;
+    out.scoutbookEntry = { error: e instanceof Error ? e.message : "reminder failed" };
   }
 
   return NextResponse.json({ ok: !failed, ...out }, { status: failed ? 500 : 200 });
