@@ -225,6 +225,18 @@ export default async function LeadersHubPage() {
         label="Leader sections"
         backLabel="Leaders"
         tabs={[
+          ...(admin
+            ? [
+                {
+                  id: "admin",
+                  label: "Pack admin",
+                  hint: joins > 0 ? `${joins} asking to join · roster, dens, welcome emails, settings` : "Roster, dens, welcome emails, report access, settings",
+                  icon: <ShieldCheck aria-hidden />,
+                  href: "/admin",
+                  wide: true,
+                },
+              ]
+            : []),
           { id: "dens", label: "Dens", hint: toApprove ? `${toApprove} reports to approve` : "Rosters, approvals, awards", icon: <Award aria-hidden />, content: denTab },
           {
             id: "events",
@@ -320,18 +332,6 @@ export default async function LeadersHubPage() {
               </>
             ),
           },
-          ...(admin
-            ? [
-                {
-                  id: "admin",
-                  label: "Pack admin",
-                  hint: joins > 0 ? `${joins} asking to join · roster, dens, welcome emails, settings` : "Roster, dens, welcome emails, report access, settings",
-                  icon: <ShieldCheck aria-hidden />,
-                  href: "/admin",
-                  wide: true,
-                },
-              ]
-            : []),
         ]}
       />
     </>
