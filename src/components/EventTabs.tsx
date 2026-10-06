@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface EventTab {
@@ -10,7 +11,9 @@ export interface EventTab {
   hint?: string;
   /** A small icon on the tile. */
   icon?: ReactNode;
-  content: ReactNode;
+  content?: ReactNode;
+  /** A tile that goes straight to another page instead of opening a section (Pack → Photos). */
+  href?: string;
 }
 
 /**
@@ -50,7 +53,7 @@ export default function EventTabs({
       setActive(null);
       return;
     }
-    if (tabs.some((t) => t.id === id)) {
+    if (tabs.some((t) => t.id === id && !t.href)) {
       setActive(id);
       return;
     }
@@ -136,29 +139,35 @@ export default function EventTabs({
         <>
           {visible.length > 0 && (
             <nav aria-label={label} className="grid grid-cols-2 gap-2 print:hidden sm:grid-cols-3">
-              {visible.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => open(t.id)}
-                  aria-controls={`tab-${t.id}`}
-                  className="card flex min-h-[4.5rem] flex-col items-start gap-1 p-3 text-left transition active:scale-[0.98] active:bg-surface-low"
-                >
-                  <span className="flex w-full items-center gap-2">
-                    {t.icon && <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-mint text-pine [&_svg]:h-4 [&_svg]:w-4">{t.icon}</span>}
-                    <span className="min-w-0 flex-1 text-[15px] font-extrabold leading-tight text-pine-950">{t.label}</span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-                  </span>
-                  {t.hint && <span className="text-xs leading-snug text-muted">{t.hint}</span>}
-                </button>
-              ))}
+              {visible.map((t) => {
+                const tile = "card flex min-h-[4.5rem] flex-col items-start gap-1 p-3 text-left transition active:scale-[0.98] active:bg-surface-low";
+                const inside = (
+                  <>
+                    <span className="flex w-full items-center gap-2">
+                      {t.icon && <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-mint text-pine [&_svg]:h-4 [&_svg]:w-4">{t.icon}</span>}
+                      <span className="min-w-0 flex-1 text-[15px] font-extrabold leading-tight text-pine-950">{t.label}</span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+                    </span>
+                    {t.hint && <span className="text-xs leading-snug text-muted">{t.hint}</span>}
+                  </>
+                );
+                return t.href ? (
+                  <Link key={t.id} href={t.href} className={tile}>
+                    {inside}
+                  </Link>
+                ) : (
+                  <button key={t.id} type="button" onClick={() => open(t.id)} aria-controls={`tab-${t.id}`} className={tile}>
+                    {inside}
+                  </button>
+                );
+              })}
             </nav>
           )}
         </>
       )}
       {rest && <div className={`space-y-4 ${current ? "hidden print:block" : ""}`}>{rest}</div>}
       <div ref={panels}>
-        {tabs.map((t) => (
+        {tabs.filter((t) => !t.href).map((t) => (
           <section
             key={t.id}
             id={`tab-${t.id}`}

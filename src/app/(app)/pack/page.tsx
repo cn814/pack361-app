@@ -46,7 +46,6 @@ export default async function PackPage() {
     { href: "/guide", label: "Pack guide", icon: BookOpen },
     { href: "/app-guide", label: "How to use this app", icon: BookOpen, note: "The app guide (PDF), always the latest", file: true },
     { href: "/documents", label: "Documents", icon: FolderOpen },
-    { href: "/photos", label: "Photos", icon: Images },
   ];
   const people: Item[] = [
     { href: "/leaders", label: "Leader contacts", icon: Phone },
@@ -64,7 +63,8 @@ export default async function PackPage() {
           { id: "money", label: "Money", hint: due > 0 ? `${fmtMoney(due)} due` : "Pay the pack, get paid back", icon: <HandCoins aria-hidden />, content: <Group items={money} /> },
           { id: "fundraisers", label: "Fundraisers", hint: "Popcorn, apparel, uniforms", icon: <Popcorn aria-hidden />, content: <Group items={store} /> },
           { id: "tools", label: "Tools", hint: "Nature ID, gear closet, polls, news", icon: <Bird aria-hidden />, content: <Group items={tools} /> },
-          { id: "info", label: "Info", hint: "Pack guide, app guide, documents, photos", icon: <BookOpen aria-hidden />, content: <Group items={info} /> },
+          { id: "photos", label: "Photos", hint: "See and add pack photos", icon: <Images aria-hidden />, href: "/photos" },
+          { id: "info", label: "Info", hint: "Pack guide, app guide, documents", icon: <BookOpen aria-hidden />, content: <Group items={info} /> },
           { id: "people", label: "People", hint: "Leader contacts, invite a family, help wanted", icon: <Phone aria-hidden />, content: <Group items={people} /> },
         ]}
       />
