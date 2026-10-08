@@ -119,7 +119,7 @@ export async function saveEvent(_prev: ActionResult, form: FormData): Promise<Ac
   const { starts_at, ends_at } = timesOn(startDate);
   if (ends_at && ends_at < starts_at) return { error: "The event ends before it starts." };
 
-  // RSVP limit: at most this many people (scouts and adults); blank = no limit.
+  // RSVP limit: at most this many people (scouts, siblings and adults); blank = no limit.
   const limitRaw = String(form.get("rsvp_limit") ?? "").trim();
   if (limitRaw && !/^\d{1,3}$/.test(limitRaw)) return { error: "The limit should be a number of people from 1 to 500, or blank." };
   const rsvpLimit = limitRaw ? Number(limitRaw) : null;
@@ -262,6 +262,7 @@ export async function setRsvp(_prev: ActionResult, form: FormData): Promise<Acti
     p_scouts: Number(form.get("scouts") ?? 0) || 0,
     p_adults: Number(form.get("adults") ?? 0) || 0,
     p_note: String(form.get("note") ?? ""),
+    p_siblings: Number(form.get("siblings") ?? 0) || 0,
   });
   if (error)
     return {

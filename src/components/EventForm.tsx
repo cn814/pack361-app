@@ -62,7 +62,7 @@ export interface EventFormValues {
   slip_due?: string | null;
   from_twh?: boolean;
   from_council?: boolean;
-  /** Most people (scouts and adults) who can come; null = no limit. */
+  /** Most people (scouts, siblings and adults) who can come; null = no limit. */
   rsvp_limit?: number | null;
   carpool?: boolean | null;
   /** Other upcoming events in the same repeating series (editing only). */
@@ -281,7 +281,7 @@ export default function EventForm({
         <legend className="px-1 text-xs font-bold text-navy">RSVP</legend>
         <label className="flex items-center gap-2 text-sm text-navy">
           <input type="checkbox" name="rsvp_enabled" checked={rsvp} onChange={(e) => setRsvp(e.target.checked)} className="h-4 w-4 accent-pine" />
-          Ask families to RSVP in the app (with how many scouts and adults)
+          Ask families to RSVP in the app (with how many scouts, siblings and adults)
         </label>
         {rsvp && (
           <>
@@ -301,7 +301,7 @@ export default function EventForm({
                   step={1}
                   inputMode="numeric"
                   defaultValue={v.rsvp_limit ?? ""}
-                  aria-label="Limit: at most this many people (scouts and adults)"
+                  aria-label="Limit: at most this many people (scouts, siblings and adults)"
                 />
                 people
               </label>

@@ -10,6 +10,8 @@ export interface MyRsvp {
   status: "yes" | "maybe" | "no";
   scouts: number;
   adults: number;
+  /** Brothers and sisters who aren't scouts. */
+  siblings: number;
   note: string | null;
   /** Said yes, but the event was full: on the waitlist (still "yes"). */
   waitlisted?: boolean;
@@ -23,9 +25,10 @@ export interface RsvpCounts {
   families_no: number;
   scouts: number;
   adults: number;
+  siblings: number;
   families_waitlist: number;
   waitlist_people: number;
-  /** Most people (scouts + adults) who can come; null = no limit. */
+  /** Most people (scouts, siblings and adults) who can come; null = no limit. */
   rsvp_limit: number | null;
 }
 export interface RsvpRow extends MyRsvp {
@@ -35,8 +38,8 @@ export interface RsvpRow extends MyRsvp {
 }
 
 /** Spots left under the limit (never below 0), or null with no limit. */
-export function spotsLeft(c: Pick<RsvpCounts, "rsvp_limit" | "scouts" | "adults">): number | null {
-  return c.rsvp_limit == null ? null : Math.max(c.rsvp_limit - c.scouts - c.adults, 0);
+export function spotsLeft(c: Pick<RsvpCounts, "rsvp_limit" | "scouts" | "adults" | "siblings">): number | null {
+  return c.rsvp_limit == null ? null : Math.max(c.rsvp_limit - c.scouts - c.adults - c.siblings, 0);
 }
 
 /** Can families still answer? */
@@ -49,7 +52,7 @@ export function rsvpOpen(e: Pick<PackEvent, "rsvp_enabled" | "rsvp_by" | "archiv
 
 export async function getRsvp(eventId: string, me: { id: string; family_id: string | null }, leader: boolean) {
   const supabase = await createClient();
-  const mineQ = supabase.from("event_rsvps").select("status, scouts, adults, note, waitlisted").eq("event_id", eventId);
+  const mineQ = supabase.from("event_rsvps").select("status, scouts, adults, siblings, note, waitlisted").eq("event_id", eventId);
   const [{ data: mine }, { data: counts }, list] = await Promise.all([
     me.family_id ? mineQ.eq("family_id", me.family_id).maybeSingle() : mineQ.is("family_id", null).eq("adult_id", me.id).maybeSingle(),
     supabase.rpc("rsvp_counts", { p_event_id: eventId }),
@@ -57,7 +60,7 @@ export async function getRsvp(eventId: string, me: { id: string; family_id: stri
       ? supabase
           .from("event_rsvps")
           .select(
-            "status, scouts, adults, note, waitlisted, waitlisted_at, updated_at, family:families(family_name), adult:adults(first_name, preferred_name, last_name)",
+            "status, scouts, adults, siblings, note, waitlisted, waitlisted_at, updated_at, family:families(family_name), adult:adults(first_name, preferred_name, last_name)",
           )
           .eq("event_id", eventId)
           .order("updated_at", { ascending: false })
@@ -73,6 +76,7 @@ export async function getRsvp(eventId: string, me: { id: string; family_id: stri
     status: r.status,
     scouts: r.scouts,
     adults: r.adults,
+    siblings: r.siblings ?? 0,
     note: r.note,
     waitlisted: Boolean(r.waitlisted),
     waitlisted_at: r.waitlisted_at,
@@ -87,13 +91,14 @@ export async function getRsvp(eventId: string, me: { id: string; family_id: stri
   const waiting = rows.filter((r) => r.waitlisted).sort((a, b) => (a.waitlisted_at ?? "").localeCompare(b.waitlisted_at ?? ""));
   const m = (mine as MyRsvp | null) ?? null;
   return {
-    mine: m ? { ...m, waitlisted: Boolean(m.waitlisted), waitlist_spot: m.waitlisted ? Number(c.my_waitlist_spot ?? 0) || null : null } : null,
+    mine: m ? { ...m, siblings: m.siblings ?? 0, waitlisted: Boolean(m.waitlisted), waitlist_spot: m.waitlisted ? Number(c.my_waitlist_spot ?? 0) || null : null } : null,
     counts: {
       families_yes: Number(c.families_yes ?? 0),
       families_maybe: Number(c.families_maybe ?? 0),
       families_no: Number(c.families_no ?? 0),
       scouts: Number(c.scouts ?? 0),
       adults: Number(c.adults ?? 0),
+      siblings: Number(c.siblings ?? 0),
       families_waitlist: Number(c.families_waitlist ?? 0),
       waitlist_people: Number(c.waitlist_people ?? 0),
       rsvp_limit: c.rsvp_limit == null ? null : Number(c.rsvp_limit),

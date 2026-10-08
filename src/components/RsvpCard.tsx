@@ -14,6 +14,7 @@ interface Props {
     status: "yes" | "maybe" | "no";
     scouts: number;
     adults: number;
+    siblings?: number;
     note: string | null;
     /** Said yes while it was full: on the waitlist. */
     waitlisted?: boolean;
@@ -25,8 +26,9 @@ interface Props {
     families_maybe: number;
     scouts: number;
     adults: number;
+    siblings?: number;
     families_waitlist?: number;
-    /** Most people (scouts + adults) who can come; null = no limit. */
+    /** Most people (scouts, siblings and adults) who can come; null = no limit. */
     rsvp_limit?: number | null;
   };
   defaultScouts: number;
@@ -39,14 +41,15 @@ interface Props {
 
 const LABEL = { yes: "Going", maybe: "Maybe", no: "Can't go" } as const;
 
-/** RSVP for an event: yes / maybe / no, with how many scouts and adults are coming. */
+/** RSVP for an event: yes / maybe / no, with how many scouts, siblings and adults are coming. */
 export default function RsvpCard({ eventId, open, deadline, mine, counts, defaultScouts, hasFamily, cost, charge }: Props) {
   const [status, setStatus] = useState<"yes" | "maybe" | "no" | "">(mine?.status ?? "");
   const [editing, setEditing] = useState(!mine);
   // After a save the card folds back to "Your answer", with the thank-you under it.
   const [savedNote, setSavedNote] = useState<string | null>(null);
   const limit = counts.rsvp_limit ?? null;
-  const left = limit == null ? null : Math.max(limit - counts.scouts - counts.adults, 0);
+  const left = limit == null ? null : Math.max(limit - counts.scouts - counts.adults - (counts.siblings ?? 0), 0);
+  const mineCount = mine ? mine.scouts + mine.adults + (mine.siblings ?? 0) : 0;
   const waiting = counts.families_waitlist ?? 0;
   // Already in (said yes, not waiting): they can grow into the spots left.
   const inNow = mine?.status === "yes" && !mine.waitlisted;
@@ -58,7 +61,8 @@ export default function RsvpCard({ eventId, open, deadline, mine, counts, defaul
       </h2>
       <p className="text-sm text-muted">
         <b className="text-ink">{counts.families_yes}</b> {counts.families_yes === 1 ? "family" : "families"} going ({counts.scouts} scout
-        {counts.scouts === 1 ? "" : "s"}, {counts.adults} adult{counts.adults === 1 ? "" : "s"})
+        {counts.scouts === 1 ? "" : "s"}, {counts.siblings ? `${counts.siblings} sibling${counts.siblings === 1 ? "" : "s"}, ` : ""}
+        {counts.adults} adult{counts.adults === 1 ? "" : "s"})
         {counts.families_maybe ? ` · ${counts.families_maybe} maybe` : ""}
         {deadline ? ` · RSVP by ${deadline}` : ""}
       </p>
@@ -99,6 +103,7 @@ export default function RsvpCard({ eventId, open, deadline, mine, counts, defaul
               {mine.status !== "no" && (
                 <span className="block text-xs">
                   {hasFamily ? `${mine.scouts} scout${mine.scouts === 1 ? "" : "s"}, ` : ""}
+                  {mine.siblings ? `${mine.siblings} sibling${mine.siblings === 1 ? "" : "s"}, ` : ""}
                   {mine.adults} adult{mine.adults === 1 ? "" : "s"}
                   {mine.note ? ` · “${mine.note}”` : ""}
                 </span>
@@ -155,15 +160,21 @@ export default function RsvpCard({ eventId, open, deadline, mine, counts, defaul
             ))}
           </div>
           {status && status !== "no" && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className={`grid gap-2 ${hasFamily ? "grid-cols-3" : "grid-cols-1"}`}>
               {hasFamily && (
                 <label className="block space-y-1">
-                  <span className="text-xs font-bold text-navy">Scouts coming</span>
+                  <span className="text-xs font-bold text-navy">Scouts</span>
                   <input className="input" type="number" name="scouts" min={0} max={20} defaultValue={mine?.scouts ?? defaultScouts} />
                 </label>
               )}
+              {hasFamily && (
+                <label className="block space-y-1">
+                  <span className="text-xs font-bold text-navy">Siblings</span>
+                  <input className="input" type="number" name="siblings" min={0} max={20} defaultValue={mine?.siblings ?? 0} />
+                </label>
+              )}
               <label className="block space-y-1">
-                <span className="text-xs font-bold text-navy">Adults coming</span>
+                <span className="text-xs font-bold text-navy">Adults</span>
                 <input className="input" type="number" name="adults" min={0} max={20} defaultValue={mine?.adults ?? 1} />
               </label>
             </div>
@@ -173,13 +184,13 @@ export default function RsvpCard({ eventId, open, deadline, mine, counts, defaul
               {mine?.waitlisted
                 ? "You keep your place on the waitlist. Fewer people can help you fit when a spot opens."
                 : inNow
-                  ? `You can bring up to ${left + mine.scouts + mine.adults} ${left + mine.scouts + mine.adults === 1 ? "person" : "people"} in all.`
+                  ? `You can bring up to ${left + mineCount} ${left + mineCount === 1 ? "person" : "people"} in all.`
                   : full
                     ? "It's full. Say Going and you'll join the waitlist; we'll let you know if a spot opens."
                     : `${left} ${left === 1 ? "spot" : "spots"} left. If your group doesn't fit, you'll go on the waitlist.`}
             </p>
           )}
-          <input className="input" name="note" maxLength={300} defaultValue={mine?.note ?? ""} placeholder="Note for leaders (optional): siblings, arriving late…" />
+          <input className="input" name="note" maxLength={300} defaultValue={mine?.note ?? ""} placeholder="Note for leaders (optional): arriving late, food allergies…" />
         </ActionForm>
       ) : (
         <p className="text-sm text-muted">RSVPs are closed.{mine ? "" : " Contact a leader if you'd still like to come."}</p>

@@ -52,7 +52,7 @@ export async function EventRsvpLeaders({ e, me }: { e: PackEvent; me: Adult }) {
           <Users className="h-4 w-4" aria-hidden /> Who&apos;s going
         </h2>
         <p className="text-sm text-muted">
-          <b className="text-ink">{counts.families_yes}</b> {counts.families_yes === 1 ? "family" : "families"} going ({people(counts.scouts, counts.adults)})
+          <b className="text-ink">{counts.families_yes}</b> {counts.families_yes === 1 ? "family" : "families"} going ({people(counts.scouts, counts.adults, counts.siblings)})
           {counts.families_maybe ? ` · ${counts.families_maybe} maybe` : ""}
         </p>
       </div>
@@ -68,7 +68,7 @@ export async function EventRsvpLeaders({ e, me }: { e: PackEvent; me: Adult }) {
                 <b className={r.status === "yes" ? "text-pine" : r.status === "maybe" ? "text-gold-800" : "text-muted"}>
                   {ANSWER[r.status as keyof typeof ANSWER] ?? r.status}
                 </b>
-                {r.status !== "no" && <span className="block">{people(r.scouts, r.adults)}</span>}
+                {r.status !== "no" && <span className="block">{people(r.scouts, r.adults, r.siblings)}</span>}
               </span>
             </li>
           ))}
@@ -90,7 +90,7 @@ export async function EventRsvpLeaders({ e, me }: { e: PackEvent; me: Adult }) {
                   </span>
                   {r.note && <span className="block text-xs text-muted">“{r.note}”</span>}
                 </span>
-                <span className="shrink-0 text-right text-xs text-muted">{people(r.scouts, r.adults)}</span>
+                <span className="shrink-0 text-right text-xs text-muted">{people(r.scouts, r.adults, r.siblings)}</span>
               </li>
             ))}
           </ol>
@@ -102,8 +102,10 @@ export async function EventRsvpLeaders({ e, me }: { e: PackEvent; me: Adult }) {
 }
 
 const ANSWER = { yes: "Going", maybe: "Maybe", no: "Can't go" } as const;
-const people = (scouts: number, adults: number) =>
-  `${scouts} scout${scouts === 1 ? "" : "s"} · ${adults} adult${adults === 1 ? "" : "s"}`;
+const people = (scouts: number, adults: number, siblings = 0) =>
+  [`${scouts} scout${scouts === 1 ? "" : "s"}`, siblings ? `${siblings} sibling${siblings === 1 ? "" : "s"}` : "", `${adults} adult${adults === 1 ? "" : "s"}`]
+    .filter(Boolean)
+    .join(" · ");
 
 /** An event with a cost but no RSVP in the app: what it costs, and Pay now if a leader added a charge. */
 async function EventCost({ e, me }: { e: PackEvent; me: Adult }) {
