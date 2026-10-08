@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import type { ActionResult } from "@/components/ActionForm";
-import { isLeader, requireMember } from "@/lib/data";
+import { isGearKeeper, requireMember } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { GEAR_CATEGORIES, gearToday, notifyGearDecision, notifyGearRequest, type GearCategory } from "@/lib/gear";
 
@@ -76,10 +76,10 @@ export async function cancelGearRequest(form: FormData) {
   redirect(data?.length ? "/gear?done=cancelled" : "/gear");
 }
 
-/** Leaders: add or change an item in the closet. */
+/** The quartermaster and leaders: add or change an item in the closet. */
 export async function saveGearItem(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isLeader(me)) return { error: "Only leaders can change the gear closet." };
+  if (!isGearKeeper(me)) return { error: "Only the quartermaster and leaders can change the gear closet." };
   const id = String(form.get("id") ?? "");
   if (id && !UUID.test(id)) return { error: "That item wasn't found." };
   const name = text(form, "name", 80);
@@ -94,6 +94,7 @@ export async function saveGearItem(_prev: ActionResult, form: FormData): Promise
     quantity,
     description: text(form, "description", 500),
     condition_note: text(form, "condition_note", 200),
+    location: text(form, "location", 120),
     active: id ? form.get("active") === "on" : true,
   };
   const supabase = await createClient();
@@ -115,7 +116,7 @@ const NEXT_STATUS: Record<string, { status: string; from: string[]; message: str
 /** Leaders: approve, decline, hand out, check back in, or change the bring-back day. */
 export async function updateGearLoan(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await requireMember();
-  if (!isLeader(me)) return { error: "Only leaders can manage gear." };
+  if (!isGearKeeper(me)) return { error: "Only the quartermaster and leaders can manage gear." };
   const id = String(form.get("id") ?? "");
   if (!UUID.test(id)) return { error: "That request wasn't found." };
   const what = String(form.get("do") ?? "");

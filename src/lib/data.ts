@@ -77,6 +77,11 @@ export function isLeader(a: Adult) {
   return LEADER_ROLES.includes(a.role);
 }
 
+/** Runs the gear closet: leaders, and the quartermaster (by pack position) even if a parent. */
+export function isGearKeeper(a: Adult) {
+  return isLeader(a) || /quartermaster/i.test(a.position_title ?? "");
+}
+
 /** Key leaders, the Cubmaster and admins (they keep the Pack guide up to date). */
 export function isCommittee(a: Adult) {
   return a.role === "committee" || a.role === "cubmaster" || a.role === "admin";

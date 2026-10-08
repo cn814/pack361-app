@@ -26,6 +26,7 @@ export default async function BorrowGearPage({ params }: PageProps<"/gear/[id]">
         <p className="text-xs font-bold uppercase tracking-wider text-muted">{item.category}</p>
         {item.description && <p className="whitespace-pre-line text-sm text-ink">{item.description}</p>}
         {item.condition_note && <p className="text-sm text-navy">Condition: {item.condition_note}</p>}
+        {item.location && <p className="text-sm text-navy">Kept at: {item.location}</p>}
         <p className={`text-sm font-bold ${item.available ? "text-pine" : "text-gold-800"}`}>
           {item.available
             ? `${item.available} of ${item.quantity} free right now`

@@ -2,7 +2,7 @@ import ActionForm, { Field } from "@/components/ActionForm";
 import { saveGearItem } from "@/app/(app)/gear/actions";
 import { GEAR_CATEGORIES, type GearItem } from "@/lib/gear";
 
-/** Leaders: add an item to the gear closet, or change one. */
+/** The quartermaster and leaders: add an item to the gear closet, or change one. */
 export default function GearItemForm({ item }: { item?: GearItem }) {
   return (
     <ActionForm action={saveGearItem} submit={item ? "Save" : "Add to the closet"} resetOnSuccess={false} className="card space-y-3">
@@ -24,6 +24,13 @@ export default function GearItemForm({ item }: { item?: GearItem }) {
           <input className="input" type="number" name="quantity" inputMode="numeric" min={0} max={999} required defaultValue={item?.quantity ?? 1} />
         </Field>
       </div>
+      <Field label="Where it's kept" hint="The pack shed, or whose house it's at between campouts. Families see this.">
+        <input className="input" name="location" maxLength={120} list="gear-places" defaultValue={item?.location ?? "Pack shed"} placeholder="Pack shed" />
+        <datalist id="gear-places">
+          <option value="Pack shed" />
+          <option value="At the quartermaster's house" />
+        </datalist>
+      </Field>
       <Field label="Description (optional)">
         <textarea className="input min-h-20" name="description" maxLength={500} defaultValue={item?.description ?? ""} placeholder="Size, what's in the bag, how to set it up" />
       </Field>

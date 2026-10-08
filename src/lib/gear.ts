@@ -40,6 +40,8 @@ export interface GearItem {
   description: string | null;
   quantity: number;
   condition_note: string | null;
+  /** Where it's kept between campouts: "Pack shed", "At the Greenspoon house". */
+  location: string | null;
   active: boolean;
   /** Not spoken for by an approved or picked-up loan. */
   available: number;
@@ -68,7 +70,7 @@ export interface ManagedLoan extends GearLoan {
   adult: { first_name: string; preferred_name: string | null; last_name: string } | null;
 }
 
-const ITEM_COLS = "id, name, category, description, quantity, condition_note, active";
+const ITEM_COLS = "id, name, category, description, quantity, condition_note, location, active";
 const LOAN_COLS =
   "id, item_id, family_id, quantity, status, requested_at, needed_on, due_on, out_at, returned_at, note, leader_note, item:gear_items(name, category), event:events(id, title, category, starts_at)";
 
@@ -123,12 +125,32 @@ export async function getFamilyLoans(familyId: string | null): Promise<GearLoan[
 /** For leaders: everything waiting, ready or out, plus the last few that finished. */
 export async function getManagedLoans(): Promise<{ open: ManagedLoan[]; recent: ManagedLoan[] }> {
   const supabase = await createClient();
-  const cols = `${LOAN_COLS}, family:families(family_name), adult:adults!gear_loans_adult_id_fkey(first_name, preferred_name, last_name)`;
   const [{ data: open }, { data: recent }] = await Promise.all([
-    supabase.from("gear_loans").select(cols).in("status", ["requested", "approved", "out"]).order("due_on").limit(200),
-    supabase.from("gear_loans").select(cols).in("status", ["returned", "declined"]).order("requested_at", { ascending: false }).limit(15),
+    supabase.from("gear_loans").select(LOAN_COLS).in("status", ["requested", "approved", "out"]).order("due_on").limit(200),
+    supabase.from("gear_loans").select(LOAN_COLS).in("status", ["returned", "declined"]).order("requested_at", { ascending: false }).limit(15),
   ]);
-  return { open: (open ?? []) as unknown as ManagedLoan[], recent: (recent ?? []) as unknown as ManagedLoan[] };
+  // Family names come from gear_borrowers(): a quartermaster who isn't a leader can't read
+  // other families' rows directly.
+  const all = [...(open ?? []), ...(recent ?? [])] as unknown as GearLoan[];
+  const { data: people } = all.length
+    ? await supabase.rpc("gear_borrowers", { p_loan_ids: all.map((l) => l.id) })
+    : { data: [] };
+  const byLoan = new Map(
+    ((people ?? []) as { loan_id: string; family_name: string; first_name: string | null; preferred_name: string | null; last_name: string | null }[]).map((p) => [
+      p.loan_id,
+      p,
+    ]),
+  );
+  const named = (rows: unknown[] | null): ManagedLoan[] =>
+    ((rows ?? []) as GearLoan[]).map((l) => {
+      const p = byLoan.get(l.id);
+      return {
+        ...l,
+        family: p ? { family_name: p.family_name } : null,
+        adult: p?.first_name ? { first_name: p.first_name, preferred_name: p.preferred_name, last_name: p.last_name ?? "" } : null,
+      };
+    });
+  return { open: named(open), recent: named(recent) };
 }
 
 /** How many requests are waiting for a leader (for menus). */
@@ -149,17 +171,15 @@ async function familyAdultIds(db: SupabaseClient, familyId: string): Promise<str
 }
 
 /**
- * Who hears about new gear requests: leaders whose pack position mentions the quartermaster
- * or gear. With none on the roster, the pack admins and Cubmaster.
+ * Who hears about new gear requests: the quartermaster (any role, by pack position), and leaders
+ * whose position mentions gear. With none on the roster, the pack admins and Cubmaster.
  */
 async function gearKeepers(db: SupabaseClient): Promise<string[]> {
-  const { data } = await db
-    .from("adults")
-    .select("id")
-    .in("role", ["den_leader", "committee", "cubmaster", "admin"])
-    .eq("is_active", true)
-    .or("position_title.ilike.%quartermaster%,position_title.ilike.%gear%");
-  return ((data ?? []) as { id: string }[]).map((a) => a.id);
+  const [{ data: qm }, { data: gear }] = await Promise.all([
+    db.from("adults").select("id").eq("is_active", true).ilike("position_title", "%quartermaster%"),
+    db.from("adults").select("id").in("role", ["den_leader", "committee", "cubmaster", "admin"]).eq("is_active", true).ilike("position_title", "%gear%"),
+  ]);
+  return [...new Set([...(qm ?? []), ...(gear ?? [])].map((a) => (a as { id: string }).id))];
 }
 
 /** A family asked to borrow something: a phone alert for whoever looks after the gear. */

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronRight, CircleCheck, Plus } from "lucide-react";
+import { CircleCheck, Plus } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import GearLoanActions from "@/components/GearLoanActions";
-import { displayName, isLeader, requireMember } from "@/lib/data";
+import { displayName, isGearKeeper, requireMember } from "@/lib/data";
 import { fmtShortDate } from "@/lib/advancement";
 import { easternDate } from "@/lib/tz";
 import { LOAN_STATUS_LABEL, LOAN_STATUS_STYLE, gearToday, getGearItems, getManagedLoans, isOverdue, type ManagedLoan } from "@/lib/gear";
@@ -18,7 +18,7 @@ const DONE: Record<string, string> = {
 
 export default async function ManageGearPage({ searchParams }: PageProps<"/gear/manage">) {
   const me = await requireMember();
-  if (!isLeader(me)) redirect("/gear");
+  if (!isGearKeeper(me)) redirect("/gear");
   const sp = await searchParams;
   const done = DONE[String(sp.done ?? "")];
   const [items, { open, recent }] = await Promise.all([getGearItems({ all: true }), getManagedLoans()]);
@@ -54,32 +54,66 @@ export default async function ManageGearPage({ searchParams }: PageProps<"/gear/
 
       <section className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <h2 className="section-title">The closet</h2>
+          <h2 className="section-title">Inventory</h2>
           <span className="text-xs text-muted">{items.filter((i) => i.active).length} items</span>
         </div>
+        <p className="px-1 text-xs text-muted">What the pack has, where it&apos;s kept, and who has it now. Tap an item to change it.</p>
         <Link href="/gear/manage/new" className="btn-primary w-full">
           <Plus className="h-4 w-4" aria-hidden /> Add gear
         </Link>
         {items.length > 0 && (
-          <ul className="card divide-y divide-line p-0">
-            {items.map((i) => (
-              <li key={i.id}>
-                <Link href={`/gear/manage/${i.id}`} className="flex min-h-[3.25rem] items-center gap-3 px-4 py-2.5">
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] font-bold text-ink">
-                      {i.name}
-                      {!i.active && <span className="badge ml-2 bg-surface text-muted">Put away</span>}
-                    </span>
-                    <span className="block text-xs text-muted">
-                      {i.category} · {i.available} of {i.quantity} free
-                    </span>
-                  </span>
-                  <span className="text-sm font-bold text-pine">Edit</span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className="card overflow-x-auto p-0">
+            <table className="w-full min-w-[34rem] text-left text-sm">
+              <thead className="bg-surface-low text-xs uppercase tracking-wide text-muted">
+                <tr>
+                  <th className="px-3 py-2 font-bold">Item</th>
+                  <th className="px-3 py-2 font-bold">Where it&apos;s kept</th>
+                  <th className="px-3 py-2 text-right font-bold">Free</th>
+                  <th className="px-3 py-2 font-bold">Who has it</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {items.map((i) => {
+                  const holders = [...ready, ...out].filter((l) => l.item_id === i.id);
+                  return (
+                    <tr key={i.id} className={i.active ? "" : "opacity-60"}>
+                      <td className="px-3 py-2.5 align-top">
+                        <Link href={`/gear/manage/${i.id}`} className="font-bold text-pine underline-offset-2 hover:underline">
+                          {i.name}
+                        </Link>
+                        <span className="block text-xs text-muted">
+                          {i.category}
+                          {!i.active && " · put away"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 align-top text-ink">{i.location || <span className="text-muted">Not set</span>}</td>
+                      <td className="px-3 py-2.5 text-right align-top font-semibold text-ink">
+                        {i.available} of {i.quantity}
+                      </td>
+                      <td className="px-3 py-2.5 align-top">
+                        {holders.length ? (
+                          <ul className="space-y-0.5">
+                            {holders.map((l) => (
+                              <li key={l.id} className="text-xs text-ink">
+                                <b>{l.family?.family_name ?? "A"} family</b>
+                                {l.quantity > 1 ? ` × ${l.quantity}` : ""}
+                                <span className="text-muted">
+                                  {" "}
+                                  · {l.status === "out" ? `back by ${fmtShortDate(l.due_on)}` : "to pick up"}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="text-xs text-muted">All here</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 

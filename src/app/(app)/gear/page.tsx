@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronRight, CircleCheck, Settings2, Tent } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import SubmitButton from "@/components/SubmitButton";
-import { isLeader, requireMember } from "@/lib/data";
+import { isGearKeeper, requireMember } from "@/lib/data";
 import { fmtShortDate } from "@/lib/advancement";
 import {
   GEAR_CATEGORIES,
@@ -29,7 +29,7 @@ export default async function GearPage({ searchParams }: PageProps<"/gear">) {
   const me = await requireMember();
   const sp = await searchParams;
   const done = DONE[String(sp.done ?? "")];
-  const leader = isLeader(me);
+  const leader = isGearKeeper(me);
   const [items, loans, waiting] = await Promise.all([
     getGearItems(),
     getFamilyLoans(me.family_id),

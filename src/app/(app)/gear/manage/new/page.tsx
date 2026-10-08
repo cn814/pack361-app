@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import BackLink from "@/components/BackLink";
 import GearItemForm from "@/components/GearItemForm";
-import { isLeader, requireMember } from "@/lib/data";
+import { isGearKeeper, requireMember } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Add gear" };
 
 export default async function NewGearPage() {
   const me = await requireMember();
-  if (!isLeader(me)) redirect("/gear");
+  if (!isGearKeeper(me)) redirect("/gear");
   return (
     <>
       <BackLink href="/gear/manage" label="Manage gear" />
