@@ -35,6 +35,7 @@ const PLACES: { href: string; title: string; words: string; who?: Who }[] = [
   { href: "/polls", title: "Polls", words: "polls vote survey" },
   { href: "/inbox", title: "News and messages", words: "news announcements messages notifications inbox" },
   { href: "/nature", title: "Nature ID", words: "bird birds song sound plant plants leaf flower tree identify nature hike merlin seek" },
+  { href: "/geocaching", title: "Geocaching", words: "geocache geocaching cache caches treasure hunt gps trackable travel bug" },
   { href: "/leaders", title: "Leader contacts", words: "leaders contacts phone email cubmaster den leader committee chair" },
   { href: "/recruit", title: "Invite a family", words: "invite recruit join friend new family flyer qr" },
   { href: "/events", title: "Calendar", words: "calendar events schedule meetings pack meeting" },

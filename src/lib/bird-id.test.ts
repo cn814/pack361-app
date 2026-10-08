@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { addHeard, hearingNow, isSpecies, pool, type Detection } from "./bird-id";
+import { HEARD_MIN, NOW_MIN, addHeard, hearingNow, isSpecies, pool, type Detection } from "./bird-id";
 
 const d = (index: number, confidence: number, name = `Bird ${index}`, geoscore = 0.5): Detection => ({
   index,
@@ -21,6 +21,13 @@ test("smoothing: one loud blip isn't a bird, a steady song is", () => {
   assert.ok(blip[0].confidence < 0.25, `blip ${blip[0].confidence}`);
   const song = pool([[d(2, 0.7)], [d(2, 0.8)], [d(2, 0.75)], [d(2, 0.6)], [d(2, 0.7)]]);
   assert.ok(song[0].confidence > 0.6, `song ${song[0].confidence}`);
+});
+
+test("smoothing: a bird singing in short bursts with gaps still shows", () => {
+  const bursts = pool([[d(3, 0.6)], [], [], [d(3, 0.5)], []]);
+  assert.ok(bursts[0].confidence >= HEARD_MIN, `bursts ${bursts[0].confidence}`);
+  const faint = pool([[d(4, 0.05)], [d(4, 0.06)], [], [], []]);
+  assert.ok(faint[0].confidence < NOW_MIN, `faint ${faint[0].confidence}`);
 });
 
 test("hearing now: likely here, confident, top three", () => {

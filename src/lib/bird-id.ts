@@ -28,37 +28,40 @@ export function isSpecies(d: Pick<Detection, "scientificName" | "commonName">): 
   return d.scientificName !== d.commonName;
 }
 
-/** How many recent predictions to smooth over (about two and a half seconds of listening). */
-export const POOL = 5;
+/** How many recent predictions to smooth over (about four seconds of listening). */
+export const POOL = 8;
 /** Shown under "Hearing now" at or above this (smoothed) confidence. */
 export const NOW_MIN = 0.25;
 /** Added to "Heard" at or above this. */
-export const HEARD_MIN = 0.45;
+export const HEARD_MIN = 0.35;
 /** Species unlikely here this week (below this) are left out. */
 export const GEO_MIN = 0.03;
 
+/** A species counts as heard in a prediction from this confidence up. */
+export const HIT_MIN = 0.1;
+
 /**
- * Smooth the last few predictions: the average of their logits, counting a species missing from a
- * prediction as nearly zero. Stricter than BirdNET Live's log-mean-exp (which follows the loudest
- * moment), so one blip or a scout's whistle doesn't show up as a bird; a bird that keeps singing does.
+ * Smooth the last few predictions. Birds sing in bursts with gaps, so a species doesn't have to be
+ * in every prediction: it needs to show up in at least two of them (so one blip, or a scout's
+ * single whistle, doesn't count as a bird), and its score is the average of its two best. A bird
+ * heard only once is kept but scored down, below every threshold.
  */
 export function pool(sets: Detection[][]): Detection[] {
   if (!sets.length) return [];
-  const eps = 1e-4;
-  const byIndex = new Map<number, { ref: Detection; logits: number[] }>();
-  sets.forEach((set, s) => {
+  const byIndex = new Map<number, { ref: Detection; scores: number[] }>();
+  for (const set of sets) {
     for (const d of set) {
-      const e = byIndex.get(d.index) ?? { ref: d, logits: Array(sets.length).fill(Math.log(0.01 / 0.99)) };
-      const c = Math.min(1 - eps, Math.max(eps, d.confidence));
-      e.logits[s] = Math.log(c / (1 - c));
+      const e = byIndex.get(d.index) ?? { ref: d, scores: [] };
+      e.scores.push(d.confidence);
       e.ref = d;
       byIndex.set(d.index, e);
     }
-  });
+  }
   const out: Detection[] = [];
-  for (const { ref, logits } of byIndex.values()) {
-    const mean = logits.reduce((a, l) => a + l, 0) / logits.length;
-    out.push({ ...ref, confidence: 1 / (1 + Math.exp(-mean)) });
+  for (const { ref, scores } of byIndex.values()) {
+    const hits = scores.filter((c) => c >= HIT_MIN).sort((x, y) => y - x);
+    const confidence = hits.length >= 2 ? (hits[0] + hits[1]) / 2 : (hits[0] ?? 0) / 5;
+    out.push({ ...ref, confidence });
   }
   return out.sort((a, b) => b.confidence - a.confidence);
 }

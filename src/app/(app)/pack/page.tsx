@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bird, BookOpen, ChevronRight, FolderOpen, HandCoins, HandHeart, Images, Megaphone, Phone, Popcorn, Receipt, Shirt, ShoppingBag, Tent, type LucideIcon, UserPlus, Vote } from "lucide-react";
+import { Bird, BookOpen, ChevronRight, Compass, FolderOpen, HandCoins, HandHeart, Images, Megaphone, Phone, Popcorn, Receipt, Shirt, ShoppingBag, Tent, type LucideIcon, UserPlus, Vote } from "lucide-react";
 import EventTabs from "@/components/EventTabs";
 import { requireMember } from "@/lib/data";
 import { getMyCharges, totalDue } from "@/lib/payments";
@@ -38,6 +38,7 @@ export default async function PackPage() {
   ];
   const tools: Item[] = [
     { href: "/nature", label: "Nature ID", icon: Bird, note: "Name a bird by its song, or a plant from a photo" },
+    { href: "/geocaching", label: "Geocaching", icon: Compass, note: "Treasure hunting with the official Geocaching app" },
     { href: "/gear", label: "Gear closet", icon: Tent, note: "Borrow tents and camp gear" },
     { href: "/polls", label: "Polls", icon: Vote },
     { href: "/inbox", label: "News and messages", icon: Megaphone },
@@ -62,7 +63,7 @@ export default async function PackPage() {
         tabs={[
           { id: "money", label: "Money", hint: due > 0 ? `${fmtMoney(due)} due` : "Pay the pack, get paid back", icon: <HandCoins aria-hidden />, content: <Group items={money} /> },
           { id: "fundraisers", label: "Fundraisers", hint: "Popcorn, apparel, uniforms", icon: <Popcorn aria-hidden />, content: <Group items={store} /> },
-          { id: "tools", label: "Tools", hint: "Nature ID, gear closet, polls, news", icon: <Bird aria-hidden />, content: <Group items={tools} /> },
+          { id: "tools", label: "Tools", hint: "Nature ID, geocaching, gear, polls, news", icon: <Bird aria-hidden />, content: <Group items={tools} /> },
           { id: "photos", label: "Photos", hint: "See and add pack photos", icon: <Images aria-hidden />, href: "/photos" },
           { id: "info", label: "Info", hint: "Pack guide, app guide, documents", icon: <BookOpen aria-hidden />, content: <Group items={info} /> },
           { id: "people", label: "People", hint: "Leader contacts, invite a family, help wanted", icon: <Phone aria-hidden />, content: <Group items={people} /> },

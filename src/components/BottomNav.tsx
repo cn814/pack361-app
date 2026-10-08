@@ -13,7 +13,7 @@ interface Tab {
 }
 
 /** Pages that belong to the Pack tab (its menu leads to them). */
-const PACK_PATHS = ["/pack", "/pay", "/reimburse", "/store", "/guide", "/documents", "/photos", "/polls", "/recruit", "/leaders", "/inbox", "/nature", "/gear", "/help-wanted"];
+const PACK_PATHS = ["/pack", "/pay", "/reimburse", "/store", "/guide", "/documents", "/photos", "/polls", "/recruit", "/leaders", "/inbox", "/nature", "/geocaching", "/gear", "/help-wanted"];
 /** Pages that belong to the Leaders tab (leader tools), even when they sit under another tab's address. */
 const LEADER_PATHS = [
   "/lead",
