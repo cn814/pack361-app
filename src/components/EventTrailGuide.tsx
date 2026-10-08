@@ -1,13 +1,15 @@
 import { Suspense } from "react";
 import { ExternalLink, Leaf } from "lucide-react";
 import NatureTools from "@/components/NatureTools";
-import { involvesHiking, showNature, type Species } from "@/lib/nature";
+import ScavengerHunt from "@/components/ScavengerHunt";
+import { involvesHiking, scavengerHunt, showNature, type Species } from "@/lib/nature";
 import { loadTrailGuide, plantIdReady } from "@/lib/nature-data";
 import type { PackEvent } from "@/lib/types";
 
 /**
  * Trail guide on campouts and events with a hike: bird sound ID and plant ID right in the app, and
- * the birds and plants people have recorded near the event in that month (from iNaturalist). From a month before the event until it ends. `extraText` = the page's
+ * the birds and plants people have recorded near the event in that month (from iNaturalist), and in
+ * the fall a scavenger hunt. From a month before the event until it ends. `extraText` = the page's
  * sections and schedule, which can mention a hike when the event's name doesn't.
  */
 export default function EventTrailGuide({ e, extraText = [] }: { e: PackEvent; extraText?: string[] }) {
@@ -22,6 +24,7 @@ export default function EventTrailGuide({ e, extraText = [] }: { e: PackEvent; e
 async function Loaded({ e }: { e: PackEvent }) {
   const g = await loadTrailGuide(e);
   const credits = [...g.birds, ...g.plants].filter((s) => s.photo && s.credit);
+  const hunt = scavengerHunt(e);
   return (
     <section id="trail-guide" className="card scroll-mt-20 space-y-3">
       <h2 className="section-title flex items-center gap-1.5">
@@ -29,6 +32,7 @@ async function Loaded({ e }: { e: PackEvent }) {
       </h2>
       <p className="text-sm text-ink">Hear a bird or spot a plant on the trail? Find out what it is, right here.</p>
       <NatureTools point={g.point} plantReady={plantIdReady()} />
+      {hunt && <ScavengerHunt eventId={e.id} title={hunt.title} items={hunt.items} />}
 
       {g.birds.length > 0 && <Strip title={`Birds seen near here in ${g.months}`} list={g.birds} />}
       {g.plants.length > 0 && <Strip title={`Plants seen near here in ${g.months}`} list={g.plants} />}

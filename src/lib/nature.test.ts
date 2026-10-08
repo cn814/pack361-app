@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { eventMonths, involvesHiking, parseSpeciesCounts, showNature, speciesUrl } from "./nature";
+import { eventMonths, involvesHiking, parseSpeciesCounts, scavengerHunt, showNature, speciesUrl } from "./nature";
 
 const base = { category: "Pack", starts_at: "2026-10-24T13:00:00Z", ends_at: "2026-10-24T17:00:00Z", location_name: "Patapsco Valley State Park", address: null };
 
@@ -55,4 +55,10 @@ test("a heard bird's photo: only an exact name match", async () => {
     url: "https://www.inaturalist.org/taxa/9083",
   });
   assert.deepEqual(parseTaxonPhoto({ results: [] }, "Nope nope"), { photo: null, credit: null, url: null });
+});
+
+test("scavenger hunt: fall events only", () => {
+  assert.equal(scavengerHunt({ starts_at: "2026-10-23T22:00:00Z", ends_at: "2026-10-25T14:00:00Z" })?.items.length, 12);
+  assert.equal(scavengerHunt({ starts_at: "2026-08-30T14:00:00Z", ends_at: "2026-09-01T14:00:00Z" })?.title, "Fall scavenger hunt");
+  assert.equal(scavengerHunt({ starts_at: "2026-06-12T14:00:00Z", ends_at: null }), null);
 });

@@ -145,3 +145,24 @@ export function parseTaxonPhoto(json: unknown, scientific: string): TaxonPhoto {
   }
   return { photo: null, credit: null, url: null };
 }
+
+/** Fall (September to November): a scavenger hunt for the trail. */
+const FALL_HUNT = [
+  "A red leaf",
+  "An orange leaf",
+  "A yellow leaf",
+  "An acorn",
+  "A pinecone",
+  "An evergreen branch (pine or hemlock)",
+  "Moss on a rock or log",
+  "A mushroom",
+  "An animal track in the mud",
+  "A woodpecker hole",
+  "A trail marker",
+  "Something made by people",
+];
+
+/** The scavenger hunt for the season the event is in, or null when there isn't one. */
+export function scavengerHunt(e: Pick<NatureEvent, "starts_at" | "ends_at">): { title: string; items: string[] } | null {
+  return eventMonths(e).some((m) => m >= 9 && m <= 11) ? { title: "Fall scavenger hunt", items: FALL_HUNT } : null;
+}

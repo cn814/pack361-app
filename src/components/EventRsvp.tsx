@@ -56,12 +56,18 @@ export async function EventRsvpLeaders({ e, me }: { e: PackEvent; me: Adult }) {
           {counts.families_maybe ? ` · ${counts.families_maybe} maybe` : ""}
         </p>
       </div>
+      {answered.some((r) => r.fromGivebutter) && (
+        <p className="text-xs text-muted">
+          <b>Givebutter</b>: filled in from the family&apos;s paid sign-up, counting each ticket by name. If a count looks off, the family can change it.
+        </p>
+      )}
       {answered.length ? (
         <ul className="divide-y divide-line text-sm">
           {answered.map((r, i) => (
             <li key={i} className="flex items-start justify-between gap-3 py-1.5">
               <span className="min-w-0">
                 <span className="font-semibold text-ink">{r.name}</span>
+                {r.fromGivebutter && <span className="ml-1.5 rounded-full bg-mint px-1.5 py-0.5 text-[10px] font-bold text-pine">Givebutter</span>}
                 {r.note && <span className="block text-xs text-muted">“{r.note}”</span>}
               </span>
               <span className="shrink-0 text-right text-xs text-muted">

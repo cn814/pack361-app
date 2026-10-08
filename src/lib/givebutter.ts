@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { customAnswers, planDuesMatch, type Answer, type RosterScout } from "./givebutter-dues";
+import { splitTickets } from "./givebutter-rsvp";
 
 // Givebutter REST API v1: https://docs.givebutter.com (Bearer API key, paginated { data, links, meta }).
 const BASE = "https://api.givebutter.com/v1";
@@ -76,14 +77,21 @@ export interface SyncResult {
   matchedFamilies: number;
   duesMatched: number;
   duesNeedReview: number;
+  /** Event RSVPs filled in from Givebutter sign-ups (campouts). */
+  rsvps?: { added: number; updated: number; removed: number } | { error: string };
 }
 
 /** Copy Givebutter campaigns and transactions into Supabase. Needs the admin (secret key) client. */
 export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
-  const [campaigns, transactions] = await Promise.all([fetchAll("/campaigns"), fetchAll("/transactions")]);
+  // Ticket names only say who's coming (for RSVP counts); a failure there mustn't stop the sync.
+  const [campaigns, transactions, tickets] = await Promise.all([
+    fetchAll("/campaigns"),
+    fetchAll("/transactions"),
+    fetchAll("/tickets").catch(() => null),
+  ]);
 
   const [{ data: events }, { data: existing }, { data: adults }, { data: placed }] = await Promise.all([
-    db.from("events").select("id, external_id, signup_url"),
+    db.from("events").select("id, external_id, signup_url, rsvp_enabled"),
     db.from("givebutter_campaigns").select("id, show_as_fundraiser"),
     db.from("adults").select("email, family_id").not("family_id", "is", null),
     db.from("givebutter_orders").select("id, family_id").not("dues_match", "is", null).not("family_id", "is", null),
@@ -181,6 +189,13 @@ export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
     if (up2.error) throw new Error(`Saving orders failed: ${up2.error.message}`);
   }
   const dues = await matchDues(db, familyByEmail, answersById);
+  let rsvps: SyncResult["rsvps"];
+  try {
+    const rsvpEvents = new Set((events ?? []).filter((e) => e.rsvp_enabled).map((e) => e.id as string));
+    rsvps = await syncRsvps(db, rows.filter((c) => c.event_id && rsvpEvents.has(c.event_id)), orders.filter(paid), tickets);
+  } catch (e) {
+    rsvps = { error: e instanceof Error ? e.message : "RSVPs failed" };
+  }
   return {
     campaigns: rows.length,
     orders: orders.length,
@@ -189,7 +204,70 @@ export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
     matchedFamilies: new Set(orders.map((o) => o.family_id).filter(Boolean)).size,
     duesMatched: dues.matched,
     duesNeedReview: dues.needReview,
+    rsvps,
   };
+}
+
+/**
+ * Campouts and other events with a Givebutter sign-up: each family that paid gets a "yes" RSVP in
+ * the app, with how many scouts, siblings and adults their tickets were for (see
+ * 20261022000000_givebutter_rsvps.sql for when a family's own answer is kept). The ticket names are
+ * only read here, to count; they aren't stored. Without ticket names (the /tickets call failed),
+ * every ticket counts as unnamed: the family's scouts first, then adults.
+ */
+async function syncRsvps(
+  db: SupabaseClient,
+  campaigns: { id: number; event_id: string | null }[],
+  paidOrders: { id: number; campaign_id: number; family_id: string | null; tickets: number; created_at: string | null }[],
+  tickets: Json[] | null,
+): Promise<{ added: number; updated: number; removed: number }> {
+  const eventIds = [...new Set(campaigns.map((c) => c.event_id as string))];
+  if (!eventIds.length) return { added: 0, updated: 0, removed: 0 };
+  const eventOf = new Map(campaigns.map((c) => [c.id, c.event_id as string]));
+  const mine = paidOrders.filter((o) => o.family_id && eventOf.has(o.campaign_id));
+  const families = [...new Set(mine.map((o) => o.family_id as string))];
+
+  const namesByOrder = new Map<number, (string | null)[]>();
+  for (const t of tickets ?? []) {
+    const tx = num(t.transaction_id);
+    if (tx === null) continue;
+    const list = namesByOrder.get(tx) ?? [];
+    list.push(str(t.first_name) ?? str(t.name)?.split(/\s+/)[0] ?? null);
+    namesByOrder.set(tx, list);
+  }
+
+  const [{ data: scouts }, { data: adults }] = families.length
+    ? await Promise.all([
+        db.from("scouts").select("family_id, first_name").eq("is_active", true).in("family_id", families),
+        db.from("adults").select("family_id, first_name, preferred_name, other_names").eq("is_active", true).in("family_id", families),
+      ])
+    : [{ data: [] }, { data: [] }];
+
+  // One row per event and family (a family can pay in more than one order).
+  const byKey = new Map<string, { event_id: string; family_id: string; names: (string | null)[]; paid_at: string | null }>();
+  for (const o of mine) {
+    const event_id = eventOf.get(o.campaign_id)!;
+    const key = `${event_id}:${o.family_id}`;
+    const row = byKey.get(key) ?? { event_id, family_id: o.family_id as string, names: [], paid_at: null };
+    const named = namesByOrder.get(o.id);
+    row.names.push(...(named && named.length ? named : Array.from({ length: o.tickets }, () => null)));
+    if (o.created_at && (!row.paid_at || o.created_at > row.paid_at)) row.paid_at = o.created_at;
+    byKey.set(key, row);
+  }
+  const rows = [...byKey.values()]
+    .filter((r) => r.names.length > 0)
+    .map((r) => {
+      const famScouts = (scouts ?? []).filter((s) => s.family_id === r.family_id).map((s) => s.first_name as string);
+      const famAdults = (adults ?? [])
+        .filter((a) => a.family_id === r.family_id)
+        .map((a) => [a.first_name as string, (a.preferred_name as string | null) ?? "", ...((a.other_names as string[] | null) ?? [])]);
+      return { event_id: r.event_id, family_id: r.family_id, paid_at: r.paid_at, ...splitTickets(r.names, famScouts, famAdults) };
+    });
+
+  const { data, error } = await db.rpc("sync_givebutter_rsvps", { p_event_ids: eventIds, p_rows: rows });
+  if (error) throw new Error(`RSVPs from Givebutter failed: ${error.message}`);
+  const r = ((data ?? []) as { added: number; updated: number; removed: number }[])[0];
+  return { added: r?.added ?? 0, updated: r?.updated ?? 0, removed: r?.removed ?? 0 };
 }
 
 /**

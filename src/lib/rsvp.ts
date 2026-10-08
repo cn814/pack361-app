@@ -13,6 +13,8 @@ export interface MyRsvp {
   /** Brothers and sisters who aren't scouts. */
   siblings: number;
   note: string | null;
+  /** Filled in from the family's Givebutter sign-up (and not changed in the app since). */
+  fromGivebutter?: boolean;
   /** Said yes, but the event was full: on the waitlist (still "yes"). */
   waitlisted?: boolean;
   /** Place on the waitlist (1 = next in). */
@@ -42,6 +44,11 @@ export function spotsLeft(c: Pick<RsvpCounts, "rsvp_limit" | "scouts" | "adults"
   return c.rsvp_limit == null ? null : Math.max(c.rsvp_limit - c.scouts - c.adults - c.siblings, 0);
 }
 
+/** Written by the Givebutter sync and not changed in the app since. */
+function fromGivebutter(r: { updated_at?: string | null; givebutter_at?: string | null }): boolean {
+  return Boolean(r.givebutter_at && r.updated_at && Date.parse(r.updated_at) <= Date.parse(r.givebutter_at));
+}
+
 /** Can families still answer? */
 export function rsvpOpen(e: Pick<PackEvent, "rsvp_enabled" | "rsvp_by" | "archived_at" | "starts_at" | "ends_at" | "all_day">): boolean {
   if (!e.rsvp_enabled || e.archived_at) return false;
@@ -52,7 +59,7 @@ export function rsvpOpen(e: Pick<PackEvent, "rsvp_enabled" | "rsvp_by" | "archiv
 
 export async function getRsvp(eventId: string, me: { id: string; family_id: string | null }, leader: boolean) {
   const supabase = await createClient();
-  const mineQ = supabase.from("event_rsvps").select("status, scouts, adults, siblings, note, waitlisted").eq("event_id", eventId);
+  const mineQ = supabase.from("event_rsvps").select("status, scouts, adults, siblings, note, waitlisted, updated_at, givebutter_at").eq("event_id", eventId);
   const [{ data: mine }, { data: counts }, list] = await Promise.all([
     me.family_id ? mineQ.eq("family_id", me.family_id).maybeSingle() : mineQ.is("family_id", null).eq("adult_id", me.id).maybeSingle(),
     supabase.rpc("rsvp_counts", { p_event_id: eventId }),
@@ -60,7 +67,7 @@ export async function getRsvp(eventId: string, me: { id: string; family_id: stri
       ? supabase
           .from("event_rsvps")
           .select(
-            "status, scouts, adults, siblings, note, waitlisted, waitlisted_at, updated_at, family:families(family_name), adult:adults(first_name, preferred_name, last_name)",
+            "status, scouts, adults, siblings, note, waitlisted, waitlisted_at, updated_at, givebutter_at, family:families(family_name), adult:adults(first_name, preferred_name, last_name)",
           )
           .eq("event_id", eventId)
           .order("updated_at", { ascending: false })
@@ -69,6 +76,7 @@ export async function getRsvp(eventId: string, me: { id: string; family_id: stri
   const c: Partial<RsvpCounts> & { my_waitlist_spot?: number | null } = ((counts ?? []) as RsvpCounts[])[0] ?? {};
   const rows: RsvpRow[] = ((list.data ?? []) as unknown as (MyRsvp & {
     updated_at: string;
+    givebutter_at: string | null;
     waitlisted_at: string | null;
     family: { family_name: string } | null;
     adult: { first_name: string; preferred_name: string | null; last_name: string } | null;
@@ -78,6 +86,7 @@ export async function getRsvp(eventId: string, me: { id: string; family_id: stri
     adults: r.adults,
     siblings: r.siblings ?? 0,
     note: r.note,
+    fromGivebutter: fromGivebutter(r),
     waitlisted: Boolean(r.waitlisted),
     waitlisted_at: r.waitlisted_at,
     updated_at: r.updated_at,
@@ -89,9 +98,9 @@ export async function getRsvp(eventId: string, me: { id: string; family_id: stri
   }));
   // Leaders: the waitlist in line order, after everyone else.
   const waiting = rows.filter((r) => r.waitlisted).sort((a, b) => (a.waitlisted_at ?? "").localeCompare(b.waitlisted_at ?? ""));
-  const m = (mine as MyRsvp | null) ?? null;
+  const m = (mine as (MyRsvp & { updated_at?: string; givebutter_at?: string | null }) | null) ?? null;
   return {
-    mine: m ? { ...m, siblings: m.siblings ?? 0, waitlisted: Boolean(m.waitlisted), waitlist_spot: m.waitlisted ? Number(c.my_waitlist_spot ?? 0) || null : null } : null,
+    mine: m ? { status: m.status, scouts: m.scouts, adults: m.adults, note: m.note, siblings: m.siblings ?? 0, fromGivebutter: fromGivebutter(m), waitlisted: Boolean(m.waitlisted), waitlist_spot: m.waitlisted ? Number(c.my_waitlist_spot ?? 0) || null : null } : null,
     counts: {
       families_yes: Number(c.families_yes ?? 0),
       families_maybe: Number(c.families_maybe ?? 0),

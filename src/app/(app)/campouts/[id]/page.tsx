@@ -30,6 +30,7 @@ import { EventLinks, EventSections } from "@/components/EventInfo";
 import { getEvent, getItinerary, getPackingList, isLeader, requireMember } from "@/lib/data";
 import { getEventCampaign, getOrders } from "@/lib/fundraising-data";
 import { fmtRange } from "@/lib/format";
+import { scavengerHunt } from "@/lib/nature";
 
 export async function generateMetadata({ params }: PageProps<"/campouts/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -146,7 +147,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
           },
           { id: "carpool", label: "Carpool", hint: "Offer or find a ride", icon: <Car aria-hidden />, content: <EventCarpool e={event} me={me} /> },
           { id: "volunteer", label: "Volunteer", hint: "Jobs that need a grown-up", icon: <HandHelping aria-hidden />, content: <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={leader} /> },
-          { id: "nature", label: "Trail guide", hint: "Bird and plant ID", icon: <Leaf aria-hidden />, content: <EventTrailGuide e={event} /> },
+          { id: "nature", label: "Trail guide", hint: scavengerHunt(event) ? "Bird and plant ID, scavenger hunt" : "Bird and plant ID", icon: <Leaf aria-hidden />, content: <EventTrailGuide e={event} /> },
         ]}
       />
     </>

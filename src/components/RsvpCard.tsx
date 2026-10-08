@@ -16,6 +16,8 @@ interface Props {
     adults: number;
     siblings?: number;
     note: string | null;
+    /** Filled in from the family's Givebutter sign-up. */
+    fromGivebutter?: boolean;
     /** Said yes while it was full: on the waitlist. */
     waitlisted?: boolean;
     /** Place in line (1 = next in). */
@@ -107,6 +109,9 @@ export default function RsvpCard({ eventId, open, deadline, mine, counts, defaul
                   {mine.adults} adult{mine.adults === 1 ? "" : "s"}
                   {mine.note ? ` · “${mine.note}”` : ""}
                 </span>
+              )}
+              {mine.fromGivebutter && (
+                <span className="block text-xs">From your Givebutter sign-up. Bringing someone else? Tap Change.</span>
               )}
             </span>
             {open && (

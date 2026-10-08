@@ -30,6 +30,7 @@ import { fmtMeetingTime, todayEastern } from "@/lib/meetings";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { fmtRange } from "@/lib/format";
+import { scavengerHunt } from "@/lib/nature";
 
 export async function generateMetadata({ params }: PageProps<"/events/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -164,7 +165,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           { id: "volunteer", label: "Volunteer", hint: "Jobs that need a grown-up", icon: <HandHelping aria-hidden />, content: <VolunteerJobs eventId={id} slots={slots} meId={me.id} leader={leader} /> },
           {
             id: "nature",
-            label: "Trail guide", hint: "Bird and plant ID", icon: <Leaf aria-hidden />,
+            label: "Trail guide", hint: scavengerHunt(event) ? "Bird and plant ID, scavenger hunt" : "Bird and plant ID", icon: <Leaf aria-hidden />,
             content: <EventTrailGuide e={event} extraText={(event.sections ?? []).map((s) => JSON.stringify(s))} />,
           },
         ]}
