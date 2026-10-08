@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { ExternalLink, Leaf } from "lucide-react";
+import { ExternalLink, Leaf, Trophy } from "lucide-react";
 import NatureTools from "@/components/NatureTools";
 import ScavengerHunt from "@/components/ScavengerHunt";
 import { involvesHiking, scavengerHunt, showNature, type Species } from "@/lib/nature";
@@ -31,6 +31,13 @@ async function Loaded({ e }: { e: PackEvent }) {
         <Leaf className="h-4 w-4" aria-hidden /> Trail guide
       </h2>
       <p className="text-sm text-ink">Hear a bird or spot a plant on the trail? Find out what it is, right here.</p>
+      <p className="flex items-start gap-2 rounded-xl bg-gold-50 p-3 text-sm text-gold-800">
+        <Trophy className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+        <span>
+          <b>Trail challenge:</b> how many different bird and plant species can you identify? Keep count as a den or family and share
+          your total at the campfire.
+        </span>
+      </p>
       <NatureTools point={g.point} plantReady={plantIdReady()} />
       {hunt && <ScavengerHunt eventId={e.id} title={hunt.title} items={hunt.items} />}
 
