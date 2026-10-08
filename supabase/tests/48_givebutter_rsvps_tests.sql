@@ -76,3 +76,38 @@ select test.check((select added = 0 from public.sync_givebutter_rsvps(array[]::u
     '[{"event_id":"54800000-0000-0000-0000-000000000001","family_id":"20000000-0000-0000-0000-000000000002","scouts":1,"siblings":0,"adults":1}]')),
     'only the events the sync names are touched');
 reset role;
+
+\echo '== Payment RSVPs: paid in the app'
+insert into public.events (id, title, category, starts_at, rsvp_enabled) values
+ ('54800000-0000-0000-0000-000000000002', 'PayPal Outing', 'Outing', now() + interval '20 days', true);
+set role service_role;
+select test.check((select added = 1 from public.sync_givebutter_rsvps(array['54800000-0000-0000-0000-000000000002']::uuid[],
+    '[{"event_id":"54800000-0000-0000-0000-000000000002","family_id":"20000000-0000-0000-0000-000000000002","scouts":1,"siblings":0,"adults":1,"only_if_missing":true}]')),
+    'a family that paid with no answer is marked going');
+reset role;
+begin; set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
+select public.set_rsvp('54800000-0000-0000-0000-000000000002', 'yes', 2, 2, null, 1);
+commit;
+set role service_role;
+select test.check((select updated = 0 from public.sync_givebutter_rsvps(array['54800000-0000-0000-0000-000000000002']::uuid[],
+    jsonb_build_array(
+      jsonb_build_object('event_id','54800000-0000-0000-0000-000000000002','family_id','20000000-0000-0000-0000-000000000002','scouts',1,'siblings',0,'adults',1,'only_if_missing',true),
+      jsonb_build_object('event_id','54800000-0000-0000-0000-000000000002','family_id','20000000-0000-0000-0000-000000000001','scouts',1,'siblings',0,'adults',1,'only_if_missing',true,'paid_at', now() + interval '1 minute')))),
+    'a family''s own yes and numbers stand, even when they paid after');
+reset role;
+select test.check((select siblings = 1 and adults = 2 from public.event_rsvps where event_id = '54800000-0000-0000-0000-000000000002'
+                    and family_id = '20000000-0000-0000-0000-000000000001'), 'their counts are kept');
+begin; set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2"}', true);
+select public.set_rsvp('54800000-0000-0000-0000-000000000002', 'maybe', 1, 1, null, 0);
+commit;
+set role service_role;
+select test.check((select updated = 1 from public.sync_givebutter_rsvps(array['54800000-0000-0000-0000-000000000002']::uuid[],
+    jsonb_build_array(
+      jsonb_build_object('event_id','54800000-0000-0000-0000-000000000002','family_id','20000000-0000-0000-0000-000000000002','scouts',1,'siblings',0,'adults',1,'only_if_missing',true),
+      jsonb_build_object('event_id','54800000-0000-0000-0000-000000000002','family_id','20000000-0000-0000-0000-000000000001','scouts',1,'siblings',0,'adults',1,'only_if_missing',true,'paid_at', now() + interval '1 minute')))),
+    'a maybe older than the payment becomes going');
+reset role;
+select test.check((select status = 'yes' and scouts = 1 and adults = 1 from public.event_rsvps where event_id = '54800000-0000-0000-0000-000000000002'
+                    and family_id = '20000000-0000-0000-0000-000000000001'), 'keeping their own numbers');

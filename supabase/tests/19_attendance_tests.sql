@@ -81,15 +81,15 @@ rollback;
 \echo '== Event attendance: record and replace'
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);   -- Lee, den leader
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);   -- Morgan, admin
 select test.check(public.record_event_attendance('5a770000-0000-0000-0000-000000000002',
                     '{4a770000-0000-0000-0000-000000000001,4a770000-0000-0000-0000-000000000002,4a770000-0000-0000-0000-000000000003}') = 2,
-                  'a den leader can record a campout; a scout who left the pack is skipped');
+                  'a key leader records the whole pack; a scout who left the pack is skipped');
 select test.check(test.count($$select * from public.event_attendance where event_id = '5a770000-0000-0000-0000-000000000002'$$) = 2,
                   'two scouts on the list');
 select test.check((select recorded_by from public.event_attendance
                     where event_id = '5a770000-0000-0000-0000-000000000002' and scout_id = '4a770000-0000-0000-0000-000000000001')
-                  = '30000000-0000-0000-0000-00000000000c', 'remembers who took attendance');
+                  = (select id from public.adults where user_id = '00000000-0000-0000-0000-00000000000d'), 'remembers who took attendance');
 select test.check((select attendance_taken_at is not null from public.events where id = '5a770000-0000-0000-0000-000000000002'),
                   'the event shows attendance was taken');
 select test.check(public.record_event_attendance('5a770000-0000-0000-0000-000000000002',
@@ -103,6 +103,25 @@ select test.check(test.count($$select * from public.event_attendance where event
 select test.check(public.record_event_attendance('5a770000-0000-0000-0000-000000000002', null) = 0
                   and test.count($$select * from public.event_attendance where event_id = '5a770000-0000-0000-0000-000000000002'$$) = 0,
                   'an empty list clears it (nobody came)');
+rollback;
+
+\echo '== Event attendance: a den leader saves their own den'
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","aal":"aal2"}', true);   -- Morgan, admin
+select public.record_event_attendance('5a770000-0000-0000-0000-000000000002', '{4a770000-0000-0000-0000-000000000001}');   -- Pat (Wolf)
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);   -- Lee, Bear den leader
+select test.check(public.record_event_attendance('5a770000-0000-0000-0000-000000000002',
+                    '{4a770000-0000-0000-0000-000000000001,4a770000-0000-0000-0000-000000000002}') = 1,
+                  'a den leader''s save only counts their own den (Kit, Bear)');
+select test.check(test.count($$select * from public.event_attendance where event_id = '5a770000-0000-0000-0000-000000000002'$$) = 2,
+                  'and keeps the Wolf scout another leader checked');
+select test.check(public.record_event_attendance('5a770000-0000-0000-0000-000000000002', '{}') = 0
+                  and test.count($$select * from public.event_attendance where event_id = '5a770000-0000-0000-0000-000000000002'
+                                  and scout_id = '4a770000-0000-0000-0000-000000000001'$$) = 1
+                  and test.count($$select * from public.event_attendance where event_id = '5a770000-0000-0000-0000-000000000002'
+                                  and scout_id = '4a770000-0000-0000-0000-000000000002'$$) = 0,
+                  'clearing their den leaves other dens alone');
 rollback;
 
 -- Saved for the rest of the file, by Morgan (admin)

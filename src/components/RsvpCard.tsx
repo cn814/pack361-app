@@ -111,7 +111,7 @@ export default function RsvpCard({ eventId, open, deadline, mine, counts, defaul
                 </span>
               )}
               {mine.fromGivebutter && (
-                <span className="block text-xs">From your Givebutter sign-up. Bringing someone else? Tap Change.</span>
+                <span className="block text-xs">From your payment. Bringing someone else? Tap Change.</span>
               )}
             </span>
             {open && (

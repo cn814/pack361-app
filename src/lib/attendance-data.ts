@@ -39,14 +39,21 @@ function groupScouts(scouts: AttendanceScout[], focusDen: (s: AttendanceScout) =
  * What the "Take attendance" card needs: scouts by den, who's checked (the saved list, or else
  * scouts from families that said yes), and whether attendance was taken already.
  */
-export async function getEventAttendance(e: PackEvent): Promise<{
+export async function getEventAttendance(
+  e: PackEvent,
+  me: Adult,
+): Promise<{
   groups: AttendanceGroup[];
   present: string[];
   taken: boolean;
   fromRsvps: number;
   hasFocus: boolean;
+  /** A den leader's own dens' names: the list is just those dens (null = the whole pack). */
+  ownDens: string[] | null;
 }> {
   const supabase = await createClient();
+  // Den leaders see (and save) just their own dens; key leaders, and leaders without a den, the pack.
+  const myDens = reviewsWholePack(me) ? [] : await getMyDenIds();
   const [{ data: scoutRows }, { data: saved }, { data: rsvps }] = await Promise.all([
     supabase
       .from("scouts")
@@ -65,26 +72,33 @@ export async function getEventAttendance(e: PackEvent): Promise<{
   // Someone already on the list who has since left the pack still shows, so a re-save keeps them.
   const ids = new Set(scouts.map((s) => s.id));
   for (const s of savedScouts) if (!ids.has(s.id)) scouts.push(s);
+  const mine = (s: AttendanceScout) => !myDens.length || (s.den ? myDens.includes(s.den.id) : false);
+  const inScope = scouts.filter(mine);
+  const savedInScope = savedScouts.filter(mine);
 
   const ranks = e.ranks ?? [];
   const hasFocus = Boolean(e.den_id) || ranks.length > 0;
   const focusDen = (s: AttendanceScout) =>
     hasFocus && Boolean(s.den) && (e.den_id ? s.den!.id === e.den_id : ranks.includes(s.den!.rank));
 
-  const taken = Boolean(e.attendance_taken_at) || savedScouts.length > 0;
+  // A den leader's den counts as taken once someone saved a scout in it.
+  const taken = myDens.length ? savedInScope.length > 0 : Boolean(e.attendance_taken_at) || savedScouts.length > 0;
   let present: string[];
   let fromRsvps = 0;
   if (taken) {
-    present = savedScouts.map((s) => s.id);
+    present = savedInScope.map((s) => s.id);
   } else {
     // Families that said yes: check their scouts (in the event's dens, if it's for certain dens).
     const yes = new Set(((rsvps ?? []) as { family_id: string }[]).map((r) => r.family_id));
-    const fam = scouts.filter((s) => s.is_active && s.family_id && yes.has(s.family_id));
+    const fam = inScope.filter((s) => s.is_active && s.family_id && yes.has(s.family_id));
     const inFocus = fam.filter(focusDen);
     present = (hasFocus && inFocus.length ? inFocus : fam).map((s) => s.id);
-    fromRsvps = yes.size;
+    fromRsvps = new Set(fam.map((s) => s.family_id)).size;
   }
-  return { groups: groupScouts(scouts, focusDen), present, taken, fromRsvps, hasFocus };
+  const ownDens = myDens.length
+    ? [...new Set(inScope.map((s) => (s.den ? s.den.name || RANK_LABEL[s.den.rank] : "")).filter(Boolean))]
+    : null;
+  return { groups: groupScouts(inScope, focusDen), present, taken, fromRsvps, hasFocus: hasFocus && !myDens.length, ownDens };
 }
 
 /** Totals per scout for a date range (attendance_summary; RLS decides what counts). */

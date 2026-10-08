@@ -13,7 +13,7 @@ export interface MyRsvp {
   /** Brothers and sisters who aren't scouts. */
   siblings: number;
   note: string | null;
-  /** Filled in from the family's Givebutter sign-up (and not changed in the app since). */
+  /** Filled in from the family's payment, on Givebutter or in the app (and not changed since). */
   fromGivebutter?: boolean;
   /** Said yes, but the event was full: on the waitlist (still "yes"). */
   waitlisted?: boolean;

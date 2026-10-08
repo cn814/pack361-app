@@ -24,10 +24,13 @@ export default async function EventAttendance({ e, me }: { e: PackEvent; me: Adu
       </section>
     );
   }
-  const a = await getEventAttendance(e);
+  const a = await getEventAttendance(e, me);
   const note =
-    !a.taken && a.fromRsvps > 0
-      ? `Checked from ${a.fromRsvps === 1 ? "1 family" : `${a.fromRsvps} families`} that said yes. Tap to change.`
-      : null;
+    [
+      a.ownDens ? `Your den${a.ownDens.length === 1 ? "" : "s"} only (${a.ownDens.join(", ") || "no scouts yet"}). Other dens' leaders check their own.` : null,
+      !a.taken && a.fromRsvps > 0 ? `Checked from ${a.fromRsvps === 1 ? "1 family" : `${a.fromRsvps} families`} that said yes. Tap to change.` : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || null;
   return <TakeAttendance eventId={e.id} groups={a.groups} present={a.present} taken={a.taken} note={note} hasFocus={a.hasFocus} />;
 }

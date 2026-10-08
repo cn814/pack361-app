@@ -91,7 +91,7 @@ export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
   ]);
 
   const [{ data: events }, { data: existing }, { data: adults }, { data: placed }] = await Promise.all([
-    db.from("events").select("id, external_id, signup_url, rsvp_enabled"),
+    db.from("events").select("id, external_id, signup_url, rsvp_enabled, starts_at, ends_at, archived_at"),
     db.from("givebutter_campaigns").select("id, show_as_fundraiser"),
     db.from("adults").select("email, family_id").not("family_id", "is", null),
     db.from("givebutter_orders").select("id, family_id").not("dues_match", "is", null).not("family_id", "is", null),
@@ -191,8 +191,14 @@ export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
   const dues = await matchDues(db, familyByEmail, answersById);
   let rsvps: SyncResult["rsvps"];
   try {
-    const rsvpEvents = new Set((events ?? []).filter((e) => e.rsvp_enabled).map((e) => e.id as string));
-    rsvps = await syncRsvps(db, rows.filter((c) => c.event_id && rsvpEvents.has(c.event_id)), orders.filter(paid), tickets);
+    // Upcoming (or happening) events that take RSVPs; finished ones are left as they are.
+    const cutoff = Date.now() - 86400000;
+    const rsvpEvents = new Set(
+      (events ?? [])
+        .filter((e) => e.rsvp_enabled && !e.archived_at && Date.parse((e.ends_at ?? e.starts_at) as string) >= cutoff)
+        .map((e) => e.id as string),
+    );
+    rsvps = await syncRsvps(db, rows.filter((c) => c.event_id && rsvpEvents.has(c.event_id)), orders.filter(paid), tickets, rsvpEvents);
   } catch (e) {
     rsvps = { error: e instanceof Error ? e.message : "RSVPs failed" };
   }
@@ -209,23 +215,40 @@ export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
 }
 
 /**
- * Campouts and other events with a Givebutter sign-up: each family that paid gets a "yes" RSVP in
- * the app, with how many scouts, siblings and adults their tickets were for (see
- * 20261022000000_givebutter_rsvps.sql for when a family's own answer is kept). The ticket names are
- * only read here, to count; they aren't stored. Without ticket names (the /tickets call failed),
- * every ticket counts as unnamed: the family's scouts first, then adults.
+ * Families who paid for an event are going:
+ *  - Givebutter sign-ups (campouts): a "yes" with how many scouts, siblings and adults their
+ *    tickets were for. The ticket names are only read here, to count; they aren't stored. Without
+ *    ticket names (the /tickets call failed), every ticket counts as unnamed: the family's scouts
+ *    first, then adults.
+ *  - Paid in the app (PayPal, or marked paid by a leader): a "yes" for a family that hasn't
+ *    answered (or answered no or maybe before paying), counting the scouts the charges were for
+ *    (or the family's scouts) and one adult. A family's own "yes" and numbers stand.
+ * See 20261022000000_givebutter_rsvps.sql and 20261023000000_den_leader_attendance.sql.
  */
 async function syncRsvps(
   db: SupabaseClient,
   campaigns: { id: number; event_id: string | null }[],
   paidOrders: { id: number; campaign_id: number; family_id: string | null; tickets: number; created_at: string | null }[],
   tickets: Json[] | null,
+  rsvpEvents: Set<string>,
 ): Promise<{ added: number; updated: number; removed: number }> {
-  const eventIds = [...new Set(campaigns.map((c) => c.event_id as string))];
+  const { data: charges, error: chargeErr } = rsvpEvents.size
+    ? await db
+        .from("charges")
+        .select("event_id, family_id, scout_id, paid_at")
+        .eq("kind", "event")
+        .eq("status", "paid")
+        .not("family_id", "is", null)
+        .in("event_id", [...rsvpEvents])
+    : { data: [], error: null };
+  if (chargeErr) throw new Error(`Reading event payments failed: ${chargeErr.message}`);
+  const appPaid = (charges ?? []) as { event_id: string; family_id: string; scout_id: string | null; paid_at: string | null }[];
+
+  const eventIds = [...new Set([...campaigns.map((c) => c.event_id as string), ...appPaid.map((c) => c.event_id)])];
   if (!eventIds.length) return { added: 0, updated: 0, removed: 0 };
   const eventOf = new Map(campaigns.map((c) => [c.id, c.event_id as string]));
   const mine = paidOrders.filter((o) => o.family_id && eventOf.has(o.campaign_id));
-  const families = [...new Set(mine.map((o) => o.family_id as string))];
+  const families = [...new Set([...mine.map((o) => o.family_id as string), ...appPaid.map((c) => c.family_id)])];
 
   const namesByOrder = new Map<number, (string | null)[]>();
   for (const t of tickets ?? []) {
@@ -263,6 +286,29 @@ async function syncRsvps(
         .map((a) => [a.first_name as string, (a.preferred_name as string | null) ?? "", ...((a.other_names as string[] | null) ?? [])]);
       return { event_id: r.event_id, family_id: r.family_id, paid_at: r.paid_at, ...splitTickets(r.names, famScouts, famAdults) };
     });
+
+  // Paid in the app: one row per event and family not already covered by a Givebutter sign-up.
+  const fromApp = new Map<string, { event_id: string; family_id: string; scoutIds: Set<string>; paid_at: string | null }>();
+  for (const c of appPaid) {
+    const key = `${c.event_id}:${c.family_id}`;
+    if (byKey.has(key)) continue;
+    const row = fromApp.get(key) ?? { event_id: c.event_id, family_id: c.family_id, scoutIds: new Set<string>(), paid_at: null };
+    if (c.scout_id) row.scoutIds.add(c.scout_id);
+    if (c.paid_at && (!row.paid_at || c.paid_at > row.paid_at)) row.paid_at = c.paid_at;
+    fromApp.set(key, row);
+  }
+  for (const r of fromApp.values()) {
+    const famScouts = (scouts ?? []).filter((s) => s.family_id === r.family_id).length;
+    rows.push({
+      event_id: r.event_id,
+      family_id: r.family_id,
+      paid_at: r.paid_at,
+      scouts: r.scoutIds.size || famScouts,
+      siblings: 0,
+      adults: 1,
+      only_if_missing: true,
+    } as (typeof rows)[number]);
+  }
 
   const { data, error } = await db.rpc("sync_givebutter_rsvps", { p_event_ids: eventIds, p_rows: rows });
   if (error) throw new Error(`RSVPs from Givebutter failed: ${error.message}`);
