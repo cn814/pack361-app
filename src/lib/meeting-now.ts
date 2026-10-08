@@ -52,7 +52,7 @@ export const getLeaderMeetingsToday = cache(async (): Promise<LeaderMeeting[]> =
   for (const e of todays) {
     if (e.kind !== "event" || e.category === "Den Meeting" || e.category === "Campout") continue;
     if (e.ends_at && Date.parse(e.ends_at) - Date.parse(e.starts_at) > LONGEST_MS) continue;
-    out.push({ key: e.id, title: e.title, starts_at: e.starts_at, ends_at: e.ends_at, href: `${e.href}#leaders`, den: false, saved: false, on: false });
+    out.push({ key: e.id, title: e.title, starts_at: e.starts_at, ends_at: e.ends_at, href: `${e.href}#attendance`, den: false, saved: false, on: false });
   }
   const now = Date.now();
   for (const m of out) m.on = meetingIsOn(m, now);

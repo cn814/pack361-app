@@ -56,11 +56,15 @@ function LeaderRow({ r, eventId }: { r: LeaderSlipRow; eventId: string }) {
   );
 }
 
-/** The permission slip card on an event: parents sign; leaders see who has. */
-export default async function PermissionSlips({ e, me }: { e: PackEvent; me: Adult }) {
+/**
+ * The permission slip card on an event. `family` (the default): parents sign for their own
+ * scouts. `leaders`: who has a slip, for the Leaders only box.
+ */
+export default async function PermissionSlips({ e, me, view = "family" }: { e: PackEvent; me: Adult; view?: "family" | "leaders" }) {
   if (!e.slip_required) return null;
-  const leader = isLeader(me);
-  const [mine, all] = await Promise.all([getFamilySlips(e, me.family_id), leader ? getLeaderSlips(e) : Promise.resolve([])]);
+  const leader = view === "leaders";
+  if (leader && !isLeader(me)) return null;
+  const [mine, all] = await Promise.all([leader ? Promise.resolve([]) : getFamilySlips(e, me.family_id), leader ? getLeaderSlips(e) : Promise.resolve([])]);
   if (!mine.length && !leader) return null;
   const open = slipOpen(e);
   const unsigned = mine.filter((m) => !m.slip);
@@ -69,7 +73,7 @@ export default async function PermissionSlips({ e, me }: { e: PackEvent; me: Adu
   const signedGoing = going.filter((r) => r.slip).length;
 
   return (
-    <section id="slip" className="card scroll-mt-20 space-y-3 border-l-4 border-l-gold">
+    <section id={leader ? "slip-list" : "slip"} className="card scroll-mt-20 space-y-3 border-l-4 border-l-gold">
       <header className="flex items-start justify-between gap-2">
         <h2 className="flex items-center gap-2 font-extrabold text-pine-950">
           <FileSignature className="h-5 w-5 text-gold-700" aria-hidden /> Permission slip
@@ -134,9 +138,9 @@ export default async function PermissionSlips({ e, me }: { e: PackEvent; me: Adu
       )}
 
       {leader && (
-        <div className="space-y-2 border-t border-line pt-3">
+        <div className="space-y-2">
           <p className="text-sm font-bold text-navy">
-            Leaders: {signedGoing} of {going.length} scout{going.length === 1 ? "" : "s"} from families going have a slip
+            {signedGoing} of {going.length} scout{going.length === 1 ? "" : "s"} from families going have a slip
           </p>
           {going.length > 0 ? (
             <ul className="divide-y divide-line">

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Backpack, CalendarDays, Car, ClipboardCheck, Clock, CloudSun, HandHelping, Info, Leaf, MapPin, Megaphone, ShieldCheck, Ticket, Video } from "lucide-react";
+import { Backpack, CalendarDays, Car, ClipboardCheck, Clock, CloudSun, HandHelping, Info, Leaf, MapPin, Ticket, Video } from "lucide-react";
 import { eventLinkLabel, isVideoCall } from "@/lib/event-link";
-import Link from "next/link";
 import PackingChecklist from "@/components/PackingChecklist";
 import BackLink from "@/components/BackLink";
 import { todayEastern } from "@/lib/meetings";
@@ -17,17 +16,14 @@ import EventSchedule from "@/components/EventSchedule";
 import ClampText from "@/components/ClampText";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
-import EventAttendance from "@/components/EventAttendance";
-import MeetingNotes from "@/components/MeetingNotes";
 import PermissionSlips from "@/components/PermissionSlips";
 import EventSignal from "@/components/EventSignal";
 import EventCarpool from "@/components/EventCarpool";
-import ReadyToGo from "@/components/ReadyToGo";
+import { eventLeaderTabs } from "@/components/EventLeaderTabs";
 import EventWeather from "@/components/EventWeather";
 import EventTrailGuide from "@/components/EventTrailGuide";
 import AddToCalendar from "@/components/AddToCalendar";
-import { BuildEventLink, CopyEventButton } from "@/components/EventBuildButtons";
-import { EditEventLink, EventRsvp } from "@/components/EventRsvp";
+import { EventRsvp } from "@/components/EventRsvp";
 import SaveOffline from "@/components/SaveOffline";
 import { getSlots } from "@/lib/volunteer";
 import { EventLinks, EventSections } from "@/components/EventInfo";
@@ -80,7 +76,7 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
           <RsvpLink e={event} />
           {navTo && <NavigateLink to={navTo} className="btn-ghost py-2" />}
           {leader && easternDate(event.starts_at) <= todayEastern() && easternDate(event.ends_at ?? event.starts_at) >= todayEastern() && !event.archived_at && (
-            <a href="#leaders" className="btn-primary py-2">
+            <a href="#attendance" className="btn-primary py-2">
               <ClipboardCheck className="h-4 w-4" aria-hidden /> Take attendance
             </a>
           )}
@@ -98,31 +94,16 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
   // Under the tiles: what you might need to do for this campout.
   const overviewRest = (
     <>
-      {campaign && <EventSignup campaign={campaign} orders={orders} myFamilyId={me.family_id} leader={leader} signupUrl={event.signup_url} />}
+      {campaign && <EventSignup campaign={campaign} orders={orders} myFamilyId={me.family_id} signupUrl={event.signup_url} />}
       <EventRsvp e={event} me={me} />
-      <ReadyToGo e={event} me={me} />
       <PermissionSlips e={event} me={me} />
       <EventSignal e={event} me={me} />
       <SaveOffline />
     </>
   );
 
-  // Leaders only: attendance (from the day of), notes, messaging families, and editing.
-  const leaderTab = leader ? (
-    <>
-      <EventAttendance e={event} me={me} />
-      <MeetingNotes target={{ eventId: id }} />
-      {event.rsvp_enabled && (
-        <Link href={`/announce?event=${id}`} className="btn-ghost w-full py-2.5">
-          <Megaphone className="h-4 w-4" aria-hidden /> Message families
-        </Link>
-      )}
-      <EditEventLink e={event} me={me} />
-      <BuildEventLink e={event} me={me} />
-      <CopyEventButton e={event} me={me} />
-      <ArchiveControl e={event} leader={leader} back={`/campouts/${id}`} part="button" />
-    </>
-  ) : null;
+  // Leaders only: everything families don't see, as buttons in a box of their own.
+  const leaderTabs = eventLeaderTabs({ e: event, me, back: `/campouts/${id}`, campaign, orders });
 
   return (
     <>
@@ -133,8 +114,8 @@ export default async function CampoutPage({ params }: PageProps<"/campouts/[id]"
         rest={overviewRest}
         label="More about this event"
         backLabel="Event"
+        leaderTabs={leaderTabs}
         tabs={[
-          { id: "leaders", label: "Leaders", hint: "Attendance, notes, edit", icon: <ShieldCheck aria-hidden />, content: leaderTab },
           {
             id: "schedule",
             label: "Schedule",

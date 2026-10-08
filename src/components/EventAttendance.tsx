@@ -1,13 +1,29 @@
+import { ClipboardCheck } from "lucide-react";
 import TakeAttendance from "@/components/TakeAttendance";
 import { isLeader } from "@/lib/data";
 import { getEventAttendance } from "@/lib/attendance-data";
 import { todayEastern } from "@/lib/meetings";
 import { easternDate } from "@/lib/tz";
+import { fmtDay } from "@/lib/format";
 import type { Adult, PackEvent } from "@/lib/types";
 
-/** Leaders, from the event's start day (Eastern) on: who was there. */
+/** Leaders, from the event's start day (Eastern) on: who was there. Before that, when it opens. */
 export default async function EventAttendance({ e, me }: { e: PackEvent; me: Adult }) {
-  if (!isLeader(me) || easternDate(e.starts_at) > todayEastern()) return null;
+  if (!isLeader(me)) return null;
+  if (easternDate(e.starts_at) > todayEastern()) {
+    return (
+      <section className="card space-y-2 border-l-4 border-l-pine">
+        <h2 className="section-title flex items-center gap-1.5">
+          <ClipboardCheck className="h-4 w-4" aria-hidden /> Take attendance
+        </h2>
+        <p className="text-sm text-ink">
+          Attendance opens on <b>{fmtDay(e.starts_at)}</b>, the day {e.ends_at && easternDate(e.ends_at) !== easternDate(e.starts_at) ? "it starts" : "of the event"}. Come back here then: everyone
+          whose family said Going will already be checked, so you just fix who&apos;s missing and Save.
+        </p>
+        {e.rsvp_enabled && <p className="text-xs text-muted">Until then, Who&apos;s going in this box shows who said yes.</p>}
+      </section>
+    );
+  }
   const a = await getEventAttendance(e);
   const note =
     !a.taken && a.fromRsvps > 0

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { Backpack, CalendarDays, Car, ClipboardCheck, Clock, CloudSun, HandHelping, Info, Leaf, MapPin, Megaphone, ShieldCheck, Ticket, Video } from "lucide-react";
+import { Backpack, CalendarDays, Car, ClipboardCheck, Clock, CloudSun, HandHelping, Info, Leaf, MapPin, Ticket, Video } from "lucide-react";
 import { eventLinkLabel, isVideoCall } from "@/lib/event-link";
 import BackLink from "@/components/BackLink";
 import NavigateLink from "@/components/NavigateLink";
@@ -13,18 +13,14 @@ import ClampText from "@/components/ClampText";
 import PackingChecklist from "@/components/PackingChecklist";
 import EventPhotosLink from "@/components/EventPhotosLink";
 import ArchiveControl from "@/components/ArchiveControl";
-import EventAttendance from "@/components/EventAttendance";
-import DenMeetingRecord from "@/components/DenMeetingRecord";
-import MeetingNotes from "@/components/MeetingNotes";
 import PermissionSlips from "@/components/PermissionSlips";
 import EventSignal from "@/components/EventSignal";
 import EventCarpool from "@/components/EventCarpool";
-import ReadyToGo from "@/components/ReadyToGo";
+import { eventLeaderTabs } from "@/components/EventLeaderTabs";
 import EventWeather from "@/components/EventWeather";
 import EventTrailGuide from "@/components/EventTrailGuide";
 import AddToCalendar from "@/components/AddToCalendar";
-import { BuildEventLink, CopyEventButton } from "@/components/EventBuildButtons";
-import { EditEventLink, EventRsvp } from "@/components/EventRsvp";
+import { EventRsvp } from "@/components/EventRsvp";
 import { EventLinks, EventSections } from "@/components/EventInfo";
 import { getEvent, getItinerary, isLeader, requireMember } from "@/lib/data";
 import { getOwnPackingList } from "@/lib/event-builder-data";
@@ -93,7 +89,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           <RsvpLink e={event} />
           {navTo && <NavigateLink to={navTo} className="btn-ghost py-2" />}
           {leader && easternDate(event.starts_at) <= todayEastern() && easternDate(event.ends_at ?? event.starts_at) >= todayEastern() && !event.archived_at && (
-            <a href="#leaders" className="btn-primary py-2">
+            <a href="#attendance" className="btn-primary py-2">
               <ClipboardCheck className="h-4 w-4" aria-hidden /> {denMeeting ? "Record the meeting" : "Take attendance"}
             </a>
           )}
@@ -128,28 +124,13 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         </section>
       )}
       <EventRsvp e={event} me={me} />
-      <ReadyToGo e={event} me={me} />
       <PermissionSlips e={event} me={me} />
       <EventSignal e={event} me={me} />
     </>
   );
 
-  // Leaders only: attendance (from the day of), notes, messaging families, and editing.
-  const leaderTab = leader ? (
-    <>
-      {denMeeting ? <DenMeetingRecord e={event} me={me} /> : <EventAttendance e={event} me={me} />}
-      <MeetingNotes target={{ eventId: id }} />
-      {event.rsvp_enabled && (
-        <Link href={`/announce?event=${id}`} className="btn-ghost w-full py-2.5">
-          <Megaphone className="h-4 w-4" aria-hidden /> Message families
-        </Link>
-      )}
-      <EditEventLink e={event} me={me} />
-      <BuildEventLink e={event} me={me} />
-      <CopyEventButton e={event} me={me} />
-      <ArchiveControl e={event} leader={leader} back={`/events/${id}`} part="button" />
-    </>
-  ) : null;
+  // Leaders only: everything families don't see, as buttons in a box of their own.
+  const leaderTabs = eventLeaderTabs({ e: event, me, back: `/events/${id}` });
 
   return (
     <>
@@ -159,8 +140,8 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         rest={overviewRest}
         label="More about this event"
         backLabel="Event"
+        leaderTabs={leaderTabs}
         tabs={[
-          { id: "leaders", label: "Leaders", hint: denMeeting ? "Record the meeting, notes, edit" : "Attendance, notes, edit", icon: <ShieldCheck aria-hidden />, content: leaderTab },
           { id: "schedule", label: "Schedule", hint: "What happens when", icon: <Clock aria-hidden />, content: <EventSchedule items={itinerary} /> },
           {
             id: "packing",

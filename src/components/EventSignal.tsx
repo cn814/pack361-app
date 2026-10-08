@@ -10,8 +10,10 @@ import type { Adult, PackEvent } from "@/lib/types";
  * The event's Signal group. Families going (RSVP yes) get a Join button; others see that there
  * is one and that answering yes gets them the link; leaders add, change or remove the link.
  */
-export default async function EventSignal({ e, me }: { e: PackEvent; me: Adult }) {
-  const leader = isLeader(me);
+export default async function EventSignal({ e, me, view = "family" }: { e: PackEvent; me: Adult; view?: "family" | "leaders" }) {
+  // `leaders` is the setup card for the Leaders only box; everyone (leaders too) gets the Join card.
+  const leader = view === "leaders";
+  if (leader && !isLeader(me)) return null;
   if (e.category === "Den Meeting") return null; // the den has its own ways to reach families
   if (!e.rsvp_enabled && !leader) return null;
   const { url, exists } = await getEventSignal(e.id);

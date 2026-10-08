@@ -31,8 +31,6 @@ interface Props {
   };
   defaultScouts: number;
   hasFamily: boolean;
-  /** Leaders: everyone's answers, the waitlist last in line order. */
-  rows?: { name: string; status: string; scouts: number; adults: number; note: string | null; waitlisted?: boolean }[];
   /** "$10 per family + $25 per scout", or null when the event is free. */
   cost?: string | null;
   /** The viewer's charge for this event, if they owe (or paid) something. */
@@ -40,11 +38,9 @@ interface Props {
 }
 
 const LABEL = { yes: "Going", maybe: "Maybe", no: "Can't go" } as const;
-const people = (scouts: number, adults: number) =>
-  `${scouts} scout${scouts === 1 ? "" : "s"} · ${adults} adult${adults === 1 ? "" : "s"}`;
 
 /** RSVP for an event: yes / maybe / no, with how many scouts and adults are coming. */
-export default function RsvpCard({ eventId, open, deadline, mine, counts, defaultScouts, hasFamily, rows, cost, charge }: Props) {
+export default function RsvpCard({ eventId, open, deadline, mine, counts, defaultScouts, hasFamily, cost, charge }: Props) {
   const [status, setStatus] = useState<"yes" | "maybe" | "no" | "">(mine?.status ?? "");
   const [editing, setEditing] = useState(!mine);
   // After a save the card folds back to "Your answer", with the thank-you under it.
@@ -55,8 +51,6 @@ export default function RsvpCard({ eventId, open, deadline, mine, counts, defaul
   // Already in (said yes, not waiting): they can grow into the spots left.
   const inNow = mine?.status === "yes" && !mine.waitlisted;
   const full = left !== null && (left === 0 || waiting > 0);
-  const going = rows?.filter((r) => !r.waitlisted) ?? [];
-  const waitlist = rows?.filter((r) => r.waitlisted) ?? [];
   return (
     <section id="rsvp" className="card scroll-mt-20 space-y-3 border-l-4 border-l-gold">
       <h2 className="section-title flex items-center gap-1.5">
@@ -191,52 +185,6 @@ export default function RsvpCard({ eventId, open, deadline, mine, counts, defaul
         <p className="text-sm text-muted">RSVPs are closed.{mine ? "" : " Contact a leader if you'd still like to come."}</p>
       )}
 
-      {rows && rows.length > 0 && (
-        <details className="border-t border-line pt-2">
-          <summary className="flex min-h-10 cursor-pointer items-center text-xs font-bold text-pine">
-            Who&apos;s coming (leaders only){waitlist.length ? ` · ${waitlist.length} waiting` : ""}
-          </summary>
-          <ul className="divide-y divide-line pt-1 text-sm">
-            {going.map((r, i) => (
-              <li key={i} className="flex items-start justify-between gap-3 py-1.5">
-                <span className="min-w-0">
-                  <span className="font-semibold text-ink">{r.name}</span>
-                  {r.note && <span className="block text-xs text-muted">“{r.note}”</span>}
-                </span>
-                <span className="shrink-0 text-right text-xs text-muted">
-                  <b className={r.status === "yes" ? "text-pine" : r.status === "maybe" ? "text-gold-800" : "text-muted"}>
-                    {LABEL[r.status as keyof typeof LABEL]}
-                  </b>
-                  {r.status !== "no" && <span className="block">{people(r.scouts, r.adults)}</span>}
-                </span>
-              </li>
-            ))}
-          </ul>
-          {waitlist.length > 0 && (
-            <>
-              <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-gold-800">
-                <Hourglass className="h-3.5 w-3.5" aria-hidden /> Waitlist, in order
-              </p>
-              <ol className="divide-y divide-line text-sm">
-                {waitlist.map((r, i) => (
-                  <li key={i} className="flex items-start justify-between gap-3 py-1.5">
-                    <span className="min-w-0">
-                      <span className="font-semibold text-ink">
-                        #{i + 1} {r.name}
-                      </span>
-                      {r.note && <span className="block text-xs text-muted">“{r.note}”</span>}
-                    </span>
-                    <span className="shrink-0 text-right text-xs text-muted">
-                      {people(r.scouts, r.adults)}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-              <p className="pt-1 text-[11px] text-muted">They move in on their own, in this order, when spots open, and get an alert.</p>
-            </>
-          )}
-        </details>
-      )}
     </section>
   );
 }
