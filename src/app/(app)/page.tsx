@@ -4,7 +4,7 @@ import GettingStarted from "@/components/GettingStarted";
 import HelpWantedCard from "@/components/HelpWantedCard";
 import SubmitButton from "@/components/SubmitButton";
 import { ChevronRight, HandHelping, MapPin, Timer } from "lucide-react";
-import { eventHref, getOpenJobs, jobComesBack } from "@/lib/volunteer";
+import { eventHref, getMyJobs, getOpenJobs, jobComesBack } from "@/lib/volunteer";
 import EventRow from "@/components/EventRow";
 import { eventLinkLabel } from "@/lib/event-link";
 import RsvpLink from "@/components/RsvpLink";
@@ -18,7 +18,7 @@ import { hideTodo } from "./todo-actions";
 import { getCatalog, getRecords, recordsByScout } from "@/lib/advancement-data";
 import { RANK_LABEL, rankProgress } from "@/lib/advancement";
 import { LEADER_TODOS } from "@/lib/leader-todos";
-import { daysUntil, eventOver, fmtRange, timeAgo } from "@/lib/format";
+import { daysUntil, eventOver, fmtDay, fmtRange, timeAgo } from "@/lib/format";
 import type { CalItem } from "@/lib/calendar";
 
 export default async function Home() {
@@ -43,9 +43,10 @@ export default async function Home() {
 // What's next, what needs you, your scouts, pack news. (Leader jobs are on the Leaders tab.)
 // ---------------------------------------------------------------------------
 async function FamilyHome() {
+  const me = await requireMember();
   // Records only need the scouts, not everything else: start them as soon as the scouts arrive.
   const scoutsP = getMyScouts();
-  const [scouts, records, events, posts, jobs, todos, big, catalog, hidden] = await Promise.all([
+  const [scouts, records, events, posts, jobs, todos, big, catalog, hidden, myJobs] = await Promise.all([
     scoutsP,
     scoutsP.then((list) => getRecords(list.map((s) => s.id))),
     getUpcomingEvents(12, { mine: true, near: true }).then((l) => l.filter((e) => !eventOver(e))),
@@ -55,9 +56,11 @@ async function FamilyHome() {
     getBigEvent(),
     getCatalog(),
     getHidden(),
+    getMyJobs(me),
   ]);
   const byScout = recordsByScout(records);
-  const openJobs = jobs.filter((j) => !hidden.has(`job-${j.slot_id}`));
+  const mySlots = new Set(myJobs.map((j) => j.slot_id));
+  const openJobs = jobs.filter((j) => !hidden.has(`job-${j.slot_id}`) && !mySlots.has(j.slot_id));
   // The pack's big event is pinned while it's coming up; otherwise whatever's next.
   // Once it's over (the bottom bar keeps it a few more days), fall back to what's next.
   const pinned = big && !eventOver(big.event) ? big : null;
@@ -89,6 +92,7 @@ async function FamilyHome() {
           </section>
         )}
 
+        {myJobs.length > 0 && <MyJobs jobs={myJobs} />}
         {openJobs.length > 0 && <Volunteers jobs={openJobs} />}
         <Suspense fallback={null}>
           <HelpWantedCard />
@@ -172,6 +176,35 @@ function NextUp({ e, label }: { e: CalItem; label: string | null }) {
           </a>
         )}
       </div>
+    </section>
+  );
+}
+
+function MyJobs({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>> }) {
+  return (
+    <section className="card space-y-2">
+      <h2 className="flex items-center gap-1.5 text-base font-extrabold text-pine-950">
+        <HandHelping className="h-4 w-4 text-pine" aria-hidden /> You&apos;re helping with
+      </h2>
+      <ul className="divide-y divide-line">
+        {jobs.slice(0, 5).map((j) => (
+          <li key={`${j.slot_id}-${j.who ?? "me"}`}>
+            <Link href={`${eventHref(j.event)}#volunteer`} className="flex items-center gap-2 py-2">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold text-ink">
+                  {j.role_title}
+                  {j.who && <span className="font-normal text-muted"> · {j.who}</span>}
+                </span>
+                <span className="block truncate text-xs text-muted">
+                  {j.event.title} · {j.shift_label || fmtDay(j.when)}
+                </span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {jobs.length > 5 && <p className="text-xs text-muted">And {jobs.length - 5} more: see each event&apos;s Volunteer tab.</p>}
     </section>
   );
 }

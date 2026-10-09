@@ -65,6 +65,54 @@ export async function getOpenJobs(days = 45, limit = 4): Promise<OpenJob[]> {
     .slice(0, limit);
 }
 
+export interface MyJob {
+  slot_id: string;
+  role_title: string;
+  shift_label: string | null;
+  when: string;
+  /** First name of the family member signed up, when it isn't you. */
+  who: string | null;
+  event: { id: string; title: string; category: string; starts_at: string };
+}
+
+/** Upcoming volunteer jobs you or your family signed up for in the app (for the home page). */
+export async function getMyJobs(me: { id: string; family_id: string | null }): Promise<MyJob[]> {
+  const supabase = await createClient();
+  const today = new Date(Date.now() - 86400000).toISOString();
+  let q = supabase
+    .from("volunteer_signups")
+    .select(
+      "adult_id, adult:adults!inner(first_name, preferred_name, family_id), slot:volunteer_slots!inner(id, role_title, shift_label, starts_at, event:events!inner(id, title, category, starts_at, ends_at, archived_at))",
+    );
+  q = me.family_id ? q.eq("adult.family_id", me.family_id) : q.eq("adult_id", me.id);
+  const { data } = await q;
+  const rows = (data ?? []) as unknown as {
+    adult_id: string;
+    adult: { first_name: string; preferred_name: string | null };
+    slot: {
+      id: string;
+      role_title: string;
+      shift_label: string | null;
+      starts_at: string | null;
+      event: { id: string; title: string; category: string; starts_at: string; ends_at: string | null; archived_at: string | null };
+    };
+  }[];
+  return rows
+    .filter((r) => !r.slot.event.archived_at)
+    .map((r) => ({
+      slot_id: r.slot.id,
+      role_title: r.slot.role_title,
+      shift_label: r.slot.shift_label,
+      when: r.slot.starts_at ?? r.slot.event.starts_at,
+      ends: r.slot.event.ends_at ?? r.slot.event.starts_at,
+      who: r.adult_id === me.id ? null : r.adult.preferred_name || r.adult.first_name,
+      event: { id: r.slot.event.id, title: r.slot.event.title, category: r.slot.event.category, starts_at: r.slot.event.starts_at },
+    }))
+    .filter((j) => j.ends >= today)
+    .sort((a, b) => a.when.localeCompare(b.when) || a.role_title.localeCompare(b.role_title))
+    .map((j) => ({ slot_id: j.slot_id, role_title: j.role_title, shift_label: j.shift_label, when: j.when, who: j.who, event: j.event }));
+}
+
 export function eventHref(e: { id: string; category: string }) {
   return e.category === "Campout" ? `/campouts/${e.id}` : `/events/${e.id}`;
 }
