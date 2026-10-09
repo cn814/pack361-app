@@ -66,8 +66,8 @@ export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
       </form>
       <p className="text-center text-[11px] text-muted">
         Still nothing after a few minutes? It may be a different email than the one the pack has. Write to{" "}
-        <a href="mailto:info@pack361.org" className="font-semibold text-pine underline">
-          info@pack361.org
+        <a href="mailto:app@pack361.org" className="font-semibold text-pine underline">
+          app@pack361.org
         </a>{" "}
         and we&apos;ll get you in.
       </p>

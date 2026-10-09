@@ -244,7 +244,7 @@ export async function sendFeedback(_prev: PostState & { message?: string }, form
   if (!message) return { error: "Write a message first." };
   const supabase = await createClient();
   const { error } = await supabase.from("feedback").insert({ adult_id: me.id, kind, message, page });
-  if (error) return { error: /lot of messages/i.test(error.message) ? error.message : "Couldn't send that. Try again, or email info@pack361.org." };
+  if (error) return { error: /lot of messages/i.test(error.message) ? error.message : "Couldn't send that. Try again, or email app@pack361.org." };
   const who = `${me.preferred_name || me.first_name} ${me.last_name}`;
   after(async () => {
     await notifyAdmins(

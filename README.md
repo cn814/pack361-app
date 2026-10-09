@@ -42,7 +42,7 @@ npm run dev
   the roster" page. The database's Row Level Security enforces this too, not just the UI.
 - Sign-in emails are limited to 20 an hour for the whole pack (Supabase → Authentication → Rate
   Limits), which protects the 100-a-day email quota. When someone hits a limit, the sign-in page
-  tells them to wait or email info@pack361.org.
+  tells them to wait or email app@pack361.org.
 - **Two-step sign-in** for every leader: den leaders, key leaders (role `committee`), the Cubmaster and admins (`TWO_STEP_ROLES`): after the
   email code they enter a code from an authenticator app (Supabase MFA, TOTP; enabled under
   Authentication → Multi-Factor). `getMe` (`src/lib/data.ts`) treats them as a parent until the

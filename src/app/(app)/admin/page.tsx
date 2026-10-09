@@ -263,6 +263,12 @@ export default async function AdminPage() {
           <Field label="Keep photos for (months)" hint="Photos older than this are deleted automatically.">
             <input className="input" type="number" min={1} max={120} name="photo_keep_months" defaultValue={settings.photo_keep_months} />
           </Field>
+          <Field
+            label="Keep contact details of families who left for (months)"
+            hint="After this, their email, phone and sign-in are cleared automatically. Names, scouts and advancement stay. The pack's data policy sets this (24 months)."
+          >
+            <input className="input" type="number" min={6} max={120} name="left_family_months" defaultValue={settings.left_family_months} />
+          </Field>
           <Field label="The pack's public page" hint="The link Invite a family shares. Change it to https://pack361.org once that address points to the app.">
             <input className="input" type="url" name="public_site_url" defaultValue={settings.public_site_url} />
           </Field>

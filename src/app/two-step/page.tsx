@@ -16,8 +16,8 @@ function SignOut() {
 }
 
 const help = (
-  <a className="font-bold text-pine underline" href="mailto:info@pack361.org">
-    info@pack361.org
+  <a className="font-bold text-pine underline" href="mailto:app@pack361.org">
+    app@pack361.org
   </a>
 );
 
@@ -46,8 +46,8 @@ export default async function TwoStepPage() {
                 </div>
                 <TwoStepVerify />
                 <p className="text-xs text-muted">
-                  You&apos;ll only be asked once on this device, until you sign out. Lost your phone or changed phones? Email {help}: an
-                  admin can reset it so you can set it up again.
+                  For leaders&apos; accounts the app asks once a week on each device, and after you sign out. Lost your phone or
+                  changed phones? Email {help}: an admin can reset it so you can set it up again.
                 </p>
               </>
             ) : (
@@ -65,7 +65,7 @@ export default async function TwoStepPage() {
                 </div>
                 <TwoStepSetup next="home" />
                 <p className="text-xs text-muted">
-                  It takes about two minutes, and you&apos;ll enter a code only when you sign in on a new device. Questions? Email{" "}
+                  It takes about two minutes, and after that you&apos;ll enter a code once a week on each device. Questions? Email{" "}
                   {help}.
                 </p>
               </>

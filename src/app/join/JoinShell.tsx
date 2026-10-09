@@ -32,8 +32,8 @@ export default function JoinShell({ children }: { children: ReactNode }) {
               Scouting America
             </a>
           </p>
-          <a href="mailto:info@pack361.org" className="inline-flex items-center gap-1 font-semibold text-pine">
-            <Mail className="h-3.5 w-3.5" aria-hidden /> info@pack361.org
+          <a href="mailto:app@pack361.org" className="inline-flex items-center gap-1 font-semibold text-pine">
+            <Mail className="h-3.5 w-3.5" aria-hidden /> app@pack361.org
           </a>
         </div>
       </footer>

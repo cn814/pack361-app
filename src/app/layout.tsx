@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { BAR_LIGHT, THEME_SCRIPT } from "@/lib/theme";
@@ -32,14 +33,16 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // The per-request nonce for the script policy (src/lib/csp.ts), on the head scripts.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     // The head script sets data-theme before React loads, so React leaves it alone.
     <html lang="en" className={`${jakarta.variable} h-full antialiased`} data-theme="light" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
         <noscript>
           <style>{"#boot{display:none!important}"}</style>
         </noscript>

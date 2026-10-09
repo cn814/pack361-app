@@ -33,7 +33,7 @@ export const joinEventWhen = (e: JoinEvent) =>
 export function askAboutEvent(e: JoinEvent): string {
   const subject = `Visiting Pack 361: ${e.title} (${joinEventWhen(e)})`;
   const body = "Hi! We'd like to come to this event. Could you send us the time and place?\n\nOur child's grade:\n";
-  return `mailto:info@pack361.org?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return `mailto:app@pack361.org?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 /** A QR code for a link, as an SVG string (dark green on white). */

@@ -52,8 +52,8 @@ export default function LoginPage() {
   const help = (
     <p className="px-2 text-center text-xs text-muted">
       Not on the roster, or changed your email? Contact the Committee Chair or email{" "}
-      <a className="font-bold text-pine underline" href="mailto:info@pack361.org">
-        info@pack361.org
+      <a className="font-bold text-pine underline" href="mailto:app@pack361.org">
+        app@pack361.org
       </a>
       . Run by Pack 361 volunteers; not an official Scouting America site.
     </p>

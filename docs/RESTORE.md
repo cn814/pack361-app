@@ -167,6 +167,27 @@ The Supabase project is gone or unusable.
    Only PayPal and check or cash payments from those days need a manual look: compare PayPal's
    activity and the treasurer's records with Leaders → Money and mark those charges paid.
 
+## 4. Photos, documents and receipts
+
+Every Sunday the NAS script also saves every file in Supabase Storage as
+`pack361-files-YYYY-MM-DD_HHMM.tar.age` (only when the four `STORAGE_S3_` settings are in
+`backup.env`; see the top of `scripts/unraid-user-script.sh`). To get files back:
+
+1. Decrypt it as above, with `tar.age` in place of `dump.age`, into `pack361-files.tar`.
+2. Unpack it in an empty folder: `mkdir files && tar -C files -xf pack361-files.tar`. There's one
+   folder per storage area (`pack-photos`, `pack-docs`, and so on), laid out exactly as in Supabase.
+3. Put back what's missing, with the same S3 settings, from that folder:
+   ```bash
+   docker run --rm -it -v "$PWD/files:/files:ro" \
+     -e RCLONE_CONFIG_SUPA_TYPE=s3 -e RCLONE_CONFIG_SUPA_PROVIDER=Other \
+     -e RCLONE_CONFIG_SUPA_ENDPOINT -e RCLONE_CONFIG_SUPA_REGION \
+     -e RCLONE_CONFIG_SUPA_ACCESS_KEY_ID -e RCLONE_CONFIG_SUPA_SECRET_ACCESS_KEY \
+     rclone/rclone:1.68.2 copy /files supa: --s3-force-path-style --ignore-existing
+   ```
+   (Set those four `RCLONE_CONFIG_SUPA_` values in the terminal first, from `backup.env`.)
+   `--ignore-existing` only adds files that are missing; it never overwrites.
+4. Delete the decrypted `.tar` and the `files` folder when you're done.
+
 ## Practice once a year
 Do section 1 with last night's backup (it touches nothing live). It takes about ten minutes and
 confirms the backups actually open.

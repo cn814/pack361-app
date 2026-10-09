@@ -298,6 +298,11 @@ export async function saveSettings(_prev: ActionResult, form: FormData): Promise
   const months = Number(str(form, "photo_keep_months"));
   if (!Number.isInteger(months) || months < 1 || months > 120) return { error: "Keep photos for 1 to 120 months." };
   rows.push({ key: "photo_keep_months", value: String(months) });
+  const leftMonths = Number(str(form, "left_family_months"));
+  if (!Number.isInteger(leftMonths) || leftMonths < 6 || leftMonths > 120) {
+    return { error: "Keep contact details of families who left for 6 to 120 months." };
+  }
+  rows.push({ key: "left_family_months", value: String(leftMonths) });
   const limit = Number(str(form, "email_daily_limit"));
   if (!Number.isInteger(limit) || limit < 0 || limit > 1000) return { error: "Daily email limit should be 0 to 1000." };
   rows.push({ key: "email_daily_limit", value: String(limit) });

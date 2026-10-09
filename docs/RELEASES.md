@@ -78,7 +78,10 @@ the same number (docs/guide/README.md).
 ## Releasing
 
 1. Bump `APP_VERSION`, update the guide (cover, sections, version history) and rebuild its PDF.
-2. Merge into `main` and push. The live site updates in a couple of minutes; a failed build leaves
+2. Merge into `main` and push. Vercel builds it, then holds it until the GitHub checks pass
+   (Settings → Build and Deployment → Deployment Checks: Permission tests; Lint, typecheck, build;
+   Secret scan) before it reaches app.pack361.org. **Force Promote** skips that, for emergencies only.
+   The live site updates in a few minutes; a failed build leaves
    the old version running. If something goes wrong after it's live: Vercel → Deployments → the
    previous deployment → **Instant Rollback**.
 3. Tell families what's new: a pack announcement (Leaders → Post an announcement) for anything

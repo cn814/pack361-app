@@ -40,7 +40,7 @@ export async function askToJoin(_prev: ActionResult, form: FormData): Promise<Ac
     if (/join_requests_one_open/.test(error.message)) return { error: "Your request is already waiting for a pack admin." };
     if (/already on the roster/i.test(error.message)) return { error: "You're already on the roster. Reload the page." };
     if (/Too many/i.test(error.message)) return { error: error.message };
-    return { error: "Couldn't send that. Try again, or email info@pack361.org." };
+    return { error: "Couldn't send that. Try again, or email app@pack361.org." };
   }
 
   try {

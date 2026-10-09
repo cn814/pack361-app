@@ -71,7 +71,7 @@ export default async function JoinPage() {
             <a href="#join" className="btn-primary py-2.5">
               How to join <ChevronRight className="h-4 w-4" aria-hidden />
             </a>
-            <a href="mailto:info@pack361.org" className="btn-ghost py-2.5">
+            <a href="mailto:app@pack361.org" className="btn-ghost py-2.5">
               <Mail className="h-4 w-4" aria-hidden /> Email us
             </a>
           </div>
@@ -94,7 +94,7 @@ export default async function JoinPage() {
           <h2 className="text-2xl font-extrabold tracking-tight text-pine-950">Big events coming up</h2>
           <p className="text-sm text-ink">
             Families thinking about joining are welcome at these. Tap <b>Ask for details</b> (or email{" "}
-            <a href="mailto:info@pack361.org" className="font-semibold text-pine underline">info@pack361.org</a>) and
+            <a href="mailto:app@pack361.org" className="font-semibold text-pine underline">app@pack361.org</a>) and
             we&apos;ll send you the time and place.
           </p>
           <ul className="grid gap-3 sm:grid-cols-2">
@@ -136,7 +136,7 @@ export default async function JoinPage() {
         ) : (
           <p className="text-ink">
             Any child in kindergarten through 5th grade can join. Email{" "}
-            <a href="mailto:info@pack361.org" className="font-semibold text-pine underline">info@pack361.org</a> and a
+            <a href="mailto:app@pack361.org" className="font-semibold text-pine underline">app@pack361.org</a> and a
             pack leader will help you get started, or apply online at{" "}
             <a href="https://beascout.scouting.org/" className="font-semibold text-pine underline" target="_blank" rel="noopener noreferrer">
               BeAScout.org

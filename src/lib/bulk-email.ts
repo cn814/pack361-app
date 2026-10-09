@@ -42,7 +42,7 @@ async function brevo(list: BulkRecipient[], e: BulkEmail): Promise<string | null
       subject: e.subject,
       htmlContent: renderEmailHtml({ to: "", ...e }),
       textContent: e.paragraphs.join("\n\n"),
-      replyTo: { email: e.replyTo ?? process.env.EMAIL_REPLY_TO ?? "info@pack361.org" },
+      replyTo: { email: e.replyTo ?? process.env.EMAIL_REPLY_TO ?? "app@pack361.org" },
       // One version per person: each gets their own copy (nobody sees the other addresses).
       messageVersions: list.map((r) => ({ to: [{ email: r.email, ...(r.name ? { name: r.name } : {}) }] })),
     }),
@@ -102,7 +102,7 @@ export async function sendPersonal(list: PersonalEmail[]): Promise<{ sent: numbe
           subject: m.subject,
           htmlContent: m.html,
           textContent: m.text,
-          replyTo: { email: process.env.EMAIL_REPLY_TO ?? "info@pack361.org" },
+          replyTo: { email: process.env.EMAIL_REPLY_TO ?? "app@pack361.org" },
         }),
       }).catch(() => null);
       if (!res) return { sent, error: "Couldn't reach the email service." };

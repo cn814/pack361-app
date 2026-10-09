@@ -356,7 +356,7 @@ export default function EventForm({
           Show on the public join page as an event to come and see
         </label>
         {onJoin && (
-          <Field label="A line for visiting families (optional)" hint="Anyone can see this. The join page shows the name, the date and this line; never the time, place or details. Visitors ask info@pack361.org for those.">
+          <Field label="A line for visiting families (optional)" hint="Anyone can see this. The join page shows the name, the date and this line; never the time, place or details. Visitors ask app@pack361.org for those.">
             <textarea className="input min-h-16" name="public_blurb" maxLength={300} defaultValue={v.public_blurb ?? ""} placeholder="Come watch the race and meet the pack. Kids can try the track afterward." />
           </Field>
         )}

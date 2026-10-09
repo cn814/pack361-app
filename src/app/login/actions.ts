@@ -6,7 +6,7 @@ import { SPLASH_COOKIE, SPLASH_COOKIE_OPTIONS } from "@/lib/splash";
 import { createClient } from "@/lib/supabase/server";
 import { needsTwoStepAfterEmail } from "@/lib/two-step";
 
-const HELP = "info@pack361.org";
+const HELP = "app@pack361.org";
 
 export type LoginState = { step: "email" | "code"; email: string; message?: string; error?: string };
 

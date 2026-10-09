@@ -44,7 +44,7 @@ export default function GetTheApp() {
       </Link>
 
       <p className="text-center text-xs text-muted">
-        Questions? <a href="mailto:info@pack361.org" className="font-semibold text-pine underline">info@pack361.org</a> ·{" "}
+        Questions? <a href="mailto:app@pack361.org" className="font-semibold text-pine underline">app@pack361.org</a> ·{" "}
         <Link href="/join" className="font-semibold text-pine underline">
           About the pack
         </Link>

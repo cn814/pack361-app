@@ -5,6 +5,7 @@ import { createClient } from "./supabase/server";
 export type SettingKey =
   | "awards_tracked_from"
   | "photo_keep_months"
+  | "left_family_months"
   | "email_daily_limit"
   | "dues_season"
   | "registration_year"
@@ -28,6 +29,7 @@ export type SettingKey =
 export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   awards_tracked_from: "2026-07-01",
   photo_keep_months: "24",
+  left_family_months: "24",
   email_daily_limit: "40",
   dues_season: "2026-27",
   registration_year: "",

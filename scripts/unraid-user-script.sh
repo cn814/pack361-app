@@ -13,6 +13,10 @@
 #     PACK361_DB_URL='postgresql://postgres.<project>:<password>@<host>.pooler.supabase.com:5432/postgres'
 #     AGE_RECIPIENT='age1...'            # the pack's PUBLIC key (docs/RESTORE.md, "Backup key")
 #     RCLONE_REMOTE='packdrive:Pack361 backups'   # optional: also copy to the pack's Google Drive
+#     STORAGE_S3_ENDPOINT='https://<project>.supabase.co/storage/v1/s3'   # optional: photos and
+#     STORAGE_S3_REGION='us-east-1'                                      # documents too (weekly);
+#     STORAGE_S3_KEY_ID='...'                                            # Supabase -> Storage ->
+#     STORAGE_S3_SECRET='...'                                            # S3 Connection -> New access key
 #   chmod 600 /mnt/user/appdata/pack361-backup/backup.env
 # (Supabase dashboard -> Connect -> Session pooler; put your database password in the URI.)
 #
@@ -22,6 +26,11 @@
 # line it prints on a laptop, signed in as the PACK's Google account:
 #   docker run --rm -it -v /mnt/user/appdata/pack361-backup/rclone:/config/rclone rclone/rclone:1.68.2 config
 # Then add RCLONE_REMOTE above. Only the encrypted files are copied.
+#
+# Photos, documents and receipts (Supabase Storage) are backed up every Sunday when the four
+# STORAGE_S3_ settings are there: every file is downloaded inside a container, packed into one
+# archive and encrypted with the same key, as pack361-files-<date>.tar.age. Make a read-only key if
+# Supabase offers it; the key stays in backup.env (chmod 600), like the database password.
 
 BACKUP_DIR="/mnt/user/backups/pack361"
 APP_DIR="/mnt/user/appdata/pack361-backup"
@@ -74,15 +83,38 @@ for old in "$BACKUP_DIR"/pack361-*.dump; do
     && echo "Encrypted an older backup: $base.age"
 done
 
-find "$BACKUP_DIR" -maxdepth 1 -name 'pack361-*.dump*' -type f -mtime +"$KEEP_DAYS" -delete
 echo "Backed up to $BACKUP_DIR/$NAME ($(du -h "$BACKUP_DIR/$NAME" | cut -f1))"
-echo "Backups kept here: $(find "$BACKUP_DIR" -maxdepth 1 -name 'pack361-*.dump.age' | wc -l)"
+
+# Photos, documents and receipts: Sundays (or FILES_NOW=1), when the storage settings are there.
+if [ -n "${STORAGE_S3_KEY_ID:-}" ] && { [ "$(date +%u)" = 7 ] || [ "${FILES_NOW:-}" = 1 ]; }; then
+  : "${STORAGE_S3_ENDPOINT:?STORAGE_S3_ENDPOINT is not set in $ENV_FILE}"
+  : "${STORAGE_S3_SECRET:?STORAGE_S3_SECRET is not set in $ENV_FILE}"
+  FILES="pack361-files-$(date +%Y-%m-%d_%H%M).tar.age"
+  RCLONE_CONFIG_SUPA_TYPE=s3 RCLONE_CONFIG_SUPA_PROVIDER=Other \
+  RCLONE_CONFIG_SUPA_ENDPOINT="$STORAGE_S3_ENDPOINT" RCLONE_CONFIG_SUPA_REGION="${STORAGE_S3_REGION:-us-east-1}" \
+  RCLONE_CONFIG_SUPA_ACCESS_KEY_ID="$STORAGE_S3_KEY_ID" RCLONE_CONFIG_SUPA_SECRET_ACCESS_KEY="$STORAGE_S3_SECRET" \
+  AGE_RECIPIENT="$AGE_RECIPIENT" docker run --rm \
+    -e RCLONE_CONFIG_SUPA_TYPE -e RCLONE_CONFIG_SUPA_PROVIDER -e RCLONE_CONFIG_SUPA_ENDPOINT -e RCLONE_CONFIG_SUPA_REGION \
+    -e RCLONE_CONFIG_SUPA_ACCESS_KEY_ID -e RCLONE_CONFIG_SUPA_SECRET_ACCESS_KEY -e AGE_RECIPIENT \
+    -v "$BACKUP_DIR:/backup" --entrypoint sh "$RCLONE_IMAGE" -c \
+    "apk add --no-cache -q age tar >/dev/null \
+     && umask 077 \
+     && rclone copy supa: /tmp/files --s3-force-path-style --transfers 4 \
+     && test -n \"\$(ls -A /tmp/files)\" \
+     && tar -C /tmp/files -cf - . | age -r \"\$AGE_RECIPIENT\" -o /backup/$FILES.part \
+     && mv /backup/$FILES.part /backup/$FILES"
+  chmod 600 "$BACKUP_DIR/$FILES"
+  echo "Photos and documents backed up to $BACKUP_DIR/$FILES ($(du -h "$BACKUP_DIR/$FILES" | cut -f1))"
+fi
+
+find "$BACKUP_DIR" -maxdepth 1 -name 'pack361-*' -type f -mtime +"$KEEP_DAYS" -delete
+echo "Backups kept here: $(find "$BACKUP_DIR" -maxdepth 1 -name 'pack361-*.age' | wc -l)"
 
 # Off-site copy (encrypted files only) to the pack's Google Drive, keeping the same 60 days.
 if [ -n "${RCLONE_REMOTE:-}" ]; then
   docker run --rm -v "$APP_DIR/rclone:/config/rclone" -v "$BACKUP_DIR:/backup:ro" "$RCLONE_IMAGE" \
-    copy /backup "$RCLONE_REMOTE" --include 'pack361-*.dump.age' --no-traverse
+    copy /backup "$RCLONE_REMOTE" --include 'pack361-*.age' --no-traverse
   docker run --rm -v "$APP_DIR/rclone:/config/rclone" "$RCLONE_IMAGE" \
-    delete "$RCLONE_REMOTE" --include 'pack361-*.dump.age' --min-age "${KEEP_DAYS}d"
+    delete "$RCLONE_REMOTE" --include 'pack361-*.age' --min-age "${KEEP_DAYS}d"
   echo "Copied to $RCLONE_REMOTE"
 fi

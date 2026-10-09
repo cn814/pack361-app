@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isCronRequest } from "@/lib/cron-auth";
 import { adminConfigured, createAdminClient } from "@/lib/supabase/admin";
-import { emailBudget, purgeJoinRequests, purgeOldPhotos, purgeSecurityLog, reconcilePayments, remindRegistration, remindTraining, remindTrainingImport, remindVolunteers } from "@/lib/daily-jobs";
+import { emailBudget, purgeJoinRequests, purgeOldPhotos, purgeLeftFamilies, purgeSecurityLog, reconcilePayments, remindRegistration, remindTraining, remindTrainingImport, remindVolunteers } from "@/lib/daily-jobs";
 import { paypalConfigured } from "@/lib/paypal";
 import { syncTwh, twhConfigured } from "@/lib/twh";
 import { syncCouncil } from "@/lib/council";
@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
     ["photos", () => purgeOldPhotos(db)],
     ["join-requests", () => purgeJoinRequests(db)],
     ["security-log", () => purgeSecurityLog(db)],
+    ["families-who-left", () => purgeLeftFamilies(db)],
   ];
   if (paypalConfigured()) steps.push(["payments", () => reconcilePayments(db)]);
   if (twhConfigured()) steps.push(["troopwebhost", () => syncTwh(db)]);

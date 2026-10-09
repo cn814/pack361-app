@@ -55,8 +55,8 @@ export default async function HouseholdPage() {
         </ul>
         <p className="text-[11px] text-muted">
           Wrong scout, den or email? Email{" "}
-          <a className="font-bold text-pine underline" href="mailto:info@pack361.org">
-            info@pack361.org
+          <a className="font-bold text-pine underline" href="mailto:app@pack361.org">
+            app@pack361.org
           </a>
           .
         </p>

@@ -346,6 +346,13 @@ export async function purgeSecurityLog(db: SupabaseClient) {
   return { security_log_deleted: Number(data ?? 0) };
 }
 
+/** Clear contact details of families who left long enough ago (public.purge_left_families(), secret key only). */
+export async function purgeLeftFamilies(db: SupabaseClient) {
+  const { data, error } = await db.rpc("purge_left_families");
+  if (error) return { left_family_adults_cleared: 0, errors: [`Couldn't clear records of families who left: ${error.message}`] };
+  return { left_family_adults_cleared: Number(data ?? 0) };
+}
+
 /**
  * Finish PayPal checkouts the family's browser didn't (closed the page, lost signal). For each
  * checkout still "created" after 15 minutes: an APPROVED order is captured, a COMPLETED one is

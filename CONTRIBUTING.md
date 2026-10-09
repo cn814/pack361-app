@@ -1,7 +1,7 @@
 # Contributing to the Pack 361 app
 
 Thanks for helping! This app holds information about Cub Scout families, so a few rules come
-before any code. Questions go to Chris Nealen (Advancement & Camping Chair) or info@pack361.org.
+before any code. Questions go to Chris Nealen (Advancement & Camping Chair) or app@pack361.org.
 
 ## Ground rules
 

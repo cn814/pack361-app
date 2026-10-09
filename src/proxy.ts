@@ -1,12 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_COOKIE_OPTIONS } from "./lib/supabase/env";
+import { CSP_REPORT_PATH, newNonce, scriptPolicy } from "./lib/csp";
 
 // Paths anyone can open without signing in
 // (the calendar feed and cron job check their own token/secret)
 // /birdnet: the bird sound ID model files (public, no pack data).
 // /.well-known: security.txt (how to report a security problem).
-const PUBLIC_PATHS = ["/login", "/get", "/safety", "/join", "/auth", "/manifest.webmanifest", "/sw.js", "/api/calendar", "/api/cron", "/birdnet", "/.well-known"];
+const PUBLIC_PATHS = ["/login", "/get", "/safety", "/join", "/auth", "/manifest.webmanifest", "/sw.js", "/api/calendar", "/api/cron", "/birdnet", "/.well-known", CSP_REPORT_PATH];
 
 // The pack's public website (pack361.org, www.pack361.org) shows only the public join pages.
 // Everything else there goes to the members' app at APP_ORIGIN.
@@ -44,9 +45,20 @@ export async function proxy(request: NextRequest) {
     return new NextResponse(null, { status: 204 });
   }
 
+  // The strict script policy, report-only for now (src/lib/csp.ts). Next.js reads the nonce from
+  // the request's policy header and adds it to its own scripts.
+  const nonce = newNonce();
+  const policy = scriptPolicy(nonce);
+  request.headers.set("x-nonce", nonce);
+  request.headers.set("content-security-policy-report-only", policy);
+  const withPolicy = (res: NextResponse) => {
+    res.headers.set("Content-Security-Policy-Report-Only", policy);
+    return res;
+  };
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return NextResponse.next(); // not configured yet: pages show a setup notice
+  if (!url || !key) return NextResponse.next({ request }); // not configured yet: pages show a setup notice
 
   let response = NextResponse.next({ request });
 
@@ -84,7 +96,7 @@ export async function proxy(request: NextRequest) {
     to.search = "";
     return NextResponse.redirect(to);
   }
-  return response;
+  return withPolicy(response);
 }
 
 export const config = {

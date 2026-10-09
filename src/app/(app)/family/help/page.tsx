@@ -21,8 +21,8 @@ export default async function HelpPage() {
           Pack guide
         </Link>{" "}
         or email{" "}
-        <a className="font-bold text-pine underline" href="mailto:info@pack361.org">
-          info@pack361.org
+        <a className="font-bold text-pine underline" href="mailto:app@pack361.org">
+          app@pack361.org
         </a>
         .
       </p>

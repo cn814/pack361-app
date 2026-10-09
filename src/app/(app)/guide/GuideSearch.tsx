@@ -41,7 +41,7 @@ export default function GuideSearch({ items }: { items: GuideItem[] }) {
       {shown.length === 0 && (
         <p className="card text-sm text-muted">
           Nothing matches. Ask on the <Link href="/leaders" className="font-semibold text-pine underline">Leaders</Link> tab or
-          email info@pack361.org.
+          email app@pack361.org.
         </p>
       )}
       {sections.map((section) => (

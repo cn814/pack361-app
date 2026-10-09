@@ -6,6 +6,7 @@ import { createClient } from "./supabase/server";
 import type { Adult, Announcement, AppRole, ItineraryItem, Leader, PackEvent, PackingItem, Scout } from "./types";
 import { LEADER_ROLES, TWO_STEP_ROLES } from "./types";
 import { VIEW_AS_COOKIE, viewAsRole } from "./view-as";
+import { codeIsFresh } from "./code-fresh";
 import { isBeta } from "./version";
 import { getTesters } from "./beta";
 import { denScopeFromScouts, loadCalendar, type CalItem, type DenScope } from "./calendar";
@@ -14,7 +15,7 @@ import { FEATURE_DAYS_AFTER, FEATURE_DAYS_BEFORE, featuredKind, type FeaturedTab
 
 /**
  * Two-step sign-in for every leader (den leaders, key leaders, the Cubmaster and admins):
- * "ok" = not needed, or the code was entered this session; "verify" = enter the code from the
+ * "ok" = not needed, or the code was entered in the last 7 days; "verify" = enter the code from the
  * authenticator app; "setup" = no authenticator app added yet.
  */
 export type TwoStep = "ok" | "verify" | "setup";
@@ -42,7 +43,7 @@ export const getMe = cache(async (): Promise<Me | null> => {
   let adult = (data as Adult | null) ?? null;
   const role = adult?.role ?? null;
   let twoStep: TwoStep = "ok";
-  if (adult && needsTwoStep(adult.role) && claims?.claims?.aal !== "aal2") {
+  if (adult && needsTwoStep(adult.role) && !codeIsFresh(claims?.claims)) {
     // Until the code is entered, a leader gets a parent's access everywhere (the database
     // checks the same thing).
     const { data: factors } = await supabase.auth.mfa.listFactors();

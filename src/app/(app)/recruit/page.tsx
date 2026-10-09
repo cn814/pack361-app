@@ -64,7 +64,7 @@ export default async function RecruitPage() {
           </ul>
         )}
         <p className="text-[11px] text-muted">These are also listed on the pack&apos;s public page under “Big events coming up”, with the date only: visiting
-          families ask info@pack361.org for the time and place.</p>
+          families ask app@pack361.org for the time and place.</p>
       </section>
     </>
   );

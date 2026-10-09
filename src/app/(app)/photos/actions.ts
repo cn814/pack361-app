@@ -177,8 +177,8 @@ export async function flagPhoto(_prev: ActionResult, form: FormData): Promise<Ac
     return {
       error:
         error.code === "54000"
-          ? "You've sent a lot of removal requests today. Email info@pack361.org and a leader will help."
-          : "Couldn't send that request. Email info@pack361.org and a leader will take care of it.",
+          ? "You've sent a lot of removal requests today. Email app@pack361.org and a leader will help."
+          : "Couldn't send that request. Email app@pack361.org and a leader will take care of it.",
     };
   }
   if (isNew) after(() =>

@@ -4,7 +4,7 @@
 import { TZ, addDays, easternDate, startOfEasternDay } from "./tz";
 
 /** api.weather.gov asks every app to name itself and give a contact. */
-export const NWS_USER_AGENT = "Pack361App (info@pack361.org)";
+export const NWS_USER_AGENT = "Pack361App (app@pack361.org)";
 export const NWS_API = "https://api.weather.gov";
 export const CENSUS_GEOCODER = "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress";
 

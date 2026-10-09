@@ -33,8 +33,8 @@ export default async function PhotoRulesPage() {
       </ol>
       <p className="text-center text-xs text-muted">
         Questions or a concern about a photo? Email{" "}
-        <a className="font-semibold text-pine underline" href="mailto:info@pack361.org">
-          info@pack361.org
+        <a className="font-semibold text-pine underline" href="mailto:app@pack361.org">
+          app@pack361.org
         </a>
         .
       </p>

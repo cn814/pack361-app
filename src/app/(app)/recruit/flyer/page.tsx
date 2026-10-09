@@ -45,7 +45,7 @@ export default async function FlyerPage() {
                 </li>
               ))}
             </ul>
-            <p className="text-sm text-ink">Email info@pack361.org for the time and place.</p>
+            <p className="text-sm text-ink">Email app@pack361.org for the time and place.</p>
           </section>
         )}
         <section className="flex items-center gap-6 rounded-2xl bg-mint p-5">
@@ -53,7 +53,7 @@ export default async function FlyerPage() {
           <div className="space-y-1">
             <p className="text-lg font-extrabold text-pine-950">Scan to learn more and join</p>
             <p className="text-base font-bold text-pine">{shown}</p>
-            <p className="text-sm text-ink">Questions? info@pack361.org</p>
+            <p className="text-sm text-ink">Questions? app@pack361.org</p>
           </div>
         </section>
       </article>

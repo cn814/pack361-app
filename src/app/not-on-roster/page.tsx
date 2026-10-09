@@ -46,7 +46,7 @@ export default async function NotOnRoster() {
             We&apos;ll email {email} when you&apos;re in. Then just open the app again.
           </p>
           <p className="text-xs text-muted">
-            Questions? Email <a className="font-bold text-pine underline" href="mailto:info@pack361.org">info@pack361.org</a>.
+            Questions? Email <a className="font-bold text-pine underline" href="mailto:app@pack361.org">app@pack361.org</a>.
           </p>
           <SignOut label="Sign out" />
         </section>
@@ -70,7 +70,7 @@ export default async function NotOnRoster() {
         <p className="card text-sm text-gold-800">
           A pack admin couldn&apos;t add you from your last request{last.decided_at ? ` (${longDate(last.decided_at)})` : ""}.
           {last.decline_reason && <> Their note: “{last.decline_reason}”</>} You can ask again below, or email{" "}
-          <a className="font-bold underline" href="mailto:info@pack361.org">info@pack361.org</a>.
+          <a className="font-bold underline" href="mailto:app@pack361.org">app@pack361.org</a>.
         </p>
       )}
 

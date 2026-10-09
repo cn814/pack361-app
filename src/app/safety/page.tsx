@@ -103,8 +103,8 @@ export default function SafetyPage() {
           "You can update your phone number and the name you go by under Me → My contact info.",
           <>
             To correct or remove your family&apos;s information, email{" "}
-            <a className="font-semibold text-pine underline" href="mailto:info@pack361.org">
-              info@pack361.org
+            <a className="font-semibold text-pine underline" href="mailto:app@pack361.org">
+              app@pack361.org
             </a>
             .
           </>,

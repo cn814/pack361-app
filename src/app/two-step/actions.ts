@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMe, needsTwoStep } from "@/lib/data";
 import type { ActionResult } from "@/components/ActionForm";
 
-const HELP = "info@pack361.org";
+const HELP = "app@pack361.org";
 
 function cleanCode(v: FormDataEntryValue | null) {
   return String(v ?? "").replace(/\D/g, "");

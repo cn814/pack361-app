@@ -431,7 +431,7 @@ ${l.where ? `<div style="font-size:12px;color:#414844">${esc(l.where)}</div>` : 
 <p style="margin:0 0 16px;font-size:13px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#1b4332">Cub Scout Pack 361 · Weekly</p>
 ${parts.join("\n")}
 </div>
-<p style="font-size:11px;color:#414844;margin:12px 4px">You get this every Sunday because you&rsquo;re on the Pack 361 roster. Questions? Reply to this email or write to info@pack361.org.</p>
+<p style="font-size:11px;color:#414844;margin:12px 4px">You get this every Sunday because you&rsquo;re on the Pack 361 roster. Questions? Reply to this email or write to app@pack361.org.</p>
 </div></body></html>`;
 
   const t: string[] = [];

@@ -7,7 +7,7 @@ import { betaEmailFilter } from "./beta";
 
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.pack361.org";
 const FROM = process.env.EMAIL_FROM ?? "Pack 361 <noreply@pack361.org>";
-const REPLY_TO = process.env.EMAIL_REPLY_TO ?? "info@pack361.org";
+const REPLY_TO = process.env.EMAIL_REPLY_TO ?? "app@pack361.org";
 
 export function emailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
@@ -18,7 +18,7 @@ export interface Email {
   subject: string;
   /** Paragraphs of plain text; a paragraph that is exactly a URL becomes a button. */
   paragraphs: string[];
-  /** Where replies go (default info@pack361.org), e.g. the den leader who wrote it. */
+  /** Where replies go (default app@pack361.org), e.g. the den leader who wrote it. */
   replyTo?: string;
   /** A finished HTML body (the weekly newsletter) instead of the standard layout. */
   html?: string;
