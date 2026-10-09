@@ -29,8 +29,8 @@
 #
 # Photos, documents and receipts (Supabase Storage) are backed up every Sunday when the four
 # STORAGE_S3_ settings are there: every file is downloaded inside a container, packed into one
-# archive and encrypted with the same key, as pack361-files-<date>.tar.age. Make a read-only key if
-# Supabase offers it; the key stays in backup.env (chmod 600), like the database password.
+# archive and encrypted with the same key, as pack361-files-<date>.tar.age. Supabase's S3 keys can
+# read and change all files, so the key stays only in backup.env (chmod 600) and the pack vault.
 
 BACKUP_DIR="/mnt/user/backups/pack361"
 APP_DIR="/mnt/user/appdata/pack361-backup"
