@@ -127,6 +127,14 @@ Done for the pack's district and council review (the printable summary is
   a strict nonce-based script policy runs report-only (`src/lib/csp.ts`, reports to
   `/api/csp-report`); Vercel Deployment Checks hold a release until CI passes (docs/RELEASES.md);
   the app's contact address is app@pack361.org.
+- **3.27 (pilot only):** until the pack committee adopts the app, only leaders and the parents an
+  admin picks can use it (`pack_settings` `pilot_only` / `pilot_people`, Pack admin → Pilot only).
+  Anyone else on the roster who signs in sees `/not-yet`; `requireMember()` and the file,
+  spreadsheet and nature routes check `getMe().held`; emails, phone alerts, welcome emails and
+  calendar feeds skip them (`src/lib/pilot.ts`, rules and tests in `src/lib/pilot-rules.ts`).
+  Turning it on or off, or changing who's picked, goes in the security log
+  (`20261030000000_pilot_only.sql`, tests `53_pilot_tests.sql`). It's an app-level gate: the
+  database still gives a signed-in parent their own family's rows.
 
 Open items (also in the printable summary, section 12): accounts in a volunteer's name; backups
 unencrypted on the maintainer's home server and without photos/documents; the weekly Scoutbook

@@ -4,6 +4,7 @@ import { buildIcs } from "@/lib/ics";
 import { denScopeFor, loadCalendar } from "@/lib/calendar";
 import type { AppRole } from "@/lib/types";
 import { eventLinkCalendarLine } from "@/lib/event-link";
+import { pilotLetsIn } from "@/lib/pilot";
 
 // Private calendar feed: /api/calendar/<token>.ics
 // Calendar apps can't sign in, so the per-adult token is the key. The feed holds pack-wide
@@ -23,9 +24,11 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/api/calendar
     .maybeSingle();
   if (!adult) return new Response("Not found", { status: 404 });
 
+  // Until the committee adopts the app, families the pilot keeps out get an empty calendar.
+  const open = await pilotLetsIn(adult as { id: string; role: AppRole });
   const scope = await denScopeFor(db, adult as { role: AppRole; family_id: string | null });
   const since = new Date(Date.now() - 60 * 86400000).toISOString();
-  const items = await loadCalendar(db, scope, { since, limit: 500 });
+  const items = open ? await loadCalendar(db, scope, { since, limit: 500 }) : [];
 
   const origin = request.nextUrl.origin;
   const ics = buildIcs(

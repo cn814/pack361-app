@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const origin = req.headers.get("origin");
   if (origin && new URL(origin).host !== req.nextUrl.host) return fail("Not allowed.", 403);
   const me = await getMe();
-  if (!me?.adult) return fail("Sign in to identify plants.", 401);
+  if (!me?.adult || me.held) return fail("Sign in to identify plants.", 401);
   const key = process.env.PLANTNET_API_KEY;
   if (!key) return fail("Plant ID isn't set up yet. Ask a pack admin.", 503);
 

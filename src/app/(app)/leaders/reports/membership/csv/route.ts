@@ -13,7 +13,7 @@ import { logDownload } from "@/lib/security-log";
 // it (the database checks).
 export async function GET(request: NextRequest) {
   const me = await getMe();
-  if (!me?.adult) return NextResponse.json({ error: "Sign in" }, { status: 401 });
+  if (!me?.adult || me.held) return NextResponse.json({ error: "Sign in" }, { status: 401 });
   const today = easternDate(Date.now());
   const asked = request.nextUrl.searchParams.get("season") ?? "";
   const season = /^\d{4}-\d{2}$/.test(asked) ? asked : seasonOf(today);

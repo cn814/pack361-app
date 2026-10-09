@@ -1,6 +1,6 @@
 import "server-only";
 import { emailConfigured, renderEmailHtml, sendEmails } from "./email";
-import { betaEmailFilter } from "./beta";
+import { allowedEmails } from "./pilot";
 
 // Email to many families at once. The main email service (Resend, free plan) allows only 100
 // emails a day and is kept for sign-in codes, reminders and welcome emails. Pack-wide and den
@@ -55,7 +55,7 @@ async function brevo(list: BulkRecipient[], e: BulkEmail): Promise<string | null
 
 /** Send the same email to everyone on the list. Returns how many went out and any error. */
 export async function sendBulk(list: BulkRecipient[], e: BulkEmail): Promise<{ sent: number; error: string | null }> {
-  const unique = await betaEmailFilter([...new Map(list.filter((r) => r.email).map((r) => [r.email.toLowerCase(), r])).values()], (r) => r.email);
+  const unique = await allowedEmails([...new Map(list.filter((r) => r.email).map((r) => [r.email.toLowerCase(), r])).values()], (r) => r.email);
   if (!unique.length) return { sent: 0, error: null };
   if (brevoConfigured()) {
     let sent = 0;
@@ -87,7 +87,7 @@ export interface PersonalEmail {
  * the main service for a handful when Brevo isn't set up.
  */
 export async function sendPersonal(list: PersonalEmail[]): Promise<{ sent: number; error: string | null }> {
-  list = await betaEmailFilter(list, (m) => m.email);
+  list = await allowedEmails(list, (m) => m.email);
   if (!list.length) return { sent: 0, error: null };
   if (brevoConfigured()) {
     let sent = 0;

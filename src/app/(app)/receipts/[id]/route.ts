@@ -19,6 +19,7 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/receipts/[id
   const me = await getMe();
   if (!me) return NextResponse.redirect(new URL("/login", request.url), { status: 303, headers: noStore });
   if (!me.adult) return NextResponse.redirect(new URL("/not-on-roster", request.url), { status: 303, headers: noStore });
+  if (me.held) return NextResponse.redirect(new URL("/not-yet", request.url), { status: 303, headers: noStore });
   const missing = () => new NextResponse("That receipt isn't available.", { status: 404, headers: noStore });
   if (!UUID.test(id)) return missing();
   const supabase = await createClient();

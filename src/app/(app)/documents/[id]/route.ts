@@ -28,6 +28,7 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/documents/[i
   const me = await getMe();
   if (!me) return NextResponse.redirect(new URL("/login", request.url), { status: 303, headers: noStore });
   if (!me.adult) return NextResponse.redirect(new URL("/not-on-roster", request.url), { status: 303, headers: noStore });
+  if (me.held) return NextResponse.redirect(new URL("/not-yet", request.url), { status: 303, headers: noStore });
   if (!UUID.test(id)) return back("missing=1");
 
   // Row Level Security decides whether this person can see the document, and the storage

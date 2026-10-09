@@ -10,7 +10,7 @@ const GUIDE = path.join(process.cwd(), "docs", "guide", "Pack361-App-Guide.pdf")
 
 export async function GET(req: NextRequest) {
   const me = await getMe();
-  if (!me?.adult) {
+  if (!me?.adult || me.held) {
     const to = new URL("/login", req.url);
     return NextResponse.redirect(to);
   }

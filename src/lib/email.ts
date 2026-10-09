@@ -1,6 +1,6 @@
 import "server-only";
 import { startOfEasternDay } from "./tz";
-import { betaEmailFilter } from "./beta";
+import { allowedEmails } from "./pilot";
 
 // Pack email goes out through Resend (the same service that sends sign-in codes).
 // Needs RESEND_API_KEY in the server environment; without it, email features stay switched off.
@@ -61,7 +61,7 @@ ${body}
 export async function sendEmails(list: Email[]): Promise<string | null> {
   const key = process.env.RESEND_API_KEY;
   if (!key) return "Email isn't set up yet (RESEND_API_KEY).";
-  list = await betaEmailFilter(list, (e) => e.to);
+  list = await allowedEmails(list, (e) => e.to);
   if (!list.length) return null;
   if (list.length > 100) return "Send at most 100 emails at a time.";
   try {

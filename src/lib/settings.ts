@@ -22,6 +22,8 @@ export type SettingKey =
   | "public_site_url"
   | "newsletter_test_adults"
   | "beta_testers"
+  | "pilot_only"
+  | "pilot_people"
   | "training_last_import"
   | "training_import_reminded";
 
@@ -46,6 +48,8 @@ export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   public_site_url: "https://app.pack361.org/join",
   newsletter_test_adults: "",
   beta_testers: "",
+  pilot_only: "",
+  pilot_people: "",
   training_last_import: "",
   training_import_reminded: "",
 };

@@ -16,6 +16,8 @@ import { syncSummary, syncTwh, twhConfigured } from "@/lib/twh";
 import { RANKS } from "@/lib/advancement";
 import { MEMBER_ID } from "@/lib/training";
 import type { AppRole, DenRank } from "@/lib/types";
+import { getPilot } from "@/lib/pilot";
+import { pilotAllows } from "@/lib/pilot-rules";
 
 const ROLES: AppRole[] = ["parent", "den_leader", "committee", "cubmaster", "admin"];
 const UUID = /^[0-9a-f-]{36}$/i;
@@ -353,16 +355,25 @@ export async function emailNewsletterPreview(): Promise<ActionResult> {
 // ---------------------------------------------------------------------------
 // Beta site testers
 // ---------------------------------------------------------------------------
-export async function saveBetaTesters(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+/** Pilot only: on/off, and the people let in besides leaders (Pack admin → Pilot only). */
+export async function savePilot(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   await requireAdmin();
-  const testers = [...new Set(form.getAll("beta_tester").map(String).filter((x) => UUID.test(x)))].slice(0, 60);
+  const on = bool(form, "pilot_only");
+  const people = [...new Set(form.getAll("pilot_person").map(String).filter((x) => UUID.test(x)))].slice(0, 60);
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("pack_settings")
-    .upsert({ key: "beta_testers", value: testers.join(","), updated_at: new Date().toISOString() });
+  const now = new Date().toISOString();
+  const { error } = await supabase.from("pack_settings").upsert([
+    { key: "pilot_only", value: on ? "on" : "", updated_at: now },
+    { key: "pilot_people", value: people.join(","), updated_at: now },
+  ]);
   if (error) return { error: "Couldn't save that." };
   revalidatePath("/admin");
-  return { ok: true, message: `${testers.length} tester${testers.length === 1 ? "" : "s"}, plus the admins` };
+  return {
+    ok: true,
+    message: on
+      ? `Pilot only: leaders${people.length ? ` and ${people.length} other${people.length === 1 ? "" : "s"}` : ""} can use the app.`
+      : "The app is open to every family on the roster.",
+  };
 }
 
 /** Two-step sign-in: a leader lost their phone. They set it up again at their next sign-in. */
@@ -410,13 +421,20 @@ export async function sendWelcomeEmails(_prev: ActionResult, form: FormData): Pr
 
   if (oneId && !UUID.test(oneId)) return { error: "Unknown person." };
 
-  let q = supabase.from("adults").select("id, first_name, preferred_name, email, family_id, welcomed_at").eq("is_active", true);
+  let q = supabase.from("adults").select("id, first_name, preferred_name, email, family_id, role, welcomed_at").eq("is_active", true);
   if (oneId) q = q.eq("id", oneId);
   else q = q.is("welcomed_at", null);
   const { data } = await q.order("last_name");
   const signIns = await getSignIns();
-  const targets = (data ?? []).filter((a) => oneId || !signIns.get(a.id as string));
-  if (!targets.length) return { ok: true, message: "Everyone has been welcomed already." };
+  const waiting = (data ?? []).filter((a) => oneId || !signIns.get(a.id as string));
+  // While the pilot runs, only the people it lets in are welcomed; the rest wait for the vote.
+  const pilot = await getPilot();
+  const targets = waiting.filter((a) => pilotAllows(pilot, { id: a.id as string, role: a.role as AppRole }));
+  const held = waiting.length - targets.length;
+  if (oneId && held) return { error: "The app is pilot only, so they can't use it yet. Pack admin → Pilot only." };
+  if (!targets.length) {
+    return { ok: true, message: held ? `Everyone in the pilot has been welcomed. ${held} more wait until the app is open to everyone.` : "Everyone has been welcomed already." };
+  }
   if (left <= 0) return { error: "Today's email limit is used up. Send the rest tomorrow." };
 
   // Claim the batch before sending, so a double tap (or two admins at once) can't email the
@@ -455,7 +473,7 @@ export async function sendWelcomeEmails(_prev: ActionResult, form: FormData): Pr
   const rest = targets.length - picked.length;
   return {
     ok: true,
-    message: `Sent ${batch.length} welcome email${batch.length === 1 ? "" : "s"}.${rest > 0 ? ` ${rest} more to send tomorrow.` : ""}`,
+    message: `Sent ${batch.length} welcome email${batch.length === 1 ? "" : "s"}.${rest > 0 ? ` ${rest} more to send tomorrow.` : ""}${held ? ` ${held} wait until the app is open to everyone.` : ""}`,
   };
 }
 
@@ -530,7 +548,9 @@ export async function approveJoin(_prev: ActionResult, form: FormData): Promise<
   }
 
   let sent = "";
-  if (bool(form, "email") && emailConfigured()) {
+  const pilotOn = (await getPilot()).on;
+  if (pilotOn && bool(form, "email")) sent = " No email sent: the app is pilot only, so they'd just see the coming-soon page. Let them know when it opens.";
+  else if (bool(form, "email") && emailConfigured()) {
     const err = await sendEmails([
       {
         to: req.email,

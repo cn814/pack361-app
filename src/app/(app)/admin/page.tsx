@@ -7,7 +7,8 @@ import BackLink from "@/components/BackLink";
 import { countWaitingJoins, requireAdmin, welcomeBudget } from "@/lib/roster-data";
 import { getSettings } from "@/lib/settings";
 import { emailConfigured } from "@/lib/email";
-import { emailNewsletterPreview, resetTwoStep, saveNewsletterMode, saveSettings, syncTroopWebHost } from "./actions";
+import { emailNewsletterPreview, resetTwoStep, saveNewsletterMode, savePilot, saveSettings, syncTroopWebHost } from "./actions";
+import { parsePilot } from "@/lib/pilot-rules";
 import { getTwoStepPeople } from "@/lib/two-step";
 import { brevoConfigured } from "@/lib/bulk-email";
 import { NEWSLETTER_MODES, newsletterMode, testAdultIds, type NewsletterMode } from "@/lib/newsletter";
@@ -51,6 +52,18 @@ export default async function AdminPage() {
     .order("first_name");
   const testers = (testerRows ?? []) as { id: string; first_name: string; preferred_name: string | null; last_name: string }[];
   const testIds = testAdultIds(settings.newsletter_test_adults);
+  // Pilot only: parents who can be let in before the app is open to everyone, picked ones first.
+  const pilot = parsePilot(settings.pilot_only, settings.pilot_people);
+  const { data: parentRows } = await supabase
+    .from("adults")
+    .select("id, first_name, preferred_name, last_name")
+    .eq("role", "parent")
+    .eq("is_active", true)
+    .order("last_name")
+    .order("first_name");
+  const pilotParents = ((parentRows ?? []) as { id: string; first_name: string; preferred_name: string | null; last_name: string }[]).sort(
+    (a, b) => Number(pilot.people.has(b.id)) - Number(pilot.people.has(a.id)),
+  );
   // Supabase's free plan includes 1 GB of file storage, shared by every bucket.
   const usage = (storageRows ?? []) as { bucket_id: string; bytes: number }[];
   const bytesIn = (bucket: string) => Number(usage.find((u) => u.bucket_id === bucket)?.bytes ?? 0);
@@ -207,6 +220,37 @@ export default async function AdminPage() {
         {!brevoConfigured() && settings.newsletter_mode === "everyone" && (
           <p className="rounded-xl bg-gold-50 p-2 text-xs text-gold-800">Sending to every family needs BREVO_API_KEY in Vercel.</p>
         )}
+      </section>
+
+      <section className="card space-y-3" id="pilot">
+        <h2 className="section-title">Pilot only</h2>
+        <p className="text-sm text-muted">
+          Until the pack committee adopts the app, only leaders (den leaders, key leaders, the Cubmaster and admins) and the people
+          ticked below can use it. Everyone else who signs in sees a &ldquo;coming shortly&rdquo; page, and the app&apos;s emails,
+          phone alerts and calendar feeds skip them. Turn it off after the vote.
+        </p>
+        <p className={`rounded-xl p-2 text-sm font-semibold ${pilot.on ? "bg-gold-50 text-gold-800" : "bg-mint text-pine"}`}>
+          {pilot.on ? "On: leaders and the people ticked below only." : "Off: open to every family on the roster."}
+        </p>
+        <ActionForm action={savePilot} submit="Save" buttonClass="btn-ghost w-full" className="space-y-3">
+          <label className="flex items-center gap-2 text-sm font-semibold text-ink">
+            <input type="checkbox" name="pilot_only" defaultChecked={pilot.on} className="h-4 w-4 accent-pine" />
+            Pilot only
+          </label>
+          <details open={pilot.people.size > 0}>
+            <summary className="cursor-pointer text-xs font-bold text-navy">
+              Parents let in during the pilot ({pilot.people.size} picked)
+            </summary>
+            <div className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
+              {pilotParents.map((a) => (
+                <label key={a.id} className="flex items-center gap-2 text-sm text-ink">
+                  <input type="checkbox" name="pilot_person" value={a.id} defaultChecked={pilot.people.has(a.id)} className="h-4 w-4 accent-pine" />
+                  {a.preferred_name || a.first_name} {a.last_name}
+                </label>
+              ))}
+            </div>
+          </details>
+        </ActionForm>
       </section>
 
       <section className="card space-y-3" id="two-step">

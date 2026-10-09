@@ -25,6 +25,15 @@ Still to tidy:
 The beta code is still in the app (`src/lib/beta.ts`, `BetaBanner`, `/beta-only`) and does nothing
 unless a build has `NEXT_PUBLIC_APP_CHANNEL=beta`.
 
+## Pilot only (from October 9, 2026)
+
+Until the pack committee adopts the app, Pack admin → **Pilot only** is on: leaders (den leaders,
+key leaders, the Cubmaster and admins) and the parents ticked there can use it; everyone else on
+the roster sees a "coming shortly" page, and emails, phone alerts, welcome emails and calendar
+feeds skip them. After the vote (docs and dates in the approval roadmap), an admin unticks
+**Pilot only** and saves; no release is needed. Then send the welcome emails (Pack admin →
+Welcome emails).
+
 ## Bringing a test site back
 
 Once families use the app and bigger changes need trying out first, bring beta back **with its own

@@ -9,6 +9,7 @@ import { VIEW_AS_COOKIE, viewAsRole } from "./view-as";
 import { codeIsFresh } from "./code-fresh";
 import { isBeta } from "./version";
 import { getTesters } from "./beta";
+import { pilotLetsIn } from "./pilot";
 import { denScopeFromScouts, loadCalendar, type CalItem, type DenScope } from "./calendar";
 import { startOfEasternDay } from "./tz";
 import { FEATURE_DAYS_AFTER, FEATURE_DAYS_BEFORE, featuredKind, type FeaturedTab } from "./featured";
@@ -26,6 +27,8 @@ export interface Me {
   twoStep: TwoStep;
   /** The roster role, whatever "View as" or a missing two-step code shows. */
   role: AppRole | null;
+  /** On the roster, but kept out until the committee adopts the app (Pack admin → Pilot only). */
+  held: boolean;
 }
 
 /** The signed-in adult's roster row, or null if they're signed in but not on the roster. */
@@ -55,7 +58,8 @@ export const getMe = cache(async (): Promise<Me | null> => {
     const view = viewAsRole(adult.role, (await cookies()).get(VIEW_AS_COOKIE)?.value);
     if (view) adult = { ...adult, role: view, real_role: adult.role };
   }
-  return { email: String(claims?.claims?.email ?? ""), adult, twoStep, role };
+  const held = data ? !(await pilotLetsIn({ id: (data as Adult).id, role })) : false;
+  return { email: String(claims?.claims?.email ?? ""), adult, twoStep, role, held };
 });
 
 /** Every leader signs in with an authenticator app as well as email. */
@@ -71,6 +75,8 @@ export async function requireMember(): Promise<Adult> {
   if (me.twoStep !== "ok") redirect("/two-step");
   // The beta site is for the testers picked in Pack admin (and admins).
   if (isBeta() && !(await getTesters()).ids.has(me.adult.id)) redirect("/beta-only");
+  // Until the committee adopts the app, only leaders and the people picked in Pack admin.
+  if (me.held) redirect("/not-yet");
   return me.adult;
 }
 
