@@ -30,6 +30,10 @@ rollback;
 
 \echo '== Den meetings: record, record again, edit'
 begin;
+-- 04_tools_tests plans a Bear meeting on a fixed date (2026-10-08); moved out of the way here, so
+-- recording "yesterday" makes a new meeting whatever day the tests run.
+update public.den_meetings set meets_on = meets_on - 30 where den_id = '10000000-0000-0000-0000-000000000002' and recorded_at is null
+   and meets_on between (now() at time zone 'America/New_York')::date - 3 and (now() at time zone 'America/New_York')::date;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2"}', true);
 create temporary table r on commit drop as
