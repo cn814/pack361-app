@@ -120,6 +120,13 @@ Done for the pack's district and council review (the printable summary is
   (`vercel.json`), CI on `main` only. Older preview deployments stay behind Vercel's sign-in.
   The "pack361-beta" keys in Supabase, Resend and Brevo are to be revoked.
 - **Removed:** the my.scouting sign-in (3.23); Scoutbook and training now come in as uploaded files.
+- **3.26 (closing the planned items):** leaders re-enter their authenticator code every 7 days
+  (`private.code_entered()` checks the session's totp time; `src/lib/code-fresh.ts` in the app);
+  contact details of families who left are cleared after 24 months (`public.purge_left_families()`,
+  nightly); photos and documents are backed up weekly, encrypted (`scripts/unraid-user-script.sh`);
+  a strict nonce-based script policy runs report-only (`src/lib/csp.ts`, reports to
+  `/api/csp-report`); Vercel Deployment Checks hold a release until CI passes (docs/RELEASES.md);
+  the app's contact address is app@pack361.org.
 
 Open items (also in the printable summary, section 12): accounts in a volunteer's name; backups
 unencrypted on the maintainer's home server and without photos/documents; the weekly Scoutbook
