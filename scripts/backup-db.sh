@@ -14,7 +14,7 @@
 #
 # Options (environment):
 #   KEEP_DAYS=60        delete backups older than this many days
-#   ENCRYPT_TO=<gpg id> encrypt each backup to this GPG key (recommended if the folder syncs anywhere)
+#   AGE_RECIPIENT=age1… encrypt each backup to the pack's public backup key (docs/RESTORE.md, "Backup key")
 #
 # The file holds family names, emails, phone numbers and scouts' advancement. Keep it on your own
 # encrypted disk; don't put it in a shared or public folder, and never commit it to the repo.
@@ -67,10 +67,14 @@ if [ ! -s "$OUT.part" ] || [[ "$LIST" != *"TABLE DATA public scouts"* ]]; then
 fi
 mv "$OUT.part" "$OUT"
 
-if [ -n "${ENCRYPT_TO:-}" ]; then
-  gpg --batch --yes --encrypt --recipient "$ENCRYPT_TO" --output "$OUT.gpg" "$OUT"
+if [ -n "${AGE_RECIPIENT:-}" ]; then
+  if command -v age >/dev/null 2>&1; then
+    age -r "$AGE_RECIPIENT" -o "$OUT.age" "$OUT"
+  else
+    docker run --rm -i -e AGE_RECIPIENT alpine sh -c 'apk add -q age && age -r "$AGE_RECIPIENT"' < "$OUT" > "$OUT.age"
+  fi
   rm -f "$OUT"
-  OUT="$OUT.gpg"
+  OUT="$OUT.age"
 fi
 
 find "$DIR" -maxdepth 1 -name 'pack361-*.dump*' -type f -mtime +"$KEEP_DAYS" -delete

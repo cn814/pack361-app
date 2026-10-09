@@ -3,22 +3,35 @@
 # into Settings -> User Scripts -> Add New Script -> Edit Script, and schedule it
 # ("Custom": 15 3 * * *  = every night at 3:15 AM).
 #
+# Every backup is ENCRYPTED before it touches the disk (age, a public-key tool): this server only
+# ever holds the pack's public key, so the files here can't be read even if the server is. The
+# matching private key lives in the pack's password vault, not on this server (docs/RESTORE.md).
+#
 # One-time setup in the Unraid terminal:
-#   mkdir -p /mnt/user/appdata/pack361-backup
+#   mkdir -p /mnt/user/appdata/pack361-backup && chmod 700 /mnt/user/appdata/pack361-backup
 #   nano /mnt/user/appdata/pack361-backup/backup.env
 #     PACK361_DB_URL='postgresql://postgres.<project>:<password>@<host>.pooler.supabase.com:5432/postgres'
+#     AGE_RECIPIENT='age1...'            # the pack's PUBLIC key (docs/RESTORE.md, "Backup key")
+#     RCLONE_REMOTE='packdrive:Pack361 backups'   # optional: also copy to the pack's Google Drive
 #   chmod 600 /mnt/user/appdata/pack361-backup/backup.env
 # (Supabase dashboard -> Connect -> Session pooler; put your database password in the URI.)
 #
-# Backups contain family contact info and scouts' advancement: keep the share private
-# (SMB export "No" or private to your user), not public/guest.
+# Optional off-site copy to the pack's own Google Drive (so the backups don't depend on this
+# server). Run once and follow the prompts: new remote "packdrive", storage "drive", scope
+# "drive.file"; when asked to use a web browser, answer n and run the `rclone authorize "drive"`
+# line it prints on a laptop, signed in as the PACK's Google account:
+#   docker run --rm -it -v /mnt/user/appdata/pack361-backup/rclone:/config/rclone rclone/rclone:1.68.2 config
+# Then add RCLONE_REMOTE above. Only the encrypted files are copied.
 
 BACKUP_DIR="/mnt/user/backups/pack361"
-ENV_FILE="/mnt/user/appdata/pack361-backup/backup.env"
+APP_DIR="/mnt/user/appdata/pack361-backup"
+ENV_FILE="$APP_DIR/backup.env"
 KEEP_DAYS=60
 IMAGE="postgres:17-alpine"
+RCLONE_IMAGE="rclone/rclone:1.68.2"
 
 set -euo pipefail
+umask 077
 if [ ! -f "$ENV_FILE" ]; then
   echo "Missing $ENV_FILE (see the top of this script)"
   exit 1
@@ -26,23 +39,50 @@ fi
 # shellcheck disable=SC1090
 . "$ENV_FILE"
 : "${PACK361_DB_URL:?PACK361_DB_URL is not set in $ENV_FILE}"
+: "${AGE_RECIPIENT:?AGE_RECIPIENT (the pack public backup key, age1...) is not set in $ENV_FILE}"
+case "$AGE_RECIPIENT" in age1*) ;; *) echo "AGE_RECIPIENT should start with age1 (the PUBLIC key, never the secret one)"; exit 1 ;; esac
 
 mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
-NAME="pack361-$(date +%Y-%m-%d_%H%M).dump"
+NAME="pack361-$(date +%Y-%m-%d_%H%M).dump.age"
 
-# "-e DB_URL" with no value passes it from this script's environment, so the password never
-# shows up in the process list.
-DB_URL="$PACK361_DB_URL" docker run --rm \
-  -e DB_URL \
+# The dump is made and checked inside the container, then encrypted there; only the encrypted
+# file is written to the share. "-e DB_URL" with no value passes it from this script's
+# environment, so the password never shows up in the process list.
+DB_URL="$PACK361_DB_URL" AGE_RECIPIENT="$AGE_RECIPIENT" docker run --rm \
+  -e DB_URL -e AGE_RECIPIENT \
   -v "$BACKUP_DIR:/backup" \
   "$IMAGE" \
-  sh -c "pg_dump --format=custom --no-owner --no-privileges --schema=public --schema=private \
-         --dbname=\"\$DB_URL\" --file=/backup/$NAME.part \
-         && pg_restore --list /backup/$NAME.part | grep -q 'TABLE DATA public scouts' \
+  sh -c "apk add --no-cache -q age >/dev/null \
+         && umask 077 \
+         && pg_dump --format=custom --no-owner --no-privileges --schema=public --schema=private \
+              --dbname=\"\$DB_URL\" --file=/tmp/db.dump \
+         && pg_restore --list /tmp/db.dump | grep -q 'TABLE DATA public scouts' \
+         && age -r \"\$AGE_RECIPIENT\" -o /backup/$NAME.part /tmp/db.dump \
+         && rm -f /tmp/db.dump \
          && mv /backup/$NAME.part /backup/$NAME"
 
 chmod 600 "$BACKUP_DIR/$NAME"
+
+# Older backups made before encryption: encrypt them too, then remove the readable copies.
+for old in "$BACKUP_DIR"/pack361-*.dump; do
+  [ -e "$old" ] || continue
+  base="$(basename "$old")"
+  AGE_RECIPIENT="$AGE_RECIPIENT" docker run --rm -e AGE_RECIPIENT -v "$BACKUP_DIR:/backup" "$IMAGE" \
+    sh -c "apk add --no-cache -q age >/dev/null && umask 077 && age -r \"\$AGE_RECIPIENT\" -o /backup/$base.age /backup/$base" \
+    && touch -r "$old" "$old.age" && chmod 600 "$old.age" && rm -f "$old" \
+    && echo "Encrypted an older backup: $base.age"
+done
+
 find "$BACKUP_DIR" -maxdepth 1 -name 'pack361-*.dump*' -type f -mtime +"$KEEP_DAYS" -delete
 echo "Backed up to $BACKUP_DIR/$NAME ($(du -h "$BACKUP_DIR/$NAME" | cut -f1))"
-echo "Backups kept: $(find "$BACKUP_DIR" -maxdepth 1 -name 'pack361-*.dump' | wc -l)"
+echo "Backups kept here: $(find "$BACKUP_DIR" -maxdepth 1 -name 'pack361-*.dump.age' | wc -l)"
+
+# Off-site copy (encrypted files only) to the pack's Google Drive, keeping the same 60 days.
+if [ -n "${RCLONE_REMOTE:-}" ]; then
+  docker run --rm -v "$APP_DIR/rclone:/config/rclone" -v "$BACKUP_DIR:/backup:ro" "$RCLONE_IMAGE" \
+    copy /backup "$RCLONE_REMOTE" --include 'pack361-*.dump.age' --no-traverse
+  docker run --rm -v "$APP_DIR/rclone:/config/rclone" "$RCLONE_IMAGE" \
+    delete "$RCLONE_REMOTE" --include 'pack361-*.dump.age' --min-age "${KEEP_DAYS}d"
+  echo "Copied to $RCLONE_REMOTE"
+fi

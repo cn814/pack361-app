@@ -20,9 +20,35 @@ schema (dump, fresh database, migrations, data-only load, row counts match).
 - **Database permissions and security rules.** Backups use `--no-privileges`. Grants, RLS policies
   and storage policies come from `supabase/migrations/`, so a full restore always runs those first.
 
+## Backup key (encryption)
+
+Backups are encrypted with [age](https://age-encryption.org) before they're written anywhere. The
+NAS (and the pack's Google Drive copy) only ever hold encrypted files and the pack's **public**
+key; the **private** key that opens them is kept in the pack's password vault, not on the NAS.
+
+- **Make the key (once):** on any computer with Docker,
+  `docker run --rm alpine sh -c "apk add -q age && age-keygen"`. It prints a public key
+  (`age1…`) and a secret key (`AGE-SECRET-KEY-1…`). Save the whole output as a secure note named
+  "Pack 361 backup key" in the pack password vault, shared with the Committee Chair. Put only the
+  public key in `backup.env` as `AGE_RECIPIENT`.
+- **Lose the secret key and every backup is unreadable**, so check the vault entry exists before
+  relying on the backups. Changing keys: make a new pair, update `AGE_RECIPIENT`, keep the old
+  secret key until its backups age out (60 days).
+- **Decrypt a backup to use the steps below** (on the NAS, in the backup folder, after the setup
+  below). Paste the secret key when asked; it isn't saved anywhere:
+  ```bash
+  read -rs AGE_KEY && export AGE_KEY
+  docker run --rm -i -e AGE_KEY -v "$PWD:/backup" -w /backup alpine sh -c \
+    'apk add -q age && printf "%s\n" "$AGE_KEY" > /tmp/k && age -d -i /tmp/k -o /tmp/x pack361-2026-10-01_0315.dump.age && cat /tmp/x' \
+    > pack361-2026-10-01_0315.dump
+  unset AGE_KEY
+  ```
+  Delete the decrypted `.dump` when you're done (`rm pack361-2026-10-01_0315.dump`).
+
 ## Before you start
 - Use the newest backup from before the problem happened. Files are named
-  `pack361-YYYY-MM-DD_HHMM.dump` on the NAS (`/mnt/user/backups/pack361`).
+  `pack361-YYYY-MM-DD_HHMM.dump.age` on the NAS (`/mnt/user/backups/pack361`), and in the pack
+  Google Drive folder "Pack361 backups" if the off-site copy is set up. Decrypt it first (above).
 - You need the database connection string: Supabase → **Connect** → **Session pooler**, with the
   database password filled in. It's already in `/mnt/user/appdata/pack361-backup/backup.env` on the
   NAS. Don't paste it into chat, email or the repo.
