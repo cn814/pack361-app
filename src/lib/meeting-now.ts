@@ -9,7 +9,7 @@ import { isVideoCall } from "./event-link";
 // Today's meetings for a leader, for the Leaders tab and the "meeting now" bar across the app:
 // their own dens' meetings (record who's here, what they did, and notes) and the day's other
 // short events (pack meetings, hikes: take attendance and notes). A meeting held on a video call
-// (a virtual committee meeting) has no attendance: join the call and take notes. Campouts and
+// (a virtual committee meeting) has no attendance: join the call and take your own notes. Campouts and
 // all-day events aren't meetings.
 
 export interface LeaderMeeting {
@@ -63,7 +63,7 @@ export const getLeaderMeetingsToday = cache(async (): Promise<LeaderMeeting[]> =
       title: e.title,
       starts_at: e.starts_at,
       ends_at: e.ends_at,
-      href: `${e.href}#${call ? "notes" : "attendance"}`,
+      href: `${e.href}#${call ? "my-notes" : "attendance"}`,
       call_url: call,
       den: false,
       saved: false,

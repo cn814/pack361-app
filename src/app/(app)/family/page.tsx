@@ -79,6 +79,7 @@ export default async function MePage() {
     ...(viewableRoles(role).length ? [{ href: "/family/view-as", label: "See the app as…", note: me.real_role ? "Viewing" : undefined }] : []),
   ];
   const settings: Row[] = [
+    { href: "/family/notes", label: "My notepad", note: "Only you see it" },
     { href: "/family/alerts", label: "Phone alerts and the app" },
     { href: "/events?subscribe=1#subscribe", label: "Sync the pack calendar to my calendar" },
     { href: "/family/contact", label: "My contact info" },

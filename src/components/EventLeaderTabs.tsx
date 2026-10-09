@@ -14,6 +14,7 @@ import { isLeader } from "@/lib/data";
 import type { GbCampaign, GbOrder } from "@/lib/fundraising-data";
 import type { Adult, PackEvent } from "@/lib/types";
 import { isVideoCall } from "@/lib/event-link";
+import { takesMyNotes } from "@/lib/my-notes-rules";
 
 /**
  * Everything on an event or campout page that families don't see, as buttons for the page's
@@ -64,7 +65,14 @@ export function eventLeaderTabs({
     },
     { id: "slips", label: "Permission slips", hint: "Who has signed", icon: <FileSignature aria-hidden />, content: <PermissionSlips e={e} me={me} view="leaders" /> },
     { id: "signal", label: "Signal group", hint: "Add or change the link", icon: <MessageCircle aria-hidden />, content: <EventSignal e={e} me={me} view="leaders" /> },
-    { id: "notes", label: "Leader notes", hint: "Only leaders see them", icon: <NotebookPen aria-hidden />, content: <MeetingNotes target={{ eventId: e.id }} /> },
+    // Committee and online meetings: everyone keeps their own notes on the page instead.
+    {
+      id: "notes",
+      label: "Leader notes",
+      hint: "Only leaders see them",
+      icon: <NotebookPen aria-hidden />,
+      content: takesMyNotes(e) ? null : <MeetingNotes target={{ eventId: e.id }} />,
+    },
   ];
   if (e.rsvp_enabled) {
     tabs.push({ id: "message", label: "Message families", hint: "Alert and email the families", icon: <Megaphone aria-hidden />, href: `/announce?event=${e.id}` });

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Backpack, CalendarDays, Car, ClipboardCheck, Clock, CloudSun, HandHelping, Info, Leaf, MapPin, NotebookPen, Ticket, Video } from "lucide-react";
 import { eventLinkLabel, isVideoCall } from "@/lib/event-link";
+import { takesMyNotes } from "@/lib/my-notes-rules";
+import MyNotes from "@/components/MyNotes";
 import BackLink from "@/components/BackLink";
 import NavigateLink from "@/components/NavigateLink";
 import { navDestination } from "@/lib/navigate";
@@ -65,6 +67,8 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const denMeeting = event.category === "Den Meeting";
   // A meeting on a video call (a virtual committee meeting): notes, no attendance.
   const virtual = !denMeeting && isVideoCall(event.signup_url);
+  // Committee and online meetings: everyone can keep their own notes (only they see them).
+  const notes = takesMyNotes(event) && !event.archived_at;
 
   const overview = (
     <>
@@ -91,10 +95,14 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         <div className="flex flex-wrap gap-2 pt-2">
           <RsvpLink e={event} />
           {navTo && <NavigateLink to={navTo} className="btn-ghost py-2" />}
-          {leader && easternDate(event.starts_at) <= todayEastern() && easternDate(event.ends_at ?? event.starts_at) >= todayEastern() && !event.archived_at && (
-            <a href={virtual ? "#notes" : "#attendance"} className="btn-primary py-2">
-              {virtual ? <NotebookPen className="h-4 w-4" aria-hidden /> : <ClipboardCheck className="h-4 w-4" aria-hidden />}{" "}
-              {virtual ? "Take notes" : denMeeting ? "Record the meeting" : "Take attendance"}
+          {leader && !virtual && easternDate(event.starts_at) <= todayEastern() && easternDate(event.ends_at ?? event.starts_at) >= todayEastern() && !event.archived_at && (
+            <a href="#attendance" className="btn-primary py-2">
+              <ClipboardCheck className="h-4 w-4" aria-hidden /> {denMeeting ? "Record the meeting" : "Take attendance"}
+            </a>
+          )}
+          {notes && (
+            <a href="#my-notes" className={virtual ? "btn-primary py-2" : "btn-ghost py-2"}>
+              <NotebookPen className="h-4 w-4" aria-hidden /> Take notes
             </a>
           )}
           {event.signup_url && (
@@ -128,6 +136,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         </section>
       )}
       <EventRsvp e={event} me={me} />
+      {notes && <MyNotes eventId={id} />}
       <PermissionSlips e={event} me={me} />
       <EventSignal e={event} me={me} />
     </>
