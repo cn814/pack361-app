@@ -11,7 +11,7 @@ public guide pages. A parent can't read or change another family's information, 
 access, or reach money, roster or youth records beyond their own family. Every leader and money
 action is checked twice: in the app and again in the database.
 
-The review found 12 smaller issues. Ten are fixed (release 1.4, database change
+The review found 13 smaller issues. Eleven are fixed (release 1.4, database change
 `20261006000000_security_review.sql`, tests in `supabase/tests/24_security_tests.sql`). Two are
 accepted, with reasons.
 
@@ -96,3 +96,28 @@ morning.
 - The live checks above, signed out (open each address, or use the browser's developer tools).
 - Read every new server action and route: does it check who's asking, and does the database check
   again? Any use of the secret key (`createAdminClient`) needs a reason and a check before it.
+
+## Review, October 9, 2026
+
+Done for the pack's district and council review (the printable summary is
+"Pack 361 app: security and privacy", version 3.22).
+
+- **Attacker-style table pass** on a test copy: every table in `public` tried for select, update,
+  delete and insert as `anon` and as an ordinary parent. Signed out: only public guide pages
+  readable. Parent: only their own family's rows plus pack-wide reference data; updates only to
+  their own adult and scout rows (the columns families may change); no inserts or deletes beyond
+  what the app allows.
+- **Functions:** all 138 SECURITY DEFINER functions in `public` and `private` have a fixed
+  search path; only `join_page_events()` is callable signed out. Every table has RLS on.
+- **Secrets:** gitleaks over the full history (about 200 commits): none found. Now a CI job.
+- **Added:** the security log (`20261026000000_security_log.sql`, tests `51_security_log_tests.sql`;
+  Pack admin → Security log), download logging on every spreadsheet route,
+  `/.well-known/security.txt`, `upgrade-insecure-requests`, CI on the `beta` branch too, and a
+  "not an official Scouting America site" line on sign-in.
+- **Fixed:** a den meeting test that failed on Oct 9 because of a fixed fixture date.
+
+Open items (also in the printable summary, section 12): accounts in a volunteer's name; backups
+unencrypted on the maintainer's home server and without photos/documents; the weekly Scoutbook
+read uses a leader's own my.scouting login (ask the council); CI doesn't block a deploy; no leader
+session timeout; no full script CSP; no retention rule for families who left; the fleur-de-lis
+background (trademark).
