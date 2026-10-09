@@ -5,6 +5,7 @@ import { buildFinanceReport } from "@/lib/finance-report";
 import { resolvePeriod } from "@/lib/finance";
 import { csvDollars, toCsv } from "@/lib/csv";
 import { easternDate } from "@/lib/tz";
+import { logDownload } from "@/lib/security-log";
 
 // Leadership: the financial report as a spreadsheet. type=summary (categories against the
 // budget, months, events, dens) or type=transactions (every dollar in and out).
@@ -77,6 +78,7 @@ export async function GET(request: NextRequest) {
 
   const span = period.season ?? `${period.from}_to_${period.to}`;
   const name = `pack361-${type === "summary" ? "financial-report" : "transactions"}-${span}-${easternDate(Date.now())}.csv`;
+  await logDownload("finance_report");
   return new NextResponse(toCsv(rows), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

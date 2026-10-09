@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, FileUp, Files, Images, Inbox, ListChecks, Mail, ShieldCheck, Tent, UserPlus, UsersRound } from "lucide-react";
+import { ChevronRight, FileUp, Files, Images, Inbox, ListChecks, Mail, ScrollText, ShieldCheck, Tent, UserPlus, UsersRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ActionForm, { Field } from "@/components/ActionForm";
 import BackLink from "@/components/BackLink";
@@ -121,6 +121,7 @@ export default async function AdminPage() {
         />
         <Tile href="/leaders/training" icon={ShieldCheck} label="Leader training" sub="Youth Protection and other courses" />
         <Tile href="/admin/reports" icon={ListChecks} label="Report access" sub="Who else can open the roster and membership reports, and who helps with Facebook photos" />
+        <Tile href="/admin/security" icon={ScrollText} label="Security log" sub="Who changed anyone's access, and who downloaded pack spreadsheets" />
         <Tile
           href="/photos/review"
           icon={Images}

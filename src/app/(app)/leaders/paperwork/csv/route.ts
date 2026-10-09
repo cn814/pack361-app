@@ -3,6 +3,7 @@ import { getMe, isLeader } from "@/lib/data";
 import { FORM_REPORT_LABEL, getFormsReport } from "@/lib/reports";
 import { toCsv } from "@/lib/csv";
 import { easternDate } from "@/lib/tz";
+import { logDownload } from "@/lib/security-log";
 
 // Leaders: everyone's medical form (Parts A and B) as a spreadsheet: state, form date, good-through
 // date, and who last checked it. No medical details: the app never has them.
@@ -14,6 +15,7 @@ export async function GET() {
     ["Scout or adult", "Name", "Den or family", "Form", "Form date", "Good through", "Last changed", "Changed by"],
     ...rows.map((r) => [r.person, r.name, r.group, FORM_REPORT_LABEL[r.state], r.form_date, r.expires_on, r.updated_at ? easternDate(r.updated_at) : null, r.updated_by]),
   ];
+  await logDownload("medical_forms");
   return new NextResponse(toCsv(out), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

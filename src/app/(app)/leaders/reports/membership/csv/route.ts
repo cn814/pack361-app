@@ -7,6 +7,7 @@ import { ROLE_LABEL } from "@/lib/roster-data";
 import { toCsv } from "@/lib/csv";
 import { easternDate } from "@/lib/tz";
 import type { AppRole } from "@/lib/types";
+import { logDownload } from "@/lib/security-log";
 
 // The membership report as a spreadsheet (no contact details). Only for the people who may open
 // it (the database checks).
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
       r.person === "Scout" ? chargeLabel(r.pack_dues) || "No dues charge" : "",
     ]),
   ];
+  await logDownload("membership");
   return new NextResponse(toCsv(out), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

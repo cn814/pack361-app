@@ -5,6 +5,7 @@ import { ROLE_LABEL } from "@/lib/roster-data";
 import { toCsv } from "@/lib/csv";
 import { easternDate } from "@/lib/tz";
 import type { AppRole } from "@/lib/types";
+import { logDownload } from "@/lib/security-log";
 
 // The roster report as a spreadsheet: everyone registered, and everyone who left in the last two
 // years. Only for the people who may open the roster report (the database checks).
@@ -35,6 +36,7 @@ export async function GET() {
       r.added_on,
     ]),
   ];
+  await logDownload("roster");
   return new NextResponse(toCsv(out), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

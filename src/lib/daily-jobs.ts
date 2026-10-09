@@ -339,6 +339,13 @@ export async function purgeJoinRequests(db: SupabaseClient) {
   return { join_requests_deleted: Number(data ?? 0) };
 }
 
+/** Clear security log entries older than two years (public.purge_security_log(), secret key only). */
+export async function purgeSecurityLog(db: SupabaseClient) {
+  const { data, error } = await db.rpc("purge_security_log");
+  if (error) return { security_log_deleted: 0, errors: [`Couldn't clear the old security log: ${error.message}`] };
+  return { security_log_deleted: Number(data ?? 0) };
+}
+
 /**
  * Finish PayPal checkouts the family's browser didn't (closed the page, lost signal). For each
  * checkout still "created" after 15 minutes: an APPROVED order is captured, a COMPLETED one is

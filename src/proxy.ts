@@ -5,14 +5,15 @@ import { AUTH_COOKIE_OPTIONS } from "./lib/supabase/env";
 // Paths anyone can open without signing in
 // (the calendar feed and cron job check their own token/secret)
 // /birdnet: the bird sound ID model files (public, no pack data).
-const PUBLIC_PATHS = ["/login", "/get", "/safety", "/join", "/auth", "/manifest.webmanifest", "/sw.js", "/api/calendar", "/api/cron", "/birdnet"];
+// /.well-known: security.txt (how to report a security problem).
+const PUBLIC_PATHS = ["/login", "/get", "/safety", "/join", "/auth", "/manifest.webmanifest", "/sw.js", "/api/calendar", "/api/cron", "/birdnet", "/.well-known"];
 
 // The pack's public website (pack361.org, www.pack361.org) shows only the public join pages.
 // Everything else there goes to the members' app at APP_ORIGIN.
 const SITE_HOSTS = ["pack361.org", "www.pack361.org"];
 const APP_ORIGIN = "https://app.pack361.org";
 // Files the public pages need (icons, photos); everything else on the site host moves to the app.
-const SITE_ASSETS = /^\/(?:_next\/|join\/|badge\.png$|icon|apple-icon|favicon|robots\.txt$|sitemap\.xml$)/;
+const SITE_ASSETS = /^\/(?:_next\/|join\/|badge\.png$|icon|apple-icon|favicon|robots\.txt$|sitemap\.xml$|\.well-known\/security\.txt$)/;
 
 function siteRoute(request: NextRequest): NextResponse | null {
   const host = (request.headers.get("host") ?? "").toLowerCase().replace(/:\d+$/, "");

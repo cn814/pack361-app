@@ -4,6 +4,7 @@ import { buildAttendanceReport } from "@/lib/attendance-data";
 import { seasonOf } from "@/lib/finance";
 import { toCsv } from "@/lib/csv";
 import { easternDate } from "@/lib/tz";
+import { logDownload } from "@/lib/security-log";
 
 // Leaders: the attendance report for a season (July to June) as a spreadsheet, one row per scout.
 export async function GET(request: NextRequest) {
@@ -24,6 +25,7 @@ export async function GET(request: NextRequest) {
   }
 
   const name = `pack361-attendance-${r.season}-${today}.csv`;
+  await logDownload("attendance");
   return new NextResponse(toCsv(rows), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

@@ -1,0 +1,7 @@
+# Found a security problem in the Pack 361 app? Please tell us; we'll reply within a few days.
+# Please don't test against other families' accounts or data.
+Contact: mailto:info@pack361.org
+Expires: 2027-10-01T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://app.pack361.org/.well-known/security.txt
+Policy: https://app.pack361.org/safety

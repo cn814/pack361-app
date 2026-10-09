@@ -4,6 +4,7 @@ import { getTrainingReport } from "@/lib/reports";
 import { COURSE_BY_KEY } from "@/lib/training";
 import { toCsv } from "@/lib/csv";
 import { easternDate } from "@/lib/tz";
+import { logDownload } from "@/lib/security-log";
 
 // Leaders: the training report as a spreadsheet: each leader's positions, what they still need,
 // and each course's completed and expiry dates.
@@ -23,6 +24,7 @@ export async function GET() {
       ...columns.flatMap((c) => [r.courses[c]?.completed_on ?? null, r.courses[c]?.expires_on ?? null]),
     ]),
   ];
+  await logDownload("training");
   return new NextResponse(toCsv(out), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

@@ -55,7 +55,7 @@ export default function LoginPage() {
       <a className="font-bold text-pine underline" href="mailto:info@pack361.org">
         info@pack361.org
       </a>
-      .
+      . Run by Pack 361 volunteers; not an official Scouting America site.
     </p>
   );
 

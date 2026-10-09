@@ -4,6 +4,7 @@ import { getSettings } from "@/lib/settings";
 import { getAllCharges, inSeason } from "@/lib/money-data";
 import { CHARGE_KINDS, CHARGE_STATUSES, chargeFor, KIND_LABEL, ownerName, type ChargeKind, type ChargeStatus } from "@/lib/money";
 import { easternDate } from "@/lib/tz";
+import { logDownload } from "@/lib/security-log";
 
 // Key leaders: the charges list as a spreadsheet for the treasurer's records (same filters as the page).
 
@@ -81,6 +82,7 @@ export async function GET(request: NextRequest) {
     );
   }
   const name = `pack361-charges-${all ? "all" : settings.dues_season}-${easternDate(Date.now())}.csv`;
+  await logDownload("money");
   return new NextResponse(lines.join("\r\n") + "\r\n", {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
