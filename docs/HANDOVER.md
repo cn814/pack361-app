@@ -17,6 +17,12 @@ rules come before features, and access rules live in the database (see CONTRIBUT
 Everything is on a free plan today. Fill in the **Owner** column whenever it changes, and keep at
 least **two people** on every account so nobody is ever the only way in.
 
+**The pack's own account:** `ECPack361@gmail.com` (Google, created October 2026). Every service
+below should be owned by, or have as a second owner, an account signed up with this address, so the
+app never depends on one volunteer's personal accounts. Its password, 2-step backup codes and
+recovery details live in the pack's password vault, shared by the app maintainer and the
+Committee Chair.
+
 | Service | What it does for the app | Plan | Owner today | How to hand it over |
 |---|---|---|---|---|
 | **GitHub** (`cn814/pack361-app`) | The code. Pushing to `main` deploys the app. GitHub also runs the tests on every pull request. | Free | Chris Nealen (personal account) | Move the repo into a free GitHub organization the pack owns (Settings → Transfer), with two owners. Collaborators can be added under Settings → Collaborators. |
