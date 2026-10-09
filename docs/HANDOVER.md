@@ -51,7 +51,7 @@ what each is for.
 | `VAPID_PRIVATE_KEY` / `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | `npx web-push generate-vapid-keys` | Changing them means everyone turns phone alerts on again; only if it leaked. |
 | `PAYPAL_CLIENT_SECRET` | PayPal developer site (treasurer) | Treasurer makes a new secret. |
 | `TWH_CALENDAR_URL` | TroopWebHost → My Stuff → Subscribe | Signs in as that person: replace it when they leave, or remove it. |
-| `MYSCOUTING_USERNAME` / `MYSCOUTING_PASSWORD` (optional, experimental) | A Key 3 delegate's my.scouting login | Turns on "Get training from my.scouting" (Pack → Training → Import), "Straight from Scoutbook" advancement (Scouts → Import from Scoutbook), and the optional weekly run (`/api/cron/scoutbook`, Sundays 07:00 UTC, switched on or off on that page; it holds off if it would remove more than a few records). It's a real person's password: when they leave or change it, remove both (or replace them), and change the password if it may have leaked. Optional `MYSCOUTING_ORG_GUID` pins the unit if it can't be found. |
+| (none for my.scouting) | | The app no longer signs in to my.scouting. Advancement and training come in by uploading Scoutbook Plus and my.scouting exports. If `MYSCOUTING_USERNAME` / `MYSCOUTING_PASSWORD` are still in Vercel, delete them. |
 
 After changing anything in Vercel, **Redeploy** (Deployments → ⋯ → Redeploy) so the app picks it up.
 

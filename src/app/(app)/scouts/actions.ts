@@ -6,11 +6,9 @@ import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/data";
 import { getCatalog, getScout, isAdmin } from "@/lib/advancement-data";
-import { parseScoutbookExport, rowsFromLines, RANKS, type ImportRow } from "@/lib/advancement";
+import { parseScoutbookExport, RANKS, type ImportRow } from "@/lib/advancement";
 import type { DenRank } from "@/lib/types";
 import type { ImportChanges } from "@/lib/import-changes";
-import { fetchScoutbookAdvancement } from "@/lib/myscouting";
-import { compareAdvancement, type CompareResult } from "@/lib/scoutbook-compare";
 import { alertReviewed } from "@/lib/family-alerts";
 
 export type FormState = { ok?: boolean; error?: string; message?: string };
@@ -161,44 +159,3 @@ async function runImport(fileName: string, rows: ImportRow[]): Promise<ImportSta
   };
 }
 
-export type ScoutbookCompareState = {
-  error?: string;
-  steps: string[];
-  skipped: { name: string; reason: string }[];
-  compare?: CompareResult;
-};
-
-/** Admin: read everyone's advancement from Scoutbook and show what would change. Saves nothing. */
-export async function compareScoutbook(): Promise<ScoutbookCompareState> {
-  const me = await requireMember();
-  if (!isAdmin(me)) return { error: "Only pack admins can do this.", steps: [], skipped: [] };
-  const sync = await fetchScoutbookAdvancement();
-  if (sync.error) return { error: sync.error, steps: sync.steps, skipped: sync.skipped };
-  const { rows } = rowsFromLines(sync.lines, await getCatalog());
-  return { steps: sync.steps, skipped: sync.skipped, compare: await compareAdvancement(rows) };
-}
-
-/** Admin: read everyone's advancement from Scoutbook and save it, like uploading the export. */
-export async function importFromScoutbook(): Promise<ImportState & { steps?: string[]; skipped?: { name: string; reason: string }[] }> {
-  const me = await requireMember();
-  if (!isAdmin(me)) return { error: "Only pack admins can import." };
-  const sync = await fetchScoutbookAdvancement();
-  if (sync.error) return { error: sync.error, steps: sync.steps, skipped: sync.skipped };
-  const { rows } = rowsFromLines(sync.lines, await getCatalog());
-  if (!rows.length) return { error: "Scoutbook didn't return any completed advancement.", steps: sync.steps, skipped: sync.skipped };
-  const res = await runImport("Scoutbook (read automatically)", rows);
-  return { ...res, steps: sync.steps, skipped: sync.skipped };
-}
-
-/** Admin: turn the weekly Scoutbook update (Sunday night) on or off. */
-export async function setScoutbookWeekly(on: boolean): Promise<{ ok?: boolean; error?: string }> {
-  const me = await requireMember();
-  if (!isAdmin(me)) return { error: "Only pack admins can do this." };
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("pack_settings")
-    .upsert({ key: "scoutbook_weekly", value: on ? "on" : "off", updated_at: new Date().toISOString() });
-  if (error) return { error: "Couldn't save that." };
-  revalidatePath("/scouts/import");
-  return { ok: true };
-}

@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/ActionForm";
 import { createClient } from "@/lib/supabase/server";
 import { isCommittee, requireMember } from "@/lib/data";
-import { fetchMyScoutingTraining, type SyncResult } from "@/lib/myscouting";
 import { isAdmin } from "@/lib/advancement-data";
 import { COURSE_BY_KEY, MEMBER_ID, defaultExpiry, type CourseKey } from "@/lib/training";
 import { IMPORT_MAX } from "@/lib/training-import";
@@ -118,15 +117,4 @@ export async function saveMyMemberId(_prev: ActionResult, form: FormData): Promi
   revalidatePath("/family");
   revalidatePath("/leaders/training");
   return { ok: true, message: id ? "Member ID saved" : "Member ID removed" };
-}
-
-/**
- * EXPERIMENTAL: read everyone's training straight from my.scouting (src/lib/myscouting.ts). Only
- * when the my.scouting login is set in Vercel. Returns rows for the same preview as an upload;
- * nothing changes until the leader applies them.
- */
-export async function fetchFromMyScouting(): Promise<SyncResult> {
-  const me = await requireMember();
-  if (!isCommittee(me)) return { rows: [], steps: [], error: "Only key leaders can do this." };
-  return fetchMyScoutingTraining();
 }

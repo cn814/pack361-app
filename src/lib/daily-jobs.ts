@@ -543,7 +543,7 @@ export async function remindScoutbookEntry(db: SupabaseClient, budget: EmailBudg
       subject: `${items} to enter in Scoutbook before the pack meeting ${when}`,
       paragraphs: [
         `Hi ${p.preferred_name || p.first_name},`,
-        `The pack meeting is ${when}, and ${items} from den meetings and family reports are waiting on the Enter in Scoutbook list. Please enter them in Scoutbook before then, so the record is up to date and the awards are ready to hand out. The app reads Scoutbook each Sunday morning, so it also shows on each scout's page and in their family's Sunday email.`,
+        `The pack meeting is ${when}, and ${items} from den meetings and family reports are waiting on the Enter in Scoutbook list. Please enter them in Scoutbook before then, so the record is up to date and the awards are ready to hand out. Once the Scoutbook export is uploaded to the app (Scouts → Import from Scoutbook), it also shows on each scout's page and in their family's Sunday email.`,
         "In the app: Leaders → Dens → Enter in Scoutbook. View it by requirement to mark one requirement for several scouts at once, and tap Entered as you go.",
         `${APP_URL}/scouts/review#record`,
       ],

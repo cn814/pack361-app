@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { CircleAlert, CircleCheck } from "lucide-react";
-import { applyTrainingImport, fetchFromMyScouting, type ImportResult } from "../actions";
+import { applyTrainingImport, type ImportResult } from "../actions";
 import { fmtShortDate } from "@/lib/advancement";
 import { failedCallMessage } from "@/components/ActionForm";
 import { COURSE_BY_KEY, type TrainingRow } from "@/lib/training";
@@ -29,7 +29,7 @@ async function readTable(file: File): Promise<Cell[][]> {
   return csvTable(await file.text());
 }
 
-export default function ImportTraining({ roster, today, liveSync = false }: { roster: RosterAdult[]; today: string; liveSync?: boolean }) {
+export default function ImportTraining({ roster, today }: { roster: RosterAdult[]; today: string }) {
   const router = useRouter();
   const [report, setReport] = useState<ParsedReport | null>(null);
   const [fileError, setFileError] = useState("");
@@ -37,8 +37,6 @@ export default function ImportTraining({ roster, today, liveSync = false }: { ro
   const [skipIds, setSkipIds] = useState<Set<string>>(new Set());
   const [result, setResult] = useState<ImportResult | null>(null);
   const [pending, startTransition] = useTransition();
-  const [syncSteps, setSyncSteps] = useState<string[]>([]);
-  const [syncing, startSync] = useTransition();
 
   const plan = useMemo(() => (report ? buildPlan(report.rows, roster, today) : null), [report, roster, today]);
   const chosen = plan ? plan.updates.filter((u) => !skip.has(u.key)) : [];
@@ -66,26 +64,6 @@ export default function ImportTraining({ roster, today, liveSync = false }: { ro
     const p = buildPlan(parsed.rows, roster, today);
     setSkip(new Set(p.updates.filter((u) => u.warn).map((u) => u.key)));
     setSkipIds(new Set());
-  }
-
-  function getFromMyScouting() {
-    setResult(null);
-    setFileError("");
-    setReport(null);
-    setSyncSteps([]);
-    startSync(async () => {
-      let res: Awaited<ReturnType<typeof fetchFromMyScouting>>;
-      try {
-        res = await fetchFromMyScouting();
-      } catch (e) {
-        setFileError(failedCallMessage(e, "Get training from my.scouting"));
-        return;
-      }
-      setSyncSteps(res.steps);
-      if (res.error) setFileError(res.error);
-      else if (!res.rows.length) setFileError("my.scouting didn't return any training dates.");
-      else load({ rows: res.rows, columns: [], yptOnly: false });
-    });
   }
 
   function apply() {
@@ -121,28 +99,6 @@ export default function ImportTraining({ roster, today, liveSync = false }: { ro
 
   return (
     <div className="space-y-3">
-      {liveSync && (
-        <section className="card space-y-2 border-l-4 border-l-gold">
-          <h2 className="font-extrabold text-pine-950">Get it straight from my.scouting (experimental)</h2>
-          <p className="text-xs text-muted">
-            Signs in to my.scouting with the pack&apos;s saved login and reads everyone&apos;s training, instead of a file. It uses
-            Scoutbook&apos;s unofficial connection, so it may stop working when Scouting America changes things; the file upload
-            below always works. You&apos;ll see every change before anything is saved.
-          </p>
-          <button type="button" className="btn-primary w-full py-2" onClick={getFromMyScouting} disabled={syncing}>
-            {syncing ? "Reading my.scouting… (up to a minute)" : "Get training from my.scouting"}
-          </button>
-          {syncSteps.length > 0 && (
-            <ul className="space-y-0.5 text-xs text-ink">
-              {syncSteps.map((s) => (
-                <li key={s} className="flex items-start gap-1.5">
-                  <CircleCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pine" aria-hidden /> {s}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
       <label className="card block space-y-1">
         <span className="block text-xs font-bold text-navy">Training report from my.scouting (.csv or .xlsx)</span>
         <input
