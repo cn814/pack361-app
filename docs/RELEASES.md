@@ -7,13 +7,37 @@ The pack uses two copies of the app:
 | **Live** | app.pack361.org | the `main` branch | every family and leader |
 | **Beta** | beta.pack361.org | the `beta` branch | the testers ticked in Pack admin → **Beta site**, plus admins and the Cubmaster |
 
-Both use the **same database**, so testers see the pack's real calendar, families and records, and
-anything they change is real. To keep families from seeing unfinished work, the beta site:
+Until the beta database is set up (next section), both use the **same database**, so testers see
+the pack's real calendar, families and records, and anything they change is real. To keep families from seeing unfinished work, the beta site:
 
 - lets only testers sign in (anyone else gets a "this is the test site" page with a link to the live app);
 - sends emails and phone alerts **only to testers**, whatever the feature tries to send;
 - doesn't run the nightly jobs or the Sunday newsletter (Vercel runs scheduled jobs on the live site only);
 - shows a dark "Beta" stripe at the top of every page, and "beta" next to the version on My family.
+
+## Moving beta to its own database (October 2026)
+
+So testers never see real family data, beta gets its own Supabase project filled with made-up
+families (`supabase/demo-data.sql`). Steps, once:
+
+1. Supabase → **New project** in the pack's organization: name `pack361-beta`, region US East, a
+   new database password (into the pack password vault). The free plan allows two projects.
+2. On a computer with Docker, from the repo folder: `scripts/setup-beta-db.sh`. Paste the beta
+   project's Session pooler string when asked. It runs every migration, the starter data and the
+   made-up families, then asks for the testers' names and emails.
+3. Beta project → Authentication → URL Configuration: Site URL `https://beta.pack361.org`, and
+   add `https://beta.pack361.org/**` to Redirect URLs. Copy the email templates and SMTP settings
+   from the live project (Authentication → Emails), so sign-in codes come from noreply@pack361.org.
+4. Vercel → Settings → Environment Variables, **Preview, branch `beta`** only: set
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY` to
+   the beta project's (Project Settings → API Keys). Remove `GIVEBUTTER_API_KEY`,
+   `TWH_CALENDAR_URL`, `PAYPAL_CLIENT_SECRET` and `NEXT_PUBLIC_PAYPAL_CLIENT_ID` from Preview, or
+   set PayPal to its sandbox (`PAYPAL_ENV=sandbox`), so beta never pulls real orders or calendars.
+   Then redeploy the beta branch.
+5. Sign in to beta.pack361.org: you should see the Maple, Birch, Cedar, Willow and Aspen families.
+
+After this, a database change is run **twice**: on the beta project first (test it there), then
+on the live project when the code goes live.
 
 ## Version numbers
 
