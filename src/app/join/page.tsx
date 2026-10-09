@@ -65,8 +65,7 @@ export default async function JoinPage() {
           </h1>
           <p className="max-w-2xl text-ink">
             Pack 361 is a co-ed Cub Scout pack for grades K–5, serving Centennial Lane Elementary School in Ellicott City
-            and the surrounding area for over 35 years. We meet Monday evenings at the First Presbyterian Church of Howard
-            County in Columbia.
+            and the surrounding area for over 35 years. We meet Monday evenings in Columbia.
           </p>
           <div className="flex flex-wrap gap-2 pt-1">
             <a href="#join" className="btn-primary py-2.5">

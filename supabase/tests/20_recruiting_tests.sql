@@ -24,6 +24,8 @@ select test.check((select (starts_at at time zone 'America/New_York')::date
 select test.expect_error('select * from public.events', '42501', 'anon still cannot read events');
 rollback;
 
+select test.check(not exists (select 1 from public.guide_pages where is_public and body like '%Presbyterian%'),
+                  'public pages say Columbia, not the church');
 select test.check((select value from public.pack_settings where key = 'public_site_url') = 'https://app.pack361.org/join',
                   'the shared link starts at the app''s join page');
 select test.expect_error($$update public.events set public_blurb = repeat('x', 301) where id = '57000000-0000-0000-0000-000000000001'$$,
