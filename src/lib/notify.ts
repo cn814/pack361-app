@@ -86,3 +86,34 @@ export async function notifyFacebookOff(scoutFirstName: string) {
     );
   }
 }
+
+/**
+ * Leaders who keep track of medical forms (pack position "Medical forms" or "Health and safety").
+ * Empty when nobody has that job, and then every leader shares it as before.
+ */
+export async function formsKeeperIds(): Promise<string[]> {
+  if (!adminConfigured()) return [];
+  const { data } = await createAdminClient()
+    .from("adults")
+    .select("id")
+    .in("role", LEADER_ROLES)
+    .eq("is_active", true)
+    .or("position_title.ilike.%medical%,position_title.ilike.%health%");
+  return ((data ?? []) as { id: string }[]).map((a) => a.id);
+}
+
+/** A family says they turned in a medical form: a phone alert for whoever keeps the forms. */
+export async function notifyFormTurnedIn(familyName: string | null, reporterId: string) {
+  try {
+    const ids = (await formsKeeperIds()).filter((id) => id !== reporterId);
+    if (!ids.length) return;
+    await sendPushTo(ids, {
+      title: "Medical form turned in",
+      body: `${familyName ? `The ${familyName} family` : "A family"} says they turned in a medical form. Confirm it when you have the paper copy.`,
+      url: "/leaders/paperwork?show=waiting",
+      tag: "form-turned-in",
+    });
+  } catch {
+    // Best effort.
+  }
+}

@@ -1,7 +1,8 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "./supabase/server";
-import { getMyScouts, getUpcomingEvents, isCommittee, isLeader, requireMember } from "./data";
+import { getMyScouts, getUpcomingEvents, isCommittee, isFormsKeeper, isLeader, requireMember } from "./data";
+import { LEADER_ROLES, type Adult } from "./types";
 import { isAdmin } from "./advancement-data";
 import { namesList, slipsToSign } from "./slips";
 import { formState, getMyPaperwork, needsForm } from "./paperwork";
@@ -53,6 +54,25 @@ export const getSeenAt = cache(async (): Promise<string | null> => {
 /** Regular meetings: no RSVP to-do for these. */
 const ROUTINE_CATEGORIES = new Set(["Den Meeting", "Pack Meeting", "Committee"]);
 
+/**
+ * Medical forms families say they turned in, for the leaders who confirm them: whoever keeps the
+ * forms (pack position "Medical forms"), or every leader when nobody has that job.
+ */
+async function waitingFormsFor(me: Adult): Promise<number> {
+  const supabase = await createClient();
+  if (!isFormsKeeper(me)) {
+    const { count: keepers } = await supabase
+      .from("adults")
+      .select("id", { count: "exact", head: true })
+      .in("role", LEADER_ROLES)
+      .eq("is_active", true)
+      .or("position_title.ilike.%medical%,position_title.ilike.%health%");
+    if (keepers) return 0;
+  }
+  const { count } = await supabase.from("health_forms").select("id", { count: "exact", head: true }).eq("status", "submitted");
+  return count ?? 0;
+}
+
 /** Things waiting on this person: polls to answer, forms, money due, leader queues. */
 export const getTodos = cache(async (): Promise<Todo[]> => {
   const me = await requireMember();
@@ -68,9 +88,7 @@ export const getTodos = cache(async (): Promise<Todo[]> => {
     getMyCharges(me),
     getUpcomingEvents(60, { mine: true, near: true }),
     leader ? countPendingPhotos() : Promise.resolve(0),
-    leader
-      ? supabase.from("health_forms").select("id", { count: "exact", head: true }).eq("status", "submitted").then((r) => r.count ?? 0)
-      : Promise.resolve(0),
+    leader ? waitingFormsFor(me) : Promise.resolve(0),
     isAdmin(me)
       ? supabase.from("feedback").select("id", { count: "exact", head: true }).is("resolved_at", null).then((r) => r.count ?? 0)
       : Promise.resolve(0),

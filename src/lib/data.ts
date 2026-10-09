@@ -77,6 +77,12 @@ export function isLeader(a: Adult) {
   return LEADER_ROLES.includes(a.role);
 }
 
+/** Keeps track of medical forms for the pack (by pack position: "Medical forms", "Health and safety"). */
+export const FORMS_KEEPER_TITLE = /medical|health/i;
+export function isFormsKeeper(a: Adult) {
+  return FORMS_KEEPER_TITLE.test(a.position_title ?? "");
+}
+
 /** Runs the gear closet: leaders, and the quartermaster (by pack position) even if a parent. */
 export function isGearKeeper(a: Adult) {
   return isLeader(a) || /quartermaster/i.test(a.position_title ?? "");

@@ -7,6 +7,8 @@ import { isLeader, requireMember } from "@/lib/data";
 import { markFormsOnFile } from "@/app/(app)/paperwork-actions";
 import { FORM_STATE_LABEL, FORM_STATE_STYLE, formState, getPaperworkOverview, type FormState, type HealthForm } from "@/lib/paperwork";
 import { fmtShortDate } from "@/lib/advancement";
+import { createClient } from "@/lib/supabase/server";
+import { LEADER_ROLES } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Paperwork" };
 
@@ -33,7 +35,20 @@ export default async function PaperworkPage({ searchParams }: PageProps<"/leader
   const me = await requireMember();
   if (!isLeader(me)) redirect("/leaders");
   const sp = await searchParams;
-  const data = await getPaperworkOverview();
+  const supabase = await createClient();
+  const [data, { data: keeperRows }] = await Promise.all([
+    getPaperworkOverview(),
+    // Who keeps the medical forms (pack position "Medical forms"): they get the turned-in alerts.
+    supabase
+      .from("adults")
+      .select("first_name, preferred_name, last_name")
+      .in("role", LEADER_ROLES)
+      .eq("is_active", true)
+      .or("position_title.ilike.%medical%,position_title.ilike.%health%"),
+  ]);
+  const keepers = ((keeperRows ?? []) as { first_name: string; preferred_name: string | null; last_name: string }[]).map(
+    (k) => `${k.preferred_name || k.first_name} ${k.last_name}`,
+  );
   const famName = new Map(data.families.map((f) => [f.id, f.family_name]));
   const activeFamilies = new Set(data.scouts.map((s) => s.family_id).filter(Boolean) as string[]);
 
@@ -77,6 +92,12 @@ export default async function PaperworkPage({ searchParams }: PageProps<"/leader
         {scoutsOk} of {scoutRows.length} scouts have a current form. {waiting.length} turned in by families and waiting for you to
         confirm you have the paper copy.
       </p>
+      {keepers.length > 0 && (
+        <p className="-mt-1 text-sm text-muted">
+          <b className="text-ink">{keepers.join(" and ")}</b> {keepers.length === 1 ? "keeps" : "keep"} the pack&apos;s medical forms and{" "}
+          {keepers.length === 1 ? "gets" : "get"} an alert when a family turns one in. Hand paper forms to {keepers.length === 1 ? "them" : "one of them"}.
+        </p>
+      )}
       <a href="/leaders/paperwork/csv" download className="btn-ghost self-start py-2">
         Download spreadsheet (CSV)
       </a>

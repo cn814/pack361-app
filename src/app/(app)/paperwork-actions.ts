@@ -1,10 +1,12 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/ActionForm";
 import { isLeader, requireMember } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { addDays, easternDate } from "@/lib/tz";
+import { notifyFormTurnedIn } from "@/lib/notify";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 /** Same window as formState() in src/lib/paperwork.ts: "expiring" within this many days. */
@@ -28,7 +30,7 @@ function refresh() {
 
 /** A family says they turned in a medical form (RLS: only their own people, only "submitted"). */
 export async function reportHealthForm(_prev: ActionResult, form: FormData): Promise<ActionResult> {
-  await requireMember();
+  const me = await requireMember();
   const who = person(String(form.get("who") ?? ""));
   const date = String(form.get("form_date") ?? "").trim();
   if (!who) return { error: "Pick who the form is for." };
@@ -62,6 +64,9 @@ export async function reportHealthForm(_prev: ActionResult, form: FormData): Pro
     if (error) return { error: "Couldn't save that. Try again." };
   }
   refresh();
+  const { data: fam } = me.family_id ? await supabase.from("families").select("family_name").eq("id", me.family_id).maybeSingle() : { data: null };
+  const familyName = (fam?.family_name as string | undefined) ?? null;
+  after(() => notifyFormTurnedIn(familyName, me.id));
   return { ok: true, message: "Thanks! A leader will confirm it when they get the form." };
 }
 
