@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { customAnswers, planDuesMatch, type Answer, type RosterScout } from "./givebutter-dues";
-import { splitTickets } from "./givebutter-rsvp";
+import { placesInOrder, splitTickets } from "./givebutter-rsvp";
 
 // Givebutter REST API v1: https://docs.givebutter.com (Bearer API key, paginated { data, links, meta }).
 const BASE = "https://api.givebutter.com/v1";
@@ -118,6 +118,7 @@ export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
   };
 
   const campaignIds = new Set(campaigns.map((c) => Number(c.id)));
+  const eventCampaigns = new Set(campaigns.filter((c) => eventFor(c)).map((c) => Number(c.id)));
   // A transaction's id is a number; some list entries carry it on their first payment instead.
   const txId = (t: Json): number | null => {
     const nested = Array.isArray(t.transactions) ? ((t.transactions as Json[])[0] ?? {}) : {};
@@ -141,7 +142,7 @@ export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
       const id = txId(t)!;
       const email = str(t.email)?.toLowerCase() ?? null;
       const items = lineItems(t);
-      const tickets = items.filter((i) => i.type === "ticket").reduce((n, i) => n + i.quantity, 0);
+      const tickets = placesInOrder(items, eventCampaigns.has(Number(t.campaign_id)));
       answersById.set(id, customAnswers(t));
       return {
         id,

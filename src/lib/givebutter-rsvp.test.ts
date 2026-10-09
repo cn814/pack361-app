@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { sameName, splitTickets } from "./givebutter-rsvp";
+import { placesInOrder, sameName, splitTickets } from "./givebutter-rsvp";
 
 test("names: exact, nicknames and first three letters", () => {
   assert.equal(sameName("Chris", "Christopher"), true);
@@ -26,4 +26,13 @@ test("all tickets under the buyer's name: scouts first, then adults", () => {
 
 test("an adult's other name or nickname counts", () => {
   assert.deepEqual(splitTickets(["Liz", "Max"], ["Max"], [["Elizabeth", "Liz"]]), { scouts: 1, siblings: 0, adults: 1 });
+});
+
+test("places: tickets, or the camping fee items for an event sign-up", () => {
+  const fee = (quantity: number) => ({ type: "item", description: "Camping Fee for Kids Ages 4+ and Adults", quantity });
+  const processing = { type: "donation", description: "Processing fee", quantity: 1 };
+  assert.equal(placesInOrder([{ type: "ticket", description: "Adult", quantity: 2 }, processing], true), 2);
+  assert.equal(placesInOrder([fee(3), processing], true), 3);
+  assert.equal(placesInOrder([fee(3)], false), 0, "a store order isn't a head count");
+  assert.equal(placesInOrder([{ type: "item", description: "Donation", quantity: 1 }], true), 0);
 });

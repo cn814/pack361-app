@@ -67,3 +67,18 @@ export function splitTickets(names: (string | null | undefined)[], scouts: strin
   out.adults += unknown - moreScouts;
   return out;
 }
+
+/**
+ * How many people an order is for. Ticket lines count; a sign-up sold as items instead (the fall
+ * campout's "Camping Fee for Kids Ages 4+ and Adults") counts its items, but only for a campaign
+ * tied to an event, and never donations, tips or processing fees.
+ */
+export function placesInOrder(
+  items: { type: string | null; description: string; quantity: number }[],
+  forEvent: boolean,
+): number {
+  const sum = (list: typeof items) => list.reduce((n, i) => n + Math.max(0, Math.round(i.quantity)), 0);
+  const tickets = sum(items.filter((i) => i.type === "ticket"));
+  if (tickets > 0 || !forEvent) return tickets;
+  return sum(items.filter((i) => i.type === "item" && !/processing|donat|\btip\b/i.test(i.description)));
+}
