@@ -20,7 +20,7 @@ least **two people** on every account so nobody is ever the only way in.
 | Service | What it does for the app | Plan | Owner today | How to hand it over |
 |---|---|---|---|---|
 | **GitHub** (`cn814/pack361-app`) | The code. Pushing to `main` deploys the app. GitHub also runs the tests on every pull request. | Free | Chris Nealen (personal account) | Move the repo into a free GitHub organization the pack owns (Settings → Transfer), with two owners. Collaborators can be added under Settings → Collaborators. |
-| **Vercel** (team `pack361`, project `pack361-app`) | Hosts the live site and the beta site (beta.pack361.org, the `beta` branch), runs the two daily jobs (`vercel.json`) and holds the secret keys (Settings → Environment Variables). | Hobby (free) | Chris Nealen | The free plan is for one person: transfer the project to the next person's account (Project → Settings → Transfer), or move to a paid team to have two members. Check vercel.com/pricing for current limits. |
+| **Vercel** (team `pack361`, project `pack361-app`) | Hosts the live site (the `main` branch; preview builds of other branches are skipped), runs the two daily jobs (`vercel.json`) and holds the secret keys (Settings → Environment Variables). | Hobby (free) | Chris Nealen | The free plan is for one person: transfer the project to the next person's account (Project → Settings → Transfer), or move to a paid team to have two members. Check vercel.com/pricing for current limits. |
 | **Supabase** (project `bvnywjvqjxbwwfnbtdzk`) | The database, sign-in, and file storage (photos, documents, receipts). | Free | Chris Nealen | Invite the next person to the organization as Owner (Organization → Team), or transfer the project to their organization (Project Settings → General). |
 | **Squarespace** (domain `pack361.org`) | The domain and its DNS: `app.pack361.org` → Vercel, email forwarding, and the email-sending records for Resend and Brevo. | Paid yearly (domain) | *Check: whose Squarespace account?* | Add the next person as a contributor with domain permissions, or transfer the domain to the pack's account. Note the renewal date: ______ |
 | **Email forwarding** (`info@pack361.org`) | Where replies and questions go. Squarespace's forwarding (the Mailgun MX records). | Included with domain | *Check* | Change who it forwards to in Squarespace → Domains → Email forwarding. |
@@ -45,7 +45,7 @@ what each is for.
 | Database password (backups only) | Supabase → Project Settings → Database | Reset it, update `backup.env`, run the backup once. |
 | `CRON_SECRET` | Any long random string | Change it in Vercel and redeploy. |
 | `RESEND_API_KEY` | Resend → API Keys | New key in Vercel **and** Supabase SMTP; delete the old one. |
-| `BREVO_API_KEY` | Brevo → SMTP & API | New key in Vercel; delete the old one. **Expires after one year:** the live key (Production) was made about Sept 30, 2026 and the beta key (Preview, branch `beta`) on Oct 1, 2026, so replace both by late September 2027. |
+| `BREVO_API_KEY` | Brevo → SMTP & API | New key in Vercel; delete the old one. **Expires after one year:** the key was made about Sept 30, 2026, so replace it by late September 2027. |
 | `GIVEBUTTER_API_KEY` | Givebutter → Settings → Developers | New key in Vercel; delete the old one. |
 | `PLANTNET_API_KEY` | my.plantnet.org → your account → API key | New key in Vercel; delete the old one. |
 | `VAPID_PRIVATE_KEY` / `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | `npx web-push generate-vapid-keys` | Changing them means everyone turns phone alerts on again; only if it leaked. |
@@ -85,9 +85,10 @@ After changing anything in Vercel, **Redeploy** (Deployments → ⋯ → Redeplo
 
 ## 5. How changes go live
 
-- **Code:** new work goes to the `beta` branch first (beta.pack361.org, testers only), then is released
-  by merging `beta` into `main` (app.pack361.org). See [RELEASES.md](RELEASES.md). Vercel builds and
-  deploys each in a couple of minutes; a failed build leaves the old version running.
+- **Code:** work on a branch, run the checks, then merge into `main` (app.pack361.org). See
+  [RELEASES.md](RELEASES.md). Vercel builds and deploys in a couple of minutes; a failed build leaves
+  the old version running. (The beta site was retired Oct 9, 2026; RELEASES.md says how to bring one
+  back with its own database.)
 - **Database changes:** each change is a new file in `supabase/migrations/` (never edit one that's
   already been run). Run it in Supabase → SQL Editor **before** pushing code that needs it, then add
   a test in `supabase/tests/`. Supabase shows a "destructive operation" warning for some changes;
@@ -104,7 +105,7 @@ After changing anything in Vercel, **Redeploy** (Deployments → ⋯ → Redeplo
 | Every week | Glance at Pack admin: a warning shows if a nightly job failed, with the reason. |
 | July (new season) | Leaders → Money → Settings for the new dues season; set up dues; registration dates; the budget (Money → Expenses → Budget). |
 | Every few months | Supabase → Usage (database and storage; the free plan has 500 MB of database and 1 GB of files). Pack admin shows file storage. Vercel → Usage. |
-| Every September | **Brevo API keys expire after a year** (both made around Oct 1, 2026). Make new ones in Brevo → SMTP & API, replace `BREVO_API_KEY` in Vercel (Production, and Preview for branch `beta`), redeploy, and delete the old keys. Until then pack-wide email and the Sunday newsletter stop working. |
+| Every September | **The Brevo API key expires after a year** (made around Sept 30, 2026). Make a new one in Brevo → SMTP & API, replace `BREVO_API_KEY` in Vercel (Production), redeploy, and delete the old key. Until then pack-wide email and the Sunday newsletter stop working. |
 | Once a year | Repeat the security review (SECURITY-REVIEW.md, "Repeating this review"). Practice a restore (RESTORE.md section 1). Renew the domain. Check every account in section 1 still has two owners. Update packages (`npm outdated`, then test and deploy). |
 | When a leader leaves | Change their role in Pack admin, and if they had access to any service or key, remove them and change the key. |
 

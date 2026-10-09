@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, beta]
+    branches: [main]
 
 # Read-only token: CI only checks code.
 permissions:

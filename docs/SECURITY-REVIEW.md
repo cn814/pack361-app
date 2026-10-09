@@ -115,9 +115,15 @@ Done for the pack's district and council review (the printable summary is
   `/.well-known/security.txt`, `upgrade-insecure-requests`, CI on the `beta` branch too, and a
   "not an official Scouting America site" line on sign-in.
 - **Fixed:** a den meeting test that failed on Oct 9 because of a fixed fixture date.
+- **Retired the beta site** (it shared the live database, so testers saw real families):
+  beta.pack361.org removed from Vercel, its Preview keys deleted, preview builds skipped
+  (`vercel.json`), CI on `main` only. Older preview deployments stay behind Vercel's sign-in.
+  The "pack361-beta" keys in Supabase, Resend and Brevo are to be revoked.
+- **Removed:** the my.scouting sign-in (3.23); Scoutbook and training now come in as uploaded files.
 
 Open items (also in the printable summary, section 12): accounts in a volunteer's name; backups
 unencrypted on the maintainer's home server and without photos/documents; the weekly Scoutbook
 read uses a leader's own my.scouting login (ask the council); CI doesn't block a deploy; no leader
 session timeout; no full script CSP; no retention rule for families who left; the fleur-de-lis
-background (trademark).
+background (trademark). Later on Oct 9: the my.scouting login, the fleur-de-lis and the beta
+site were removed, and backups are encrypted once the pack's backup key is set.

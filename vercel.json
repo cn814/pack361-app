@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "[ \"$VERCEL_ENV\" = \"preview\" ]",
   "crons": [
     { "path": "/api/cron/givebutter", "schedule": "0 10 * * *" },
     { "path": "/api/cron/daily", "schedule": "0 21 * * *" }

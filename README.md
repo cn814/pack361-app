@@ -18,8 +18,9 @@ key, who owns each, and the steps for the outgoing and incoming maintainer.
 **Security review:** [docs/SECURITY-REVIEW.md](docs/SECURITY-REVIEW.md): what was checked in October
 2026, what was fixed, what's left, and how to repeat it.
 
-**Beta and releases:** [docs/RELEASES.md](docs/RELEASES.md): new work goes to beta.pack361.org (the
-`beta` branch, testers only, same database) and is released to app.pack361.org by merging into `main`.
+**Releases:** [docs/RELEASES.md](docs/RELEASES.md): checks, database changes first, then merge into
+`main` (app.pack361.org). The beta site was retired on Oct 9, 2026; RELEASES.md says how to bring
+one back with its own database.
 
 **App guide for families and leaders:** `docs/guide/` (`guide.html` and the printable
 `Pack361-App-Guide.pdf`). Update it whenever a feature is added or changes, in the same change
