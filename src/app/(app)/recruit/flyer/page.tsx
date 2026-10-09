@@ -42,10 +42,10 @@ export default async function FlyerPage() {
               {events.slice(0, 4).map((e) => (
                 <li key={`${e.title}-${e.starts_at}`} className="text-base">
                   <b>{e.title}</b> · {joinEventWhen(e)}
-                  {e.location_name ? ` · ${e.location_name}` : ""}
                 </li>
               ))}
             </ul>
+            <p className="text-sm text-ink">Email info@pack361.org for the time and place.</p>
           </section>
         )}
         <section className="flex items-center gap-6 rounded-2xl bg-mint p-5">

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarDays, ChevronRight, Compass, Mail, MapPin, Tent, Users } from "lucide-react";
-import { getJoinEvents, joinEventWhen } from "@/lib/recruiting";
+import { CalendarDays, ChevronRight, Compass, Mail, Tent, Users } from "lucide-react";
+import { askAboutEvent, getJoinEvents, joinEventWhen } from "@/lib/recruiting";
 import GuideBody from "@/components/GuideBody";
 import { getPublicPage, getPublicPages } from "@/lib/guide";
 import JoinShell from "./JoinShell";
@@ -94,9 +94,9 @@ export default async function JoinPage() {
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-sage">Come see us</p>
           <h2 className="text-2xl font-extrabold tracking-tight text-pine-950">Big events coming up</h2>
           <p className="text-sm text-ink">
-            Families thinking about joining are welcome at these. Email{" "}
-            <a href="mailto:info@pack361.org" className="font-semibold text-pine underline">info@pack361.org</a> and we&apos;ll
-            send you the details.
+            Families thinking about joining are welcome at these. Tap <b>Ask for details</b> (or email{" "}
+            <a href="mailto:info@pack361.org" className="font-semibold text-pine underline">info@pack361.org</a>) and
+            we&apos;ll send you the time and place.
           </p>
           <ul className="grid gap-3 sm:grid-cols-2">
             {events.map((e) => (
@@ -105,12 +105,10 @@ export default async function JoinPage() {
                 <p className="mt-1 flex items-center gap-1.5 text-sm text-ink">
                   <CalendarDays className="h-4 w-4 shrink-0 text-pine" aria-hidden /> {joinEventWhen(e)}
                 </p>
-                {e.location_name && (
-                  <p className="flex items-center gap-1.5 text-sm text-ink">
-                    <MapPin className="h-4 w-4 shrink-0 text-pine" aria-hidden /> {e.location_name}
-                  </p>
-                )}
                 {e.public_blurb && <p className="mt-2 text-sm text-muted">{e.public_blurb}</p>}
+                <a href={askAboutEvent(e)} className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-pine underline">
+                  <Mail className="h-4 w-4" aria-hidden /> Ask for details
+                </a>
               </li>
             ))}
           </ul>

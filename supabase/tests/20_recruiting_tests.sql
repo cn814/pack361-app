@@ -15,6 +15,12 @@ select test.check(test.count('select * from public.join_page_events()') = 1, 'th
 select test.check((select title from public.join_page_events() limit 1) = 'Pinewood Derby', 'the picked event is listed');
 select test.check((select public_blurb from public.join_page_events() limit 1) = 'Come watch the race.', 'with its public note');
 select test.expect_error('select address from public.join_page_events()', '42703', 'the address is never part of it');
+select test.check((select location_name from public.join_page_events() limit 1) is null, 'nor the place');
+select test.check((select all_day and (starts_at at time zone 'America/New_York')::time = '00:00'
+                     from public.join_page_events() limit 1), 'nor the time: only the date');
+select test.check((select (starts_at at time zone 'America/New_York')::date
+                     from public.join_page_events() limit 1)
+                  = ((now() + interval '10 days') at time zone 'America/New_York')::date, 'on the right day');
 select test.expect_error('select * from public.events', '42501', 'anon still cannot read events');
 rollback;
 

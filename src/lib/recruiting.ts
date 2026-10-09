@@ -1,6 +1,6 @@
 import "server-only";
 import QRCode from "qrcode";
-import { fmtRange } from "./format";
+import { fmtDay } from "./format";
 
 // Recruiting: events picked for families thinking about joining, and the link members share.
 
@@ -10,7 +10,7 @@ export interface JoinEvent {
   starts_at: string;
   ends_at: string | null;
   all_day: boolean;
-  location_name: string | null;
+  location_name: string | null; // always empty now: the place goes only to families who ask
   public_blurb: string | null;
 }
 
@@ -25,7 +25,16 @@ export async function getJoinEvents(): Promise<JoinEvent[]> {
   return (data ?? []) as JoinEvent[];
 }
 
-export const joinEventWhen = (e: JoinEvent) => fmtRange(e.starts_at, e.ends_at, e.all_day);
+/** Just the day (or first and last day): public pages never show an event's time or place. */
+export const joinEventWhen = (e: JoinEvent) =>
+  e.ends_at && fmtDay(e.ends_at) !== fmtDay(e.starts_at) ? `${fmtDay(e.starts_at)} – ${fmtDay(e.ends_at)}` : fmtDay(e.starts_at);
+
+/** "Ask for details": an email to the pack about one event, for its time and place. */
+export function askAboutEvent(e: JoinEvent): string {
+  const subject = `Visiting Pack 361: ${e.title} (${joinEventWhen(e)})`;
+  const body = "Hi! We'd like to come to this event. Could you send us the time and place?\n\nOur child's grade:\n";
+  return `mailto:info@pack361.org?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
 
 /** A QR code for a link, as an SVG string (dark green on white). */
 export async function qrSvg(link: string): Promise<string> {

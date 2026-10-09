@@ -42,7 +42,7 @@ export function EventSignalView({
           <input type="hidden" name="event_id" value={eventId} />
           <Field
             label="Signal group link"
-            hint={`In Signal, open the group, tap its name, then Group link, and copy it. Turn on “Approve new members” there too, so you see who joins.${url ? " Clear the box and save to remove the link." : ""}`}
+            hint={`In Signal, open the group, tap its name, then Group link, and copy it. Turn on “Approve new members” there too, so you see who joins. Keep it adults only, with at least two leaders in it, and disappearing messages off (Scouting’s rules for online groups).${url ? " Clear the box and save to remove the link." : ""}`}
           >
             <input
               className="input"

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarDays, ExternalLink, MapPin, Printer } from "lucide-react";
+import { CalendarDays, ExternalLink, Printer } from "lucide-react";
 import RecruitShare from "@/components/RecruitShare";
 import { isLeader, requireMember } from "@/lib/data";
 import { getSettings } from "@/lib/settings";
@@ -57,18 +57,14 @@ export default async function RecruitPage() {
                 <span className="block font-bold text-pine-950">{e.title}</span>
                 <span className="flex items-center gap-1.5 text-xs text-muted">
                   <CalendarDays className="h-3.5 w-3.5" aria-hidden /> {joinEventWhen(e)}
-                  {e.location_name && (
-                    <>
-                      <MapPin className="ml-1 h-3.5 w-3.5" aria-hidden /> {e.location_name}
-                    </>
-                  )}
                 </span>
                 {e.public_blurb && <span className="block text-xs text-ink">{e.public_blurb}</span>}
               </li>
             ))}
           </ul>
         )}
-        <p className="text-[11px] text-muted">These are also listed on the pack&apos;s public page under “Big events coming up”.</p>
+        <p className="text-[11px] text-muted">These are also listed on the pack&apos;s public page under “Big events coming up”, with the date only: visiting
+          families ask info@pack361.org for the time and place.</p>
       </section>
     </>
   );
