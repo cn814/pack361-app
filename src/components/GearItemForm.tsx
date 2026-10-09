@@ -29,6 +29,7 @@ export default function GearItemForm({ item }: { item?: GearItem }) {
         <datalist id="gear-places">
           <option value="Pack shed" />
           <option value="At the quartermaster's house" />
+          <option value="Sass house" />
         </datalist>
       </Field>
       <Field label="Description (optional)">

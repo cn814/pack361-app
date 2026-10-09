@@ -13,6 +13,7 @@ import ArchiveControl from "@/components/ArchiveControl";
 import { isLeader } from "@/lib/data";
 import type { GbCampaign, GbOrder } from "@/lib/fundraising-data";
 import type { Adult, PackEvent } from "@/lib/types";
+import { isVideoCall } from "@/lib/event-link";
 
 /**
  * Everything on an event or campout page that families don't see, as buttons for the page's
@@ -37,15 +38,21 @@ export function eventLeaderTabs({
 }): EventTab[] {
   if (!isLeader(me)) return [];
   const denMeeting = e.category === "Den Meeting";
+  // A meeting on a video call (a virtual committee meeting) has no attendance: just notes.
+  const virtual = !denMeeting && isVideoCall(e.signup_url);
   const tabs: EventTab[] = [
-    {
-      id: "attendance",
-      aliases: ["leaders"],
-      label: denMeeting ? "Record the meeting" : "Take attendance",
-      hint: denMeeting ? "Who came and what you worked on" : "Who came, from the day of",
-      icon: <ClipboardCheck aria-hidden />,
-      content: denMeeting ? <DenMeetingRecord e={e} me={me} /> : <EventAttendance e={e} me={me} />,
-    },
+    ...(virtual
+      ? []
+      : [
+          {
+            id: "attendance",
+            aliases: ["leaders"],
+            label: denMeeting ? "Record the meeting" : "Take attendance",
+            hint: denMeeting ? "Who came and what you worked on" : "Who came, from the day of",
+            icon: <ClipboardCheck aria-hidden />,
+            content: denMeeting ? <DenMeetingRecord e={e} me={me} /> : <EventAttendance e={e} me={me} />,
+          },
+        ]),
     { id: "going", label: "Who's going", hint: "Every family's RSVP", icon: <Users aria-hidden />, content: <EventRsvpLeaders e={e} me={me} /> },
     { id: "ready", label: "Ready to go?", hint: "What families going still need", icon: <ClipboardList aria-hidden />, content: <ReadyToGo e={e} me={me} /> },
     {

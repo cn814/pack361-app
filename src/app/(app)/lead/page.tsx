@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Stamp,
   Tent,
+  Video,
   Vote,
   type LucideIcon,
 } from "lucide-react";
@@ -352,6 +353,7 @@ function Meetings({ meetings }: { meetings: LeaderMeeting[] }) {
       <Heading title="Today's meetings" />
       {meetings.map((m) => {
         const on = m.on;
+        if (m.call_url) return <VirtualMeeting key={m.key} m={m} />;
         return (
           <Link
             key={m.key}
@@ -383,6 +385,44 @@ function Meetings({ meetings }: { meetings: LeaderMeeting[] }) {
         );
       })}
     </section>
+  );
+}
+
+/** A meeting on a video call (a virtual committee meeting): join it and take notes, no attendance. */
+function VirtualMeeting({ m }: { m: LeaderMeeting }) {
+  const on = m.on;
+  return (
+    <div className={`space-y-3 rounded-3xl px-4 py-3.5 shadow-[var(--shadow-card)] ${on ? "bg-gold text-on-gold" : "bg-card text-ink"}`}>
+      <div className="flex items-center gap-3">
+        <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${on ? "bg-deep" : "bg-mint"}`}>
+          <Video className={`h-6 w-6 ${on ? "text-gold" : "text-pine"}`} aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-xs font-extrabold uppercase tracking-wider">{on ? "On now" : fmtTime(m.starts_at)} · Online</span>
+          <span className="block truncate text-lg font-extrabold leading-tight">{m.title}</span>
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <a
+          href={m.call_url!}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-extrabold active:brightness-95 ${
+            on ? "bg-deep text-gold" : "bg-pine text-white"
+          }`}
+        >
+          <Video className="h-4 w-4" aria-hidden /> Join the meeting
+        </a>
+        <Link
+          href={m.href}
+          className={`flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-extrabold active:brightness-95 ${
+            on ? "bg-white/40" : "bg-mint text-pine"
+          }`}
+        >
+          <NotebookPen className="h-4 w-4" aria-hidden /> Take notes
+        </Link>
+      </div>
+    </div>
   );
 }
 

@@ -4,19 +4,23 @@ import { getUpcomingEvents, isLeader, requireMember } from "./data";
 import { easternDate, easternToIso } from "./calendar";
 import { myDenMeetingButtons, todayEastern } from "./meetings";
 import { meetingIsOn } from "./meeting-window";
+import { isVideoCall } from "./event-link";
 
 // Today's meetings for a leader, for the Leaders tab and the "meeting now" bar across the app:
 // their own dens' meetings (record who's here, what they did, and notes) and the day's other
-// short events (pack meetings, hikes: take attendance and notes). Campouts and all-day events
-// aren't meetings.
+// short events (pack meetings, hikes: take attendance and notes). A meeting held on a video call
+// (a virtual committee meeting) has no attendance: join the call and take notes. Campouts and
+// all-day events aren't meetings.
 
 export interface LeaderMeeting {
   key: string;
   title: string;
   starts_at: string;
   ends_at: string | null;
-  /** Where the leader takes attendance and keeps notes. */
+  /** Where the leader takes attendance and keeps notes (just notes for a video-call meeting). */
   href: string;
+  /** The video call, for a meeting held online (no attendance there). */
+  call_url: string | null;
   den: boolean;
   /** A den meeting already recorded today. */
   saved: boolean;
@@ -44,6 +48,7 @@ export const getLeaderMeetingsToday = cache(async (): Promise<LeaderMeeting[]> =
       starts_at: t?.starts_at ?? easternToIso(today, "18:30"),
       ends_at: t?.ends_at ?? null,
       href: `/scouts/den/${d.denId}/today`,
+      call_url: null,
       den: true,
       saved: d.saved,
       on: false,
@@ -52,7 +57,18 @@ export const getLeaderMeetingsToday = cache(async (): Promise<LeaderMeeting[]> =
   for (const e of todays) {
     if (e.kind !== "event" || e.category === "Den Meeting" || e.category === "Campout") continue;
     if (e.ends_at && Date.parse(e.ends_at) - Date.parse(e.starts_at) > LONGEST_MS) continue;
-    out.push({ key: e.id, title: e.title, starts_at: e.starts_at, ends_at: e.ends_at, href: `${e.href}#attendance`, den: false, saved: false, on: false });
+    const call = isVideoCall(e.signup_url) ? e.signup_url!.trim() : null;
+    out.push({
+      key: e.id,
+      title: e.title,
+      starts_at: e.starts_at,
+      ends_at: e.ends_at,
+      href: `${e.href}#${call ? "notes" : "attendance"}`,
+      call_url: call,
+      den: false,
+      saved: false,
+      on: false,
+    });
   }
   const now = Date.now();
   for (const m of out) m.on = meetingIsOn(m, now);

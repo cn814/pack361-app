@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { Backpack, CalendarDays, Car, ClipboardCheck, Clock, CloudSun, HandHelping, Info, Leaf, MapPin, Ticket, Video } from "lucide-react";
+import { Backpack, CalendarDays, Car, ClipboardCheck, Clock, CloudSun, HandHelping, Info, Leaf, MapPin, NotebookPen, Ticket, Video } from "lucide-react";
 import { eventLinkLabel, isVideoCall } from "@/lib/event-link";
 import BackLink from "@/components/BackLink";
 import NavigateLink from "@/components/NavigateLink";
@@ -63,6 +63,8 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const leader = isLeader(me);
   // Den meetings are recorded on the den's meeting page (attendance and requirements together).
   const denMeeting = event.category === "Den Meeting";
+  // A meeting on a video call (a virtual committee meeting): notes, no attendance.
+  const virtual = !denMeeting && isVideoCall(event.signup_url);
 
   const overview = (
     <>
@@ -90,8 +92,9 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           <RsvpLink e={event} />
           {navTo && <NavigateLink to={navTo} className="btn-ghost py-2" />}
           {leader && easternDate(event.starts_at) <= todayEastern() && easternDate(event.ends_at ?? event.starts_at) >= todayEastern() && !event.archived_at && (
-            <a href="#attendance" className="btn-primary py-2">
-              <ClipboardCheck className="h-4 w-4" aria-hidden /> {denMeeting ? "Record the meeting" : "Take attendance"}
+            <a href={virtual ? "#notes" : "#attendance"} className="btn-primary py-2">
+              {virtual ? <NotebookPen className="h-4 w-4" aria-hidden /> : <ClipboardCheck className="h-4 w-4" aria-hidden />}{" "}
+              {virtual ? "Take notes" : denMeeting ? "Record the meeting" : "Take attendance"}
             </a>
           )}
           {event.signup_url && (
