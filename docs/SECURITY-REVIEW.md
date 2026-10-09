@@ -118,7 +118,7 @@ Done for the pack's district and council review (the printable summary is
 - **Retired the beta site** (it shared the live database, so testers saw real families):
   beta.pack361.org removed from Vercel, its Preview keys deleted, preview builds skipped
   (`vercel.json`), CI on `main` only. Older preview deployments stay behind Vercel's sign-in.
-  The "pack361-beta" keys in Supabase, Resend and Brevo are to be revoked.
+  The "pack361-beta" keys in Supabase, Resend and Brevo were revoked.
 - **Removed:** the my.scouting sign-in (3.23); Scoutbook and training now come in as uploaded files.
 - **3.26 (closing the planned items):** leaders re-enter their authenticator code every 7 days
   (`private.code_entered()` checks the session's totp time; `src/lib/code-fresh.ts` in the app);

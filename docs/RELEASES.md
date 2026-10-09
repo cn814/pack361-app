@@ -18,7 +18,7 @@ Still to tidy:
 
 - Squarespace DNS: delete the CNAME `beta` → `989d26bd7722caa5.vercel-dns-017.com`.
 - Supabase → Authentication → URL Configuration: remove `https://beta.pack361.org/**`.
-- Revoke the "pack361-beta" keys in Supabase (Project Settings → API Keys), Resend and Brevo.
+- ~~Revoke the "pack361-beta" keys in Supabase, Resend and Brevo.~~ Done.
 - Vercel → Deployment Protection → Exceptions: remove `beta.pack361.org` if it's still listed.
 - GitHub: delete the `beta` branch.
 
