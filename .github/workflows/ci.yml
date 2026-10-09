@@ -32,8 +32,9 @@ jobs:
     timeout-minutes: 10
     services:
       postgres:
-        # Same major version as the Supabase database.
-        image: postgres:17
+        # Same major version as the Supabase database. Pulled from the AWS mirror of Docker's
+        # official images, so a Docker Hub outage or pull limit doesn't block a release.
+        image: public.ecr.aws/docker/library/postgres:17
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: packtest
