@@ -1,6 +1,6 @@
 -- Terms of use: every adult agrees to the pack's terms of use and data policy the first time they
 -- sign in, and again when the version goes up (the text and version live in the app,
--- src/lib/terms.ts). Each adult's row records the version they agreed to and when.
+-- src/lib/policies.ts). Each adult's row records the version they agreed to and when.
 --
 -- Members can't set these columns directly (the adult row guard only lets them change their phone
 -- and the name they go by); they record their own agreement through public.accept_terms().

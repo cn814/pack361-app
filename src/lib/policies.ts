@@ -13,13 +13,26 @@ export const TERMS_MD = `These terms are for everyone who signs in to the Pack 3
 - **Not an official Scouting America site.** Scoutbook Plus stays the official record of advancement, and my.scouting stays the official record of registration and training.
 - **Optional.** Everything important also goes out by email or on paper, and you can still RSVP and pay the pack the usual ways.
 
-## 2. Your account
+## 2. How we protect your information
+
+The pack takes your family's privacy and the security of its information seriously. The app is built with the same kinds of safeguards professional software uses:
+
+- **Encryption** for every connection, for stored data and for backups.
+- **No passwords to steal.** You sign in with a one-time code sent to your email, and every leader also enters a code from an authenticator app, at least once a week.
+- **Access rules enforced inside the database**, not just on the screen, and checked by more than 1,500 automated tests on every change.
+- **A security log** that no one can edit, recording every change to who can see what and every spreadsheet download.
+- **Less to lose.** The app never stores ID numbers, card or bank numbers, passwords, birthdates, home addresses or medical details.
+- **Ongoing checks:** automatic scans for leaked keys and known software flaws, encrypted nightly backups, and an independent review before families use it.
+
+No system can promise perfect security. If something ever goes wrong, the [data policy](/privacy) says what the pack does, including telling the families affected.
+
+## 3. Your account
 
 - Accounts are for adults on the pack roster. Scouts don't have accounts.
 - You sign in with a code or link sent to your email, so keep your email account secure. Don't forward sign-in emails or share codes. Leaders keep their authenticator app to themselves.
 - If you think someone else got into your account, email [app@pack361.org](mailto:app@pack361.org) right away.
 
-## 3. House rules
+## 4. House rules
 
 - **Family details are for pack business only.** Names, emails, phone numbers, scouts' names and dens that you see in the app stay inside the pack. Don't share them, add them to other mailing lists, or use them to sell, solicit or campaign.
 - **Spreadsheets and downloads** are for the pack work your role needs. Delete copies when you're done with them.
@@ -29,25 +42,25 @@ export const TERMS_MD = `These terms are for everyone who signs in to the Pack 3
 - **Stay within your role:** don't try to reach information your role doesn't allow, and don't test the app's security without the pack committee's written OK. Found a problem? Report it to [app@pack361.org](mailto:app@pack361.org).
 - **Leaders:** use what you can see only for your pack role, and treat it as confidential.
 
-## 4. What the pack does
+## 5. What the pack does
 
 - Runs the app with care and follows the data policy: it keeps only what the pack needs, and never stores birthdates, home addresses, medical details, ID numbers, card numbers or passwords.
 - Tells affected families promptly if their information may have been seen by someone who shouldn't have, as the data policy describes.
 - Asks you to agree again whenever these terms or the data policy change in a way that matters.
 - May pause or remove access for anyone who breaks these rules, and turns off access when a family leaves the pack.
 
-## 5. The fine print
+## 6. The fine print
 
 - **Run by volunteers, as is.** Volunteers run the app in their own time. It's provided as is, without any promise that it will always be available or free of mistakes. Dates, times and amounts in the app are a convenience: if something matters, check with a leader.
 - **You use the app at your own risk.** As far as the law allows, you agree not to hold Pack 361, its chartered organization or the volunteers who run the app responsible for any loss or harm from using the app, from relying on what's in it, or from its being unavailable. The law doesn't let anyone excuse gross negligence or willful misconduct, so this doesn't either.
 - **Payments** go through Givebutter and PayPal, under their own terms. The app never sees card or bank numbers.
 - **Maryland law** applies to these terms.
 
-## 6. Questions
+## 7. Questions
 
 Questions about these terms or your information: [app@pack361.org](mailto:app@pack361.org). This is version ${TERMS_VERSION}.`;
 
-export const DATA_POLICY_MD = `This is the pack's own policy for the Pack 361 app (app.pack361.org): what it keeps about families, who can see it, how long it's kept, and what families can ask for. Scouting America asks units for a notice wherever personal information is collected; this is that notice. It goes with the app's [terms of use](/terms).
+export const DATA_POLICY_MD = `The pack takes families' privacy and the security of their information seriously. This is the pack's own policy for the Pack 361 app (app.pack361.org): what it keeps about families, who can see it, how long it's kept, and what families can ask for. Scouting America asks units for a notice wherever personal information is collected; this is that notice. It goes with the app's [terms of use](/terms).
 
 ## Purpose
 
