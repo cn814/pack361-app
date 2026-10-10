@@ -3,6 +3,7 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { SPLASH_COOKIE, SPLASH_COOKIE_OPTIONS } from "@/lib/splash";
 import { needsTwoStepAfterEmail } from "@/lib/two-step";
+import { recordTermsTick } from "@/lib/terms-agree";
 
 // Target of the sign-in email link. The Supabase email template must point here:
 //   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email
@@ -29,6 +30,7 @@ async function verify(request: NextRequest, token_hash: string | null, type: Ema
     ok = !r.error;
     userId = r.data.user?.id;
   }
+  if (ok) await recordTermsTick(supabase);
   // Leaders go on to their authenticator code; the welcome animation plays once they've entered it.
   const twoStep = ok && (await needsTwoStepAfterEmail(supabase, userId));
   const res = NextResponse.redirect(new URL(!ok ? "/login?error=link" : twoStep ? "/two-step" : "/", request.nextUrl.origin), 303);

@@ -47,6 +47,20 @@ export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
           </span>
           <span className="mt-1 block text-[11px] text-muted">Use the email the pack has on file.</span>
         </label>
+        <label className="flex items-start gap-2 text-left text-xs text-ink">
+          <input type="checkbox" name="agree_terms" required className="mt-0.5 h-4 w-4 shrink-0 accent-pine" />
+          <span>
+            I agree to the pack&apos;s{" "}
+            <a href="/terms" target="_blank" rel="noopener" className="font-semibold text-pine underline">
+              Terms of Use
+            </a>{" "}
+            and{" "}
+            <a href="/privacy" target="_blank" rel="noopener" className="font-semibold text-pine underline">
+              Data Policy
+            </a>
+            .
+          </span>
+        </label>
         {sent.error && <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger">{sent.error}</p>}
         <button type="submit" className="btn-primary w-full" disabled={sending}>
           {sending ? "Sending…" : codeEnabled ? "Email me a sign-in link and code" : "Email me a sign-in link"}
@@ -60,6 +74,7 @@ export default function LoginForm({ codeEnabled }: { codeEnabled: boolean }) {
     <>
       <form action={sendAction}>
         <input type="hidden" name="email" value={email} />
+        <input type="hidden" name="agree_terms" value="on" />
         <button type="submit" className="w-full text-center text-xs font-bold text-pine underline" disabled={sending}>
           {sending ? "Sending…" : "Didn't get it? Send a new link"}
         </button>

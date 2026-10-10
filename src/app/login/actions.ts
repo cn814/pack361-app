@@ -5,6 +5,7 @@ import { cookies, headers } from "next/headers";
 import { SPLASH_COOKIE, SPLASH_COOKIE_OPTIONS } from "@/lib/splash";
 import { createClient } from "@/lib/supabase/server";
 import { needsTwoStepAfterEmail } from "@/lib/two-step";
+import { recordTermsTick, rememberTermsTick } from "@/lib/terms-agree";
 
 const HELP = "app@pack361.org";
 
@@ -19,6 +20,10 @@ export async function sendLoginEmail(_prev: LoginState, form: FormData): Promise
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return { step: "email", email, error: "Enter the email address you gave the pack." };
   }
+  if (form.get("agree_terms") !== "on") {
+    return { step: "email", email, error: "Tick the box to agree to the terms of use and data policy." };
+  }
+  await rememberTermsTick();
   const h = await headers();
   const origin = h.get("origin") ?? `https://${h.get("host")}`;
   const supabase = await createClient();
@@ -58,6 +63,7 @@ export async function verifyLoginCode(_prev: LoginState, form: FormData): Promis
         : "That code didn't work or has expired. Request a new one below.",
     };
   }
+  await recordTermsTick(supabase);
   // Leaders go on to their authenticator code; the welcome animation plays once they've entered it.
   if (await needsTwoStepAfterEmail(supabase, data.user?.id)) redirect("/two-step");
   (await cookies()).set(SPLASH_COOKIE, "1", SPLASH_COOKIE_OPTIONS); // the welcome animation

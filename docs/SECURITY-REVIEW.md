@@ -140,7 +140,10 @@ Done for the pack's district and council review (the printable summary is
   `/terms` and `/privacy` pages). `requireMember()` sends anyone who hasn't agreed to `/terms`;
   agreement is recorded on their own adult row through `public.accept_terms()`
   (`20261031000000_terms_of_use.sql`, tests `54_terms_tests.sql`). Pack admin shows how many have
-  agreed. The safety page's facts were brought up to date (den leaders see all families' contacts,
+  agreed. From 3.29 the sign-in page itself has the "I agree" tick (links to `/terms` and
+  `/privacy`); it waits in a one-day `pack_terms` cookie and is recorded right after the code or
+  email link signs them in (`src/lib/terms-agree.ts`). `/terms` stays as the fallback (another
+  device, or a new version). The safety page's facts were brought up to date (den leaders see all families' contacts,
   1,500+ checks, contacts cleared 24 months after a family leaves).
 
 Open items (also in the printable summary, section 12): accounts in a volunteer's name; backups
