@@ -10,7 +10,7 @@ const SCIENTIFIC = /^[A-Z][a-z]+ [a-z-]+$/;
 
 export async function GET(req: NextRequest) {
   const me = await getMe();
-  if (!me?.adult || me.held) return NextResponse.json({ error: "Sign in" }, { status: 401 });
+  if (!me?.adult || me.held || me.termsDue) return NextResponse.json({ error: "Sign in" }, { status: 401 });
   const name = (req.nextUrl.searchParams.get("name") ?? "").trim().slice(0, 80);
   if (!SCIENTIFIC.test(name)) return NextResponse.json({ error: "Bad name" }, { status: 400 });
   try {

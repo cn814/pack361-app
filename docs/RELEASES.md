@@ -34,6 +34,10 @@ feeds skip them. After the vote (docs and dates in the approval roadmap), an adm
 **Pilot only** and saves; no release is needed. Then send the welcome emails (Pack admin →
 Welcome emails).
 
+Changing the terms of use or data policy (`src/lib/policies.ts`): edit the text, and raise
+`TERMS_VERSION` when the change matters enough that everyone should agree again. Keep the pack's
+documents in step, and get the committee's OK first.
+
 ## Bringing a test site back
 
 Once families use the app and bigger changes need trying out first, bring beta back **with its own

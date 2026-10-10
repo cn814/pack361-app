@@ -9,6 +9,7 @@ import { getSettings } from "@/lib/settings";
 import { emailConfigured } from "@/lib/email";
 import { emailNewsletterPreview, resetTwoStep, saveNewsletterMode, savePilot, saveSettings, syncTroopWebHost } from "./actions";
 import { parsePilot } from "@/lib/pilot-rules";
+import { TERMS_VERSION } from "@/lib/policies";
 import { getTwoStepPeople } from "@/lib/two-step";
 import { brevoConfigured } from "@/lib/bulk-email";
 import { NEWSLETTER_MODES, newsletterMode, testAdultIds, type NewsletterMode } from "@/lib/newsletter";
@@ -61,6 +62,11 @@ export default async function AdminPage() {
     .eq("is_active", true)
     .order("last_name")
     .order("first_name");
+  // Terms of use: how many active adults have agreed to the current version.
+  const [{ count: adultsActive }, { count: adultsAgreed }] = await Promise.all([
+    supabase.from("adults").select("id", { count: "exact", head: true }).eq("is_active", true),
+    supabase.from("adults").select("id", { count: "exact", head: true }).eq("is_active", true).gte("terms_version", TERMS_VERSION),
+  ]);
   const pilotParents = ((parentRows ?? []) as { id: string; first_name: string; preferred_name: string | null; last_name: string }[]).sort(
     (a, b) => Number(pilot.people.has(b.id)) - Number(pilot.people.has(a.id)),
   );
@@ -251,6 +257,17 @@ export default async function AdminPage() {
             </div>
           </details>
         </ActionForm>
+        <p className="text-sm text-muted">
+          <b className="text-ink">Terms of use</b> (version {TERMS_VERSION}): {adultsAgreed ?? 0} of {adultsActive ?? 0} people on the
+          roster have agreed. Everyone agrees at their first sign-in, and again when the version changes.{" "}
+          <Link className="font-semibold text-pine underline" href="/terms">
+            Terms
+          </Link>{" "}
+          ·{" "}
+          <Link className="font-semibold text-pine underline" href="/privacy">
+            Data policy
+          </Link>
+        </p>
       </section>
 
       <section className="card space-y-3" id="two-step">

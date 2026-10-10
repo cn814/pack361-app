@@ -12,6 +12,6 @@ export const SPLASH_COOKIE = "pack_welcome";
 export const SPLASH_COOKIE_OPTIONS = { path: "/", maxAge: 120, sameSite: "lax" as const, secure: true, httpOnly: false };
 
 /** Pages the animation never plays on (as a RegExp source, shared with the head script). */
-export const SPLASH_SKIP_PATHS = "^\\/(login|join|get|safety|auth|api|two-step|not-on-roster|not-yet|beta-only)(\\/|$)";
+export const SPLASH_SKIP_PATHS = "^\\/(login|join|get|safety|auth|api|two-step|not-on-roster|not-yet|terms|privacy|beta-only)(\\/|$)";
 
 export const SPLASH_SCRIPT = `(function(){try{if(!/(?:^|; )${SPLASH_COOKIE}=1/.test(document.cookie))return;if(new RegExp(${JSON.stringify(SPLASH_SKIP_PATHS)}).test(location.pathname))return;if(matchMedia("(prefers-reduced-motion: reduce)").matches){document.cookie="${SPLASH_COOKIE}=; Max-Age=0; path=/";return}document.documentElement.setAttribute("data-splash","show")}catch(e){}})()`;

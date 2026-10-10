@@ -10,6 +10,7 @@ import { codeIsFresh } from "./code-fresh";
 import { isBeta } from "./version";
 import { getTesters } from "./beta";
 import { pilotLetsIn } from "./pilot";
+import { TERMS_VERSION } from "./policies";
 import { denScopeFromScouts, loadCalendar, type CalItem, type DenScope } from "./calendar";
 import { startOfEasternDay } from "./tz";
 import { FEATURE_DAYS_AFTER, FEATURE_DAYS_BEFORE, featuredKind, type FeaturedTab } from "./featured";
@@ -29,6 +30,10 @@ export interface Me {
   role: AppRole | null;
   /** On the roster, but kept out until the committee adopts the app (Pack admin → Pilot only). */
   held: boolean;
+  /** Hasn't agreed to the current terms of use and data policy yet (src/lib/policies.ts). */
+  termsDue: boolean;
+  /** When they last agreed (any version). */
+  termsAcceptedAt: string | null;
 }
 
 /** The signed-in adult's roster row, or null if they're signed in but not on the roster. */
@@ -39,11 +44,18 @@ export const getMe = cache(async (): Promise<Me | null> => {
   if (!sub) return null;
   const { data } = await supabase
     .from("adults")
-    .select("id, family_id, first_name, last_name, preferred_name, email, phone, role, position_title, ypt_expires_on, registration_expires_on")
+    .select("id, family_id, first_name, last_name, preferred_name, email, phone, role, position_title, ypt_expires_on, registration_expires_on, terms_version, terms_accepted_at")
     .eq("user_id", sub)
     .eq("is_active", true)
     .maybeSingle();
-  let adult = (data as Adult | null) ?? null;
+  const row = data as (Adult & { terms_version: number | null; terms_accepted_at: string | null }) | null;
+  let adult: Adult | null = null;
+  if (row) {
+    const a: Partial<typeof row> = { ...row };
+    delete a.terms_version;
+    delete a.terms_accepted_at;
+    adult = a as Adult;
+  }
   const role = adult?.role ?? null;
   let twoStep: TwoStep = "ok";
   if (adult && needsTwoStep(adult.role) && !codeIsFresh(claims?.claims)) {
@@ -58,8 +70,9 @@ export const getMe = cache(async (): Promise<Me | null> => {
     const view = viewAsRole(adult.role, (await cookies()).get(VIEW_AS_COOKIE)?.value);
     if (view) adult = { ...adult, role: view, real_role: adult.role };
   }
-  const held = data ? !(await pilotLetsIn({ id: (data as Adult).id, role })) : false;
-  return { email: String(claims?.claims?.email ?? ""), adult, twoStep, role, held };
+  const held = row ? !(await pilotLetsIn({ id: row.id, role })) : false;
+  const termsDue = !!row && (row.terms_version ?? 0) < TERMS_VERSION;
+  return { email: String(claims?.claims?.email ?? ""), adult, twoStep, role, held, termsDue, termsAcceptedAt: row?.terms_accepted_at ?? null };
 });
 
 /** Every leader signs in with an authenticator app as well as email. */
@@ -77,6 +90,8 @@ export async function requireMember(): Promise<Adult> {
   if (isBeta() && !(await getTesters()).ids.has(me.adult.id)) redirect("/beta-only");
   // Until the committee adopts the app, only leaders and the people picked in Pack admin.
   if (me.held) redirect("/not-yet");
+  // Everyone agrees to the terms of use and data policy before using the app.
+  if (me.termsDue) redirect("/terms");
   return me.adult;
 }
 

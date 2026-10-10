@@ -57,7 +57,7 @@ export default function SafetyPage() {
         items={[
           "No family information is public. The only public pages are the pack's welcome pages at pack361.org, with general information about joining, and this safety page. Everything else requires signing in, and search engines are told not to list it.",
           "Families see only their own scouts' information and advancement.",
-          "Den leaders see their own den; key leaders see the whole pack for approvals and awards.",
+          "Den leaders see every family's contact details and medical-form status, plus their own den's attendance and advancement. Key leaders see the whole pack for money, approvals and awards.",
           "Parents' phone numbers and emails aren't shown to other parents. The leader directory lists only leaders.",
           "Your calendar subscription link is private to you and contains pack events plus your scouts' den meetings.",
           "Volunteer sign-ups show other families only your first name and last initial.",
@@ -77,7 +77,7 @@ export default function SafetyPage() {
           "The documents library is for pack papers only. Leaders are asked never to upload medical forms, insurance cards or anything with personal details about scouts or families.",
           "Adults can add their own BSA member ID so leaders can match training records from my.scouting.org. Training reports are read on the leader's device: only course dates and member IDs for adults on the roster are saved, and the file itself is never uploaded or stored.",
           "Photos are resized and their location (GPS) data removed before they're stored, and they're deleted automatically after a set time.",
-          "When a family leaves the pack, their access is turned off.",
+          "When a family leaves the pack, their access is turned off, and their contact details are cleared automatically 24 months later.",
         ]}
       />
 
@@ -85,9 +85,9 @@ export default function SafetyPage() {
         icon={KeyRound}
         title="Security"
         items={[
-          "No passwords to steal: you sign in with a one-time link or code sent to the email the pack has on file.",
+          "No passwords to steal: you sign in with a one-time link or code sent to the email the pack has on file. Leaders also enter a code from an authenticator app at least once a week.",
           "Every connection is encrypted (HTTPS), and the database host encrypts stored data.",
-          "Access rules are enforced inside the database itself, not just on the screen, and are checked by more than 650 automated tests.",
+          "Access rules are enforced inside the database itself, not just on the screen, and are checked by more than 1,500 automated tests.",
           "Only designated pack admins can import roster or advancement data or change anyone's role.",
         ]}
       />
@@ -113,7 +113,17 @@ export default function SafetyPage() {
 
       <p className="flex items-start gap-2 px-1 text-[11px] text-muted">
         <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-        This app is run by Pack 361 volunteers. It isn&apos;t an official Scouting America product.
+        <span>
+          This app is run by Pack 361 volunteers. It isn&apos;t an official Scouting America product. Read the{" "}
+          <Link className="font-semibold text-pine underline" href="/terms">
+            terms of use
+          </Link>{" "}
+          and the{" "}
+          <Link className="font-semibold text-pine underline" href="/privacy">
+            data policy
+          </Link>
+          .
+        </span>
       </p>
     </main>
   );

@@ -7,7 +7,7 @@ import { CSP_REPORT_PATH, newNonce, scriptPolicy } from "./lib/csp";
 // (the calendar feed and cron job check their own token/secret)
 // /birdnet: the bird sound ID model files (public, no pack data).
 // /.well-known: security.txt (how to report a security problem).
-const PUBLIC_PATHS = ["/login", "/get", "/safety", "/join", "/auth", "/manifest.webmanifest", "/sw.js", "/api/calendar", "/api/cron", "/birdnet", "/.well-known", CSP_REPORT_PATH];
+const PUBLIC_PATHS = ["/login", "/get", "/safety", "/terms", "/privacy", "/join", "/auth", "/manifest.webmanifest", "/sw.js", "/api/calendar", "/api/cron", "/birdnet", "/.well-known", CSP_REPORT_PATH];
 
 // The pack's public website (pack361.org, www.pack361.org) shows only the public join pages.
 // Everything else there goes to the members' app at APP_ORIGIN.

@@ -135,6 +135,13 @@ Done for the pack's district and council review (the printable summary is
   Turning it on or off, or changing who's picked, goes in the security log
   (`20261030000000_pilot_only.sql`, tests `53_pilot_tests.sql`). It's an app-level gate: the
   database still gives a signed-in parent their own family's rows.
+- **3.28 (terms of use):** every adult agrees to the pack's terms of use and data policy at first
+  sign-in, and again when `TERMS_VERSION` goes up (`src/lib/policies.ts`, shown at the public
+  `/terms` and `/privacy` pages). `requireMember()` sends anyone who hasn't agreed to `/terms`;
+  agreement is recorded on their own adult row through `public.accept_terms()`
+  (`20261031000000_terms_of_use.sql`, tests `54_terms_tests.sql`). Pack admin shows how many have
+  agreed. The safety page's facts were brought up to date (den leaders see all families' contacts,
+  1,500+ checks, contacts cleared 24 months after a family leaves).
 
 Open items (also in the printable summary, section 12): accounts in a volunteer's name; backups
 unencrypted on the maintainer's home server and without photos/documents; the weekly Scoutbook

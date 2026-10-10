@@ -11,7 +11,7 @@ import { logDownload } from "@/lib/security-log";
 // years. Only for the people who may open the roster report (the database checks).
 export async function GET() {
   const me = await getMe();
-  if (!me?.adult || me.held) return NextResponse.json({ error: "Sign in" }, { status: 401 });
+  if (!me?.adult || me.held || me.termsDue) return NextResponse.json({ error: "Sign in" }, { status: 401 });
   const rows = await getRosterReport();
   if (!rows) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   const out: (string | null)[][] = [
