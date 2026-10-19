@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/data";
-import { getCatalog, getScout, isAdmin } from "@/lib/advancement-data";
+import { getCatalog, getScout, isAdvancement } from "@/lib/advancement-data";
 import { parseScoutbookExport, RANKS, type ImportRow } from "@/lib/advancement";
 import type { DenRank } from "@/lib/types";
 import type { ImportChanges } from "@/lib/import-changes";
@@ -115,7 +115,7 @@ export type ImportState = FormState & {
 /** Admin uploads Scoutbook Plus -> Reports -> Quick Export -> Advancements. */
 export async function importScoutbook(_prev: ImportState, form: FormData): Promise<ImportState> {
   const me = await requireMember();
-  if (!isAdmin(me)) return { error: "Only pack admins can import." };
+  if (!isAdvancement(me)) return { error: "Only admins and the Advancement Chair can import." };
   const file = form.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "Choose the CSV file first." };
   if (file.size > 3_500_000) return { error: "That file is bigger than a Scoutbook advancement export should be." };

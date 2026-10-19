@@ -39,6 +39,7 @@ import {
   getRecords,
   getReviewableScouts,
   isAdmin,
+  isAdvancement,
   recordsByScout,
 } from "@/lib/advancement-data";
 import { rankProgress } from "@/lib/advancement";
@@ -67,6 +68,7 @@ export default async function LeadersHubPage() {
   if (!isLeader(me)) redirect("/");
   const committee = isCommittee(me);
   const admin = isAdmin(me);
+  const advancement = isAdvancement(me);
   const [meetings, todos, toApprove, toRecord, dens, reviewable, settings, lastImport, waiting, joins, catalog, reports] = await Promise.all([
     getLeaderMeetingsToday(),
     getTodos(),
@@ -75,7 +77,7 @@ export default async function LeadersHubPage() {
     getMessageableDens(me),
     getReviewableScouts(),
     getSettings(),
-    admin ? getLastImport() : Promise.resolve(null),
+    advancement ? getLastImport() : Promise.resolve(null),
     committee ? countWaitingRequests() : Promise.resolve(null),
     admin ? countWaitingJoins() : Promise.resolve(0),
     getCatalog(),
@@ -158,7 +160,7 @@ export default async function LeadersHubPage() {
           { href: "/scouts/review#record", icon: Stamp, label: "Enter in Scoutbook", count: toRecord },
           { href: "/scouts/awards", icon: Award, label: "Awards to hand out", count: awards.length },
           { href: "/scouts/awards/sheet", icon: Printer, label: "Awards night sheet", note: "Printable, by den" },
-          ...(admin
+          ...(advancement
             ? [{ href: "/scouts/import", icon: FileUp, label: "Import Scoutbook", note: lastImport ? `Updated ${timeAgo(lastImport.imported_at)}` : "Never imported" }]
             : []),
         ]}

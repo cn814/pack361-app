@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { CalendarDays, ChevronLeft, ClipboardCheck, House } from "lucide-react";
 import { isLeader, requireMember } from "@/lib/data";
 import PostAnnouncement from "@/components/PostAnnouncement";
-import { getCatalog, getMyDenIds, getRecords, reviewsWholePack } from "@/lib/advancement-data";
+import { getCatalog, getMyDenIds, getRecords, seesAllAdvancement } from "@/lib/advancement-data";
 import { ELECTIVES_NEEDED, RANK_LABEL, rankProgress } from "@/lib/advancement";
 import { createClient } from "@/lib/supabase/server";
 import type { Scout } from "@/lib/types";
@@ -19,7 +19,7 @@ export default async function DenGridPage({ params }: PageProps<"/scouts/den/[de
   if (!isLeader(me)) redirect("/scouts");
   const { denId } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(denId)) notFound();
-  if (!reviewsWholePack(me) && !(await getMyDenIds()).includes(denId)) redirect("/scouts");
+  if (!seesAllAdvancement(me) && !(await getMyDenIds()).includes(denId)) redirect("/scouts");
 
   const supabase = await createClient();
   const [{ data: den }, { data: scoutRows }, catalog] = await Promise.all([

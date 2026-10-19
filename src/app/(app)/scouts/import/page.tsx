@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { requireMember } from "@/lib/data";
-import { getLastImport, isAdmin } from "@/lib/advancement-data";
+import { getLastImport, isAdvancement } from "@/lib/advancement-data";
 import { fmtDay, fmtTime } from "@/lib/format";
 import ImportForm from "./ImportForm";
 import { changesText } from "@/lib/import-changes";
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Import from Scoutbook" };
 
 export default async function ImportPage() {
   const me = await requireMember();
-  if (!isAdmin(me)) redirect("/scouts");
+  if (!isAdvancement(me)) redirect("/scouts");
   const last = await getLastImport();
 
   return (

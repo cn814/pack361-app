@@ -72,6 +72,10 @@ npm run dev
 - **Scoutbook Plus is the official record.** There's no Scoutbook API, so an admin exports
   *Reports → Quick Export → Advancements* and uploads the CSV at **Scouts → Import Scoutbook**.
   Each scout in the file is replaced (matched by BSA member ID). Do it after each pack meeting.
+- **Advancement Chair by position:** a leader (den leader role or above) whose position title
+  mentions "advancement" can import Scoutbook and sees, approves and marks entered the advancement
+  of every den, with no other admin rights (`isAdvancement()` in `src/lib/advancement-data.ts`,
+  `private.is_advancement()` in `20261101000000_advancement_position.sql`).
 - Families see their scout's current rank: required adventures, electives, partial requirements,
   ranks earned. They can report finished home requirements; the den leader approves; whoever enters
   it in Scoutbook taps "Entered" (or the next import marks it automatically).

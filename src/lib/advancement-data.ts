@@ -3,7 +3,7 @@ import { cache } from "react";
 import { createClient } from "./supabase/server";
 import { requireMember } from "./data";
 import type { AdvancementRecord, CatalogAdventure } from "./advancement";
-import type { Adult, DenRank, Scout } from "./types";
+import { LEADER_ROLES, type Adult, type DenRank, type Scout } from "./types";
 import type { ImportChanges } from "./import-changes";
 
 export type SubmissionStatus = "submitted" | "approved" | "returned" | "recorded";
@@ -58,6 +58,20 @@ export function isAdmin(me: Adult) {
   return me.role === "admin" || me.role === "cubmaster";
 }
 
+/**
+ * Runs advancement for the whole pack: admins and the Cubmaster, and any leader whose pack
+ * position mentions advancement (the Advancement Chair). They import Scoutbook and see every
+ * den's advancement. The database checks the same thing (private.is_advancement()).
+ */
+export function isAdvancement(me: Adult) {
+  return isAdmin(me) || (LEADER_ROLES.includes(me.role) && /advancement/i.test(me.position_title ?? ""));
+}
+
+/** Sees advancement (records, reports, awards) for every den, not just the dens they lead. */
+export function seesAllAdvancement(me: Adult) {
+  return reviewsWholePack(me) || isAdvancement(me);
+}
+
 export const getCatalog = cache(async (): Promise<CatalogAdventure[]> => {
   const supabase = await createClient();
   const { data } = await supabase
@@ -85,7 +99,7 @@ export const getMyDenIds = cache(async (): Promise<string[]> => {
 /** Scouts whose advancement this adult can review: their den(s), or the whole pack. */
 export async function getReviewableScouts(): Promise<Scout[]> {
   const me = await requireMember();
-  const whole = reviewsWholePack(me);
+  const whole = seesAllAdvancement(me);
   const denIds = whole ? [] : await getMyDenIds();
   if (!whole && denIds.length === 0) return [];
   const supabase = await createClient();
@@ -142,7 +156,7 @@ export function recordsByScout(records: ScoutRecord[]): Map<string, ScoutRecord[
  */
 export async function countReviewSubmissions(status: SubmissionStatus): Promise<number> {
   const me = await requireMember();
-  const whole = reviewsWholePack(me);
+  const whole = seesAllAdvancement(me);
   const denIds = whole ? [] : await getMyDenIds();
   if (!whole && denIds.length === 0) return 0;
   const supabase = await createClient();
