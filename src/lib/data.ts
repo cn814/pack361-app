@@ -110,6 +110,12 @@ export function isGearKeeper(a: Adult) {
   return isLeader(a) || /quartermaster/i.test(a.position_title ?? "");
 }
 
+/** Runs the camp kitchen: leaders, and the camp cooks (by pack position: cook, chef, Grub Master, kitchen). */
+export const CAMP_COOK_TITLE = /cook|chef|grub|kitchen/i;
+export function isCampCook(a: Adult) {
+  return isLeader(a) || CAMP_COOK_TITLE.test(a.position_title ?? "");
+}
+
 /** Key leaders, the Cubmaster and admins (they keep the Pack guide up to date). */
 export function isCommittee(a: Adult) {
   return a.role === "committee" || a.role === "cubmaster" || a.role === "admin";

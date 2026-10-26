@@ -26,6 +26,15 @@ export function sameName(a: string, b: string): boolean {
  * yet, then adults.
  */
 export function splitTickets(names: (string | null | undefined)[], scouts: string[], adults: string[][]): Headcount {
+  return splitTicketsDetail(names, scouts, adults).count;
+}
+
+/** splitTickets, plus which of the family's scouts (by position in `scouts`) were counted. */
+export function splitTicketsDetail(
+  names: (string | null | undefined)[],
+  scouts: string[],
+  adults: string[][],
+): { count: Headcount; scoutIdx: number[] } {
   const out: Headcount = { scouts: 0, siblings: 0, adults: 0 };
   const scoutUsed = new Set<number>();
   const adultUsed = new Set<number>();
@@ -63,8 +72,68 @@ export function splitTickets(names: (string | null | undefined)[], scouts: strin
   }
   out.siblings = left.size;
   const moreScouts = Math.min(unknown, scouts.length - scoutUsed.size);
+  for (let i = 0, added = 0; i < scouts.length && added < moreScouts; i++) {
+    if (!scoutUsed.has(i)) {
+      scoutUsed.add(i);
+      added++;
+    }
+  }
   out.scouts += moreScouts;
   out.adults += unknown - moreScouts;
+  return { count: out, scoutIdx: [...scoutUsed].sort((a, b) => a - b) };
+}
+
+/** The groups the camp kitchen counts people in (see 20261102000000_camp_kitchen.sql). */
+export type EaterGroup =
+  | "adult" | "lion" | "tiger" | "wolf" | "bear" | "webelos" | "aol" | "scout"
+  | "sib_0_3" | "sib_4_6" | "sib_7_9" | "sib_10_12" | "sib_13_up" | "sib";
+export type Eaters = Partial<Record<EaterGroup, number>>;
+
+const RANKS = new Set(["lion", "tiger", "wolf", "bear", "webelos", "aol"]);
+
+export function siblingGroup(age: number | null): EaterGroup {
+  if (age === null || !Number.isFinite(age) || age < 0) return "sib";
+  if (age <= 3) return "sib_0_3";
+  if (age <= 6) return "sib_4_6";
+  if (age <= 9) return "sib_7_9";
+  if (age <= 12) return "sib_10_12";
+  return "sib_13_up";
+}
+
+/**
+ * Siblings' ages from a sign-up's answers: a question about siblings (or brothers or sisters) and
+ * their age. "7 and 4", "Emma (7), Jack 3", "18 months" (0). Read in memory; only the age groups
+ * are kept, as counts.
+ */
+export function siblingAges(answers: { question: string; answer: string }[]): number[] {
+  const ages: number[] = [];
+  for (const a of answers) {
+    if (!/sibling|brother|sister/i.test(a.question) || !/\bages?\b|\bold\b|\bbirth/i.test(a.question)) continue;
+    for (const m of a.answer.matchAll(/(\d{1,2})(?:\s*(?:-|to)\s*\d{1,2})?\s*(mo(?:nths?|s)?\b|m\b)?/gi)) {
+      const n = Number(m[1]);
+      if (m[2]) ages.push(0);
+      else if (n <= 17) ages.push(n);
+    }
+  }
+  return ages;
+}
+
+/**
+ * Who a family is bringing, by group: adults; each scout counted by their den on the roster (a
+ * scout who isn't on the roster is "scout"); siblings by the ages the sign-up gave, in order (the
+ * rest "sib"). Groups with nobody are left out.
+ */
+export function eatersFor(count: Headcount, scoutRanks: (string | null)[], siblingAgeList: number[]): Eaters {
+  const out: Eaters = {};
+  const add = (g: EaterGroup, n = 1) => {
+    if (n > 0) out[g] = (out[g] ?? 0) + n;
+  };
+  add("adult", count.adults);
+  for (let i = 0; i < count.scouts; i++) {
+    const r = scoutRanks[i];
+    add(r && RANKS.has(r) ? (r as EaterGroup) : "scout");
+  }
+  for (let i = 0; i < count.siblings; i++) add(siblingGroup(siblingAgeList[i] ?? null));
   return out;
 }
 

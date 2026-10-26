@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "./supabase/server";
-import { getLeaders, getUpcomingEvents, isCommittee, isLeader } from "./data";
+import { getLeaders, getUpcomingEvents, isCampCook, isCommittee, isLeader } from "./data";
 import { getReviewableScouts, isAdmin } from "./advancement-data";
 import type { Adult } from "./types";
 
@@ -22,7 +22,7 @@ export interface SearchResults {
   scouts: Hit[];
 }
 
-type Who = "all" | "leader" | "committee" | "admin";
+type Who = "all" | "leader" | "committee" | "admin" | "cook";
 /** The app's places, with the words people might type for them. */
 const PLACES: { href: string; title: string; words: string; who?: Who }[] = [
   { href: "/pay", title: "Pay the pack", words: "pay dues fees money payment owe givebutter paypal" },
@@ -52,6 +52,7 @@ const PLACES: { href: string; title: string; words: string; who?: Who }[] = [
   { href: "/lead", title: "Leaders", words: "leaders leader tools today meeting attendance notes dens waiting", who: "leader" },
   { href: "/lead#dens", title: "Your dens", words: "dens den roster my den scouts", who: "leader" },
   { href: "/gear", title: "Gear closet", words: "gear closet borrow tent equipment quartermaster" },
+  { href: "/kitchen", title: "Camp kitchen", words: "camp kitchen chef cook recipes menu food grocery shopping list meals grub", who: "cook" },
   { href: "/help-wanted", title: "Help wanted", words: "help wanted volunteer jobs roles grown-up" },
   { href: "/announce", title: "Announce to the pack", words: "announce announcement post message den email", who: "leader" },
   { href: "/events/new", title: "Add an event", words: "add event new create", who: "leader" },
@@ -78,7 +79,7 @@ export async function searchPack(me: Adult, raw: string): Promise<SearchResults>
   const lower = q.toLowerCase();
   const words = lower.split(/\s+/).filter(Boolean);
   const allowed = (who: Who | undefined) =>
-    !who || who === "all" || (who === "leader" && isLeader(me)) || (who === "committee" && isCommittee(me)) || (who === "admin" && isAdmin(me));
+    !who || who === "all" || (who === "leader" && isLeader(me)) || (who === "committee" && isCommittee(me)) || (who === "admin" && isAdmin(me)) || (who === "cook" && isCampCook(me));
 
   const pages = PLACES.filter((p) => allowed(p.who))
     .filter((p) => words.every((w) => `${p.title} ${p.words}`.toLowerCase().includes(w)))

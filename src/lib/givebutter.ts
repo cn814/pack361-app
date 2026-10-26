@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { customAnswers, planDuesMatch, type Answer, type RosterScout } from "./givebutter-dues";
-import { placesInOrder, splitTickets } from "./givebutter-rsvp";
+import { eatersFor, placesInOrder, siblingAges, splitTicketsDetail, type Eaters } from "./givebutter-rsvp";
 
 // Givebutter REST API v1: https://docs.givebutter.com (Bearer API key, paginated { data, links, meta }).
 const BASE = "https://api.givebutter.com/v1";
@@ -199,7 +199,14 @@ export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
         .filter((e) => e.rsvp_enabled && !e.archived_at && Date.parse((e.ends_at ?? e.starts_at) as string) >= cutoff)
         .map((e) => e.id as string),
     );
-    rsvps = await syncRsvps(db, rows.filter((c) => c.event_id && rsvpEvents.has(c.event_id)), orders.filter(paid), tickets, rsvpEvents);
+    rsvps = await syncRsvps(
+      db,
+      rows.filter((c) => c.event_id && rsvpEvents.has(c.event_id)),
+      orders.filter(paid),
+      tickets,
+      rsvpEvents,
+      answersById,
+    );
   } catch (e) {
     rsvps = { error: e instanceof Error ? e.message : "RSVPs failed" };
   }
@@ -220,7 +227,8 @@ export async function syncGivebutter(db: SupabaseClient): Promise<SyncResult> {
  *  - Givebutter sign-ups (campouts): a "yes" with how many scouts, siblings and adults their
  *    tickets were for. The ticket names are only read here, to count; they aren't stored. Without
  *    ticket names (the /tickets call failed), every ticket counts as unnamed: the family's scouts
- *    first, then adults.
+ *    first, then adults. For the camp kitchen, the same count by group: each scout by their den on
+ *    the roster, and siblings by the ages given in a "siblings' ages" answer (counts only).
  *  - Paid in the app (PayPal, or marked paid by a leader): a "yes" for a family that hasn't
  *    answered (or answered no or maybe before paying), counting the scouts the charges were for
  *    (or the family's scouts) and one adult. A family's own "yes" and numbers stand.
@@ -232,6 +240,7 @@ async function syncRsvps(
   paidOrders: { id: number; campaign_id: number; family_id: string | null; tickets: number; created_at: string | null }[],
   tickets: Json[] | null,
   rsvpEvents: Set<string>,
+  answersById: Map<number, Answer[]>,
 ): Promise<{ added: number; updated: number; removed: number }> {
   const { data: charges, error: chargeErr } = rsvpEvents.size
     ? await db
@@ -262,30 +271,51 @@ async function syncRsvps(
 
   const [{ data: scouts }, { data: adults }] = families.length
     ? await Promise.all([
-        db.from("scouts").select("family_id, first_name").eq("is_active", true).in("family_id", families),
+        db
+          .from("scouts")
+          .select("family_id, first_name, den:dens(rank)")
+          .eq("is_active", true)
+          .in("family_id", families)
+          .order("created_at"),
         db.from("adults").select("family_id, first_name, preferred_name, other_names").eq("is_active", true).in("family_id", families),
       ])
     : [{ data: [] }, { data: [] }];
 
   // One row per event and family (a family can pay in more than one order).
-  const byKey = new Map<string, { event_id: string; family_id: string; names: (string | null)[]; paid_at: string | null }>();
+  const byKey = new Map<
+    string,
+    { event_id: string; family_id: string; names: (string | null)[]; ages: number[]; paid_at: string | null }
+  >();
   for (const o of mine) {
     const event_id = eventOf.get(o.campaign_id)!;
     const key = `${event_id}:${o.family_id}`;
-    const row = byKey.get(key) ?? { event_id, family_id: o.family_id as string, names: [], paid_at: null };
+    const row = byKey.get(key) ?? { event_id, family_id: o.family_id as string, names: [], ages: [], paid_at: null };
+    row.ages.push(...siblingAges(answersById.get(o.id) ?? []));
     const named = namesByOrder.get(o.id);
     row.names.push(...(named && named.length ? named : Array.from({ length: o.tickets }, () => null)));
     if (o.created_at && (!row.paid_at || o.created_at > row.paid_at)) row.paid_at = o.created_at;
     byKey.set(key, row);
   }
-  const rows = [...byKey.values()]
+  const rows: {
+    event_id: string;
+    family_id: string;
+    paid_at: string | null;
+    scouts: number;
+    siblings: number;
+    adults: number;
+    eaters?: Eaters;
+    only_if_missing?: boolean;
+  }[] = [...byKey.values()]
     .filter((r) => r.names.length > 0)
     .map((r) => {
-      const famScouts = (scouts ?? []).filter((s) => s.family_id === r.family_id).map((s) => s.first_name as string);
+      const fam = (scouts ?? []).filter((s) => s.family_id === r.family_id);
+      const famScouts = fam.map((s) => s.first_name as string);
       const famAdults = (adults ?? [])
         .filter((a) => a.family_id === r.family_id)
         .map((a) => [a.first_name as string, (a.preferred_name as string | null) ?? "", ...((a.other_names as string[] | null) ?? [])]);
-      return { event_id: r.event_id, family_id: r.family_id, paid_at: r.paid_at, ...splitTickets(r.names, famScouts, famAdults) };
+      const { count, scoutIdx } = splitTicketsDetail(r.names, famScouts, famAdults);
+      const ranks = scoutIdx.map((i) => denRank(fam[i]?.den));
+      return { event_id: r.event_id, family_id: r.family_id, paid_at: r.paid_at, ...count, eaters: eatersFor(count, ranks, r.ages) };
     });
 
   // Paid in the app: one row per event and family not already covered by a Givebutter sign-up.
@@ -308,7 +338,7 @@ async function syncRsvps(
       siblings: 0,
       adults: 1,
       only_if_missing: true,
-    } as (typeof rows)[number]);
+    });
   }
 
   const { data, error } = await db.rpc("sync_givebutter_rsvps", { p_event_ids: eventIds, p_rows: rows });
@@ -380,4 +410,10 @@ async function matchDues(
     }
   }
   return out;
+}
+
+/** A scout's den rank from the embedded `den:dens(rank)` (an object, or a one-item list). */
+function denRank(den: unknown): string | null {
+  const d = Array.isArray(den) ? den[0] : den;
+  return d && typeof d === "object" && typeof (d as { rank?: unknown }).rank === "string" ? (d as { rank: string }).rank : null;
 }

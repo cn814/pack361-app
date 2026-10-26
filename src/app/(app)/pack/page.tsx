@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bird, BookOpen, ChevronRight, Compass, FolderOpen, HandCoins, HandHeart, Images, Megaphone, Phone, Popcorn, Receipt, Shirt, ShoppingBag, Tent, type LucideIcon, UserPlus, Vote } from "lucide-react";
+import { Bird, BookOpen, ChefHat, ChevronRight, Compass, FolderOpen, HandCoins, HandHeart, Images, Megaphone, Phone, Popcorn, Receipt, Shirt, ShoppingBag, Tent, type LucideIcon, UserPlus, Vote } from "lucide-react";
 import EventTabs from "@/components/EventTabs";
-import { requireMember } from "@/lib/data";
+import { isCampCook, requireMember } from "@/lib/data";
 import { getMyCharges, totalDue } from "@/lib/payments";
 import { fmtMoney } from "@/lib/money";
 
@@ -40,6 +40,7 @@ export default async function PackPage() {
     { href: "/nature", label: "Nature ID", icon: Bird, note: "Name a bird by its song, or a plant from a photo" },
     { href: "/geocaching", label: "Geocaching", icon: Compass, note: "Treasure hunting with the official Geocaching app" },
     { href: "/gear", label: "Gear closet", icon: Tent, note: "Borrow tents and camp gear" },
+    ...(isCampCook(me) ? [{ href: "/kitchen", label: "Camp kitchen", icon: ChefHat, note: "Recipes, campout menus and the shopping list" }] : []),
     { href: "/polls", label: "Polls", icon: Vote },
     { href: "/inbox", label: "News and messages", icon: Megaphone },
   ];
