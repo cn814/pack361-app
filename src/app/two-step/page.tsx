@@ -46,7 +46,7 @@ export default async function TwoStepPage() {
                 </div>
                 <TwoStepVerify />
                 <p className="text-xs text-muted">
-                  For leaders&apos; accounts the app asks once a week on each device, and after you sign out. Lost your phone or
+                  For leaders&apos; accounts the app asks once a month on each device, and after you sign out. Lost your phone or
                   changed phones? Email {help}: an admin can reset it so you can set it up again.
                 </p>
               </>
@@ -65,7 +65,7 @@ export default async function TwoStepPage() {
                 </div>
                 <TwoStepSetup next="home" />
                 <p className="text-xs text-muted">
-                  It takes about two minutes, and after that you&apos;ll enter a code once a week on each device. Questions? Email{" "}
+                  It takes about two minutes, and after that you&apos;ll enter a code once a month on each device. Questions? Email{" "}
                   {help}.
                 </p>
               </>

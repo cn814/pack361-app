@@ -1,23 +1,23 @@
--- Leaders' code lasts 7 days; contact details of families who left are cleared after the set
+-- Leaders' code lasts 30 days; contact details of families who left are cleared after the set
 -- number of months; the app's contact address is app@pack361.org.
 \set QUIET on
 
-\echo '== Leader code: lasts 7 days'
+\echo '== Leader code: lasts 30 days'
 begin;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object(
     'sub', '00000000-0000-0000-0000-00000000000d', 'aal', 'aal2',
     'amr', json_build_array(json_build_object('method', 'otp', 'timestamp', extract(epoch from now())::bigint),
-                            json_build_object('method', 'totp', 'timestamp', extract(epoch from now() - interval '1 day')::bigint)))::text, true);
-select test.check(private.is_admin(), 'an admin who entered the code yesterday has admin access');
+                            json_build_object('method', 'totp', 'timestamp', extract(epoch from now() - interval '29 days')::bigint)))::text, true);
+select test.check(private.is_admin(), 'an admin who entered the code 29 days ago has admin access');
 select set_config('request.jwt.claims', json_build_object(
     'sub', '00000000-0000-0000-0000-00000000000d', 'aal', 'aal2',
-    'amr', json_build_array(json_build_object('method', 'totp', 'timestamp', extract(epoch from now() - interval '8 days')::bigint)))::text, true);
-select test.check(not private.is_admin(), 'eight days later the code must be entered again');
+    'amr', json_build_array(json_build_object('method', 'totp', 'timestamp', extract(epoch from now() - interval '31 days')::bigint)))::text, true);
+select test.check(not private.is_admin(), 'after 30 days the code must be entered again');
 select test.check(not exists (select 1 from public.security_log), 'and the admin-only security log is closed to them');
 select set_config('request.jwt.claims', json_build_object(
     'sub', '00000000-0000-0000-0000-00000000000c', 'aal', 'aal2',
-    'amr', json_build_array(json_build_object('method', 'totp', 'timestamp', extract(epoch from now() - interval '8 days')::bigint)))::text, true);
+    'amr', json_build_array(json_build_object('method', 'totp', 'timestamp', extract(epoch from now() - interval '31 days')::bigint)))::text, true);
 select test.check(not private.is_leader(), 'the same goes for den leaders');
 select set_config('request.jwt.claims', json_build_object(
     'sub', '00000000-0000-0000-0000-00000000000d', 'aal', 'aal2',

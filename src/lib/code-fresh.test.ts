@@ -5,11 +5,11 @@ import { codeIsFresh } from "./code-fresh";
 const now = Date.UTC(2026, 9, 9, 12);
 const secs = (daysAgo: number) => Math.floor((now - daysAgo * 86_400_000) / 1000);
 
-test("a code entered in the last 7 days counts", () => {
-  assert.equal(codeIsFresh({ aal: "aal2", amr: [{ method: "otp", timestamp: secs(0) }, { method: "totp", timestamp: secs(6) }] }, now), true);
+test("a code entered in the last 30 days counts", () => {
+  assert.equal(codeIsFresh({ aal: "aal2", amr: [{ method: "otp", timestamp: secs(0) }, { method: "totp", timestamp: secs(29) }] }, now), true);
 });
-test("after 7 days the code is asked for again", () => {
-  assert.equal(codeIsFresh({ aal: "aal2", amr: [{ method: "totp", timestamp: secs(8) }] }, now), false);
+test("after 30 days the code is asked for again", () => {
+  assert.equal(codeIsFresh({ aal: "aal2", amr: [{ method: "totp", timestamp: secs(31) }] }, now), false);
 });
 test("aal2 without an authenticator entry does not count", () => {
   assert.equal(codeIsFresh({ aal: "aal2", amr: [{ method: "otp", timestamp: secs(0) }] }, now), false);

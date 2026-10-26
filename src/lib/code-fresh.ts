@@ -1,9 +1,9 @@
 /**
- * Leaders enter their authenticator code again every 7 days. The same rule is in the database
+ * Leaders enter their authenticator code again every 30 days. The same rule is in the database
  * (private.code_entered()): the session must be aal2 and its "totp" sign-in entry (amr) less than
- * 7 days old. A session with no amr list at all is judged on aal2 alone, as the database does.
+ * 30 days old. A session with no amr list at all is judged on aal2 alone, as the database does.
  */
-export const CODE_LASTS_DAYS = 7;
+export const CODE_LASTS_DAYS = 30;
 
 type Claims = { aal?: unknown; amr?: unknown } | null | undefined;
 

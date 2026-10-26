@@ -121,6 +121,7 @@ Done for the pack's district and council review (the printable summary is
   The "pack361-beta" keys in Supabase, Resend and Brevo were revoked.
 - **Removed:** the my.scouting sign-in (3.23); Scoutbook and training now come in as uploaded files.
 - **3.26 (closing the planned items):** leaders re-enter their authenticator code every 7 days
+  (30 days from 3.32, after leaders were signing in again too often)
   (`private.code_entered()` checks the session's totp time; `src/lib/code-fresh.ts` in the app);
   contact details of families who left are cleared after 24 months (`public.purge_left_families()`,
   nightly); photos and documents are backed up weekly, encrypted (`scripts/unraid-user-script.sh`);
