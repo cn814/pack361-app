@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import BackLink from "@/components/BackLink";
 import GearItemForm from "@/components/GearItemForm";
 import { isGearKeeper, requireMember } from "@/lib/data";
-import { getGearItem } from "@/lib/gear";
+import { getGearItem, getGearItems } from "@/lib/gear";
 
 export const metadata: Metadata = { title: "Edit gear" };
 
@@ -11,7 +11,7 @@ export default async function EditGearPage({ params }: PageProps<"/gear/manage/[
   const me = await requireMember();
   if (!isGearKeeper(me)) redirect("/gear");
   const { id } = await params;
-  const item = await getGearItem(id);
+  const [item, all] = await Promise.all([getGearItem(id), getGearItems({ all: true })]);
   if (!item) notFound();
   return (
     <>
@@ -20,7 +20,7 @@ export default async function EditGearPage({ params }: PageProps<"/gear/manage/[
       <p className="-mt-1 text-sm text-muted">
         {item.available} of {item.quantity} free right now. To stop lending it, untick the box at the bottom.
       </p>
-      <GearItemForm item={item} />
+      <GearItemForm item={item} places={all.map((i) => i.location ?? "")} />
     </>
   );
 }

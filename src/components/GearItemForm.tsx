@@ -1,9 +1,10 @@
 import ActionForm, { Field } from "@/components/ActionForm";
+import GearLocationPicker from "@/components/GearLocationPicker";
 import { saveGearItem } from "@/app/(app)/gear/actions";
 import { GEAR_CATEGORIES, type GearItem } from "@/lib/gear";
 
 /** The quartermaster and leaders: add an item to the gear closet, or change one. */
-export default function GearItemForm({ item }: { item?: GearItem }) {
+export default function GearItemForm({ item, places = [] }: { item?: GearItem; places?: string[] }) {
   return (
     <ActionForm action={saveGearItem} submit={item ? "Save" : "Add to the closet"} resetOnSuccess={false} className="card space-y-3">
       {item && <input type="hidden" name="id" value={item.id} />}
@@ -25,12 +26,7 @@ export default function GearItemForm({ item }: { item?: GearItem }) {
         </Field>
       </div>
       <Field label="Where it's kept" hint="The pack shed, or whose house it's at between campouts. Families see this.">
-        <input className="input" name="location" maxLength={120} list="gear-places" defaultValue={item?.location ?? "Pack shed"} placeholder="Pack shed" />
-        <datalist id="gear-places">
-          <option value="Pack shed" />
-          <option value="At the quartermaster's house" />
-          <option value="Sass house" />
-        </datalist>
+        <GearLocationPicker places={places} value={item?.location ?? null} />
       </Field>
       <Field label="Description (optional)">
         <textarea className="input min-h-20" name="description" maxLength={500} defaultValue={item?.description ?? ""} placeholder="Size, what's in the bag, how to set it up" />
