@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { ChevronRight, Plus, Scale } from "lucide-react";
 import BackLink from "@/components/BackLink";
 import { isCampCook, requireMember } from "@/lib/data";
-import { fmtRange } from "@/lib/format";
+import { fmtEventDates } from "@/lib/format";
 import { MEALS } from "@/lib/kitchen";
 import { getKitchenEvents, getRecipes } from "@/lib/kitchen-data";
 
@@ -97,14 +97,14 @@ export default async function KitchenPage({ searchParams }: PageProps<"/kitchen"
   );
 }
 
-function EventLine({ e }: { e: { id: string; title: string; starts_at: string; ends_at: string | null; meals: number } }) {
+function EventLine({ e }: { e: { id: string; title: string; starts_at: string; ends_at: string | null; all_day: boolean; meals: number } }) {
   return (
     <li>
       <Link href={`/kitchen/events/${e.id}`} className="flex items-center gap-3 px-3 py-2.5">
         <span className="min-w-0 flex-1">
           <span className="block font-bold text-pine-950">{e.title}</span>
           <span className="block text-xs text-muted">
-            {fmtRange(e.starts_at, e.ends_at)} · {e.meals ? `${e.meals} on the menu` : "No menu yet"}
+            {fmtEventDates(e)} · {e.meals ? `${e.meals} on the menu` : "No menu yet"}
           </span>
         </span>
         <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />

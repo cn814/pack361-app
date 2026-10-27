@@ -25,6 +25,13 @@ export function fmtRange(start: string, end: string | null, allDay = false) {
   return sameDay ? `${fmtDay(start)} · ${fmtTime(start)}–${fmtTime(end)}` : `${fmtDay(start)} – ${fmtDay(end)}`;
 }
 
+/** An event's dates, with no time when it's all day or has no real start time (midnight). */
+export function fmtEventDates(e: { starts_at: string; ends_at: string | null; all_day?: boolean | null }) {
+  const noTime = Boolean(e.all_day) || fmtTime(e.starts_at) === "12:00 AM";
+  if (noTime && (!e.ends_at || fmtDay(e.ends_at) === fmtDay(e.starts_at))) return fmtDay(e.starts_at);
+  return fmtRange(e.starts_at, e.ends_at, noTime);
+}
+
 /** "Today", "Tomorrow", "In 5 days" by calendar day in Eastern time; "Happening now" mid-event. */
 export function daysUntil(iso: string, endIso?: string | null) {
   const today = easternDate(Date.now());

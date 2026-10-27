@@ -8,7 +8,7 @@ import PrintButton from "@/components/PrintButton";
 import ShoppingList, { type ShoppingRow } from "@/components/ShoppingList";
 import SubmitButton from "@/components/SubmitButton";
 import { isCampCook, requireMember } from "@/lib/data";
-import { fmtRange } from "@/lib/format";
+import { fmtEventDates } from "@/lib/format";
 import { EATER_GROUPS, MEALS, byStore, formatAmount, formatPacks, mergeCounts, portions, shoppingList, totalPeople } from "@/lib/kitchen";
 import { getEventKitchen, getKitchenEvents, getRecipes } from "@/lib/kitchen-data";
 import { addMenuItem, clearShoppingChecks, copyMenu, removeMenuItem, saveCounts } from "../../actions";
@@ -73,7 +73,7 @@ export default async function EventKitchenPage({ params, searchParams }: PagePro
     <>
       <BackLink href="/kitchen" label="Camp kitchen" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">{k.event.title}</h1>
-      <p className="-mt-1 text-sm text-muted">{fmtRange(k.event.starts_at, k.event.ends_at)}</p>
+      <p className="-mt-1 text-sm text-muted">{fmtEventDates(k.event)}</p>
       {done && (
         <p className="flex items-center gap-1.5 rounded-xl bg-mint p-3 text-sm font-semibold text-pine">
           <CircleCheck className="h-4 w-4 shrink-0" aria-hidden /> {done}

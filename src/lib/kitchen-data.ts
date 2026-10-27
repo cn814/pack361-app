@@ -91,6 +91,7 @@ export interface KitchenEvent {
   category: string;
   starts_at: string;
   ends_at: string | null;
+  all_day: boolean;
   meals: number;
 }
 
@@ -101,7 +102,7 @@ export async function getKitchenEvents(): Promise<{ upcoming: KitchenEvent[]; pa
   const [{ data: events }, { data: menus }] = await Promise.all([
     supabase
       .from("events")
-      .select("id, title, category, starts_at, ends_at")
+      .select("id, title, category, starts_at, ends_at, all_day")
       .is("archived_at", null)
       .gte("starts_at", since)
       .order("starts_at")
@@ -118,7 +119,7 @@ export async function getKitchenEvents(): Promise<{ upcoming: KitchenEvent[]; pa
   const { data: past } = pastIds.length
     ? await supabase
         .from("events")
-        .select("id, title, category, starts_at, ends_at")
+        .select("id, title, category, starts_at, ends_at, all_day")
         .in("id", pastIds)
         .order("starts_at", { ascending: false })
         .limit(12)
@@ -136,7 +137,7 @@ export interface MenuRow extends MenuItem {
 }
 
 export interface EventKitchen {
-  event: { id: string; title: string; starts_at: string; ends_at: string | null; category: string };
+  event: { id: string; title: string; starts_at: string; ends_at: string | null; category: string; all_day: boolean };
   menu: MenuRow[];
   /** From the RSVPs (families going, not the waitlist). */
   rsvpCounts: Counts;
@@ -149,7 +150,7 @@ export interface EventKitchen {
 export async function getEventKitchen(eventId: string): Promise<EventKitchen | null> {
   if (!UUID.test(eventId)) return null;
   const supabase = await createClient();
-  const { data: event } = await supabase.from("events").select("id, title, starts_at, ends_at, category").eq("id", eventId).maybeSingle();
+  const { data: event } = await supabase.from("events").select("id, title, starts_at, ends_at, category, all_day").eq("id", eventId).maybeSingle();
   if (!event) return null;
   const [menuRes, countsRes, overRes, weightRes, checkRes] = await Promise.all([
     supabase
