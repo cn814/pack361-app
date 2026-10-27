@@ -28,21 +28,22 @@ jobs:
 
   database:
     name: Permission tests
-    runs-on: ubuntu-latest
+    # Pinned so the Postgres that comes installed on GitHub's machine stays the same.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
-    services:
-      postgres:
-        # Same major version as the Supabase database. Pulled from the AWS mirror of Docker's
-        # official images, so a Docker Hub outage or pull limit doesn't block a release.
-        image: public.ecr.aws/docker/library/postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: packtest
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v7
+      # The Postgres already installed on GitHub's machine (16; the tests need 15 or later), started
+      # here instead of a downloaded container: the container download (Docker Hub, then the AWS
+      # mirror) failed often enough to block releases. Installs Postgres only if an image lacks it.
+      - name: Start Postgres
+        run: |
+          if ! command -v pg_ctlcluster >/dev/null; then sudo apt-get update -q && sudo apt-get install -yq postgresql; fi
+          sudo systemctl start postgresql.service
+          for i in $(seq 1 30); do pg_isready -h localhost -q && break; sleep 1; done
+          sudo -u postgres psql -qc "alter user postgres password 'postgres'"
+          sudo -u postgres createdb packtest
+          psql --version
       - run: supabase/tests/run.sh
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/packtest
