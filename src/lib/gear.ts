@@ -9,7 +9,7 @@ import { addDays, easternDate } from "./tz";
 // The pack gear closet: tents, cooking kits, spare uniforms and the like that families can
 // borrow. Families ask; leaders approve, hand out and check back in (/gear/manage).
 
-export const GEAR_CATEGORIES = ["Tents", "Sleeping", "Cooking", "Uniforms", "Other"] as const;
+export const GEAR_CATEGORIES = ["Tents", "Sleeping", "Cooking", "Activities", "Recruitment", "Uniforms", "Other"] as const;
 export type GearCategory = (typeof GEAR_CATEGORIES)[number];
 
 export type LoanStatus = "requested" | "approved" | "declined" | "out" | "returned";
