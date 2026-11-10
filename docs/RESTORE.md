@@ -1,6 +1,6 @@
 # Restoring a database backup
 
-The nightly backups (`scripts/unraid-user-script.sh`, `scripts/backup-db.sh`) are Postgres
+The backups (`scripts/unraid-user-script.sh` every hour, `scripts/backup-db.sh` nightly) are Postgres
 custom-format dumps of the app's data: the `public` and `private` schemas, tables and rows. This
 guide covers three situations, from most to least likely. The steps were tested on a copy of the
 schema (dump, fresh database, migrations, data-only load, row counts match).

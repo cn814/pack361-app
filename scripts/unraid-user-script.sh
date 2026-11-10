@@ -1,7 +1,10 @@
 #!/bin/bash
 # Pack 361 database backup for Unraid (User Scripts plugin). Self-contained: paste this whole file
 # into Settings -> User Scripts -> Add New Script -> Edit Script, and schedule it
-# ("Custom": 15 3 * * *  = every night at 3:15 AM).
+# ("Custom": 15 * * * *  = every hour at quarter past).
+#
+# Hourly copies are kept for 2 days; the 3 AM copy each night is kept for 60 days. (Before 3.33
+# this ran once a night at 3:15 AM; the same script still works on that schedule.)
 #
 # Every backup is ENCRYPTED before it touches the disk (age, a public-key tool): this server only
 # ever holds the pack's public key, so the files here can't be read even if the server is. The
@@ -27,7 +30,7 @@
 #   docker run --rm -it -v /mnt/user/appdata/pack361-backup/rclone:/config/rclone rclone/rclone:1.68.2 config
 # Then add RCLONE_REMOTE above. Only the encrypted files are copied.
 #
-# Photos, documents and receipts (Supabase Storage) are backed up every Sunday when the four
+# Photos, documents and receipts (Supabase Storage) are backed up every Sunday (in the 3 AM run) when the four
 # STORAGE_S3_ settings are there: every file is downloaded inside a container, packed into one
 # archive and encrypted with the same key, as pack361-files-<date>.tar.age. Supabase's S3 keys can
 # read and change all files, so the key stays only in backup.env (chmod 600) and the pack vault.
@@ -35,7 +38,9 @@
 BACKUP_DIR="/mnt/user/backups/pack361"
 APP_DIR="/mnt/user/appdata/pack361-backup"
 ENV_FILE="$APP_DIR/backup.env"
-KEEP_DAYS=60
+KEEP_DAYS=60            # the nightly copies (the 3 AM run)
+KEEP_HOURLY_MIN=2880    # the other hourly copies: 2 days
+NIGHTLY_HOUR="03"
 IMAGE="postgres:17-alpine"
 RCLONE_IMAGE="rclone/rclone:1.68.2"
 
@@ -85,8 +90,9 @@ done
 
 echo "Backed up to $BACKUP_DIR/$NAME ($(du -h "$BACKUP_DIR/$NAME" | cut -f1))"
 
-# Photos, documents and receipts: Sundays (or FILES_NOW=1), when the storage settings are there.
-if [ -n "${STORAGE_S3_KEY_ID:-}" ] && { [ "$(date +%u)" = 7 ] || [ "${FILES_NOW:-}" = 1 ]; }; then
+# Photos, documents and receipts: Sundays in the 3 AM run (or FILES_NOW=1), when the storage
+# settings are there.
+if [ -n "${STORAGE_S3_KEY_ID:-}" ] && { { [ "$(date +%u)" = 7 ] && [ "$(date +%H)" = "$NIGHTLY_HOUR" ]; } || [ "${FILES_NOW:-}" = 1 ]; }; then
   : "${STORAGE_S3_ENDPOINT:?STORAGE_S3_ENDPOINT is not set in $ENV_FILE}"
   : "${STORAGE_S3_SECRET:?STORAGE_S3_SECRET is not set in $ENV_FILE}"
   FILES="pack361-files-$(date +%Y-%m-%d_%H%M).tar.age"
@@ -107,14 +113,20 @@ if [ -n "${STORAGE_S3_KEY_ID:-}" ] && { [ "$(date +%u)" = 7 ] || [ "${FILES_NOW:
   echo "Photos and documents backed up to $BACKUP_DIR/$FILES ($(du -h "$BACKUP_DIR/$FILES" | cut -f1))"
 fi
 
+# Hourly copies after 2 days (all but the 3 AM one), then everything after 60 days.
+find "$BACKUP_DIR" -maxdepth 1 -type f -name 'pack361-2*_*.dump.age' ! -name "pack361-*_${NIGHTLY_HOUR}[0-9][0-9].dump.age" \
+  -mmin +"$KEEP_HOURLY_MIN" -delete
 find "$BACKUP_DIR" -maxdepth 1 -name 'pack361-*' -type f -mtime +"$KEEP_DAYS" -delete
 echo "Backups kept here: $(find "$BACKUP_DIR" -maxdepth 1 -name 'pack361-*.age' | wc -l)"
 
-# Off-site copy (encrypted files only) to the pack's Google Drive, keeping the same 60 days.
+# Off-site copy (encrypted files only) to the pack's Google Drive, kept the same way.
 if [ -n "${RCLONE_REMOTE:-}" ]; then
   docker run --rm -v "$APP_DIR/rclone:/config/rclone" -v "$BACKUP_DIR:/backup:ro" "$RCLONE_IMAGE" \
     copy /backup "$RCLONE_REMOTE" --include 'pack361-*.age' --no-traverse
   docker run --rm -v "$APP_DIR/rclone:/config/rclone" "$RCLONE_IMAGE" \
     delete "$RCLONE_REMOTE" --include 'pack361-*.age' --min-age "${KEEP_DAYS}d"
+  docker run --rm -v "$APP_DIR/rclone:/config/rclone" "$RCLONE_IMAGE" \
+    delete "$RCLONE_REMOTE" --min-age "$((KEEP_HOURLY_MIN / 60))h" \
+    --filter "- pack361-*_${NIGHTLY_HOUR}[0-9][0-9].dump.age" --filter '+ pack361-2*_*.dump.age' --filter '- *'
   echo "Copied to $RCLONE_REMOTE"
 fi

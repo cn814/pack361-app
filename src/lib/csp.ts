@@ -1,13 +1,16 @@
 /**
- * The strict script policy, in report-only mode: browsers report what it would block (to
- * /api/csp-report, shown in Vercel's logs) without blocking anything. Once a few weeks pass with
- * no reports from the app's own pages and PayPal checkout, it can be switched to enforce by
- * renaming the header in src/proxy.ts to Content-Security-Policy. Before enforcing, make sure pages
- * saved for offline use (public/sw.js) are fetched fresh, since a saved page carries an old nonce.
+ * The strict script policy: the browser runs only scripts the app itself sent with this request
+ * (they carry the per-request nonce), so a script slipped into a page some other way doesn't run.
+ * It ran report-only from 3.26 (Oct 9, 2026) and is enforced from 3.33. Browsers still report
+ * anything it blocks to /api/csp-report (shown in Vercel's logs).
  *
- * Scripts must carry the per-request nonce (Next.js adds it to its own scripts; the layout adds it
- * to the head scripts), and 'strict-dynamic' lets those load what they need, such as PayPal's
- * checkout script.
+ * Off switch: if it ever blocks something it shouldn't, set CSP_REPORT_ONLY=1 in Vercel
+ * (Settings -> Environment Variables) and redeploy; the policy goes back to report-only.
+ *
+ * Next.js adds the nonce to its own scripts and the layout adds it to the head scripts;
+ * 'strict-dynamic' lets those load what they need, such as PayPal's checkout script. Pages saved
+ * for offline use (public/sw.js) are saved with their own policy header, whose nonce matches the
+ * saved page. The service worker's loading screen is built on the phone and has no policy.
  */
 export const CSP_REPORT_PATH = "/api/csp-report";
 
@@ -28,6 +31,10 @@ export function scriptPolicy(nonce: string, dev = process.env.NODE_ENV === "deve
     "frame-ancestors 'none'",
     `report-uri ${CSP_REPORT_PATH}`,
   ].join("; ");
+}
+
+export function cspHeaderName(): "Content-Security-Policy" | "Content-Security-Policy-Report-Only" {
+  return process.env.CSP_REPORT_ONLY === "1" ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy";
 }
 
 export function newNonce(): string {

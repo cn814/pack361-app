@@ -5,7 +5,8 @@ import Toast from "@/components/Toast";
 import { Suspense } from "react";
 import ServiceWorkerSetup from "@/components/ServiceWorkerSetup";
 import { Bell, Search } from "lucide-react";
-import { displayName, isLeader, requireMember } from "@/lib/data";
+import { displayName, getMe, isLeader, needsTwoStep, requireMember } from "@/lib/data";
+import IdleWatch from "@/components/IdleWatch";
 import InboxBadge from "@/components/InboxBadge";
 import ViewAsBanner from "@/components/ViewAsBanner";
 import MeetingNow from "@/components/MeetingNow";
@@ -16,6 +17,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   // The bell's number (InboxBadge) and the meeting bar (MeetingNow) stream in on their own, so
   // pages don't wait for them.
   const leader = isLeader(me);
+  // Leaders' accounts lock after 15 minutes without use (src/lib/idle.ts). The real role counts,
+  // so "View as" a parent still locks.
+  const locks = needsTwoStep((await getMe())?.role);
   const initials = (displayName(me)[0] + me.last_name[0]).toUpperCase();
   return (
     <div className="min-h-dvh w-full lg:pl-64 print:pl-0">
@@ -24,6 +28,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <Toast />
       </Suspense>
       <ServiceWorkerSetup mode="register" />
+      {locks && <IdleWatch />}
       <BetaBanner />
       {/* Full-width green bar; the content inside lines up with the page column. */}
       <header className="print:hidden sticky top-0 z-40 bg-brand pt-[env(safe-area-inset-top)] text-white shadow-md lg:hidden">

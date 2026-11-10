@@ -1,7 +1,22 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_COOKIE_OPTIONS } from "./lib/supabase/env";
-import { CSP_REPORT_PATH, newNonce, scriptPolicy } from "./lib/csp";
+import { CSP_REPORT_PATH, cspHeaderName, newNonce, scriptPolicy } from "./lib/csp";
+import { latestCodeMs } from "./lib/code-fresh";
+import {
+  ACTIVE_COOKIE,
+  ACTIVE_COOKIE_OPTIONS,
+  LEFT_HEADER,
+  LOCKED_HEADER,
+  LOCK_MS,
+  REFRESH_MS,
+  countsAsUse,
+  idleState,
+  lastActive,
+  openWhileLocked,
+  readActive,
+  stampActive,
+} from "./lib/idle";
 
 // Paths anyone can open without signing in
 // (the calendar feed and cron job check their own token/secret)
@@ -45,22 +60,34 @@ export async function proxy(request: NextRequest) {
     return new NextResponse(null, { status: 204 });
   }
 
-  // The strict script policy, report-only for now (src/lib/csp.ts). Next.js reads the nonce from
-  // the request's policy header and adds it to its own scripts.
+  // The strict script policy (src/lib/csp.ts). Next.js reads the nonce from the request's policy
+  // header and adds it to its own scripts.
   const nonce = newNonce();
   const policy = scriptPolicy(nonce);
+  const policyHeader = cspHeaderName();
   request.headers.set("x-nonce", nonce);
-  request.headers.set("content-security-policy-report-only", policy);
+  request.headers.set(policyHeader.toLowerCase(), policy);
+  // Set below; never taken from the browser.
+  request.headers.set(LOCKED_HEADER, "0");
+  request.headers.set(LEFT_HEADER, "");
   const withPolicy = (res: NextResponse) => {
-    res.headers.set("Content-Security-Policy-Report-Only", policy);
+    res.headers.set(policyHeader, policy);
     return res;
   };
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return NextResponse.next({ request }); // not configured yet: pages show a setup notice
+  if (!url || !key) return withPolicy(NextResponse.next({ request })); // not configured yet: pages show a setup notice
 
-  let response = NextResponse.next({ request });
+  // Cookies to send back (a refreshed sign-in, the "last used" stamp), kept so any response
+  // built below carries them, including redirects.
+  const outCookies: { name: string; value: string; options?: Parameters<NextResponse["cookies"]["set"]>[2] }[] = [];
+  const outHeaders: Record<string, string> = {};
+  const finish = (res: NextResponse) => {
+    outCookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
+    Object.entries(outHeaders).forEach(([k, v]) => res.headers.set(k, v));
+    return res;
+  };
 
   const supabase = createServerClient(url, key, {
     cookieOptions: AUTH_COOKIE_OPTIONS,
@@ -69,17 +96,19 @@ export async function proxy(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet, headers) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-        Object.entries(headers ?? {}).forEach(([k, v]) => response.headers.set(k, v));
+        cookiesToSet.forEach(({ name, value, options }) => {
+          request.cookies.set(name, value);
+          outCookies.push({ name, value, options });
+        });
+        Object.assign(outHeaders, headers ?? {});
       },
     },
   });
 
   // Refreshes the session cookie if needed and verifies the JWT.
   const { data } = await supabase.auth.getClaims();
-  const signedIn = Boolean(data?.claims?.sub);
+  const claims = data?.claims;
+  const signedIn = Boolean(claims?.sub);
 
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + "/"));
@@ -90,13 +119,53 @@ export async function proxy(request: NextRequest) {
     to.search = "";
     return NextResponse.redirect(to);
   }
+
+  // Away from the app (src/lib/idle.ts): a leader's session locks after 15 minutes without use,
+  // and everyone is signed out after 30 days.
+  if (signedIn && claims && !isPublic) {
+    const now = Date.now();
+    const sessionId = String(claims.session_id ?? claims.sub);
+    const aal2 = claims.aal === "aal2";
+    const stamped = await readActive(request.cookies.get(ACTIVE_COOKIE)?.value, sessionId);
+    const last = lastActive({ stamped, codeAt: latestCodeMs(claims), aal2, now });
+    const state = idleState({ last, aal2, now });
+    if (state === "signed-out") {
+      await supabase.auth.signOut({ scope: "local" });
+      const to = request.nextUrl.clone();
+      to.pathname = "/login";
+      to.search = "?away=1";
+      const res = finish(NextResponse.redirect(to, request.method === "GET" ? 307 : 303));
+      res.cookies.delete(ACTIVE_COOKIE);
+      return res;
+    }
+    if (state === "locked") {
+      request.headers.set(LOCKED_HEADER, "1");
+      request.headers.set(LEFT_HEADER, "0");
+      if (!openWhileLocked(path)) {
+        const to = request.nextUrl.clone();
+        to.pathname = "/two-step";
+        to.search = "";
+        to.searchParams.set("next", path + request.nextUrl.search);
+        return finish(NextResponse.redirect(to, request.method === "GET" ? 307 : 303));
+      }
+    } else {
+      const use = countsAsUse(request.method, path, request.headers);
+      if (use && (stamped === null || now - stamped > REFRESH_MS)) {
+        const value = await stampActive(sessionId, now);
+        request.cookies.set(ACTIVE_COOKIE, value);
+        outCookies.push({ name: ACTIVE_COOKIE, value, options: ACTIVE_COOKIE_OPTIONS });
+      }
+      if (aal2) request.headers.set(LEFT_HEADER, String(use ? LOCK_MS : Math.max(0, LOCK_MS - (now - last))));
+    }
+  }
+
   if (signedIn && path === "/login") {
     const to = request.nextUrl.clone();
     to.pathname = "/";
     to.search = "";
-    return NextResponse.redirect(to);
+    return finish(NextResponse.redirect(to));
   }
-  return withPolicy(response);
+  return withPolicy(finish(NextResponse.next({ request })));
 }
 
 export const config = {

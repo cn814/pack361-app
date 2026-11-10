@@ -36,7 +36,7 @@ Committee Chair.
 | **Givebutter** | The pack's fundraising and dues account. The app reads campaigns and orders with an API key. | Pack account | Pack account (ECPack361@gmail.com); Annie (admin) | Any Givebutter admin can make a new key (Settings → Developers → API) and replace `GIVEBUTTER_API_KEY` in Vercel. |
 | **PayPal** (optional) | Pay buttons for fees other than dues. | Pack's PayPal Business | Pack treasurer | The treasurer makes the REST app keys; see the "Connect PayPal to the App" guide. |
 | **TroopWebHost** | Calendar sync only, until the pack cancels it. | Paid yearly | Pack | Remove `TWH_CALENDAR_URL` from Vercel when cancelled. |
-| **Backups** | Nightly copy of the database (`scripts/unraid-user-script.sh` or `scripts/backup-db.sh`). | — | Chris Nealen's home NAS | The next person runs one of the backup scripts on their own computer or NAS (README → Backups) and keeps the files. Make sure the old copies are deleted when the old owner steps away. |
+| **Backups** | Hourly copy of the database (`scripts/unraid-user-script.sh` or `scripts/backup-db.sh`). | — | Chris Nealen's home NAS | The next person runs one of the backup scripts on their own computer or NAS (README → Backups) and keeps the files. Make sure the old copies are deleted when the old owner steps away. |
 | **Password manager** | Where the database password and account logins are kept for the pack. | — | *Set one up* (any shared vault) | Share the vault with the next person; change passwords when someone leaves. |
 
 ## 2. The secret keys
@@ -86,7 +86,7 @@ After changing anything in Vercel, **Redeploy** (Deployments → ⋯ → Redeplo
    Supabase project, never the live one.
 4. Run the checks: `npm run typecheck`, `npm run lint`, `npm run build`, and the database tests
    (README → Run the permission tests).
-5. Set up the nightly backup and practice RESTORE.md section 1 once.
+5. Set up the hourly backup and practice RESTORE.md section 1 once.
 6. Walk through the app with the guide (`docs/guide/`), as a parent and as a leader.
 
 ## 5. How changes go live

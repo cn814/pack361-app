@@ -1,12 +1,13 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createClient } from "./supabase/server";
 import type { Adult, Announcement, AppRole, ItineraryItem, Leader, PackEvent, PackingItem, Scout } from "./types";
 import { LEADER_ROLES, TWO_STEP_ROLES } from "./types";
 import { VIEW_AS_COOKIE, viewAsRole } from "./view-as";
 import { codeIsFresh } from "./code-fresh";
+import { LOCKED_HEADER } from "./idle";
 import { isBeta } from "./version";
 import { getTesters } from "./beta";
 import { pilotLetsIn } from "./pilot";
@@ -17,8 +18,8 @@ import { FEATURE_DAYS_AFTER, FEATURE_DAYS_BEFORE, featuredKind, type FeaturedTab
 
 /**
  * Two-step sign-in for every leader (den leaders, key leaders, the Cubmaster and admins):
- * "ok" = not needed, or the code was entered in the last 7 days; "verify" = enter the code from the
- * authenticator app; "setup" = no authenticator app added yet.
+ * "ok" = not needed, or the code was entered in the last 30 days and the account hasn't locked;
+ * "verify" = enter the code from the authenticator app; "setup" = no authenticator app added yet.
  */
 export type TwoStep = "ok" | "verify" | "setup";
 
@@ -26,6 +27,8 @@ export interface Me {
   email: string;
   adult: Adult | null;
   twoStep: TwoStep;
+  /** A leader's account locked after 15 minutes without use (src/lib/idle.ts): the code opens it. */
+  locked: boolean;
   /** The roster role, whatever "View as" or a missing two-step code shows. */
   role: AppRole | null;
   /** On the roster, but kept out until the committee adopts the app (Pack admin → Pilot only). */
@@ -58,7 +61,9 @@ export const getMe = cache(async (): Promise<Me | null> => {
   }
   const role = adult?.role ?? null;
   let twoStep: TwoStep = "ok";
-  if (adult && needsTwoStep(adult.role) && !codeIsFresh(claims?.claims)) {
+  // Set by src/proxy.ts, which overwrites anything a browser sends under that name.
+  const locked = !!adult && needsTwoStep(adult.role) && (await headers()).get(LOCKED_HEADER) === "1";
+  if (adult && needsTwoStep(adult.role) && (locked || !codeIsFresh(claims?.claims))) {
     // Until the code is entered, a leader gets a parent's access everywhere (the database
     // checks the same thing).
     const { data: factors } = await supabase.auth.mfa.listFactors();
@@ -72,7 +77,7 @@ export const getMe = cache(async (): Promise<Me | null> => {
   }
   const held = row ? !(await pilotLetsIn({ id: row.id, role })) : false;
   const termsDue = !!row && (row.terms_version ?? 0) < TERMS_VERSION;
-  return { email: String(claims?.claims?.email ?? ""), adult, twoStep, role, held, termsDue, termsAcceptedAt: row?.terms_accepted_at ?? null };
+  return { email: String(claims?.claims?.email ?? ""), adult, twoStep, locked, role, held, termsDue, termsAcceptedAt: row?.terms_accepted_at ?? null };
 });
 
 /** Every leader signs in with an authenticator app as well as email. */

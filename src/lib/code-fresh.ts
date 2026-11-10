@@ -7,14 +7,24 @@ export const CODE_LASTS_DAYS = 30;
 
 type Claims = { aal?: unknown; amr?: unknown } | null | undefined;
 
-export function codeIsFresh(claims: Claims, nowMs = Date.now()): boolean {
-  if (claims?.aal !== "aal2") return false;
-  if (!Array.isArray(claims.amr)) return true;
+/**
+ * When the authenticator code was last entered in this session, in milliseconds; 0 if never,
+ * null if the session has no amr list to tell.
+ */
+export function latestCodeMs(claims: Claims): number | null {
+  if (!Array.isArray(claims?.amr)) return null;
   let latest = 0;
   for (const e of claims.amr as unknown[]) {
     if (!e || typeof e !== "object") continue;
     const { method, timestamp } = e as { method?: unknown; timestamp?: unknown };
     if (method === "totp" && typeof timestamp === "number" && timestamp > latest) latest = timestamp;
   }
-  return latest * 1000 > nowMs - CODE_LASTS_DAYS * 86_400_000;
+  return latest * 1000;
+}
+
+export function codeIsFresh(claims: Claims, nowMs = Date.now()): boolean {
+  if (claims?.aal !== "aal2") return false;
+  const at = latestCodeMs(claims);
+  if (at === null) return true;
+  return at > nowMs - CODE_LASTS_DAYS * 86_400_000;
 }

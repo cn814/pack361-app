@@ -22,7 +22,7 @@ The pack takes your family's privacy and the security of its information serious
 - **Access rules enforced inside the database**, not just on the screen, and checked by more than 1,500 automated tests on every change.
 - **A security log** that no one can edit, recording every change to who can see what and every spreadsheet download.
 - **Less to lose.** The app never stores ID numbers, card or bank numbers, passwords, birthdates, home addresses or medical details.
-- **Ongoing checks:** automatic scans for leaked keys and known software flaws, encrypted nightly backups, and an independent review before families use it.
+- **Ongoing checks:** automatic scans for leaked keys and known software flaws, encrypted hourly backups, and an independent review planned.
 
 No system can promise perfect security. If something ever goes wrong, the [data policy](/privacy) says what the pack does, including telling the families affected.
 
@@ -94,7 +94,7 @@ This keeps the app clear of the information that triggers Maryland's data-breach
 
 ## Where it lives
 
-The data is kept by well-known services (Supabase for the database, in the US; Vercel for the website; Resend and Brevo for email). The accounts belong to the pack's own account, not a volunteer's, and its sign-in is shared by two people through the pack's password vault. Data is encrypted in storage and in transit. Backups are encrypted too (the database nightly, photos and documents weekly), kept 60 days on the backup server and in the pack's own Google Drive, and the key to open them is kept in the pack's password vault.
+The data is kept by well-known services (Supabase for the database, in the US; Vercel for the website; Resend and Brevo for email). The accounts belong to the pack's own account, not a volunteer's, and its sign-in is shared by two people through the pack's password vault. Data is encrypted in storage and in transit. Backups are encrypted too (the database every hour, photos and documents weekly), kept on the backup server (hourly copies for 2 days, one a night for 60 days) and in the pack's own Google Drive, and the key to open them is kept in the pack's password vault.
 
 ## Who can see what
 
@@ -104,7 +104,7 @@ Each person sees only what their job needs, and the database enforces it, not ju
 - **Den leaders** see all families' contact details, medical-form status and event RSVPs, and attendance and advancement for their own den.
 - **Key leaders** (today the Committee Chair and Treasurer) see pack-wide money and records.
 - **Admins** (the Cubmaster and pack admins) add and remove people, change roles and import data. Every change to people, roles, den leaders and report access, and every spreadsheet download, is written to a security log that no one can edit.
-- Every leader enters a second code from an authenticator app, at least once a month, before seeing anything beyond their own family.
+- Every leader enters a second code from an authenticator app, at least once a month, before seeing anything beyond their own family. A leader's account locks after 15 minutes without use until that code is entered again, and everyone is signed out after 30 days without opening the app.
 
 ## Youth protection and photos
 

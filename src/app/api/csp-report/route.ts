@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-// Browsers post here what the report-only script policy would have blocked (src/lib/csp.ts).
+// Browsers post here what the script policy blocked (or, report-only, would have) (src/lib/csp.ts).
 // Each report is written to the server log, trimmed; nothing is stored.
 export async function POST(request: Request) {
   const body = (await request.text()).slice(0, 4000);

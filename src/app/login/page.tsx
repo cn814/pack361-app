@@ -41,7 +41,9 @@ const safetyLink = (cls: string) => (
  * Sign in. On a phone: one column, the sign-in card first. On a computer: the pack's welcome on
  * the left (what the app does, youth protection) and signing in on the right. One form either way.
  */
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: PageProps<"/login">) {
+  // Signed out after 30 days without opening the app (src/lib/idle.ts).
+  const away = (await searchParams).away === "1";
   const form = supabaseConfigured() ? (
     <LoginForm codeEnabled={process.env.LOGIN_CODE_ENABLED !== "false"} />
   ) : (
@@ -123,7 +125,12 @@ export default function LoginPage() {
                 <span className="lg:hidden">Pack news, campouts, events and leader contacts for Pack 361 families.</span>
                 <span className="hidden lg:inline">Use the email the pack has on file for you.</span>
               </p>
-              <div className="mt-6">{form}</div>
+              <div className="mt-6">{away && (
+                <p className="mb-3 rounded-xl bg-mint px-3 py-2 text-left text-sm text-pine">
+                  You were signed out because the app hadn&apos;t been opened in a month. Sign in again below.
+                </p>
+              )}
+              {form}</div>
             </div>
           </section>
 

@@ -4,6 +4,7 @@ import { ShieldCheck } from "lucide-react";
 import { displayName, getMe } from "@/lib/data";
 import { TwoStepSetup, TwoStepVerify } from "@/components/TwoStep";
 import BetaBanner from "@/components/BetaBanner";
+import { LOCK_MINUTES, safeNext } from "@/lib/idle";
 
 export const metadata: Metadata = { title: "Two-step sign-in" };
 
@@ -21,11 +22,13 @@ const help = (
   </a>
 );
 
-export default async function TwoStepPage() {
+export default async function TwoStepPage({ searchParams }: PageProps<"/two-step">) {
+  const sp = await searchParams;
+  const next = safeNext(Array.isArray(sp.next) ? sp.next[0] : sp.next);
   const me = await getMe();
   if (!me) redirect("/login");
   if (!me.adult) redirect("/not-on-roster");
-  if (me.twoStep === "ok") redirect("/");
+  if (me.twoStep === "ok") redirect(next);
   const name = displayName(me.adult);
 
   return (
@@ -36,7 +39,22 @@ export default async function TwoStepPage() {
           <div className="h-1.5 bg-brand" />
           <div className="space-y-4 px-5 pb-5 text-center">
             <ShieldCheck className="mx-auto h-10 w-10 text-pine" aria-hidden />
-            {me.twoStep === "verify" ? (
+            {me.twoStep === "verify" && me.locked ? (
+              <>
+                <div className="space-y-1">
+                  <h1 className="text-xl font-extrabold text-pine-950">Welcome back, {name}</h1>
+                  <p className="text-sm text-muted">
+                    Leader accounts lock after {LOCK_MINUTES} minutes without use, so nobody else can use yours on a phone or
+                    computer you stepped away from. Enter the code your authenticator app shows for{" "}
+                    <b className="text-navy">Pack 361</b> to keep going.
+                  </p>
+                </div>
+                <TwoStepVerify next={next} />
+                <p className="text-xs text-muted">
+                  Not you? Sign out below. Lost your phone? Email {help}: an admin can reset it.
+                </p>
+              </>
+            ) : me.twoStep === "verify" ? (
               <>
                 <div className="space-y-1">
                   <h1 className="text-xl font-extrabold text-pine-950">One more step, {name}</h1>
@@ -44,7 +62,7 @@ export default async function TwoStepPage() {
                     Open your authenticator app and enter the code it shows for <b className="text-navy">Pack 361</b>.
                   </p>
                 </div>
-                <TwoStepVerify />
+                <TwoStepVerify next={next} />
                 <p className="text-xs text-muted">
                   For leaders&apos; accounts the app asks once a month on each device, and after you sign out. Lost your phone or
                   changed phones? Email {help}: an admin can reset it so you can set it up again.

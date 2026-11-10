@@ -7,6 +7,7 @@ import { SPLASH_COOKIE, SPLASH_COOKIE_OPTIONS } from "@/lib/splash";
 import { createClient } from "@/lib/supabase/server";
 import { getMe, needsTwoStep } from "@/lib/data";
 import type { ActionResult } from "@/components/ActionForm";
+import { ACTIVE_COOKIE, ACTIVE_COOKIE_OPTIONS, safeNext, stampActive } from "@/lib/idle";
 
 const HELP = "app@pack361.org";
 
@@ -85,23 +86,29 @@ export async function finishTwoStepSetup(_prev: ActionResult, form: FormData): P
   return { ok: true, message: "Added. Either app's code now works." };
 }
 
-/** At sign-in: the code from any of the person's authenticator apps. */
+/** At sign-in, or to open a locked account: the code from any of the person's authenticator apps. */
 export async function verifyTwoStep(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const me = await getMe();
   if (!me?.adult) redirect("/login");
   const code = cleanCode(form.get("code"));
   if (code.length !== 6) return { error: "Enter the 6-digit code your authenticator app shows for Pack 361." };
   const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const sessionId = String(claims?.claims?.session_id ?? claims?.claims?.sub ?? "");
   const { data: list } = await supabase.auth.mfa.listFactors();
   let lastError = "";
   for (const f of list?.totp ?? []) {
     const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: f.id, code });
     if (!error) {
       revalidatePath("/", "layout");
+      const jar = await cookies();
+      // In use from now (src/lib/idle.ts): the 15-minute lock starts over.
+      if (sessionId) jar.set(ACTIVE_COOKIE, await stampActive(sessionId, Date.now()), ACTIVE_COOKIE_OPTIONS);
+      if (me.locked) redirect(safeNext(form.get("next")));
       // All the way in: the welcome animation plays on the home page (fresh, in case the
       // email code's marker ran out while they found their authenticator app).
-      (await cookies()).set(SPLASH_COOKIE, "1", SPLASH_COOKIE_OPTIONS);
-      redirect("/");
+      jar.set(SPLASH_COOKIE, "1", SPLASH_COOKIE_OPTIONS);
+      redirect(safeNext(form.get("next")));
     }
     lastError = error.message;
   }

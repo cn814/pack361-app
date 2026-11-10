@@ -387,7 +387,9 @@ name, deletes ones older than 60 days, and can GPG-encrypt (`ENCRYPT_TO`). It us
 variable, never in the repo. Photos and documents are in Supabase Storage and aren't included.
 
 On an Unraid NAS, paste `scripts/unraid-user-script.sh` into the User Scripts plugin and schedule it
-nightly; it runs `pg_dump` in a throwaway `postgres:17-alpine` container.
+hourly (`15 * * * *`); it runs `pg_dump` in a throwaway `postgres:17-alpine` container, keeps the
+hourly copies 2 days and the 3 AM copy 60 days, and backs up photos and documents in the Sunday
+3 AM run.
 
 Each script keeps a backup only if `pg_restore` can read it and it has the scouts table (a failed
 run leaves a `.part` file), and passes the connection string to Docker through the environment so

@@ -136,6 +136,15 @@ Done for the pack's district and council review (the printable summary is
   Turning it on or off, or changing who's picked, goes in the security log
   (`20261030000000_pilot_only.sql`, tests `53_pilot_tests.sql`). It's an app-level gate: the
   database still gives a signed-in parent their own family's rows.
+- **3.33 (ahead of TroopWebHost and Scoutbook):** leader sessions (aal2) lock after 15 minutes
+  without use and open only with the authenticator code; every session is signed out (refresh
+  token revoked) after 30 days without use. "Use" is an HMAC-signed `pack-active` cookie tied to
+  the session id, checked and freshened (once a minute) by `src/proxy.ts`; a locked session can
+  open only `/two-step`, `/auth/*` and `/api/session` (`src/lib/idle.ts`, tests `idle.test.ts`;
+  browser warning and screen cover `src/components/IdleWatch.tsx`). Deleting or editing the
+  cookie doesn't open a lock: the code's own time in the session is the fallback. The script
+  policy is enforced (`CSP_REPORT_ONLY=1` in Vercel puts it back to report-only). The NAS backup
+  runs hourly: hourly copies kept 2 days, the 3 AM copy 60 days.
 - **3.28 (terms of use):** every adult agrees to the pack's terms of use and data policy at first
   sign-in, and again when `TERMS_VERSION` goes up (`src/lib/policies.ts`, shown at the public
   `/terms` and `/privacy` pages). `requireMember()` sends anyone who hasn't agreed to `/terms`;

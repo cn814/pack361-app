@@ -31,11 +31,12 @@ function CodeInput({ autoFocus = false }: { autoFocus?: boolean }) {
 const guarded = guardAction(verifyTwoStep, "Continue");
 
 /** Sign-in: enter the code from the authenticator app. */
-export function TwoStepVerify() {
+export function TwoStepVerify({ next }: { next?: string }) {
   const [state, action, pending] = useActionState(guarded, {});
   const onSubmit = useSubmitKeepingValues(action);
   return (
     <form action={action} onSubmit={onSubmit} className="space-y-3">
+      {next && <input type="hidden" name="next" value={next} />}
       <CodeInput autoFocus />
       {state.error && !pending && <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger">{state.error}</p>}
       <button className="btn-primary w-full" disabled={pending}>

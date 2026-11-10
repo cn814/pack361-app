@@ -86,6 +86,8 @@ export default function SafetyPage() {
         title="Security"
         items={[
           "No passwords to steal: you sign in with a one-time link or code sent to the email the pack has on file. Leaders also enter a code from an authenticator app at least once a month.",
+          "Leader accounts lock after 15 minutes without use and open again only with the authenticator code. Anyone who hasn't opened the app in 30 days is signed out.",
+          "The browser runs only the app's own scripts, and the database is backed up, encrypted, every hour.",
           "Every connection is encrypted (HTTPS), and the database host encrypts stored data.",
           "Access rules are enforced inside the database itself, not just on the screen, and are checked by more than 1,500 automated tests.",
           "Only designated pack admins can import roster or advancement data or change anyone's role.",
