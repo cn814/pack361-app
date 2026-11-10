@@ -23,6 +23,8 @@ export interface Submission {
   scout?: { first_name: string; last_name: string; den: { name: string } | null } | null;
   submitter?: { first_name: string; last_name: string; preferred_name: string | null } | null;
   reviewer?: { first_name: string; last_name: string; preferred_name: string | null } | null;
+  recorded_at?: string | null;
+  recorder?: { first_name: string; last_name: string; preferred_name: string | null } | null;
 }
 
 export interface ScoutRecord extends AdvancementRecord {
@@ -176,6 +178,21 @@ export async function getSubmissions(filter: { scoutId?: string; status?: Submis
   if (filter.scoutId) q = q.eq("scout_id", filter.scoutId);
   if (filter.status) q = q.in("status", filter.status);
   const { data } = await q.order("created_at", { ascending: false }).limit(300);
+  return (data ?? []) as unknown as Submission[];
+}
+
+/** Marked "Entered in Scoutbook" in the last few days, newest first: what Undo can put back. */
+export async function getRecentlyEntered(days = 7): Promise<Submission[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("advancement_submissions")
+    .select(
+      `${SUB_COLS}, recorded_at, recorder:adults!advancement_submissions_recorded_by_fkey(first_name, last_name, preferred_name)`,
+    )
+    .eq("status", "recorded")
+    .gte("recorded_at", new Date(Date.now() - days * 86_400_000).toISOString())
+    .order("recorded_at", { ascending: false })
+    .limit(300);
   return (data ?? []) as unknown as Submission[];
 }
 

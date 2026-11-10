@@ -94,6 +94,24 @@ export async function reviewSubmissions(form: FormData) {
   }
 }
 
+/**
+ * Leaders: undo "Entered in Scoutbook" (a mistaken tap). Back to approved, still approved by
+ * whoever approved it (the database keeps that). No one is alerted. RLS decides who may.
+ */
+export async function undoEntered(form: FormData) {
+  await requireMember();
+  const ids = [...new Set(form.getAll("id").map(String).filter((x) => SUBMISSION_ID.test(x)))].slice(0, 500);
+  if (!ids.length) return;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("advancement_submissions")
+    .update({ status: "approved" })
+    .in("id", ids)
+    .eq("status", "recorded");
+  if (error) throw new Error("Couldn't undo that.");
+  revalidatePath("/scouts", "layout");
+}
+
 /** Family withdraws a report that hasn't been reviewed yet. */
 export async function withdrawSubmission(form: FormData) {
   await requireMember();

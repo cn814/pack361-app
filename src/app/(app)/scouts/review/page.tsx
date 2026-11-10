@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import SubmitButton from "@/components/SubmitButton";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Check, ChevronLeft, Stamp, Undo2 } from "lucide-react";
+import { Check, ChevronLeft, RotateCcw, Stamp, Undo2 } from "lucide-react";
 import ScoutbookGrid from "@/components/ScoutbookGrid";
 import { displayName, isLeader, requireMember } from "@/lib/data";
-import { getReviewableScouts, getSubmissions, type Submission } from "@/lib/advancement-data";
+import { getRecentlyEntered, getReviewableScouts, getSubmissions, type Submission } from "@/lib/advancement-data";
 import { RANK_LABEL, fmtShortDate } from "@/lib/advancement";
-import { reviewSubmissions } from "../actions";
+import { fmtDay, fmtTime } from "@/lib/format";
+import { reviewSubmissions, undoEntered } from "../actions";
 
 export const metadata: Metadata = { title: "Advancement approvals" };
 
@@ -46,20 +47,35 @@ function groupByRequirement(list: Submission[]) {
   );
 }
 
+/**
+ * One tap of "Entered" marks its items in the same moment, so grouping by who and when gives back
+ * exactly what each tap did (an import's automatic marks form one group too).
+ */
+function groupByTap(list: Submission[]) {
+  const m = new Map<string, Submission[]>();
+  for (const s of list) {
+    const k = `${s.recorded_at ?? ""}|${s.recorder ? `${s.recorder.first_name} ${s.recorder.last_name}` : ""}`;
+    m.set(k, [...(m.get(k) ?? []), s]);
+  }
+  return [...m.values()];
+}
+
 export default async function ReviewPage({ searchParams }: PageProps<"/scouts/review">) {
   const byReq = (await searchParams).view === "requirement";
   const me = await requireMember();
   if (!isLeader(me)) redirect("/scouts");
-  const [scouts, pending, approved] = await Promise.all([
+  const [scouts, pending, approved, entered] = await Promise.all([
     getReviewableScouts(),
     getSubmissions({ status: ["submitted"] }),
     getSubmissions({ status: ["approved"] }),
+    getRecentlyEntered(),
   ]);
   const ids = new Set(scouts.map((s) => s.id));
   const toReview = groupByScout(pending.filter((s) => ids.has(s.scout_id)).reverse());
   const approvedMine = approved.filter((s) => ids.has(s.scout_id)).reverse();
   const toRecord = groupByScout(approvedMine);
   const toRecordByReq = groupByRequirement(approvedMine);
+  const taps = groupByTap(entered.filter((s) => ids.has(s.scout_id)));
 
   return (
     <>
@@ -125,6 +141,16 @@ export default async function ReviewPage({ searchParams }: PageProps<"/scouts/re
         <h2 className="section-title">Approved — enter in Scoutbook ({toRecord.reduce((n, g) => n + g.length, 0)})</h2>
         <p className="text-xs text-muted">
           After you enter these in Scoutbook Plus, tap “Entered”. The next Scoutbook import also clears them automatically.
+          {taps.length > 0 && (
+            <>
+              {" "}
+              Tapped it by mistake?{" "}
+              <a href="#entered" className="font-semibold text-pine underline-offset-2 hover:underline">
+                Undo it below
+              </a>
+              .
+            </>
+          )}
         </p>
         {approvedMine.length > 0 && <ScoutbookGrid list={approvedMine} />}
         {toRecord.length > 0 && (
@@ -221,6 +247,55 @@ export default async function ReviewPage({ searchParams }: PageProps<"/scouts/re
             );
           })}
       </section>
+
+      {taps.length > 0 && (
+        <section id="entered" className="scroll-mt-20 space-y-3 lg:max-w-3xl">
+          <details className="card group">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-pine">
+              <span>
+                Marked entered in the last 7 days ({taps.reduce((n, t) => n + t.length, 0)})
+                <span className="block text-xs font-normal text-muted">Tapped “Entered” by mistake? Undo it here.</span>
+              </span>
+              <span className="text-xs text-muted group-open:hidden">Show</span>
+            </summary>
+            <ul className="mt-3 divide-y divide-line">
+              {taps.map((tap) => {
+                const first = tap[0];
+                const byScout = groupByScout(tap);
+                return (
+                  <li key={first.id} className="space-y-2 py-3">
+                    <p className="text-xs text-muted">
+                      {first.recorded_at && `${fmtDay(first.recorded_at)} at ${fmtTime(first.recorded_at)}`}
+                      {first.recorder && ` · by ${displayName(first.recorder)} ${first.recorder.last_name}`}
+                    </p>
+                    <ul className="space-y-0.5 text-sm">
+                      {byScout.map((g) => (
+                        <li key={g[0].scout_id}>
+                          <b className="text-ink">
+                            {g[0].scout?.first_name} {g[0].scout?.last_name}
+                          </b>
+                          {": "}
+                          {summarize(g)
+                            .map((a) => `${a.adventure} req ${a.reqs}`)
+                            .join(" · ")}
+                        </li>
+                      ))}
+                    </ul>
+                    <form action={undoEntered}>
+                      {tap.map((s) => (
+                        <input key={s.id} type="hidden" name="id" value={s.id} />
+                      ))}
+                      <SubmitButton className="btn-ghost w-full py-2">
+                        <RotateCcw className="h-4 w-4" aria-hidden /> Undo: not entered yet
+                      </SubmitButton>
+                    </form>
+                  </li>
+                );
+              })}
+            </ul>
+          </details>
+        </section>
+      )}
     </>
   );
 }
