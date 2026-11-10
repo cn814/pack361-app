@@ -18,7 +18,7 @@ export const TERMS_MD = `These terms are for everyone who signs in to the Pack 3
 The pack takes your family's privacy and the security of its information seriously. The app is built with the same kinds of safeguards professional software uses:
 
 - **Encryption** for every connection, for stored data and for backups.
-- **No passwords to steal.** You sign in with a one-time code sent to your email, and every leader also enters a code from an authenticator app, at least once a month.
+- **No passwords to steal.** You sign in with a one-time code sent to your email, and every leader also enters a code from an authenticator app, at least once a month. Leader accounts lock after 15 minutes without use.
 - **Access rules enforced inside the database**, not just on the screen, and checked by more than 1,500 automated tests on every change.
 - **A security log** that no one can edit, recording every change to who can see what and every spreadsheet download.
 - **Less to lose.** The app never stores ID numbers, card or bank numbers, passwords, birthdates, home addresses or medical details.
