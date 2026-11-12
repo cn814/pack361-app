@@ -5,8 +5,9 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/data";
-import { getCatalog, getScout, isAdvancement } from "@/lib/advancement-data";
-import { parseScoutbookExport, RANKS, type ImportRow } from "@/lib/advancement";
+import { getAwardsToHandOut, getCatalog, getScout, isAdvancement } from "@/lib/advancement-data";
+import { getSettings } from "@/lib/settings";
+import { awardLabel, parseScoutbookExport, RANKS, type ImportRow } from "@/lib/advancement";
 import type { DenRank } from "@/lib/types";
 import type { ImportChanges } from "@/lib/import-changes";
 import { alertReviewed } from "@/lib/family-alerts";
@@ -177,3 +178,56 @@ async function runImport(fileName: string, rows: ImportRow[]): Promise<ImportSta
   };
 }
 
+
+// ---------------------------------------------------------------------------
+// Awards night: who wasn't there, and what they're still owed
+// ---------------------------------------------------------------------------
+const awardsScout = (form: FormData) => {
+  const id = String(form.get("scout_id") ?? "");
+  return SUBMISSION_ID.test(id) ? id : null;
+};
+
+/** "Not here": keep this scout's awards on the Still owed list until someone taps Given. RLS decides who may. */
+export async function markNotHere(form: FormData) {
+  await requireMember();
+  const scoutId = awardsScout(form);
+  if (!scoutId) return;
+  const settings = await getSettings();
+  const items = await getAwardsToHandOut([scoutId], settings.awards_tracked_from);
+  const supabase = await createClient();
+  const { data: open } = await supabase.from("awards_owed").select("label").eq("scout_id", scoutId).is("given_at", null);
+  const have = new Set(((open ?? []) as { label: string }[]).map((r) => r.label));
+  const rows = [...new Map(items.map((r) => [awardLabel(r), r])).entries()]
+    .filter(([label]) => !have.has(label))
+    .map(([label, r]) => ({ scout_id: scoutId, label: label.slice(0, 200), kind: r.kind, completed_on: r.completed_on }));
+  if (rows.length) {
+    const { error } = await supabase.from("awards_owed").insert(rows);
+    if (error) throw new Error("Couldn't save that.");
+  }
+  revalidatePath("/scouts/awards", "layout");
+}
+
+/** "Here after all": undo Not here for tonight's awards (the ones still on the awards list). */
+export async function hereAfterAll(form: FormData) {
+  await requireMember();
+  const scoutId = awardsScout(form);
+  if (!scoutId) return;
+  const settings = await getSettings();
+  const labels = (await getAwardsToHandOut([scoutId], settings.awards_tracked_from)).map(awardLabel);
+  if (!labels.length) return;
+  const supabase = await createClient();
+  const { error } = await supabase.from("awards_owed").delete().eq("scout_id", scoutId).is("given_at", null).in("label", labels);
+  if (error) throw new Error("Couldn't undo that.");
+  revalidatePath("/scouts/awards", "layout");
+}
+
+/** "Given": the scout got what they were owed. */
+export async function markOwedGiven(form: FormData) {
+  await requireMember();
+  const scoutId = awardsScout(form);
+  if (!scoutId) return;
+  const supabase = await createClient();
+  const { error } = await supabase.from("awards_owed").update({ given_at: new Date().toISOString() }).eq("scout_id", scoutId).is("given_at", null);
+  if (error) throw new Error("Couldn't save that.");
+  revalidatePath("/scouts/awards", "layout");
+}

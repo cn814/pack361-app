@@ -216,6 +216,29 @@ export async function getAwardsToHandOut(scoutIds: string[], since: string): Pro
   return (data ?? []) as ScoutRecord[];
 }
 
+export interface OwedAward {
+  id: string;
+  scout_id: string;
+  label: string;
+  kind: "rank" | "adventure" | "award";
+  completed_on: string | null;
+  noted_at: string;
+}
+
+/** Awards a scout missed at an awards night (tapped "Not here") and hasn't been given yet. */
+export async function getOwedAwards(scoutIds: string[]): Promise<OwedAward[]> {
+  if (!scoutIds.length) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("awards_owed")
+    .select("id, scout_id, label, kind, completed_on, noted_at")
+    .in("scout_id", scoutIds)
+    .is("given_at", null)
+    .order("noted_at")
+    .limit(2000);
+  return (data ?? []) as OwedAward[];
+}
+
 export async function getLastImport(): Promise<ImportLog | null> {
   const supabase = await createClient();
   const { data } = await supabase

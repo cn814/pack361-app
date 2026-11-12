@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Award, ChevronLeft, ExternalLink, Printer, Tags } from "lucide-react";
+import { Award, ChevronLeft, ExternalLink, Gift, Printer, Tags } from "lucide-react";
 import PrintButton from "@/components/PrintButton";
 import { isLeader, requireMember } from "@/lib/data";
-import { getAwardsToHandOut, getReviewableScouts } from "@/lib/advancement-data";
+import { getAwardsToHandOut, getOwedAwards, getReviewableScouts } from "@/lib/advancement-data";
 import { RANKS, RANK_LABEL, awardLabel, fmtShortDate } from "@/lib/advancement";
 import { getSettings } from "@/lib/settings";
 import { piece, shopImage, shopItem, type ShopItem } from "@/lib/scout-shop";
@@ -51,7 +51,8 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
   const byScoutView = view === "scout";
   const [scouts, settings] = await Promise.all([getReviewableScouts(), getSettings()]);
   const since = settings.awards_tracked_from;
-  const items = await getAwardsToHandOut(scouts.map((s) => s.id), since);
+  const [items, owed] = await Promise.all([getAwardsToHandOut(scouts.map((s) => s.id), since), getOwedAwards(scouts.map((s) => s.id))]);
+  const owedScouts = new Set(owed.map((o) => o.scout_id)).size;
   const scoutById = new Map(scouts.map((s) => [s.id, s]));
   const name = (id: string) => {
     const s = scoutById.get(id);
@@ -117,6 +118,11 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
         <Link href="/scouts/awards/sheet" className="inline-flex items-center gap-1 rounded-full bg-card px-3 py-1 text-pine ring-1 ring-line">
           <Printer className="h-3.5 w-3.5" aria-hidden /> Awards night sheet
         </Link>
+        {owedScouts > 0 && (
+          <Link href="/scouts/awards/sheet#owed" className="inline-flex items-center gap-1 rounded-full bg-gold-50 px-3 py-1 text-gold-800 ring-1 ring-gold">
+            <Gift className="h-3.5 w-3.5" aria-hidden /> Still owed ({owedScouts})
+          </Link>
+        )}
       </div>
       <p className="text-xs text-muted print:hidden">
         Anything older than {fmtShortDate(since)} counts as already handed out. Mark items awarded in Scoutbook after the pack
