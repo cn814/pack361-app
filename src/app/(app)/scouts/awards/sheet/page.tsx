@@ -1,201 +1,164 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronLeft, Gift, UserX, Undo2 } from "lucide-react";
-import SubmitButton from "@/components/SubmitButton";
+import { ChevronLeft } from "lucide-react";
 import PrintButton from "@/components/PrintButton";
+import FitOnePage from "@/components/FitOnePage";
 import { isLeader, requireMember } from "@/lib/data";
-import { getAwardsToHandOut, getOwedAwards, getReviewableScouts, type OwedAward } from "@/lib/advancement-data";
-import { RANKS, awardLabel, fmtShortDate } from "@/lib/advancement";
+import { getAwardsToHandOut, getCatalog, getOwedAwards, getReviewableScouts, type OwedAward } from "@/lib/advancement-data";
+import { ELECTIVES_NEEDED, RANKS, RANK_LABEL, fmtShortDate } from "@/lib/advancement";
+import { awardBlurb } from "@/lib/award-blurbs";
 import { getSettings } from "@/lib/settings";
-import type { Scout } from "@/lib/types";
-import { hereAfterAll, markNotHere, markOwedGiven } from "../../actions";
+import type { DenRank, Scout } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Awards night sheet" };
+export const metadata: Metadata = { title: "Awards night cheat sheet" };
 
-const KIND_ORDER = { rank: 0, adventure: 1, award: 2, requirement: 3 } as const;
-/** The pack's calendar date of a moment (an evening awards night is already tomorrow in UTC). */
-const etDate = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date(iso));
-const denOrder = (s: Scout) => (s.den ? RANKS.indexOf(s.den.rank) : 99);
+const PRINT_CSS = "@page { size: letter; margin: 0.4in; }";
 
+type Row = Awaited<ReturnType<typeof getAwardsToHandOut>>[number];
+
+interface Line {
+  key: string;
+  name: string;
+  /** Another rank's adventure (a Bear finishing a Wolf elective): shown after the name. */
+  otherRank: DenRank | null;
+  what: string | null;
+  scouts: Set<string>;
+  order: number;
+}
+
+/**
+ * The awards night cheat sheet for the leaders handing out awards: by den, what the den is
+ * getting and what they did for it, on one printed page. Who's there and who's still owed is
+ * on Awards to hand out → By scout.
+ */
 export default async function AwardsSheetPage() {
   const me = await requireMember();
   if (!isLeader(me)) redirect("/scouts");
-  const [scouts, settings] = await Promise.all([getReviewableScouts(), getSettings()]);
-  const [items, owed] = await Promise.all([
-    getAwardsToHandOut(scouts.map((s) => s.id), settings.awards_tracked_from),
-    getOwedAwards(scouts.map((s) => s.id)),
-  ]);
-  // Not here: every award on tonight's list for this scout is on the Still owed list.
-  const owedByScout = new Map<string, OwedAward[]>();
-  for (const o of owed) owedByScout.set(o.scout_id, [...(owedByScout.get(o.scout_id) ?? []), o]);
-  const notHere = (id: string) => {
-    const labels = new Set((owedByScout.get(id) ?? []).map((o) => o.label));
-    const tonight = items.filter((r) => r.scout_id === id);
-    return tonight.length > 0 && tonight.every((r) => labels.has(awardLabel(r)));
-  };
+  const [scouts, settings, catalog] = await Promise.all([getReviewableScouts(), getSettings(), getCatalog()]);
+  const ids = scouts.map((s) => s.id);
+  const [items, owed] = await Promise.all([getAwardsToHandOut(ids, settings.awards_tracked_from), getOwedAwards(ids)]);
+  const required = (rank: DenRank) => catalog.filter((a) => a.rank === rank && a.required).length;
+  const isRequired = new Set(catalog.filter((a) => a.required).map((a) => `${a.rank}|${a.name.toLowerCase()}`));
   const scoutById = new Map(scouts.map((s) => [s.id, s]));
-  const owedScouts = [...owedByScout.keys()]
-    .map((id) => scoutById.get(id))
-    .filter((s): s is Scout => Boolean(s))
-    .sort((a, b) => denOrder(a) - denOrder(b) || a.last_name.localeCompare(b.last_name) || a.first_name.localeCompare(b.first_name));
 
-  // Shopping list: one line per item with a count
-  const counts = new Map<string, { label: string; kind: keyof typeof KIND_ORDER; n: number }>();
-  for (const r of items) {
-    const label = awardLabel(r);
-    const c = counts.get(label) ?? { label, kind: r.kind, n: 0 };
-    c.n++;
-    counts.set(label, c);
-  }
-  const shopping = [...counts.values()].sort(
-    (a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || b.n - a.n || a.label.localeCompare(b.label),
-  );
-
-  // Per den, per scout
-  const byScout = new Map<string, typeof items>();
-  for (const r of items) byScout.set(r.scout_id, [...(byScout.get(r.scout_id) ?? []), r]);
-  const dens = new Map<string, Scout[]>();
-  for (const s of scouts) {
-    if (!byScout.has(s.id)) continue;
-    const k = s.den?.name ?? "No den";
-    dens.set(k, [...(dens.get(k) ?? []), s]);
-  }
-  const denRank = (name: string) => {
-    const d = scouts.find((s) => (s.den?.name ?? "No den") === name)?.den;
-    return d ? RANKS.indexOf(d.rank) : 99;
+  // Den → lines (one per award, with how many scouts get it).
+  const dens = new Map<string, { den: NonNullable<Scout["den"]> | null; scouts: Set<string>; lines: Map<string, Line>; owed: OwedAward[] }>();
+  const denOf = (scoutId: string) => {
+    const s = scoutById.get(scoutId);
+    const k = s?.den?.name ?? "No den";
+    if (!dens.has(k)) dens.set(k, { den: s?.den ?? null, scouts: new Set(), lines: new Map(), owed: [] });
+    return dens.get(k)!;
   };
-  const denNames = [...dens.keys()].sort((a, b) => denRank(a) - denRank(b) || a.localeCompare(b));
+  for (const r of items as Row[]) {
+    const d = denOf(r.scout_id);
+    d.scouts.add(r.scout_id);
+    const denRank = d.den?.rank ?? null;
+    let line: Omit<Line, "scouts">;
+    if (r.kind === "rank") {
+      const rank = r.rank ?? denRank;
+      line = {
+        key: `rank|${rank}`,
+        name: rank ? `${RANK_LABEL[rank]} rank` : r.item.replace(/ Rank$/, " rank"),
+        otherRank: null,
+        what: rank ? `finished the ${required(rank)} required ${RANK_LABEL[rank]} adventures and ${ELECTIVES_NEEDED} electives.` : null,
+        order: 0,
+      };
+    } else if (r.kind === "adventure") {
+      const name = r.adventure ?? r.item;
+      const req = r.rank ? isRequired.has(`${r.rank}|${name.toLowerCase()}`) : false;
+      line = {
+        key: `adv|${r.rank}|${name}`,
+        name,
+        otherRank: r.rank && r.rank !== denRank ? r.rank : null,
+        what: awardBlurb(r.rank ?? denRank, name),
+        order: req ? 1 : 2,
+      };
+    } else {
+      line = { key: `award|${r.item}`, name: r.item, otherRank: null, what: null, order: 3 };
+    }
+    const l = d.lines.get(line.key) ?? { ...line, scouts: new Set<string>() };
+    l.scouts.add(r.scout_id);
+    d.lines.set(line.key, l);
+  }
+  for (const o of owed) denOf(o.scout_id).owed.push(o);
+
+  const denOrder = (d: { den: Scout["den"] | null }) => (d.den ? RANKS.indexOf(d.den.rank) : 99);
+  const denList = [...dens.entries()].sort(([a, x], [b, y]) => denOrder(x) - denOrder(y) || a.localeCompare(b));
   const today = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" }).format(new Date());
+  const scoutCount = new Set(items.map((r) => r.scout_id)).size;
 
   return (
     <>
+      <style>{PRINT_CSS}</style>
       <Link href="/scouts/awards" className="inline-flex items-center gap-1 text-sm font-semibold text-pine print:hidden">
         <ChevronLeft className="h-4 w-4" aria-hidden /> Awards to hand out
       </Link>
-      <header className="space-y-1">
-        <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack 361 awards night</h1>
-        <p className="text-sm text-muted">
-          {today} · {items.length} awards for {byScout.size} scouts · earned since {fmtShortDate(settings.awards_tracked_from)}
-          {owedScouts.length > 0 && (
-            <>
-              {" · "}
-              <a href="#owed" className="font-semibold text-gold-800 underline">
-                {owedScouts.length} still owed
-              </a>
-            </>
-          )}
-        </p>
-      </header>
-      <PrintButton label="Print sheet" />
+      <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
+        <p className="text-sm text-muted">One page for the leaders handing out awards: what each den is getting and what they did for it.</p>
+        <PrintButton label="Print cheat sheet" />
+      </div>
 
-      <section className="card space-y-2 break-inside-avoid print:border-0 print:shadow-none">
-        <h2 className="section-title">Scout Shop list</h2>
-        {shopping.length === 0 && <p className="text-sm text-muted">Nothing to buy.</p>}
-        <table className="w-full text-sm">
-          <tbody className="divide-y divide-line">
-            {shopping.map((s) => (
-              <tr key={s.label}>
-                <td className="py-1.5 pr-2 text-ink">{s.label}</td>
-                <td className="w-12 py-1.5 text-right font-extrabold text-pine-950">{s.n}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-
-      {owedScouts.length > 0 && (
-        <section id="owed" className="card scroll-mt-20 space-y-3 border-l-4 border-l-gold break-inside-avoid print:border-0 print:shadow-none">
-          <div>
-            <h2 className="section-title">Still owed ({owedScouts.length} scout{owedScouts.length === 1 ? "" : "s"})</h2>
+      <FitOnePage>
+        <article className="card space-y-3 print:border-0 print:p-0 print:shadow-none">
+          <header className="flex flex-wrap items-baseline justify-between gap-x-3 border-b border-line pb-2">
+            <h1 className="text-xl font-extrabold tracking-tight text-pine-950">Pack 361 awards night</h1>
             <p className="text-xs text-muted">
-              Scouts who weren&apos;t there when their awards were handed out. They stay here, even after they&apos;re marked awarded in
-              Scoutbook, until you tap <b>Given</b>.
+              {today} · {items.length} award{items.length === 1 ? "" : "s"} for {scoutCount} scout{scoutCount === 1 ? "" : "s"} · earned since{" "}
+              {fmtShortDate(settings.awards_tracked_from)}
             </p>
-          </div>
-          <ul className="divide-y divide-line">
-            {owedScouts.map((s) => {
-              const list = owedByScout.get(s.id)!;
-              return (
-                <li key={s.id} className="break-inside-avoid space-y-1.5 py-2.5">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="font-bold text-ink">
-                      {s.first_name} {s.last_name}
-                    </p>
-                    <span className="text-xs text-muted">
-                      {s.den?.name ?? "No den"} · missed {fmtShortDate(etDate(list[0].noted_at))}
-                    </span>
-                  </div>
-                  <ul className="space-y-1 text-sm">
-                    {list.map((o) => (
-                      <li key={o.id} className="flex items-start gap-2">
-                        <span className="mt-0.5 h-4 w-4 shrink-0 rounded border-2 border-gold" aria-hidden />
-                        <span className={o.kind === "rank" ? "font-bold text-pine" : "text-navy"}>{o.label}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <form action={markOwedGiven} className="print:hidden">
-                    <input type="hidden" name="scout_id" value={s.id} />
-                    <SubmitButton className="btn-ghost w-full py-2">
-                      <Gift className="h-4 w-4" aria-hidden /> Given to {s.first_name}
-                    </SubmitButton>
-                  </form>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
+          </header>
 
-      {denNames.map((den) => (
-        <section key={den} className="card space-y-3 break-before-page print:border-0 print:shadow-none">
-          <h2 className="text-lg font-extrabold text-pine-950">{den}</h2>
-          <ul className="space-y-3">
-            {dens.get(den)!.map((s) => {
-              const list = [...byScout.get(s.id)!].sort(
-                (a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || awardLabel(a).localeCompare(awardLabel(b)),
-              );
+          {denList.length === 0 && <p className="text-sm text-muted">Nothing to hand out.</p>}
+
+          <div className="gap-5 sm:columns-2 print:columns-2">
+            {denList.map(([name, d]) => {
+              const lines = [...d.lines.values()].sort((a, b) => a.order - b.order || b.scouts.size - a.scouts.size || a.name.localeCompare(b.name));
+              const owedBy = new Map<string, string[]>();
+              for (const o of d.owed) owedBy.set(o.scout_id, [...(owedBy.get(o.scout_id) ?? []), o.label.replace(/ \([^)]*\)$/, "")]);
               return (
-                <li key={s.id} className="break-inside-avoid">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-bold text-ink">
-                      {s.first_name} {s.last_name}
-                      {notHere(s.id) && (
-                        <span className="ml-2 rounded-full bg-gold-50 px-2 py-0.5 align-middle text-[11px] font-bold text-gold-800">Not here · owed</span>
-                      )}
-                    </p>
-                    <form action={notHere(s.id) ? hereAfterAll : markNotHere} className="shrink-0 print:hidden">
-                      <input type="hidden" name="scout_id" value={s.id} />
-                      <SubmitButton className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-pine ring-1 ring-line">
-                        {notHere(s.id) ? (
-                          <>
-                            <Undo2 className="h-3.5 w-3.5" aria-hidden /> Here after all
-                          </>
-                        ) : (
-                          <>
-                            <UserX className="h-3.5 w-3.5" aria-hidden /> Not here
-                          </>
-                        )}
-                      </SubmitButton>
-                    </form>
-                  </div>
-                  <ul className="mt-1 space-y-1 text-sm">
-                    {list.map((r) => (
-                      <li key={awardLabel(r)} className="flex items-start gap-2">
-                        <span className="mt-0.5 h-4 w-4 shrink-0 rounded border-2 border-pine" aria-hidden />
-                        <span className={r.kind === "rank" ? "font-bold text-pine" : "text-navy"}>{awardLabel(r)}</span>
+                <section key={name} className="mb-4 break-inside-avoid">
+                  <h2 className="flex items-baseline justify-between gap-2 border-b-2 border-pine pb-0.5">
+                    <span className="text-[15px] font-extrabold text-pine-950">{name}</span>
+                    {d.scouts.size > 0 && (
+                      <span className="text-[11px] text-muted">
+                        {d.scouts.size} scout{d.scouts.size === 1 ? "" : "s"}
+                      </span>
+                    )}
+                  </h2>
+                  <ul className="mt-1.5 space-y-1.5">
+                    {lines.map((l) => (
+                      <li key={l.key} className="text-[12px] leading-snug">
+                        <span className={`font-bold ${l.order === 0 ? "text-pine" : "text-ink"}`}>
+                          {l.name}
+                          {l.otherRank && ` (${RANK_LABEL[l.otherRank]})`}
+                        </span>
+                        <span className="text-muted"> ×{l.scouts.size}</span>
+                        {l.what && <span className="text-navy">: {l.what}</span>}
                       </li>
                     ))}
                   </ul>
-                </li>
+                  {owedBy.size > 0 && (
+                    <p className="mt-1.5 rounded-md bg-gold-50 px-2 py-1 text-[11px] leading-snug text-gold-800">
+                      <b>Still owed from before:</b>{" "}
+                      {[...owedBy.entries()]
+                        .map(([id, labels]) => `${scoutById.get(id)?.first_name ?? ""} (${labels.join(", ")})`)
+                        .join("; ")}
+                    </p>
+                  )}
+                </section>
               );
             })}
-          </ul>
-        </section>
-      ))}
+          </div>
+        </article>
+      </FitOnePage>
+
       <p className="text-center text-[11px] text-muted print:hidden">
-        Tap <b>Not here</b> for anyone who missed it: their awards move to <b>Still owed</b> at the top until you tap Given. After the
-        ceremony, mark everything awarded in Scoutbook Plus; the next import clears tonight&apos;s list.
+        Someone missed it? Mark them <b>Not here</b> on{" "}
+        <Link href="/scouts/awards?view=scout" className="font-semibold text-pine underline">
+          Awards to hand out → By scout
+        </Link>
+        ; their awards stay on the Still owed list until they get them.
       </p>
     </>
   );

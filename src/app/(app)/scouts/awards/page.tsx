@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Award, ChevronLeft, ExternalLink, Gift, Printer, Tags } from "lucide-react";
+import { Award, ChevronLeft, ExternalLink, Gift, Printer, Tags, Undo2, UserX } from "lucide-react";
+import SubmitButton from "@/components/SubmitButton";
 import PrintButton from "@/components/PrintButton";
 import { isLeader, requireMember } from "@/lib/data";
 import { getAwardsToHandOut, getOwedAwards, getReviewableScouts } from "@/lib/advancement-data";
@@ -9,6 +10,10 @@ import { RANKS, RANK_LABEL, awardLabel, fmtShortDate } from "@/lib/advancement";
 import { getSettings } from "@/lib/settings";
 import { piece, shopImage, shopItem, type ShopItem } from "@/lib/scout-shop";
 import type { DenRank } from "@/lib/types";
+import { hereAfterAll, markNotHere, markOwedGiven } from "../actions";
+
+/** The pack's calendar date of a moment (an evening awards night is already tomorrow in UTC). */
+const etDate = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date(iso));
 
 export const metadata: Metadata = { title: "Awards to hand out" };
 
@@ -53,6 +58,14 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
   const since = settings.awards_tracked_from;
   const [items, owed] = await Promise.all([getAwardsToHandOut(scouts.map((s) => s.id), since), getOwedAwards(scouts.map((s) => s.id))]);
   const owedScouts = new Set(owed.map((o) => o.scout_id)).size;
+  const owedByScout = new Map<string, typeof owed>();
+  for (const o of owed) owedByScout.set(o.scout_id, [...(owedByScout.get(o.scout_id) ?? []), o]);
+  // Not here: every award on the list for this scout is on the Still owed list.
+  const notHere = (id: string) => {
+    const labels = new Set((owedByScout.get(id) ?? []).map((o) => o.label));
+    const tonight = items.filter((r) => r.scout_id === id);
+    return tonight.length > 0 && tonight.every((r) => labels.has(awardLabel(r)));
+  };
   const scoutById = new Map(scouts.map((s) => [s.id, s]));
   const name = (id: string) => {
     const s = scoutById.get(id);
@@ -116,10 +129,10 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
           <Tags className="h-3.5 w-3.5" aria-hidden /> Bag labels
         </Link>
         <Link href="/scouts/awards/sheet" className="inline-flex items-center gap-1 rounded-full bg-card px-3 py-1 text-pine ring-1 ring-line">
-          <Printer className="h-3.5 w-3.5" aria-hidden /> Awards night sheet
+          <Printer className="h-3.5 w-3.5" aria-hidden /> Awards night cheat sheet
         </Link>
         {owedScouts > 0 && (
-          <Link href="/scouts/awards/sheet#owed" className="inline-flex items-center gap-1 rounded-full bg-gold-50 px-3 py-1 text-gold-800 ring-1 ring-gold">
+          <Link href="/scouts/awards?view=scout#owed" className="inline-flex items-center gap-1 rounded-full bg-gold-50 px-3 py-1 text-gold-800 ring-1 ring-gold">
             <Gift className="h-3.5 w-3.5" aria-hidden /> Still owed ({owedScouts})
           </Link>
         )}
@@ -174,16 +187,71 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
       )}
 
       {byScoutView && (
+        <p className="text-xs text-muted print:hidden">
+          On awards night, tap <b>Not here</b> for anyone who missed it. Their awards go on the <b>Still owed</b> list, and stay
+          there after Scoutbook marks them awarded, until you tap <b>Given</b>.
+        </p>
+      )}
+
+      {byScoutView && owedByScout.size > 0 && (
+        <section id="owed" className="page-wide card scroll-mt-20 space-y-2 border-l-4 border-l-gold print:break-inside-avoid print:shadow-none">
+          <h2 className="section-title">Still owed ({owedByScout.size} scout{owedByScout.size === 1 ? "" : "s"})</h2>
+          <ul className="grid gap-x-6 divide-y divide-line lg:grid-cols-2 lg:divide-y-0">
+            {[...owedByScout.entries()]
+              .sort(([a], [b]) => name(a).localeCompare(name(b)))
+              .map(([id, list]) => (
+                <li key={id} className="space-y-1.5 py-2.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="font-bold text-ink">{name(id)}</p>
+                    <span className="text-xs text-muted">
+                      {scoutById.get(id)?.den?.name ?? ""} · missed {fmtShortDate(etDate(list[0].noted_at))}
+                    </span>
+                  </div>
+                  <p className="text-sm text-navy">{list.map((o) => o.label).join(", ")}</p>
+                  <form action={markOwedGiven} className="print:hidden">
+                    <input type="hidden" name="scout_id" value={id} />
+                    <SubmitButton className="btn-ghost w-full py-2">
+                      <Gift className="h-4 w-4" aria-hidden /> Given to {scoutById.get(id)?.first_name ?? "them"}
+                    </SubmitButton>
+                  </form>
+                </li>
+              ))}
+          </ul>
+        </section>
+      )}
+
+      {byScoutView && (
         <div className="page-wide grid gap-2 lg:grid-cols-2 print:grid-cols-2">
           {scoutList.map(([id, rows]) => {
             const s = scoutById.get(id);
             return (
               <section key={id} className="card space-y-1 print:break-inside-avoid print:shadow-none">
-                <div className="flex items-baseline justify-between gap-2">
-                  <h2 className="font-extrabold text-pine-950">{name(id)}</h2>
-                  <span className="text-xs text-muted">
-                    {s?.den?.name ?? ""} · {rows.length} item{rows.length === 1 ? "" : "s"}
-                  </span>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h2 className="font-extrabold text-pine-950">
+                      {name(id)}
+                      {notHere(id) && (
+                        <span className="ml-2 rounded-full bg-gold-50 px-2 py-0.5 align-middle text-[11px] font-bold text-gold-800">Not here · owed</span>
+                      )}
+                    </h2>
+                    <span className="text-xs text-muted">
+                      {s?.den?.name ?? ""} · {rows.length} item{rows.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <form action={notHere(id) ? hereAfterAll : markNotHere} className="shrink-0 print:hidden">
+                    <input type="hidden" name="scout_id" value={id} />
+                    <SubmitButton className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-pine ring-1 ring-line">
+                      {notHere(id) ? (
+                        <>
+                          <Undo2 className="h-3.5 w-3.5" aria-hidden /> Here after all
+                        </>
+                      ) : (
+                        <>
+                          <UserX className="h-3.5 w-3.5" aria-hidden /> Not here
+                        </>
+                      )}
+                    </SubmitButton>
+                  </form>
                 </div>
                 <ul className="space-y-1 text-sm">
                   {rows.map((r) => {

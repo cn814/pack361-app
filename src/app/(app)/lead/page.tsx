@@ -159,7 +159,7 @@ export default async function LeadersHubPage() {
           { href: "/scouts/review", icon: ClipboardCheck, label: "Approve reports", count: toApprove },
           { href: "/scouts/review#record", icon: Stamp, label: "Enter in Scoutbook", count: toRecord },
           { href: "/scouts/awards", icon: Award, label: "Awards to hand out", count: awards.length },
-          { href: "/scouts/awards/sheet", icon: Printer, label: "Awards night sheet", note: "Printable, by den" },
+          { href: "/scouts/awards/sheet", icon: Printer, label: "Awards night cheat sheet", note: "One page, by den" },
           ...(advancement
             ? [{ href: "/scouts/import", icon: FileUp, label: "Import Scoutbook", note: lastImport ? `Updated ${timeAgo(lastImport.imported_at)}` : "Never imported" }]
             : []),

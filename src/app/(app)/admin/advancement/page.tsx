@@ -27,7 +27,7 @@ export default async function AdminAdvancementPage() {
         />
         <Tile href="/scouts/review" icon={ClipboardCheck} label="Approvals and Scoutbook" sub="Reports to approve, and approved items to enter in Scoutbook" />
         <Tile href="/scouts/awards" icon={Award} label="Awards to hand out" sub="Scout Shop shopping list and bag labels" />
-        <Tile href="/scouts/awards/sheet" icon={Printer} label="Awards night sheet" sub="Printable, by den" />
+        <Tile href="/scouts/awards/sheet" icon={Printer} label="Awards night cheat sheet" sub="One printed page for the leaders, by den" />
       </div>
       <section className="card space-y-3">
         <h2 className="section-title">Awards tracking</h2>
