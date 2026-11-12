@@ -40,7 +40,7 @@ export default async function MessagesPage() {
 
   return (
     <>
-      <BackLink href="/admin" label="Pack admin" />
+      <BackLink href="/admin/communication" label="Messages and newsletter" />
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Messages</h1>
         <p className="text-sm text-muted">Problems and notes families send from the app. Admins get a phone alert and an email for each.</p>

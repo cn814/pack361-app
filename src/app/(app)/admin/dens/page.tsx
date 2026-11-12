@@ -56,7 +56,7 @@ export default async function DensPage() {
 
   return (
     <>
-      <BackLink href="/admin" label="Pack admin" />
+      <BackLink href="/admin/people" label="Families and dens" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Dens and den leaders</h1>
 
       {dens.map((d) => {

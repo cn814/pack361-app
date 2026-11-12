@@ -44,7 +44,7 @@ export default async function ReportAccessPage() {
 
   return (
     <>
-      <BackLink href="/admin" label="Pack admin" />
+      <BackLink href="/admin/access" label="Security and sign-in" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Report access</h1>
       <p className="-mt-1 text-sm text-muted">
         Training, medical-form and attendance reports are open to every leader. The roster and membership reports hold more, so they&rsquo;re open to

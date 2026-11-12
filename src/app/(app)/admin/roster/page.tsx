@@ -27,7 +27,7 @@ export default async function RosterPage({ searchParams }: PageProps<"/admin/ros
 
   return (
     <>
-      <BackLink href="/admin" label="Pack admin" />
+      <BackLink href="/admin/people" label="Families and dens" />
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Families and scouts</h1>
         <p className="text-sm text-muted">

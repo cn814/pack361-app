@@ -12,7 +12,7 @@ export default async function NewsletterPreviewPage() {
   const n = adminConfigured() ? await buildNewsletter(createAdminClient(), me.id) : null;
   return (
     <>
-      <BackLink href="/admin#newsletter" label="Pack admin" />
+      <BackLink href="/admin/communication#newsletter" label="Messages and newsletter" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">This week&apos;s newsletter</h1>
       {n ? (
         <>

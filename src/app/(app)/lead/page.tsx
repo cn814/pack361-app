@@ -233,7 +233,7 @@ export default async function LeadersHubPage() {
                 {
                   id: "admin",
                   label: "Pack admin",
-                  hint: joins > 0 ? `${joins} asking to join · roster, dens, welcome emails, settings` : "Roster, dens, welcome emails, report access, settings",
+                  hint: joins > 0 ? `${joins} asking to join · families, advancement, messages, options` : "Families, advancement, messages, security, options",
                   icon: <ShieldCheck aria-hidden />,
                   href: "/admin",
                   wide: true,

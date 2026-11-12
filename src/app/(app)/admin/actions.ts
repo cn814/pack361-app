@@ -297,23 +297,31 @@ export async function saveSettings(_prev: ActionResult, form: FormData): Promise
     if (!/^\d{4}-\d{2}-\d{2}$/.test(awards)) return { error: "Pick a date for the awards cutoff." };
     rows.push({ key: "awards_tracked_from", value: awards });
   }
-  const months = Number(str(form, "photo_keep_months"));
-  if (!Number.isInteger(months) || months < 1 || months > 120) return { error: "Keep photos for 1 to 120 months." };
-  rows.push({ key: "photo_keep_months", value: String(months) });
-  const leftMonths = Number(str(form, "left_family_months"));
-  if (!Number.isInteger(leftMonths) || leftMonths < 6 || leftMonths > 120) {
-    return { error: "Keep contact details of families who left for 6 to 120 months." };
+  // Each Pack admin section saves only the settings on its own page.
+  if (form.has("photo_keep_months")) {
+    const months = Number(str(form, "photo_keep_months"));
+    if (!Number.isInteger(months) || months < 1 || months > 120) return { error: "Keep photos for 1 to 120 months." };
+    rows.push({ key: "photo_keep_months", value: String(months) });
   }
-  rows.push({ key: "left_family_months", value: String(leftMonths) });
-  const limit = Number(str(form, "email_daily_limit"));
-  if (!Number.isInteger(limit) || limit < 0 || limit > 1000) return { error: "Daily email limit should be 0 to 1000." };
-  rows.push({ key: "email_daily_limit", value: String(limit) });
+  if (form.has("left_family_months")) {
+    const leftMonths = Number(str(form, "left_family_months"));
+    if (!Number.isInteger(leftMonths) || leftMonths < 6 || leftMonths > 120) {
+      return { error: "Keep contact details of families who left for 6 to 120 months." };
+    }
+    rows.push({ key: "left_family_months", value: String(leftMonths) });
+  }
+  if (form.has("email_daily_limit")) {
+    const limit = Number(str(form, "email_daily_limit"));
+    if (!Number.isInteger(limit) || limit < 0 || limit > 1000) return { error: "Daily email limit should be 0 to 1000." };
+    rows.push({ key: "email_daily_limit", value: String(limit) });
+  }
   const site = str(form, "public_site_url", 200);
   if (site) {
     if (!/^https:\/\/[^\s/]+\.[^\s]+$/i.test(site)) return { error: "The public page link should start with https://" };
     rows.push({ key: "public_site_url", value: site });
   }
 
+  if (!rows.length) return { ok: true };
   const supabase = await createClient();
   const { error } = await supabase.from("pack_settings").upsert(rows.map((r) => ({ ...r, updated_at: new Date().toISOString() })));
   if (error) return { error: "Couldn't save settings." };
@@ -337,7 +345,7 @@ export async function saveNewsletterMode(_prev: ActionResult, form: FormData): P
     { key: "newsletter_test_adults", value: testers.join(","), updated_at: now },
   ]);
   if (error) return { error: "Couldn't save that." };
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return {
     ok: true,
     message: mode === "everyone" ? "Every family gets it from next Sunday" : mode === "test" ? `${testers.length} ${testers.length === 1 ? "person gets" : "people get"} the test copy` : "Turned off",
@@ -367,7 +375,7 @@ export async function savePilot(_prev: ActionResult, form: FormData): Promise<Ac
     { key: "pilot_people", value: people.join(","), updated_at: now },
   ]);
   if (error) return { error: "Couldn't save that." };
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return {
     ok: true,
     message: on
@@ -384,7 +392,7 @@ export async function resetTwoStep(_prev: ActionResult, form: FormData): Promise
   if (!adminConfigured()) return { error: "The server key isn't set up." };
   const problem = await resetTwoStepFor(id);
   if (problem) return { error: problem };
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return {
     ok: true,
     message:

@@ -32,7 +32,7 @@ export default async function WelcomePage() {
 
   return (
     <>
-      <BackLink href="/admin" label="Pack admin" />
+      <BackLink href="/admin/people" label="Families and dens" />
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Welcome emails</h1>
         <p className="text-sm text-muted">

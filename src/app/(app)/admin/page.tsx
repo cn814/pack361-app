@@ -1,353 +1,94 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ChevronRight, FileUp, Files, Images, Inbox, ListChecks, Mail, ScrollText, ShieldCheck, Tent, UserPlus, UsersRound } from "lucide-react";
+import { Award, Images, Inbox, ShieldCheck, SlidersHorizontal, UsersRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import ActionForm, { Field } from "@/components/ActionForm";
 import BackLink from "@/components/BackLink";
-import { countWaitingJoins, requireAdmin, welcomeBudget } from "@/lib/roster-data";
+import { countWaitingJoins, requireAdmin } from "@/lib/roster-data";
 import { getSettings } from "@/lib/settings";
-import { emailConfigured } from "@/lib/email";
-import { emailNewsletterPreview, resetTwoStep, saveNewsletterMode, savePilot, saveSettings, syncTroopWebHost } from "./actions";
 import { parsePilot } from "@/lib/pilot-rules";
-import { TERMS_VERSION } from "@/lib/policies";
 import { getTwoStepPeople } from "@/lib/two-step";
-import { brevoConfigured } from "@/lib/bulk-email";
-import { NEWSLETTER_MODES, newsletterMode, testAdultIds, type NewsletterMode } from "@/lib/newsletter";
-import { twhConfigured } from "@/lib/twh";
+import { getLastImport } from "@/lib/advancement-data";
 import { timeAgo } from "@/lib/format";
+import { nightlyProblem, storageUse } from "./admin-data";
+import Tile from "./Tile";
 
 export const metadata: Metadata = { title: "Pack admin" };
 
-const startedOver = (at: string, minutes: number) => Date.parse(at) < Date.now() - minutes * 60000;
-
-function Tile({ href, icon: Icon, label, sub }: { href: string; icon: typeof Mail; label: string; sub: string }) {
-  return (
-    <Link href={href} className="card flex items-center gap-3 py-3">
-      <Icon className="h-6 w-6 shrink-0 text-pine" aria-hidden />
-      <span className="min-w-0 flex-1">
-        <span className="block font-bold text-pine-950">{label}</span>
-        <span className="block text-xs text-muted">{sub}</span>
-      </span>
-      <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
-    </Link>
-  );
-}
-
+/** Pack admin: one button per area. Each area's tools and settings are on its own page. */
 export default async function AdminPage() {
   await requireAdmin();
   const supabase = await createClient();
-  const [settings, budget, { count: openMessages }, { data: storageRows }, waitingJoins, twoStep] = await Promise.all([
+  const [settings, waitingJoins, { count: openMessages }, storage, twoStep, problem, lastImport] = await Promise.all([
     getSettings(),
-    welcomeBudget(),
-    supabase.from("feedback").select("id", { count: "exact", head: true }).is("resolved_at", null),
-    supabase.rpc("storage_usage"),
     countWaitingJoins(),
+    supabase.from("feedback").select("id", { count: "exact", head: true }).is("resolved_at", null),
+    storageUse(),
     getTwoStepPeople(),
+    nightlyProblem(),
+    getLastImport(),
   ]);
-  // People who can get the newsletter's test copy: key leaders, the Cubmaster and admins.
-  const { data: testerRows } = await supabase
-    .from("adults")
-    .select("id, first_name, preferred_name, last_name")
-    .in("role", ["admin", "cubmaster", "committee"])
-    .eq("is_active", true)
-    .order("first_name");
-  const testers = (testerRows ?? []) as { id: string; first_name: string; preferred_name: string | null; last_name: string }[];
-  const testIds = testAdultIds(settings.newsletter_test_adults);
-  // Pilot only: parents who can be let in before the app is open to everyone, picked ones first.
   const pilot = parsePilot(settings.pilot_only, settings.pilot_people);
-  const { data: parentRows } = await supabase
-    .from("adults")
-    .select("id, first_name, preferred_name, last_name")
-    .eq("role", "parent")
-    .eq("is_active", true)
-    .order("last_name")
-    .order("first_name");
-  // Terms of use: how many active adults have agreed to the current version.
-  const [{ count: adultsActive }, { count: adultsAgreed }] = await Promise.all([
-    supabase.from("adults").select("id", { count: "exact", head: true }).eq("is_active", true),
-    supabase.from("adults").select("id", { count: "exact", head: true }).eq("is_active", true).gte("terms_version", TERMS_VERSION),
-  ]);
-  const pilotParents = ((parentRows ?? []) as { id: string; first_name: string; preferred_name: string | null; last_name: string }[]).sort(
-    (a, b) => Number(pilot.people.has(b.id)) - Number(pilot.people.has(a.id)),
-  );
-  // Supabase's free plan includes 1 GB of file storage, shared by every bucket.
-  const usage = (storageRows ?? []) as { bucket_id: string; bytes: number }[];
-  const bytesIn = (bucket: string) => Number(usage.find((u) => u.bucket_id === bucket)?.bytes ?? 0);
-  const photoBytes = bytesIn("pack-photos");
-  const docBytes = bytesIn("pack-docs");
-  const totalBytes = usage.reduce((n, u) => n + Number(u.bytes), 0);
-  const otherBytes = Math.max(0, totalBytes - photoBytes - docBytes);
-  const pct = (n: number) => Math.min(100, (n / 1e9) * 100);
-  const mb = (n: number) => `${Math.round(n / 1e6)} MB`;
-  const { data: runRows } = await supabase.from("pack_settings").select("key, value").in("key", ["twh_last_sync", "daily_last_run"]);
-  const read = <T,>(key: string): T | null => {
-    try {
-      const v = runRows?.find((r) => r.key === key)?.value;
-      return v ? (JSON.parse(v as string) as T) : null;
-    } catch {
-      return null;
-    }
-  };
-  const lastSync = read<{ at: string; feed: number; skipped?: string; errors?: string[] }>("twh_last_sync");
-  const lastRun = read<{ at: string; ok: boolean; failed: string[]; reasons?: Record<string, string>; running?: string | null }>("daily_last_run");
-  // A run still "running" well past the 5-minute limit was cut off in that step.
-  const cutOff = lastRun?.running && startedOver(lastRun.at, 10) ? lastRun.running : null;
-  const runProblem = lastRun && (cutOff || (!lastRun.running && !lastRun.ok)) ? [...lastRun.failed.map((f) => (lastRun.reasons?.[f] ? `${f} (${lastRun.reasons[f]})` : f)), ...(cutOff ? [`${cutOff} (didn't finish)`] : [])] : null;
+  const notSetUp = (twoStep ?? []).filter((p) => p.signedUp && p.apps === 0).length;
+  const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
   return (
     <>
       <BackLink href="/lead" label="Leaders" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Pack admin</h1>
-      {lastRun && runProblem && (
+      {problem && (
         <p className="rounded-xl bg-danger-50 p-3 text-sm text-danger">
-          The nightly jobs (5 PM) had a problem {timeAgo(lastRun.at)}: {runProblem.join(", ")}. Each job tries again the next
+          The nightly jobs (5 PM) had a problem {timeAgo(problem.at)}: {problem.steps.join(", ")}. Each job tries again the next
           evening; this goes away after a run with no problems. Details are in the Vercel logs.
         </p>
       )}
 
       <div className="space-y-2">
         <Tile
-          href="/admin/messages"
+          big
+          href="/admin/people"
+          icon={UsersRound}
+          label="Families and dens"
+          sub="Join requests, families and scouts, roster check, dens, welcome emails, training"
+          alert={waitingJoins ? `${plural(waitingJoins, "join request")} waiting` : null}
+        />
+        <Tile
+          big
+          href="/admin/advancement"
+          icon={Award}
+          label="Advancement"
+          sub={`Import Scoutbook, approvals, awards · ${lastImport ? `imported ${timeAgo(lastImport.imported_at)}` : "never imported"}`}
+        />
+        <Tile
+          big
+          href="/admin/communication"
           icon={Inbox}
-          label={openMessages ? `Messages (${openMessages} open)` : "Messages"}
-          sub="Problems and notes sent from the app"
+          label="Messages and newsletter"
+          sub="Notes families send from the app, and the Sunday email"
+          alert={openMessages ? `${plural(openMessages, "message")} open` : null}
         />
         <Tile
-          href="/admin/join"
-          icon={UserPlus}
-          label={waitingJoins ? `Join requests (${waitingJoins} waiting)` : "Join requests"}
-          sub="People who signed in and asked to be added"
-        />
-        <Tile href="/admin/roster" icon={UsersRound} label="Families and scouts" sub="Add families, change dens, turn off access" />
-        <Tile href="/admin/roster/check" icon={ListChecks} label="Roster check" sub="Compare with the Scoutbook roster: new scouts, den moves, who left" />
-        <Tile href="/admin/dens" icon={Tent} label="Dens and den leaders" sub="Add dens, assign leaders" />
-        <Tile
-          href="/admin/welcome"
-          icon={Mail}
-          label="Welcome emails"
-          sub={emailConfigured() ? `${budget.sentToday} of ${budget.limit} sent today` : "Needs the email key in Vercel"}
-        />
-        <Tile href="/leaders/training" icon={ShieldCheck} label="Leader training" sub="Youth Protection and other courses" />
-        <Tile href="/admin/reports" icon={ListChecks} label="Report access" sub="Who else can open the roster and membership reports, and who helps with Facebook photos" />
-        <Tile href="/admin/security" icon={ScrollText} label="Security log" sub="Who changed anyone's access, and who downloaded pack spreadsheets" />
-        <Tile
-          href="/photos/review"
+          big
+          href="/admin/files"
           icon={Images}
-          label="Photo review"
-          sub={`Approve uploads, handle removal requests · ${mb(photoBytes)} of photos`}
+          label="Photos and documents"
+          sub={`Photo review, pack documents, storage · ${storage.percent}% of 1 GB used`}
+          alert={storage.percent >= 80 ? "Storage getting full" : null}
         />
-        <Tile href="/documents" icon={Files} label="Pack documents" sub={`Forms, minutes and pack papers · ${mb(docBytes)} of files`} />
-        <Tile href="/scouts/import" icon={FileUp} label="Import Scoutbook" sub="Advancement export from Scoutbook Plus" />
+        <Tile
+          big
+          href="/admin/access"
+          icon={ShieldCheck}
+          label="Security and sign-in"
+          sub="Two-step sign-in, report access, security log, terms of use"
+          alert={notSetUp ? `${plural(notSetUp, "leader")} without two-step yet` : null}
+        />
+        <Tile
+          big
+          href="/admin/options"
+          icon={SlidersHorizontal}
+          label="App options"
+          sub={`Pilot only (${pilot.on ? "on" : "off"}), TroopWebHost calendar, email and data settings`}
+        />
       </div>
-
-      <section className="card space-y-2">
-        <h2 className="section-title">File storage</h2>
-        <p className="text-sm text-muted">
-          {mb(totalBytes)} of the free 1 GB used ({Math.round(pct(totalBytes))}%).
-          {pct(totalBytes) >= 80 && " Getting full: delete old photos or documents, or shorten how long photos are kept."}
-        </p>
-        <div
-          className="flex h-3 overflow-hidden rounded-full bg-surface"
-          role="img"
-          aria-label={`Photos ${mb(photoBytes)}, documents ${mb(docBytes)}, of 1 GB`}
-        >
-          <span className="bg-brand" style={{ width: `${pct(photoBytes)}%` }} />
-          <span className="bg-gold" style={{ width: `${pct(docBytes)}%` }} />
-          <span className="bg-sage" style={{ width: `${pct(otherBytes)}%` }} />
-        </div>
-        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-          <li className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-brand" aria-hidden /> Photos {mb(photoBytes)}
-          </li>
-          <li className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-gold" aria-hidden /> Documents {mb(docBytes)}
-          </li>
-          {otherBytes > 0 && (
-            <li className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-sage" aria-hidden /> Other files {mb(otherBytes)}
-            </li>
-          )}
-        </ul>
-      </section>
-
-      <section className="card space-y-2">
-        <h2 className="section-title">TroopWebHost calendar</h2>
-        {twhConfigured() ? (
-          <>
-            <p className="text-sm text-muted">
-              Events sync from TroopWebHost every afternoon.{" "}
-              {lastSync ? `Last sync ${timeAgo(lastSync.at)} (${lastSync.feed} events).` : "Not synced yet."} Events removed in
-              TroopWebHost move to the archive; nothing is deleted.
-            </p>
-            {(lastSync?.skipped || lastSync?.errors?.length) && (
-              <p className="rounded-xl bg-gold-50 p-2 text-xs text-gold-800">{[lastSync.skipped, ...(lastSync.errors ?? [])].filter(Boolean).join(" ")}</p>
-            )}
-            <ActionForm action={syncTroopWebHost} submit="Sync now" busy="Syncing…" buttonClass="btn-ghost w-full" />
-          </>
-        ) : (
-          <p className="text-sm text-gold-800">
-            Not connected. In TroopWebHost, open My Stuff → Subscribe to Calendar, copy the link, and add it in Vercel as
-            TWH_CALENDAR_URL (Secret, Production). Then redeploy.
-          </p>
-        )}
-      </section>
-
-      <section className="card space-y-3" id="newsletter">
-        <h2 className="section-title">Weekly newsletter</h2>
-        <p className="text-sm text-muted">
-          Every Sunday morning each adult gets one email for their family: the next two weeks of events with their RSVP, anything
-          waiting on them (RSVPs, money due, medical forms, registration), the week&apos;s announcements and open volunteer jobs.
-        </p>
-        <ActionForm action={saveNewsletterMode} submit="Save" buttonClass="btn-ghost w-full">
-          <Field label="Who gets it" hint="While TroopWebHost still sends its own newsletter, keep it to testing.">
-            <select className="input" name="newsletter_mode" defaultValue={newsletterMode(settings.newsletter_mode)}>
-              {(Object.keys(NEWSLETTER_MODES) as NewsletterMode[]).map((m) => (
-                <option key={m} value={m}>
-                  {NEWSLETTER_MODES[m]}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <fieldset className="space-y-1">
-            <legend className="text-xs font-bold text-navy">Test copy goes to</legend>
-            {testers.map((a) => (
-              <label key={a.id} className="flex items-center gap-2 text-sm text-ink">
-                <input type="checkbox" name="tester" value={a.id} defaultChecked={testIds.includes(a.id)} className="h-4 w-4 accent-pine" />
-                {a.preferred_name || a.first_name} {a.last_name}
-              </label>
-            ))}
-          </fieldset>
-        </ActionForm>
-        <div className="grid grid-cols-2 gap-2">
-          <Link href="/admin/newsletter" className="btn-ghost py-2">
-            See this week&apos;s
-          </Link>
-          <ActionForm action={emailNewsletterPreview} submit="Email it to me" busy="Sending…" buttonClass="btn-ghost w-full py-2" className="space-y-1" />
-        </div>
-        {!brevoConfigured() && settings.newsletter_mode === "everyone" && (
-          <p className="rounded-xl bg-gold-50 p-2 text-xs text-gold-800">Sending to every family needs BREVO_API_KEY in Vercel.</p>
-        )}
-      </section>
-
-      <section className="card space-y-3" id="pilot">
-        <h2 className="section-title">Pilot only</h2>
-        <p className="text-sm text-muted">
-          Until the pack committee adopts the app, only leaders (den leaders, key leaders, the Cubmaster and admins) and the people
-          ticked below can use it. Everyone else who signs in sees a &ldquo;coming shortly&rdquo; page, and the app&apos;s emails,
-          phone alerts and calendar feeds skip them. Turn it off after the vote.
-        </p>
-        <p className={`rounded-xl p-2 text-sm font-semibold ${pilot.on ? "bg-gold-50 text-gold-800" : "bg-mint text-pine"}`}>
-          {pilot.on ? "On: leaders and the people ticked below only." : "Off: open to every family on the roster."}
-        </p>
-        <ActionForm action={savePilot} submit="Save" buttonClass="btn-ghost w-full" className="space-y-3">
-          <label className="flex items-center gap-2 text-sm font-semibold text-ink">
-            <input type="checkbox" name="pilot_only" defaultChecked={pilot.on} className="h-4 w-4 accent-pine" />
-            Pilot only
-          </label>
-          <details open={pilot.people.size > 0}>
-            <summary className="cursor-pointer text-xs font-bold text-navy">
-              Parents let in during the pilot ({pilot.people.size} picked)
-            </summary>
-            <div className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
-              {pilotParents.map((a) => (
-                <label key={a.id} className="flex items-center gap-2 text-sm text-ink">
-                  <input type="checkbox" name="pilot_person" value={a.id} defaultChecked={pilot.people.has(a.id)} className="h-4 w-4 accent-pine" />
-                  {a.preferred_name || a.first_name} {a.last_name}
-                </label>
-              ))}
-            </div>
-          </details>
-        </ActionForm>
-        <p className="text-sm text-muted">
-          <b className="text-ink">Terms of use</b> (version {TERMS_VERSION}): {adultsAgreed ?? 0} of {adultsActive ?? 0} people on the
-          roster have agreed. Everyone agrees at their first sign-in, and again when the version changes.{" "}
-          <Link className="font-semibold text-pine underline" href="/terms">
-            Terms
-          </Link>{" "}
-          ·{" "}
-          <Link className="font-semibold text-pine underline" href="/privacy">
-            Data policy
-          </Link>
-        </p>
-      </section>
-
-      <section className="card space-y-3" id="two-step">
-        <h2 className="section-title">Two-step sign-in</h2>
-        <p className="text-sm text-muted">
-          Every leader (den leaders, key leaders, the Cubmaster and admins) signs in with their email code <b>and</b> a code from an authenticator app.
-          Anyone who hasn&apos;t set it up is walked through it the next time they open the app; until then they get only a
-          parent&apos;s access. Someone lost their phone? Reset them: they&apos;re signed out and set up their app again.
-        </p>
-        {twoStep === null ? (
-          <p className="text-sm text-gold-800">Needs the server key (SUPABASE_SECRET_KEY) to show who&apos;s set up.</p>
-        ) : (
-          <ul className="divide-y divide-line rounded-xl ring-1 ring-line">
-            {twoStep.map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
-                <span>
-                  <span className="font-semibold text-ink">{p.name}</span>
-                  <span className="block text-xs text-muted">
-                    {!p.signedUp
-                      ? "Hasn't signed in yet"
-                      : p.apps === 0
-                        ? "Not set up yet"
-                        : `Set up · ${p.apps} app${p.apps === 1 ? "" : "s"}${p.lastUsed ? ` · last code ${timeAgo(p.lastUsed)}` : ""}`}
-                  </span>
-                </span>
-                {p.apps > 0 ? (
-                  <ActionForm
-                    action={resetTwoStep}
-                    submit="Reset"
-                    busy="Resetting…"
-                    className="flex flex-col items-end text-right"
-                    buttonClass="text-xs font-bold text-danger underline"
-                    confirm={`Reset ${p.name}'s two-step sign-in? They'll be signed out everywhere and set up their authenticator app again.`}
-                  >
-                    <input type="hidden" name="adult_id" value={p.id} />
-                  </ActionForm>
-                ) : (
-                  <span className={`badge ${p.signedUp ? "bg-gold-50 text-gold-800" : "bg-surface-low text-muted"}`}>
-                    {p.signedUp ? "To do" : "—"}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="card space-y-3">
-        <h2 className="section-title">Pack settings</h2>
-        <ActionForm action={saveSettings}>
-          <Field label="Track awards earned on or after" hint="Anything earned before this date counts as already handed out.">
-            <input className="input" type="date" name="awards_tracked_from" defaultValue={settings.awards_tracked_from} />
-          </Field>
-          <Field label="Keep photos for (months)" hint="Photos older than this are deleted automatically.">
-            <input className="input" type="number" min={1} max={120} name="photo_keep_months" defaultValue={settings.photo_keep_months} />
-          </Field>
-          <Field
-            label="Keep contact details of families who left for (months)"
-            hint="After this, their email, phone and sign-in are cleared automatically. Names, scouts and advancement stay. The pack's data policy sets this (24 months)."
-          >
-            <input className="input" type="number" min={6} max={120} name="left_family_months" defaultValue={settings.left_family_months} />
-          </Field>
-          <Field label="The pack's public page" hint="The link Invite a family shares. Change it to https://pack361.org once that address points to the app.">
-            <input className="input" type="url" name="public_site_url" defaultValue={settings.public_site_url} />
-          </Field>
-          <Field
-            label="Welcome emails per day"
-            hint="The free email plan allows 100 emails a day in total, shared by welcome emails, sign-in codes and up to 40 nightly reminder emails (most reminders go to phones instead). Each family you welcome then signs in, which is another email, so 40 welcomes a day can crowd out sign-in codes on a heavy reminder day. 30 is safer."
-          >
-            <input className="input" type="number" min={0} max={1000} name="email_daily_limit" defaultValue={settings.email_daily_limit} />
-          </Field>
-        </ActionForm>
-        <p className="text-[11px] text-muted">
-          {settings.registration_billing === "on" ? "Dues, registration fee amounts" : "Dues"} and other ways to pay are on{" "}
-          <Link href="/leaders/money?tab=settings" className="font-semibold text-pine underline">
-            Leaders → Money
-          </Link>
-          .
-        </p>
-      </section>
     </>
   );
 }
