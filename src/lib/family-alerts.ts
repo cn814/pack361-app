@@ -63,7 +63,7 @@ export async function alertDenMeeting(meetingId: string, exceptAdultId?: string)
   const [{ data: att }, { data: denScouts }, { data: catalog }] = await Promise.all([
     db.from("den_meeting_attendance").select("scout_id").eq("meeting_id", meeting.id),
     db.from("scouts").select("id, first_name, family_id").eq("den_id", meeting.den_id).eq("is_active", true),
-    db.from("adventures").select("name, home_idea").eq("rank", meeting.den.rank).in("name", adventures),
+    db.from("adventures").select("name, home_idea, required").eq("rank", meeting.den.rank).in("name", adventures),
   ]);
   const present = new Set(((att ?? []) as { scout_id: string }[]).map((a) => a.scout_id));
   if (!present.size) return { skipped: "nobody marked here" };
@@ -90,7 +90,10 @@ export async function alertDenMeeting(meetingId: string, exceptAdultId?: string)
   const to = (familyId: string) => (adults.get(familyId) ?? []).filter((id) => id !== exceptAdultId);
   const when = meetingWhen(meeting.meets_on, today);
   const group = RANK_GROUP[meeting.den.rank];
-  const ideas = new Map(((catalog ?? []) as { name: string; home_idea: string | null }[]).map((a) => [a.name, a.home_idea]));
+  // At-home ideas for electives only: a required adventure that was missed is caught up with the den.
+  const ideas = new Map(
+    ((catalog ?? []) as { name: string; home_idea: string | null; required: boolean }[]).map((a) => [a.name, a.required ? null : a.home_idea]),
+  );
   const byId = new Map(scouts.map((s) => [s.id, s]));
   let pushed = 0;
 

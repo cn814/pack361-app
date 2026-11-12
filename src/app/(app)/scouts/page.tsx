@@ -104,7 +104,7 @@ function MyScouts({ mine, picked, records, catalog }: { mine: Scout[]; picked?: 
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-bold text-ink">{a.name}</span>
                     <span className="block text-xs text-muted">
-                      {a.reqsDone ? `${a.reqsDone} of ${a.reqCount} requirements` : a.home ? "Not started · try at home" : "Not started"}
+                      {a.reqsDone ? `${a.reqsDone} of ${a.reqCount} requirements` : !a.required && a.home && a.home !== "den" ? "Not started · try at home" : "Not started"}
                     </span>
                   </span>
                   <span className="w-16 shrink-0">

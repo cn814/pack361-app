@@ -42,7 +42,7 @@ export function closestToDone(required: AdventureProgress[], electives: Adventur
   const started = [...required, ...electives].filter((a) => !a.done && a.reqsDone > 0 && a.reqCount > 0);
   started.sort((a, b) => b.reqsDone / b.reqCount - a.reqsDone / a.reqCount || Number(b.required) - Number(a.required));
   const pick = started[0] ?? fallback;
-  return pick ? { name: pick.name, reqsDone: pick.reqsDone, reqCount: pick.reqCount, idea: pick.idea ? clip(pick.idea, 200) : null } : null;
+  return pick ? { name: pick.name, reqsDone: pick.reqsDone, reqCount: pick.reqCount, idea: pick.idea && !pick.required ? clip(pick.idea, 200) : null } : null;
 }
 
 const reqLabel = (adventure: string, reqs: string[]) =>

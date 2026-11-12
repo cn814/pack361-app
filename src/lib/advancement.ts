@@ -340,7 +340,10 @@ export function fmtShortDate(iso: string | null): string {
   return new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-/** Up to `n` unfinished adventures a family can work on at home: required first, then started electives, then others. */
+/**
+ * Up to `n` unfinished electives a family can work on at home: started ones first, then others.
+ * Electives only: required adventures are left to the den, so families don't get ahead of it.
+ */
 export function homeSuggestions(p: RankProgress, catalog: CatalogAdventure[], n = 3): AdventureProgress[] {
   const started = new Set(p.electives.map((e) => e.name));
   const otherElectives: AdventureProgress[] = catalog
@@ -359,11 +362,8 @@ export function homeSuggestions(p: RankProgress, catalog: CatalogAdventure[], n 
       completedOn: null,
     }));
   const needElectives = p.electivesDone < ELECTIVES_NEEDED;
-  const pool = [
-    ...p.required.filter((a) => !a.done && a.home === "home"),
-    ...(needElectives ? p.electives.filter((a) => !a.done && a.home !== "den") : []),
-    ...(needElectives ? otherElectives : []),
-  ];
+  if (!needElectives) return [];
+  const pool = [...p.electives.filter((a) => !a.done && a.home !== "den"), ...otherElectives];
   return pool.filter((a) => a.idea).slice(0, n);
 }
 
