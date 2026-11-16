@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Award, ChevronLeft, ExternalLink, Gift, Printer, Tags, Undo2, UserX } from "lucide-react";
+import { Award, ChevronLeft, ExternalLink, Gift, PackageCheck, Printer, Tags, Undo2, UserX } from "lucide-react";
+import PrintShoppingList from "@/components/PrintShoppingList";
 import SubmitButton from "@/components/SubmitButton";
 import PrintButton from "@/components/PrintButton";
 import { isLeader, requireMember } from "@/lib/data";
-import { getAwardsToHandOut, getOwedAwards, getReviewableScouts } from "@/lib/advancement-data";
+import { getAwardsToHandOut, getOwedAwards, getPurchasedAwards, getReviewableScouts } from "@/lib/advancement-data";
 import { RANKS, RANK_LABEL, awardLabel, fmtShortDate } from "@/lib/advancement";
 import { getSettings } from "@/lib/settings";
 import { piece, shopImage, shopItem, type ShopItem } from "@/lib/scout-shop";
 import type { DenRank } from "@/lib/types";
-import { hereAfterAll, markNotHere, markOwedGiven } from "../actions";
+import { hereAfterAll, markAllPurchased, markNotHere, markOwedGiven, unmarkPurchased } from "../actions";
 
 /** The pack's calendar date of a moment (an evening awards night is already tomorrow in UTC). */
 const etDate = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date(iso));
@@ -56,7 +57,13 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
   const byScoutView = view === "scout";
   const [scouts, settings] = await Promise.all([getReviewableScouts(), getSettings()]);
   const since = settings.awards_tracked_from;
-  const [items, owed] = await Promise.all([getAwardsToHandOut(scouts.map((s) => s.id), since), getOwedAwards(scouts.map((s) => s.id))]);
+  const ids = scouts.map((s) => s.id);
+  const [items, owed, purchasedRows] = await Promise.all([getAwardsToHandOut(ids, since), getOwedAwards(ids), getPurchasedAwards(ids)]);
+  // Purchased: marked after a Scout Shop trip. The shopping list shows only what's left to buy.
+  const purchasedKeys = new Set(purchasedRows.map((p) => `${p.scout_id}|${p.label}`));
+  const isPurchased = (r: Row) => purchasedKeys.has(`${r.scout_id}|${awardLabel(r)}`);
+  const toBuy = items.filter((r) => !isPurchased(r));
+  const purchased = items.filter(isPurchased);
   const owedScouts = new Set(owed.map((o) => o.scout_id)).size;
   const owedByScout = new Map<string, typeof owed>();
   for (const o of owed) owedByScout.set(o.scout_id, [...(owedByScout.get(o.scout_id) ?? []), o]);
@@ -74,7 +81,7 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
 
   // Shopping list: one line per item to buy, by rank (Lion → Arrow of Light), like the shelves at the Scout Shop.
   const lines = new Map<string, Line>();
-  for (const r of items) {
+  for (const r of toBuy) {
     const label = awardLabel(r);
     const k = `${r.kind}|${label}`;
     const l = lines.get(k) ?? { key: k, label, kind: r.kind, rank: r.rank, shop: shopItem(r), rows: [] };
@@ -96,6 +103,14 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
   if (other.length) sections.push({ title: "Other awards", lines: other.sort((a, b) => b.rows.length - a.rows.length) });
 
   const skus = all.filter((l) => l.shop).length;
+  // Already purchased, by item, for the folded list.
+  const purchasedLines = new Map<string, { label: string; names: string[] }>();
+  for (const r of purchased) {
+    const label = awardLabel(r);
+    const l = purchasedLines.get(label) ?? { label, names: [] };
+    l.names.push(scoutById.get(r.scout_id)?.first_name ?? "");
+    purchasedLines.set(label, l);
+  }
   const noSku = all.filter((l) => !l.shop).reduce((n, l) => n + l.rows.length, 0);
 
   // By scout: what goes in each scout's bag.
@@ -112,11 +127,21 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">{byScoutView ? "Awards by scout" : "Scout Shop shopping list"}</h1>
           <p className="text-sm text-muted">
-            {items.length} item{items.length === 1 ? "" : "s"} approved in Scoutbook and not yet awarded, earned since {fmtShortDate(since)}
-            {!byScoutView && items.length > 0 && ` · ${skus} different Scout Shop item${skus === 1 ? "" : "s"}`}.
+            {byScoutView ? (
+              <>
+                {items.length} item{items.length === 1 ? "" : "s"} approved in Scoutbook and not yet awarded, earned since {fmtShortDate(since)}.
+              </>
+            ) : (
+              <>
+                <b className="text-ink">{toBuy.length} to buy</b>
+                {toBuy.length > 0 && ` (${skus} different Scout Shop item${skus === 1 ? "" : "s"})`}
+                {purchased.length > 0 && ` · ${purchased.length} already purchased`} · approved in Scoutbook, not yet awarded, earned since{" "}
+                {fmtShortDate(since)}.
+              </>
+            )}
           </p>
         </div>
-        {items.length > 0 && <PrintButton label="Print" />}
+        {byScoutView ? items.length > 0 && <PrintButton label="Print" /> : <PrintShoppingList toBuy={toBuy.length} action={markAllPurchased} />}
       </div>
       <div className="flex flex-wrap gap-2 text-sm font-semibold print:hidden">
         <Link href="/scouts/awards" className={`rounded-full px-3 py-1 ${!byScoutView ? "bg-brand text-white" : "bg-card text-pine ring-1 ring-line"}`}>
@@ -143,6 +168,12 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
       </p>
 
       {items.length === 0 && <p className="card text-sm text-muted">Everything approved has been awarded.</p>}
+      {!byScoutView && items.length > 0 && toBuy.length === 0 && (
+        <p className="card flex items-center gap-2 text-sm text-pine">
+          <PackageCheck className="h-5 w-5 shrink-0" aria-hidden /> Everything on the list is purchased. New awards from the next Scoutbook import will
+          show here.
+        </p>
+      )}
 
       {!byScoutView && (
         <div className="page-wide space-y-5">
@@ -177,6 +208,31 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
               </div>
             </section>
           ))}
+          {purchased.length > 0 && (
+            <details className="card group print:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-pine">
+                <span className="flex items-center gap-2">
+                  <PackageCheck className="h-4 w-4" aria-hidden /> Already purchased ({purchased.length})
+                </span>
+                <span className="text-xs text-muted group-open:hidden">Show</span>
+              </summary>
+              <ul className="mt-3 space-y-1 text-sm">
+                {[...purchasedLines.values()]
+                  .sort((a, b) => a.label.localeCompare(b.label))
+                  .map((l) => (
+                    <li key={l.label}>
+                      <b className="text-ink">{l.label}</b> <span className="text-muted">× {l.names.length}</span>
+                      <span className="text-xs text-muted"> · {l.names.filter(Boolean).sort().join(", ")}</span>
+                    </li>
+                  ))}
+              </ul>
+              <form action={unmarkPurchased} className="mt-3">
+                <SubmitButton className="btn-ghost w-full py-2">
+                  <Undo2 className="h-4 w-4" aria-hidden /> Not purchased after all: put these back on the list
+                </SubmitButton>
+              </form>
+            </details>
+          )}
           {noSku > 0 && (
             <p className="text-xs text-muted">
               {noSku} item{noSku === 1 ? "" : "s"} without a Scout Shop number (special awards, or a rank patch the list doesn&apos;t have): ask at the
@@ -264,7 +320,10 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
                         ) : (
                           <Award className="h-7 w-7 shrink-0 p-1 text-muted" aria-hidden />
                         )}
-                        <span className="min-w-0 flex-1 text-ink">{awardLabel(r)}</span>
+                        <span className="min-w-0 flex-1 text-ink">
+                          {awardLabel(r)}
+                          {isPurchased(r) && <span className="ml-1.5 text-[11px] font-semibold text-pine">· purchased</span>}
+                        </span>
                         <span className="shrink-0 text-xs text-muted">{fmtShortDate(r.completed_on)}</span>
                       </li>
                     );

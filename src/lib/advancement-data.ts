@@ -239,6 +239,14 @@ export async function getOwedAwards(scoutIds: string[]): Promise<OwedAward[]> {
   return (data ?? []) as OwedAward[];
 }
 
+/** Awards marked purchased after a Scout Shop trip ("scout_id|label"). */
+export async function getPurchasedAwards(scoutIds: string[]): Promise<{ id: string; scout_id: string; label: string }[]> {
+  if (!scoutIds.length) return [];
+  const supabase = await createClient();
+  const { data } = await supabase.from("awards_bought").select("id, scout_id, label").in("scout_id", scoutIds).limit(5000);
+  return (data ?? []) as { id: string; scout_id: string; label: string }[];
+}
+
 export async function getLastImport(): Promise<ImportLog | null> {
   const supabase = await createClient();
   const { data } = await supabase

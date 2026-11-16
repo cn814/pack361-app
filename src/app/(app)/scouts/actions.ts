@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isLeader, requireMember } from "@/lib/data";
 import { APP_URL, sendEmails } from "@/lib/email";
 import type { ActionResult } from "@/components/ActionForm";
-import { getAwardsToHandOut, getCatalog, getScout, isAdvancement } from "@/lib/advancement-data";
+import { getAwardsToHandOut, getCatalog, getPurchasedAwards, getReviewableScouts, getScout, isAdvancement } from "@/lib/advancement-data";
 import { getSettings } from "@/lib/settings";
 import { awardLabel, parseScoutbookExport, RANKS, type ImportRow } from "@/lib/advancement";
 import type { DenRank } from "@/lib/types";
@@ -256,4 +256,48 @@ export async function emailMeScoutbookLink(): Promise<ActionResult> {
     },
   ]);
   return error ? { error } : { ok: true, message: `Sent to ${me.email}` };
+}
+
+// ---------------------------------------------------------------------------
+// Scout Shop: what's already been purchased
+// ---------------------------------------------------------------------------
+async function shoppingList() {
+  const [scouts, settings] = await Promise.all([getReviewableScouts(), getSettings()]);
+  const ids = scouts.map((s) => s.id);
+  const [items, purchased] = await Promise.all([getAwardsToHandOut(ids, settings.awards_tracked_from), getPurchasedAwards(ids)]);
+  const onList = new Map(items.map((r) => [`${r.scout_id}|${awardLabel(r)}`, { scout_id: r.scout_id, label: awardLabel(r).slice(0, 200) }]));
+  return { onList, purchased };
+}
+
+/** After shopping (or printing the list): everything on the shopping list is purchased. */
+export async function markAllPurchased(): Promise<ActionResult> {
+  const me = await requireMember();
+  if (!isLeader(me)) return { error: "For leaders." };
+  const { onList, purchased } = await shoppingList();
+  const have = new Set(purchased.map((p) => `${p.scout_id}|${p.label}`));
+  const rows = [...onList.entries()].filter(([k]) => !have.has(k)).map(([, v]) => v);
+  if (rows.length) {
+    const supabase = await createClient();
+    for (let i = 0; i < rows.length; i += 500) {
+      const { error } = await supabase.from("awards_bought").insert(rows.slice(i, i + 500));
+      if (error) return { error: "Couldn't save that. Try again." };
+    }
+  }
+  revalidatePath("/scouts/awards", "layout");
+  return { ok: true, message: `${rows.length} award${rows.length === 1 ? "" : "s"} marked purchased.` };
+}
+
+/** Not purchased after all: everything under Already purchased goes back on the list to buy. */
+export async function unmarkPurchased() {
+  const me = await requireMember();
+  if (!isLeader(me)) return;
+  const { onList, purchased } = await shoppingList();
+  const ids = purchased.filter((p) => onList.has(`${p.scout_id}|${p.label}`)).map((p) => p.id);
+  if (!ids.length) return;
+  const supabase = await createClient();
+  for (let i = 0; i < ids.length; i += 200) {
+    const { error } = await supabase.from("awards_bought").delete().in("id", ids.slice(i, i + 200));
+    if (error) throw new Error("Couldn't undo that.");
+  }
+  revalidatePath("/scouts/awards", "layout");
 }
