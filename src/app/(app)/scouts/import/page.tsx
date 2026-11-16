@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import BackLink from "@/components/BackLink";
 import { redirect } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 import { requireMember } from "@/lib/data";
 import { getLastImport, isAdvancement } from "@/lib/advancement-data";
 import { fmtDay, fmtTime } from "@/lib/format";
@@ -17,9 +16,7 @@ export default async function ImportPage() {
 
   return (
     <>
-      <Link href="/scouts" className="inline-flex items-center gap-1 text-sm font-semibold text-pine">
-        <ChevronLeft className="h-4 w-4" aria-hidden /> Scouts
-      </Link>
+      <BackLink href="/scouts" label="Scouts" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Import from Scoutbook</h1>
 
       <section className="card space-y-2 text-sm text-navy">

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import BackLink from "@/components/BackLink";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Award, ChevronLeft, ExternalLink, Gift, PackageCheck, Printer, Tags, Undo2, UserX } from "lucide-react";
+import { Award, ExternalLink, Gift, PackageCheck, Printer, Tags, Undo2, UserX } from "lucide-react";
 import PrintShoppingList from "@/components/PrintShoppingList";
 import SubmitButton from "@/components/SubmitButton";
 import PrintButton from "@/components/PrintButton";
@@ -120,9 +121,7 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
 
   return (
     <>
-      <Link href="/scouts" className="inline-flex items-center gap-1 text-sm font-semibold text-pine print:hidden">
-        <ChevronLeft className="h-4 w-4" aria-hidden /> Scouts
-      </Link>
+      <BackLink href="/scouts" label="Scouts" className="print:hidden" />
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">{byScoutView ? "Awards by scout" : "Scout Shop shopping list"}</h1>

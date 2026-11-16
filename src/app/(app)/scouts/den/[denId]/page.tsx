@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import BackLink from "@/components/BackLink";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CalendarDays, ChevronLeft, ClipboardCheck, House } from "lucide-react";
+import { CalendarDays, ClipboardCheck, House } from "lucide-react";
 import { isLeader, requireMember } from "@/lib/data";
 import PostAnnouncement from "@/components/PostAnnouncement";
 import { getCatalog, getMyDenIds, getRecords, seesAllAdvancement } from "@/lib/advancement-data";
@@ -56,9 +57,7 @@ export default async function DenGridPage({ params }: PageProps<"/scouts/den/[de
 
   return (
     <>
-      <Link href="/scouts" className="inline-flex items-center gap-1 text-sm font-semibold text-pine">
-        <ChevronLeft className="h-4 w-4" aria-hidden /> Scouts
-      </Link>
+      <BackLink href="/scouts" label="Scouts" />
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">{den.name}</h1>
         <p className="text-sm text-muted">

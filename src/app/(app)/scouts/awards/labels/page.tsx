@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import BackLink from "@/components/BackLink";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 import PrintButton from "@/components/PrintButton";
 import { isLeader, requireMember } from "@/lib/data";
 import { getAwardsToHandOut, getReviewableScouts } from "@/lib/advancement-data";
@@ -54,9 +54,7 @@ export default async function AwardLabelsPage({ searchParams }: PageProps<"/scou
   return (
     <>
       <div className="space-y-3 print:hidden">
-        <Link href="/scouts/awards" className="inline-flex items-center gap-1 text-sm font-semibold text-pine">
-          <ChevronLeft className="h-4 w-4" aria-hidden /> Shopping list
-        </Link>
+        <BackLink href="/scouts/awards" label="Shopping list" />
         <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Award bag labels</h1>
         <p className="text-sm text-muted">
           One label per scout with their den, how many items and what they are, to stick on each scout&apos;s bag. {labels.length} scout

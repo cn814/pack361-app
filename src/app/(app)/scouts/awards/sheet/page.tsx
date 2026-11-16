@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import BackLink from "@/components/BackLink";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronLeft, Gift, Undo2, UserX } from "lucide-react";
+import { Gift, Undo2, UserX } from "lucide-react";
 import SubmitButton from "@/components/SubmitButton";
 import PrintButton from "@/components/PrintButton";
 import FitOnePage from "@/components/FitOnePage";
@@ -104,9 +105,7 @@ export default async function AwardsSheetPage() {
   return (
     <>
       <style>{PRINT_CSS}</style>
-      <Link href="/scouts/awards" className="inline-flex items-center gap-1 text-sm font-semibold text-pine print:hidden">
-        <ChevronLeft className="h-4 w-4" aria-hidden /> Awards to hand out
-      </Link>
+      <BackLink href="/scouts/awards" label="Awards to hand out" className="print:hidden" />
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <p className="text-sm text-muted">One page for the leaders handing out awards: what each den is getting and what they did for it.</p>
         <div className="flex flex-wrap gap-2">

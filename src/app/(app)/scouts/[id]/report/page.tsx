@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import BackLink from "@/components/BackLink";
 import { notFound, redirect } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 import { requireMember } from "@/lib/data";
 import { getCatalog, getRecords, getScout, getSubmissions } from "@/lib/advancement-data";
 import { CURRENT_VERSION, RANK_LABEL } from "@/lib/advancement";
@@ -50,9 +49,7 @@ export default async function ReportPage({ params }: PageProps<"/scouts/[id]/rep
 
   return (
     <>
-      <Link href={`/scouts/${id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-pine">
-        <ChevronLeft className="h-4 w-4" aria-hidden /> {scout.first_name}
-      </Link>
+      <BackLink href={`/scouts/${id}`} label={scout.first_name} />
       <section className="card space-y-1">
         <h1 className="text-xl font-extrabold tracking-tight text-pine-950">Report finished requirements</h1>
         <p className="text-sm text-muted">

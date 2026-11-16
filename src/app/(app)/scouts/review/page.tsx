@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import BackLink from "@/components/BackLink";
 import SubmitButton from "@/components/SubmitButton";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Check, ChevronLeft, Laptop, RotateCcw, Stamp, Undo2 } from "lucide-react";
+import { Check, Laptop, RotateCcw, Stamp, Undo2 } from "lucide-react";
 import ActionForm from "@/components/ActionForm";
 import ScoutbookGrid from "@/components/ScoutbookGrid";
 import { displayName, isLeader, requireMember } from "@/lib/data";
@@ -80,9 +81,7 @@ export default async function ReviewPage({ searchParams }: PageProps<"/scouts/re
 
   return (
     <>
-      <Link href="/scouts" className="inline-flex items-center gap-1 text-sm font-semibold text-pine">
-        <ChevronLeft className="h-4 w-4" aria-hidden /> Scouts
-      </Link>
+      <BackLink href="/scouts" label="Scouts" />
       <h1 className="text-2xl font-extrabold tracking-tight text-pine-950">Approvals and Scoutbook</h1>
 
       <section className="space-y-3 lg:max-w-3xl">
