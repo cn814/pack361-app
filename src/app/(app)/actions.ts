@@ -7,9 +7,10 @@ import { packEmailConfigured, sendBulk } from "@/lib/bulk-email";
 import { EVENT_AUDIENCES, denAudience, eventAudience, type EventAudience } from "@/lib/audience";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyAdmins, notifyFacebookOff, notifyPhotoOptOut } from "@/lib/notify";
-import { APP_URL } from "@/lib/email";
+import { APP_URL, sendEmails } from "@/lib/email";
+import type { ActionResult } from "@/components/ActionForm";
 import { createClient } from "@/lib/supabase/server";
-import { isLeader, requireMember } from "@/lib/data";
+import { getCalendarToken, isLeader, requireMember } from "@/lib/data";
 
 export type PostState = { ok?: boolean; error?: string };
 
@@ -261,6 +262,31 @@ export async function sendFeedback(_prev: PostState & { message?: string }, form
     );
   });
   return { ok: true, message: "Sent to the pack admins. Thanks!" };
+}
+
+/**
+ * Email someone their own calendar link with the steps for Google Calendar on a computer
+ * (Google's "add a calendar from a link" only works fully there).
+ */
+export async function emailMeCalendarLink(): Promise<ActionResult> {
+  const me = await requireMember();
+  const token = await getCalendarToken();
+  if (!token) return { error: "Couldn't find your calendar link." };
+  const feed = `${APP_URL}/api/calendar/${token}.ics`;
+  const error = await sendEmails([
+    {
+      to: me.email,
+      subject: "Add the Pack 361 calendar to Google Calendar",
+      paragraphs: [
+        `Hi ${me.preferred_name || me.first_name},`,
+        "On a computer, open Google Calendar (calendar.google.com). On the left, next to Other calendars, click + and then From URL. Paste this link and click Add calendar:",
+        feed,
+        "It shows up on your phone too, since it's the same Google account. If it doesn't, open the Google Calendar app → Settings → Pack 361 and turn on Sync.",
+        "This link is just for your family. Please don't share it.",
+      ],
+    },
+  ]);
+  return error ? { error } : { ok: true, message: `Sent to ${me.email}` };
 }
 
 /** A new private calendar link (the old one stops working). */
