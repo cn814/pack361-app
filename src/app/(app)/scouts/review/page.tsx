@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import SubmitButton from "@/components/SubmitButton";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Check, ChevronLeft, RotateCcw, Stamp, Undo2 } from "lucide-react";
+import { Check, ChevronLeft, Laptop, RotateCcw, Stamp, Undo2 } from "lucide-react";
+import ActionForm from "@/components/ActionForm";
 import ScoutbookGrid from "@/components/ScoutbookGrid";
 import { displayName, isLeader, requireMember } from "@/lib/data";
 import { getRecentlyEntered, getReviewableScouts, getSubmissions, type Submission } from "@/lib/advancement-data";
 import { RANK_LABEL, fmtShortDate } from "@/lib/advancement";
 import { fmtDay, fmtTime } from "@/lib/format";
-import { reviewSubmissions, undoEntered } from "../actions";
+import { emailMeScoutbookLink, reviewSubmissions, undoEntered } from "../actions";
 
 export const metadata: Metadata = { title: "Advancement approvals" };
 
@@ -153,6 +154,27 @@ export default async function ReviewPage({ searchParams }: PageProps<"/scouts/re
           )}
         </p>
         {approvedMine.length > 0 && <ScoutbookGrid list={approvedMine} />}
+        {toRecord.length === 0 && <p className="card text-sm text-muted">Nothing to enter.</p>}
+        {toRecord.length > 0 && (
+          <div className="card space-y-2 border-l-4 border-l-pine lg:hidden">
+            <p className="flex items-center gap-2 font-extrabold text-pine-950">
+              <Laptop className="h-5 w-5 shrink-0" aria-hidden /> Best done on a computer
+            </p>
+            <p className="text-sm text-navy">
+              Scoutbook Plus is easiest on a computer, and there this list is laid out like Scoutbook&apos;s screens: one adventure
+              at a time, with the scouts and dates to tick. Open both side by side. (Approving family reports above works fine on
+              your phone.)
+            </p>
+            <ActionForm action={emailMeScoutbookLink} submit="Email me the link" busy="Sending…" buttonClass="btn-primary w-full" className="space-y-1" />
+          </div>
+        )}
+        {toRecord.length > 0 && (
+          <details className="group space-y-3 lg:hidden" open={byReq}>
+            <summary className="cursor-pointer list-none text-center text-sm font-semibold text-pine underline underline-offset-2">
+              <span className="group-open:hidden">Show the list on this phone anyway</span>
+              <span className="hidden group-open:inline">Hide the list</span>
+            </summary>
+            <div className="mt-3 space-y-3">
         {toRecord.length > 0 && (
           <div className="flex gap-1 rounded-xl bg-surface-low p-1 text-sm font-semibold lg:hidden" role="tablist" aria-label="Group by">
             <Link
@@ -179,7 +201,6 @@ export default async function ReviewPage({ searchParams }: PageProps<"/scouts/re
             and requirement, check these scouts, use this date.
           </p>
         )}
-        {toRecord.length === 0 && <p className="card text-sm text-muted">Nothing to enter.</p>}
         {!byReq && toRecord.map((group) => {
           const first = group[0];
           return (
@@ -246,6 +267,9 @@ export default async function ReviewPage({ searchParams }: PageProps<"/scouts/re
               </article>
             );
           })}
+            </div>
+          </details>
+        )}
       </section>
 
       {taps.length > 0 && (

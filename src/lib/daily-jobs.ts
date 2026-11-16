@@ -540,7 +540,7 @@ export async function remindScoutbookEntry(db: SupabaseClient, budget: EmailBudg
   const items = `${waiting} approved item${waiting === 1 ? "" : "s"}`;
   const push = await sendPushTo(to.map((p) => p.id), {
     title: "Enter advancement in Scoutbook before the pack meeting",
-    body: `${items} waiting. The pack meeting is ${when}.`,
+    body: `${items} waiting. The pack meeting is ${when}. Easiest on a computer.`,
     url: "/scouts/review#record",
     tag: "scoutbook-entry",
   });
@@ -551,7 +551,7 @@ export async function remindScoutbookEntry(db: SupabaseClient, budget: EmailBudg
       paragraphs: [
         `Hi ${p.preferred_name || p.first_name},`,
         `The pack meeting is ${when}, and ${items} from den meetings and family reports are waiting on the Enter in Scoutbook list. Please enter them in Scoutbook before then, so the record is up to date and the awards are ready to hand out. Once the Scoutbook export is uploaded to the app (Scouts → Import from Scoutbook), it also shows on each scout's page and in their family's Sunday email.`,
-        "In the app: Leaders → Dens → Enter in Scoutbook. View it by requirement to mark one requirement for several scouts at once, and tap Entered as you go.",
+        "It's easiest on a computer: open Scoutbook Plus in one window and the link below in another. The app lays the list out like Scoutbook's screens, one adventure at a time with the scouts and dates to tick. Tap Entered as you go.",
         `${APP_URL}/scouts/review#record`,
       ],
     })),

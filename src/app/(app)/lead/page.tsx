@@ -157,7 +157,7 @@ export default async function LeadersHubPage() {
       <Tiles
         items={[
           { href: "/scouts/review", icon: ClipboardCheck, label: "Approve reports", count: toApprove },
-          { href: "/scouts/review#record", icon: Stamp, label: "Enter in Scoutbook", count: toRecord },
+          { href: "/scouts/review#record", icon: Stamp, label: "Enter in Scoutbook", count: toRecord, note: "Best on a computer" },
           { href: "/scouts/awards", icon: Award, label: "Awards to hand out", count: awards.length },
           { href: "/scouts/awards/sheet", icon: Printer, label: "Awards night cheat sheet", note: "One page, by den" },
           ...(advancement

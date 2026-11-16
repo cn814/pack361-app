@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireMember } from "@/lib/data";
+import { isLeader, requireMember } from "@/lib/data";
+import { APP_URL, sendEmails } from "@/lib/email";
+import type { ActionResult } from "@/components/ActionForm";
 import { getAwardsToHandOut, getCatalog, getScout, isAdvancement } from "@/lib/advancement-data";
 import { getSettings } from "@/lib/settings";
 import { awardLabel, parseScoutbookExport, RANKS, type ImportRow } from "@/lib/advancement";
@@ -230,4 +232,28 @@ export async function markOwedGiven(form: FormData) {
   const { error } = await supabase.from("awards_owed").update({ given_at: new Date().toISOString() }).eq("scout_id", scoutId).is("given_at", null);
   if (error) throw new Error("Couldn't save that.");
   revalidatePath("/scouts/awards", "layout");
+}
+
+/**
+ * Leaders on a phone: email themselves the link to Enter in Scoutbook, to open later on a
+ * computer beside Scoutbook Plus.
+ */
+export async function emailMeScoutbookLink(): Promise<ActionResult> {
+  const me = await requireMember();
+  if (!isLeader(me)) return { error: "For leaders." };
+  const supabase = await createClient();
+  const { count } = await supabase.from("advancement_submissions").select("id", { count: "exact", head: true }).eq("status", "approved");
+  const n = count ?? 0;
+  const error = await sendEmails([
+    {
+      to: me.email,
+      subject: "Enter in Scoutbook: open this on a computer",
+      paragraphs: [
+        `Hi ${me.preferred_name || me.first_name},`,
+        `${n} approved item${n === 1 ? " is" : "s are"} waiting to be entered in Scoutbook Plus. It's easiest on a computer: open Scoutbook Plus in one window and this link in another. The app lays the list out like Scoutbook's screens, one adventure at a time with the scouts and dates to tick.`,
+        `${APP_URL}/scouts/review#record`,
+      ],
+    },
+  ]);
+  return error ? { error } : { ok: true, message: `Sent to ${me.email}` };
 }
