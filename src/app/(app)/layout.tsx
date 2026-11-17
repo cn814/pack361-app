@@ -18,7 +18,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   // The bell's number (InboxBadge) and the meeting bar (MeetingNow) stream in on their own, so
   // pages don't wait for them.
   const leader = isLeader(me);
-  // Leaders' accounts lock after 15 minutes without use (src/lib/idle.ts). The real role counts,
+  // Leaders' accounts lock after 6 hours without use (src/lib/idle.ts). The real role counts,
   // so "View as" a parent still locks.
   const locks = needsTwoStep((await getMe())?.role);
   const initials = (displayName(me)[0] + me.last_name[0]).toUpperCase();

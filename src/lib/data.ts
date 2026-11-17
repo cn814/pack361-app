@@ -27,7 +27,7 @@ export interface Me {
   email: string;
   adult: Adult | null;
   twoStep: TwoStep;
-  /** A leader's account locked after 15 minutes without use (src/lib/idle.ts): the code opens it. */
+  /** A leader's account locked after 6 hours without use (src/lib/idle.ts): the code opens it. */
   locked: boolean;
   /** The roster role, whatever "View as" or a missing two-step code shows. */
   role: AppRole | null;

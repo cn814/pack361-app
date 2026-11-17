@@ -23,8 +23,9 @@ test("an edited time doesn't read", async () => {
   assert.equal(await readActive(`${now}.${sig}`, "session-a"), null);
 });
 
-test("a leader's account locks after 15 minutes without use", () => {
-  assert.equal(idleState({ last: now - 14 * min, aal2: true, now }), "ok");
+test("a leader's account locks after 6 hours without use", () => {
+  assert.equal(LOCK_MS, 6 * 60 * min);
+  assert.equal(idleState({ last: now - 5 * 60 * min, aal2: true, now }), "ok");
   assert.equal(idleState({ last: now - LOCK_MS - 1, aal2: true, now }), "locked");
   // A parent (no authenticator code in this session) doesn't lock.
   assert.equal(idleState({ last: now - 3 * 86_400_000, aal2: false, now }), "ok");
@@ -40,7 +41,7 @@ test("entering the code counts as use; deleting the cookie doesn't open a lock",
   // Just entered the code: fresh even with an old cookie.
   assert.equal(lastActive({ stamped: now - 40 * min, codeAt: now - min, aal2: true, now }), now - min);
   // Cookie deleted on a leader's laptop: the code's time still counts, so it stays locked.
-  const last = lastActive({ stamped: null, codeAt: now - 40 * min, aal2: true, now });
+  const last = lastActive({ stamped: null, codeAt: now - LOCK_MS - 40 * min, aal2: true, now });
   assert.equal(idleState({ last, aal2: true, now }), "locked");
   // A leader's session with nothing to go by is locked (the code opens it).
   assert.equal(idleState({ last: lastActive({ stamped: null, codeAt: null, aal2: true, now }), aal2: true, now }), "locked");

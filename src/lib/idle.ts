@@ -1,6 +1,6 @@
 /**
  * Away from the app:
- *  - A leader's account (a session with the authenticator code entered) LOCKS after 15 minutes
+ *  - A leader's account (a session with the authenticator code entered) LOCKS after 6 hours
  *    without use. Only the authenticator code opens it again (no email wait), so someone who
  *    walks up to a leader's open laptop or unlocked phone can't see or change pack records.
  *  - Everyone is SIGNED OUT after 30 days without opening the app.
@@ -11,7 +11,9 @@
  * while the person is using the app. The browser side (src/components/IdleWatch.tsx) shows a
  * warning a minute before and covers the screen when it locks.
  */
-export const LOCK_MINUTES = 15;
+export const LOCK_MINUTES = 6 * 60;
+/** How the lock reads in the app's words. */
+export const LOCK_LABEL = "6 hours";
 export const LOCK_MS = LOCK_MINUTES * 60_000;
 export const SIGN_OUT_DAYS = 30;
 export const SIGN_OUT_MS = SIGN_OUT_DAYS * 86_400_000;

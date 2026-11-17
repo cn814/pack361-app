@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Lock } from "lucide-react";
-import { LOCK_MS, REFRESH_MS, SESSION_PATH } from "@/lib/idle";
+import { LOCK_LABEL, LOCK_MS, REFRESH_MS, SESSION_PATH } from "@/lib/idle";
 
 const WARN_MS = 60_000;
 
 /**
- * For leaders: the browser side of the 15-minute lock (src/lib/idle.ts; the server enforces it).
+ * For leaders: the browser side of the 6-hour lock (src/lib/idle.ts; the server enforces it).
  * Taps, typing and scrolling count as use: every minute of use tells the server, so a long form
  * typed without loading a page doesn't lock. A minute before the lock it asks "Still there?";
  * at the lock it checks with the server (another tab may have been in use), then covers the
@@ -100,7 +100,7 @@ export default function IdleWatch() {
       >
         <p className="text-sm font-bold">Still there?</p>
         <p className="mt-1 text-xs text-white/80">
-          Leader accounts lock after {LOCK_MS / 60_000} minutes without use. You&apos;ll need your authenticator code to keep going.
+          Leader accounts lock after {LOCK_LABEL} without use. You&apos;ll need your authenticator code to keep going.
         </p>
         <button
           type="button"
@@ -120,7 +120,7 @@ export default function IdleWatch() {
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-3 bg-canvas px-6 text-center" role="alertdialog" aria-label="Locked">
       <Lock className="h-10 w-10 text-pine" aria-hidden />
-      <p className="text-lg font-extrabold text-pine-950">Locked after {LOCK_MS / 60_000} minutes away</p>
+      <p className="text-lg font-extrabold text-pine-950">Locked after {LOCK_LABEL} away</p>
       <p className="max-w-xs text-sm text-muted">Enter the code from your authenticator app to keep going.</p>
       <a className="btn-primary" href={`/two-step?next=${encodeURIComponent(typeof location === "undefined" ? "/" : location.pathname + location.search)}`}>
         Unlock

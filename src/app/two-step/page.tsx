@@ -4,7 +4,7 @@ import { ShieldCheck } from "lucide-react";
 import { displayName, getMe } from "@/lib/data";
 import { TwoStepSetup, TwoStepVerify } from "@/components/TwoStep";
 import BetaBanner from "@/components/BetaBanner";
-import { LOCK_MINUTES, safeNext } from "@/lib/idle";
+import { LOCK_LABEL, safeNext } from "@/lib/idle";
 
 export const metadata: Metadata = { title: "Two-step sign-in" };
 
@@ -44,7 +44,7 @@ export default async function TwoStepPage({ searchParams }: PageProps<"/two-step
                 <div className="space-y-1">
                   <h1 className="text-xl font-extrabold text-pine-950">Welcome back, {name}</h1>
                   <p className="text-sm text-muted">
-                    Leader accounts lock after {LOCK_MINUTES} minutes without use, so nobody else can use yours on a phone or
+                    Leader accounts lock after {LOCK_LABEL} without use, so nobody else can use yours on a phone or
                     computer you stepped away from. Enter the code your authenticator app shows for{" "}
                     <b className="text-navy">Pack 361</b> to keep going.
                   </p>

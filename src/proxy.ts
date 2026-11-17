@@ -120,7 +120,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(to);
   }
 
-  // Away from the app (src/lib/idle.ts): a leader's session locks after 15 minutes without use,
+  // Away from the app (src/lib/idle.ts): a leader's session locks after 6 hours without use,
   // and everyone is signed out after 30 days.
   if (signedIn && claims && !isPublic) {
     const now = Date.now();

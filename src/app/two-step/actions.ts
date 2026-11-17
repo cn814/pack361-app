@@ -102,7 +102,7 @@ export async function verifyTwoStep(_prev: ActionResult, form: FormData): Promis
     if (!error) {
       revalidatePath("/", "layout");
       const jar = await cookies();
-      // In use from now (src/lib/idle.ts): the 15-minute lock starts over.
+      // In use from now (src/lib/idle.ts): the 6-hour lock starts over.
       if (sessionId) jar.set(ACTIVE_COOKIE, await stampActive(sessionId, Date.now()), ACTIVE_COOKIE_OPTIONS);
       if (me.locked) redirect(safeNext(form.get("next")));
       // All the way in: the welcome animation plays on the home page (fresh, in case the

@@ -136,7 +136,7 @@ Done for the pack's district and council review (the printable summary is
   Turning it on or off, or changing who's picked, goes in the security log
   (`20261030000000_pilot_only.sql`, tests `53_pilot_tests.sql`). It's an app-level gate: the
   database still gives a signed-in parent their own family's rows.
-- **3.33 (ahead of TroopWebHost and Scoutbook):** leader sessions (aal2) lock after 15 minutes
+- **3.33 (ahead of TroopWebHost and Scoutbook):** leader sessions (aal2) lock after 15 minutes (6 hours since 3.45, at the pack's request)
   without use and open only with the authenticator code; every session is signed out (refresh
   token revoked) after 30 days without use. "Use" is an HMAC-signed `pack-active` cookie tied to
   the session id, checked and freshened (once a minute) by `src/proxy.ts`; a locked session can
