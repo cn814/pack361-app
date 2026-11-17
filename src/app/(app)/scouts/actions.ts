@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isLeader, requireMember } from "@/lib/data";
 import { APP_URL, sendEmails } from "@/lib/email";
 import type { ActionResult } from "@/components/ActionForm";
-import { getAwardsToHandOut, getCatalog, getPurchasedAwards, getReviewableScouts, getScout, isAdvancement } from "@/lib/advancement-data";
+import { getAwardsToHandOut, getCatalog, getOwedAwards, getPurchasedAwards, getReviewableScouts, getScout, isAdvancement } from "@/lib/advancement-data";
 import { getSettings } from "@/lib/settings";
 import { awardLabel, parseScoutbookExport, RANKS, type ImportRow } from "@/lib/advancement";
 import type { DenRank } from "@/lib/types";
@@ -189,28 +189,28 @@ const awardsScout = (form: FormData) => {
   return SUBMISSION_ID.test(id) ? id : null;
 };
 
-/** "Not here": keep this scout's awards on the Still owed list until someone taps Given. RLS decides who may. */
-export async function markNotHere(form: FormData) {
+/** "Awarded": this scout got tonight's awards. RLS decides who may. */
+export async function markAwarded(form: FormData) {
   await requireMember();
   const scoutId = awardsScout(form);
   if (!scoutId) return;
   const settings = await getSettings();
-  const items = await getAwardsToHandOut([scoutId], settings.awards_tracked_from);
+  const labels = [...new Set((await getAwardsToHandOut([scoutId], settings.awards_tracked_from)).map((r) => awardLabel(r).slice(0, 200)))];
   const supabase = await createClient();
-  const { data: open } = await supabase.from("awards_owed").select("label").eq("scout_id", scoutId).is("given_at", null);
-  const have = new Set(((open ?? []) as { label: string }[]).map((r) => r.label));
-  const rows = [...new Map(items.map((r) => [awardLabel(r), r])).entries()]
-    .filter(([label]) => !have.has(label))
-    .map(([label, r]) => ({ scout_id: scoutId, label: label.slice(0, 200), kind: r.kind, completed_on: r.completed_on }));
+  const { data: have } = await supabase.from("awards_given").select("label").eq("scout_id", scoutId);
+  const done = new Set(((have ?? []) as { label: string }[]).map((r) => r.label));
+  const rows = labels.filter((l) => !done.has(l)).map((label) => ({ scout_id: scoutId, label }));
   if (rows.length) {
-    const { error } = await supabase.from("awards_owed").insert(rows);
+    const { error } = await supabase.from("awards_given").insert(rows);
     if (error) throw new Error("Couldn't save that.");
   }
+  // Anything they were still owed from before was handed over too.
+  await supabase.from("awards_owed").update({ given_at: new Date().toISOString() }).eq("scout_id", scoutId).is("given_at", null);
   revalidatePath("/scouts/awards", "layout");
 }
 
-/** "Here after all": undo Not here for tonight's awards (the ones still on the awards list). */
-export async function hereAfterAll(form: FormData) {
+/** Undo "Awarded" for tonight's awards (a mistaken tap). */
+export async function unmarkAwarded(form: FormData) {
   await requireMember();
   const scoutId = awardsScout(form);
   if (!scoutId) return;
@@ -218,9 +218,42 @@ export async function hereAfterAll(form: FormData) {
   const labels = (await getAwardsToHandOut([scoutId], settings.awards_tracked_from)).map(awardLabel);
   if (!labels.length) return;
   const supabase = await createClient();
-  const { error } = await supabase.from("awards_owed").delete().eq("scout_id", scoutId).is("given_at", null).in("label", labels);
+  const { error } = await supabase.from("awards_given").delete().eq("scout_id", scoutId).in("label", labels);
   if (error) throw new Error("Couldn't undo that.");
   revalidatePath("/scouts/awards", "layout");
+}
+
+/**
+ * "Finish awards night": every award on the list that nobody marked Awarded goes on the Still
+ * owed list, where it stays (even after Scoutbook marks it awarded) until someone taps Given.
+ */
+export async function finishAwardsNight(): Promise<ActionResult> {
+  const me = await requireMember();
+  if (!isLeader(me)) return { error: "For leaders." };
+  const [scouts, settings] = await Promise.all([getReviewableScouts(), getSettings()]);
+  const ids = scouts.map((s) => s.id);
+  const items = await getAwardsToHandOut(ids, settings.awards_tracked_from);
+  const supabase = await createClient();
+  const [{ data: given }, owed] = await Promise.all([
+    supabase.from("awards_given").select("scout_id, label").in("scout_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]),
+    getOwedAwards(ids),
+  ]);
+  const skip = new Set([...((given ?? []) as { scout_id: string; label: string }[]), ...owed].map((r) => `${r.scout_id}|${r.label}`));
+  const rows = [
+    ...new Map(
+      items
+        .map((r) => ({ scout_id: r.scout_id, label: awardLabel(r).slice(0, 200), kind: r.kind, completed_on: r.completed_on }))
+        .filter((r) => !skip.has(`${r.scout_id}|${r.label}`))
+        .map((r) => [`${r.scout_id}|${r.label}`, r]),
+    ).values(),
+  ];
+  for (let i = 0; i < rows.length; i += 500) {
+    const { error } = await supabase.from("awards_owed").insert(rows.slice(i, i + 500));
+    if (error) return { error: "Couldn't save that. Try again." };
+  }
+  revalidatePath("/scouts/awards", "layout");
+  const n = new Set(rows.map((r) => r.scout_id)).size;
+  return { ok: true, message: n ? `${n} scout${n === 1 ? "" : "s"} moved to Still owed.` : "Everyone was awarded. Nothing is owed." };
 }
 
 /** "Given": the scout got what they were owed. */

@@ -225,7 +225,7 @@ export interface OwedAward {
   noted_at: string;
 }
 
-/** Awards a scout missed at an awards night (tapped "Not here") and hasn't been given yet. */
+/** Awards a scout didn't get at an awards night (not marked Awarded) and hasn't been given yet. */
 export async function getOwedAwards(scoutIds: string[]): Promise<OwedAward[]> {
   if (!scoutIds.length) return [];
   const supabase = await createClient();
@@ -245,6 +245,14 @@ export async function getPurchasedAwards(scoutIds: string[]): Promise<{ id: stri
   const supabase = await createClient();
   const { data } = await supabase.from("awards_bought").select("id, scout_id, label").in("scout_id", scoutIds).limit(5000);
   return (data ?? []) as { id: string; scout_id: string; label: string }[];
+}
+
+/** Awards marked Awarded at an awards night ("scout_id|label"). */
+export async function getGivenAwards(scoutIds: string[]): Promise<Set<string>> {
+  if (!scoutIds.length) return new Set();
+  const supabase = await createClient();
+  const { data } = await supabase.from("awards_given").select("scout_id, label").in("scout_id", scoutIds).limit(5000);
+  return new Set(((data ?? []) as { scout_id: string; label: string }[]).map((r) => `${r.scout_id}|${r.label}`));
 }
 
 export async function getLastImport(): Promise<ImportLog | null> {

@@ -2,17 +2,17 @@ import type { Metadata } from "next";
 import BackLink from "@/components/BackLink";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Award, ExternalLink, Gift, PackageCheck, Printer, Tags, Undo2, UserX } from "lucide-react";
+import { Award, ExternalLink, Gift, PackageCheck, Printer, Tags, Undo2 } from "lucide-react";
 import PrintShoppingList from "@/components/PrintShoppingList";
 import SubmitButton from "@/components/SubmitButton";
 import PrintButton from "@/components/PrintButton";
 import { isLeader, requireMember } from "@/lib/data";
-import { getAwardsToHandOut, getOwedAwards, getPurchasedAwards, getReviewableScouts } from "@/lib/advancement-data";
+import { getAwardsToHandOut, getGivenAwards, getOwedAwards, getPurchasedAwards, getReviewableScouts } from "@/lib/advancement-data";
 import { RANKS, RANK_LABEL, awardLabel, fmtShortDate } from "@/lib/advancement";
 import { getSettings } from "@/lib/settings";
 import { piece, shopImage, shopItem, type ShopItem } from "@/lib/scout-shop";
 import type { DenRank } from "@/lib/types";
-import { hereAfterAll, markAllPurchased, markNotHere, markOwedGiven, unmarkPurchased } from "../actions";
+import { markAllPurchased, markAwarded, markOwedGiven, unmarkAwarded, unmarkPurchased } from "../actions";
 
 /** The pack's calendar date of a moment (an evening awards night is already tomorrow in UTC). */
 const etDate = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date(iso));
@@ -59,7 +59,7 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
   const [scouts, settings] = await Promise.all([getReviewableScouts(), getSettings()]);
   const since = settings.awards_tracked_from;
   const ids = scouts.map((s) => s.id);
-  const [items, owed, purchasedRows] = await Promise.all([getAwardsToHandOut(ids, since), getOwedAwards(ids), getPurchasedAwards(ids)]);
+  const [items, owed, purchasedRows, given] = await Promise.all([getAwardsToHandOut(ids, since), getOwedAwards(ids), getPurchasedAwards(ids), getGivenAwards(ids)]);
   // Purchased: marked after a Scout Shop trip. The shopping list shows only what's left to buy.
   const purchasedKeys = new Set(purchasedRows.map((p) => `${p.scout_id}|${p.label}`));
   const isPurchased = (r: Row) => purchasedKeys.has(`${r.scout_id}|${awardLabel(r)}`);
@@ -68,11 +68,10 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
   const owedScouts = new Set(owed.map((o) => o.scout_id)).size;
   const owedByScout = new Map<string, typeof owed>();
   for (const o of owed) owedByScout.set(o.scout_id, [...(owedByScout.get(o.scout_id) ?? []), o]);
-  // Not here: every award on the list for this scout is on the Still owed list.
-  const notHere = (id: string) => {
-    const labels = new Set((owedByScout.get(id) ?? []).map((o) => o.label));
+  // Awarded: every award on the list for this scout was marked Awarded at an awards night.
+  const awarded = (id: string) => {
     const tonight = items.filter((r) => r.scout_id === id);
-    return tonight.length > 0 && tonight.every((r) => labels.has(awardLabel(r)));
+    return tonight.length > 0 && tonight.every((r) => given.has(`${id}|${awardLabel(r)}`));
   };
   const scoutById = new Map(scouts.map((s) => [s.id, s]));
   const name = (id: string) => {
@@ -243,8 +242,11 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
 
       {byScoutView && (
         <p className="text-xs text-muted print:hidden">
-          On awards night, tap <b>Not here</b> for anyone who missed it. Their awards go on the <b>Still owed</b> list, and stay
-          there after Scoutbook marks them awarded, until you tap <b>Given</b>.
+          On awards night, tap <b>Awarded</b> as each scout gets their awards, then <b>Finish awards night</b> on the{" "}
+          <Link href="/scouts/awards/sheet#roster" className="font-semibold text-pine underline">
+            cheat sheet
+          </Link>{" "}
+          puts anyone not awarded on the <b>Still owed</b> list until they get them.
         </p>
       )}
 
@@ -259,7 +261,7 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="font-bold text-ink">{name(id)}</p>
                     <span className="text-xs text-muted">
-                      {scoutById.get(id)?.den?.name ?? ""} · missed {fmtShortDate(etDate(list[0].noted_at))}
+                      {scoutById.get(id)?.den?.name ?? ""} · owed since {fmtShortDate(etDate(list[0].noted_at))}
                     </span>
                   </div>
                   <p className="text-sm text-navy">{list.map((o) => o.label).join(", ")}</p>
@@ -285,24 +287,24 @@ export default async function AwardsPage({ searchParams }: PageProps<"/scouts/aw
                   <div className="min-w-0">
                     <h2 className="font-extrabold text-pine-950">
                       {name(id)}
-                      {notHere(id) && (
-                        <span className="ml-2 rounded-full bg-gold-50 px-2 py-0.5 align-middle text-[11px] font-bold text-gold-800">Not here · owed</span>
+                      {awarded(id) && (
+                        <span className="ml-2 rounded-full bg-mint px-2 py-0.5 align-middle text-[11px] font-bold text-pine">Awarded</span>
                       )}
                     </h2>
                     <span className="text-xs text-muted">
                       {s?.den?.name ?? ""} · {rows.length} item{rows.length === 1 ? "" : "s"}
                     </span>
                   </div>
-                  <form action={notHere(id) ? hereAfterAll : markNotHere} className="shrink-0 print:hidden">
+                  <form action={awarded(id) ? unmarkAwarded : markAwarded} className="shrink-0 print:hidden">
                     <input type="hidden" name="scout_id" value={id} />
                     <SubmitButton className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-pine ring-1 ring-line">
-                      {notHere(id) ? (
+                      {awarded(id) ? (
                         <>
-                          <Undo2 className="h-3.5 w-3.5" aria-hidden /> Here after all
+                          <Undo2 className="h-3.5 w-3.5" aria-hidden /> Undo
                         </>
                       ) : (
                         <>
-                          <UserX className="h-3.5 w-3.5" aria-hidden /> Not here
+                          <Award className="h-3.5 w-3.5" aria-hidden /> Awarded
                         </>
                       )}
                     </SubmitButton>
